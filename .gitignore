@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vercel/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+deploy.sh
+.vercel
