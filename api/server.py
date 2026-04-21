@@ -47,13 +47,121 @@ else:
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 SENDGRID_FROM_EMAIL = os.environ.get("SENDGRID_FROM_EMAIL", "noreply@fidelitour.com")
 
-# Tours postal code centroids (latitude, longitude)
-POSTAL_CODE_CENTROIDS = {
-    "37000": (47.3941, 0.6848),
-    "37100": (47.4210, 0.6840),
-    "37200": (47.3741, 0.6900),
-    "37300": (47.3800, 0.7000),
+# ============================================================
+# France-wide postal code → (lat, lng, department_name) mapping
+# Keyed by 2-digit department prefix. Covers all 96 metropolitan departments.
+# Individual well-known city postal codes override at full-5-digit granularity.
+# ============================================================
+FRENCH_DEPARTMENTS = {
+    "01": ("Ain", 46.20, 5.22), "02": ("Aisne", 49.56, 3.62), "03": ("Allier", 46.39, 3.19),
+    "04": ("Alpes-de-Haute-Provence", 44.10, 6.24), "05": ("Hautes-Alpes", 44.66, 6.42),
+    "06": ("Alpes-Maritimes", 43.93, 7.21), "07": ("Ardèche", 44.75, 4.42),
+    "08": ("Ardennes", 49.61, 4.62), "09": ("Ariège", 42.93, 1.52), "10": ("Aube", 48.32, 4.17),
+    "11": ("Aude", 43.11, 2.45), "12": ("Aveyron", 44.28, 2.57),
+    "13": ("Bouches-du-Rhône", 43.50, 5.10), "14": ("Calvados", 49.08, -0.28),
+    "15": ("Cantal", 45.06, 2.65), "16": ("Charente", 45.73, 0.24),
+    "17": ("Charente-Maritime", 45.82, -0.69), "18": ("Cher", 47.06, 2.46),
+    "19": ("Corrèze", 45.36, 1.87), "21": ("Côte-d'Or", 47.50, 4.85),
+    "22": ("Côtes-d'Armor", 48.47, -2.98), "23": ("Creuse", 46.08, 2.03),
+    "24": ("Dordogne", 45.14, 0.72), "25": ("Doubs", 47.22, 6.48),
+    "26": ("Drôme", 44.74, 5.26), "27": ("Eure", 49.17, 1.16),
+    "28": ("Eure-et-Loir", 48.46, 1.35), "29": ("Finistère", 48.22, -4.10),
+    "2A": ("Corse-du-Sud", 41.93, 8.94), "2B": ("Haute-Corse", 42.35, 9.29),
+    "30": ("Gard", 44.04, 4.22), "31": ("Haute-Garonne", 43.45, 1.34),
+    "32": ("Gers", 43.64, 0.58), "33": ("Gironde", 44.85, -0.57),
+    "34": ("Hérault", 43.61, 3.55), "35": ("Ille-et-Vilaine", 48.17, -1.52),
+    "36": ("Indre", 46.75, 1.52), "37": ("Indre-et-Loire", 47.29, 0.68),
+    "38": ("Isère", 45.25, 5.75), "39": ("Jura", 46.75, 5.69),
+    "40": ("Landes", 43.93, -0.73), "41": ("Loir-et-Cher", 47.58, 1.37),
+    "42": ("Loire", 45.57, 4.27), "43": ("Haute-Loire", 45.10, 3.83),
+    "44": ("Loire-Atlantique", 47.35, -1.73), "45": ("Loiret", 47.83, 2.38),
+    "46": ("Lot", 44.62, 1.60), "47": ("Lot-et-Garonne", 44.35, 0.62),
+    "48": ("Lozère", 44.56, 3.49), "49": ("Maine-et-Loire", 47.37, -0.49),
+    "50": ("Manche", 49.11, -1.30), "51": ("Marne", 48.97, 4.37),
+    "52": ("Haute-Marne", 48.11, 5.14), "53": ("Mayenne", 48.14, -0.72),
+    "54": ("Meurthe-et-Moselle", 48.70, 6.20), "55": ("Meuse", 48.97, 5.37),
+    "56": ("Morbihan", 47.87, -2.79), "57": ("Moselle", 49.02, 6.66),
+    "58": ("Nièvre", 47.12, 3.59), "59": ("Nord", 50.47, 3.15),
+    "60": ("Oise", 49.42, 2.42), "61": ("Orne", 48.63, 0.12),
+    "62": ("Pas-de-Calais", 50.52, 2.50), "63": ("Puy-de-Dôme", 45.77, 3.08),
+    "64": ("Pyrénées-Atlantiques", 43.30, -0.77), "65": ("Hautes-Pyrénées", 43.07, 0.15),
+    "66": ("Pyrénées-Orientales", 42.60, 2.66), "67": ("Bas-Rhin", 48.58, 7.73),
+    "68": ("Haut-Rhin", 47.91, 7.30), "69": ("Rhône", 45.75, 4.85),
+    "70": ("Haute-Saône", 47.62, 6.15), "71": ("Saône-et-Loire", 46.65, 4.52),
+    "72": ("Sarthe", 48.00, 0.20), "73": ("Savoie", 45.57, 6.52),
+    "74": ("Haute-Savoie", 46.00, 6.43), "75": ("Paris", 48.8566, 2.3522),
+    "76": ("Seine-Maritime", 49.67, 1.00), "77": ("Seine-et-Marne", 48.62, 2.95),
+    "78": ("Yvelines", 48.80, 1.90), "79": ("Deux-Sèvres", 46.55, -0.23),
+    "80": ("Somme", 49.92, 2.30), "81": ("Tarn", 43.79, 2.15),
+    "82": ("Tarn-et-Garonne", 44.08, 1.35), "83": ("Var", 43.47, 6.27),
+    "84": ("Vaucluse", 44.00, 5.15), "85": ("Vendée", 46.67, -1.35),
+    "86": ("Vienne", 46.57, 0.47), "87": ("Haute-Vienne", 45.84, 1.26),
+    "88": ("Vosges", 48.20, 6.46), "89": ("Yonne", 47.85, 3.55),
+    "90": ("Territoire de Belfort", 47.62, 6.87), "91": ("Essonne", 48.53, 2.25),
+    "92": ("Hauts-de-Seine", 48.85, 2.23), "93": ("Seine-Saint-Denis", 48.92, 2.47),
+    "94": ("Val-de-Marne", 48.77, 2.47), "95": ("Val-d'Oise", 49.08, 2.17),
+    "97": ("Outre-mer", 16.25, -61.55), "98": ("Outre-mer", -21.11, 55.53),
 }
+
+# Fine-grained overrides for major city postal codes (lat, lng)
+POSTAL_CODE_OVERRIDES = {
+    "37000": (47.3941, 0.6848), "37100": (47.4210, 0.6840),
+    "37200": (47.3741, 0.6900), "37300": (47.3800, 0.7000),
+    "75001": (48.8606, 2.3376), "75008": (48.8722, 2.3108),
+    "69001": (45.7678, 4.8336), "13001": (43.2976, 5.3810),
+    "33000": (44.8378, -0.5792), "59000": (50.6292, 3.0573),
+    "44000": (47.2184, -1.5536), "31000": (43.6047, 1.4442),
+    "06000": (43.7102, 7.2620), "34000": (43.6108, 3.8767),
+    "67000": (48.5734, 7.7521),
+}
+
+def get_postal_coords(postal_code: str):
+    """Return (lat, lng) for a French postal code. Falls back through overrides → department → Paris."""
+    if not postal_code:
+        return (48.8566, 2.3522)
+    postal_code = str(postal_code).strip()
+    # 1. Exact override (major cities)
+    if postal_code in POSTAL_CODE_OVERRIDES:
+        return POSTAL_CODE_OVERRIDES[postal_code]
+    # 2. Department-level (first 2 chars). Corsica handled specially (20xxx → 2A/2B).
+    if len(postal_code) >= 2:
+        prefix = postal_code[:2]
+        if prefix == "20":
+            # Corsica: 200xx-201xx are 2A (Corse-du-Sud), 202xx-206xx are 2B (Haute-Corse)
+            try:
+                n = int(postal_code[:3])
+                prefix = "2A" if n < 202 else "2B"
+            except ValueError:
+                prefix = "2A"
+        elif postal_code[:2] in ("97", "98"):
+            prefix = postal_code[:2]
+        if prefix in FRENCH_DEPARTMENTS:
+            _, lat, lng = FRENCH_DEPARTMENTS[prefix]
+            return (lat, lng)
+    # 3. Default to Paris
+    return (48.8566, 2.3522)
+
+def get_department_info(postal_code: str):
+    """Return (department_code, department_name) for a French postal code."""
+    if not postal_code:
+        return ("75", "Paris")
+    postal_code = str(postal_code).strip()
+    if len(postal_code) < 2:
+        return ("75", "Paris")
+    prefix = postal_code[:2]
+    if prefix == "20":
+        try:
+            n = int(postal_code[:3])
+            prefix = "2A" if n < 202 else "2B"
+        except ValueError:
+            prefix = "2A"
+    if prefix in FRENCH_DEPARTMENTS:
+        name, _, _ = FRENCH_DEPARTMENTS[prefix]
+        return (prefix, name)
+    return ("75", "Paris")
+
+# Backward-compat alias (used by legacy code paths)
+POSTAL_CODE_CENTROIDS = POSTAL_CODE_OVERRIDES
 
 # 1x1 transparent PNG (base64)
 PIXEL_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
@@ -68,8 +176,20 @@ def generate_varied_customers(tenant_id: str, count: int = 15) -> List[dict]:
     customers = []
     names = ["Jean Dupont", "Marie Martin", "Pierre Bernard", "Sophie Laurent", "Luc Moreau", "Emma Petit",
              "Thomas Dubois", "Julie Mercier", "Olivier Fontaine", "Isabelle Arnould", "David Rousseau",
-             "Claire Leblanc", "Marc Renard", "Francoise Deschamps", "Philippe Marchand"]
-    postal_codes = ["37000", "37100", "37200", "37300"]
+             "Claire Leblanc", "Marc Renard", "Francoise Deschamps", "Philippe Marchand",
+             "Antoine Leroy", "Camille Faure", "Nicolas Girard", "Léa Bonnet", "Hugo Lefevre",
+             "Chloé Moreau", "Maxime Durand", "Inès Fontaine", "Lucas Blanc", "Sarah Meyer",
+             "Paul Robert", "Louise Perrin", "Gabriel Noël", "Alice Chevalier", "Raphaël Bertrand",
+             "Manon Garnier", "Jules Perez", "Zoé Lambert", "Arthur Henry", "Juliette Rolland",
+             "Théo Roche", "Jade Simon", "Nathan Muller", "Rose Nicolas", "Ethan Carpentier"]
+    # Spread customers across major French cities (Tours, Paris, Lyon, Marseille, Bordeaux, Lille, Nantes, Toulouse, Nice, Strasbourg)
+    postal_codes = [
+        "37000", "37100", "37200", "37300",  # Tours (local concentration)
+        "37000", "37100", "37200",             # weight Tours heavier
+        "75001", "75008", "69001", "13001",    # Paris, Lyon, Marseille
+        "33000", "59000", "44000", "31000",    # Bordeaux, Lille, Nantes, Toulouse
+        "06000", "67000", "34000",             # Nice, Strasbourg, Montpellier
+    ]
     acquisition_sources = ["qr_store", "instagram", "tiktok", "facebook", "website", "friend", "other"]
 
     now = datetime.now(timezone.utc)
@@ -99,7 +219,7 @@ def generate_varied_customers(tenant_id: str, count: int = 15) -> List[dict]:
             id=f"c-{i}",
             tenant_id=tenant_id,
             barcode_id=f"FT-{uuid.uuid4().hex[:8].upper()}",
-            name=names[i],
+            name=names[i % len(names)],
             email=f"customer{i}@mail.com",
             phone=f"06{random.randint(10000000, 99999999)}",
             postal_code=postal,
@@ -358,8 +478,7 @@ def mock_seed_data():
         if visits_data:
             db.visits.insert_many(visits_data)
 
-    # === Test user: akshanshshukla963@gmail.com ===
-    # Check and seed test admin
+    # === Test user: akshanshshukla963@gmail.com (super admin) ===
     if not db.users.find_one({"email": "akshanshshukla963@gmail.com"}):
         test_admin = UserInDB(
             email="akshanshshukla963@gmail.com",
@@ -368,24 +487,420 @@ def mock_seed_data():
         )
         db.users.insert_one(test_admin.model_dump())
 
-    # Also add as customer for Café Lumière
-    if not db.customers.find_one({"email": "akshanshshukla963@gmail.com", "tenant_id": "tenant-1"}):
-        test_customer = Customer(
+    # === Primary test customer: Akshansh (postal 37000, Tours) ===
+    # Ensure a single canonical test customer record for shuklaakshansh38@gmail.com
+    db.customers.delete_many({"email": "shuklaakshansh38@gmail.com"})
+    akshansh_customer = Customer(
+        id="c-akshansh",
+        tenant_id="tenant-1",
+        barcode_id="FT-AKSH0001",
+        name="Akshansh",
+        email="shuklaakshansh38@gmail.com",
+        phone="+33-612345678",
+        postal_code="37000",
+        birthday="1998-01-15",
+        tier="gold",
+        visits=18,
+        total_amount_paid=382.40,
+        points=1800,
+        pass_issued=True,
+        acquisition_source="instagram",
+        created_at=datetime.now(timezone.utc) - timedelta(days=45),
+        last_visit_date=datetime.now(timezone.utc) - timedelta(days=2)
+    )
+    db.customers.insert_one(akshansh_customer.model_dump())
+
+    # Seed a visit history so campaign/map/analytics flows all have rich data for this customer
+    db.visits.delete_many({"customer_id": "c-akshansh"})
+    now = datetime.now(timezone.utc)
+    akshansh_visits = []
+    for i in range(18):
+        vt = now - timedelta(days=random.randint(0, 60), hours=random.randint(0, 12))
+        akshansh_visits.append(Visit(
             id=str(uuid.uuid4()),
             tenant_id="tenant-1",
-            barcode_id="FT-" + str(uuid.uuid4().hex[:8]).upper(),
-            name="Akshansh Shukla",
-            email="akshanshshukla963@gmail.com",
-            phone="+91-9999999999",
-            postal_code="75001",
-            birthday="1998-01-15",
-            tier="gold",
-            visits=12,
-            total_amount_paid=245.50,
-            points=1200,
-            pass_issued=True
+            customer_id="c-akshansh",
+            points_awarded=random.choice([10, 15, 20]),
+            amount_paid=round(random.uniform(8, 28), 2),
+            visit_time=vt,
+            created_at=vt
+        ).model_dump())
+    db.visits.insert_many(akshansh_visits)
+
+    # Also add Akshansh to Boulangerie Saint-Michel so multi-tenant testing works
+    db.customers.delete_many({"email": "shuklaakshansh38@gmail.com", "tenant_id": "tenant-2"})
+    akshansh_bakery = Customer(
+        id="c-akshansh-bakery",
+        tenant_id="tenant-2",
+        barcode_id="FT-AKSH0002",
+        name="Akshansh",
+        email="shuklaakshansh38@gmail.com",
+        phone="+33-612345678",
+        postal_code="37000",
+        birthday="1998-01-15",
+        tier="silver",
+        visits=6,
+        total_amount_paid=87.50,
+        points=600,
+        pass_issued=True,
+        acquisition_source="qr_store",
+        created_at=datetime.now(timezone.utc) - timedelta(days=20)
+    )
+    db.customers.insert_one(akshansh_bakery.model_dump())
+
+    # === Seed 20 varied businesses for admin feature-coverage testing ===
+    seed_extended_tenants()
+
+
+# ============================================================
+# EXTENDED TENANT SEED — 20 realistic businesses covering every
+# combination: sector, plan, GPS on/off, multi-branch, varied sizes.
+# ============================================================
+EXTENDED_TENANTS_SPEC = [
+    # (slug, name, sector, plan, postal, city_lat, city_lng, address, phone, website, geo_on, customers, min_visits_any, avg_spend, has_offer, branches)
+    ("maison-gourmet-paris",    "Maison Gourmet",       "restaurant",   "vip",   "75008", 48.8723, 2.3047, "12 Rue Saint-Honoré, 75008 Paris",     "01-42-65-10-11", "maison-gourmet.fr", True,  42, 2, 38.50, True,  0),
+    ("pizza-napoli-lyon",       "Pizza Napoli",         "pizzeria",     "gold",  "69002", 45.7484, 4.8320, "28 Rue de la République, 69002 Lyon",   "04-78-42-15-22", "pizzanapoli.fr",   True,  31, 1, 18.20, True,  0),
+    ("glacier-berthillon",      "Glacier Berthillon",   "glacier",      "gold",  "75004", 48.8519, 2.3565, "29-31 Rue Saint-Louis-en-l'Île, Paris", "01-43-54-31-61", "berthillon.fr",    False, 27, 2, 9.80,  True,  0),
+    ("brasserie-flo-strasbourg","Brasserie Flo",        "brasserie",    "vip",   "67000", 48.5839, 7.7455, "Place Kléber, 67000 Strasbourg",        "03-88-32-45-12", "flo-strasbourg.fr", True, 55, 3, 42.10, True,  0),
+    ("sushi-zen-nice",          "Sushi Zen",            "sushi",        "gold",  "06000", 43.7034, 7.2663, "8 Rue Masséna, 06000 Nice",             "04-93-16-25-88", "sushizen.fr",      True,  24, 1, 29.40, True,  0),
+    ("burger-republic-lille",   "Burger Republic",      "burger",       "basic", "59000", 50.6292, 3.0573, "45 Rue de Béthune, 59000 Lille",        "03-20-55-33-44", "burgerrepublic.fr", False, 18, 1, 15.60, False, 0),
+    ("kebab-istanbul-marseille","Kebab Istanbul",       "kebab",        "basic", "13001", 43.2965, 5.3698, "102 Canebière, 13001 Marseille",        "04-91-54-22-11", "",                 False, 14, 1, 11.40, False, 0),
+    ("creperie-bretonne-rennes","Crêperie Bretonne",    "crêperie",     "gold",  "35000", 48.1147, -1.6794,"18 Rue Saint-Georges, 35000 Rennes",    "02-99-38-17-63", "creperie-bretonne.fr", True, 33, 2, 16.80, True, 0),
+    ("chocolatier-lyonnais",    "Chocolatier Lyonnais", "chocolatier",  "vip",   "69001", 45.7580, 4.8320, "4 Rue du Président Carnot, 69001 Lyon", "04-78-28-44-99", "chocolatier-lyonnais.fr", True, 38, 2, 24.20, True, 0),
+    ("tea-palace-toulouse",     "Tea Palace",           "tea salon",    "gold",  "31000", 43.6047, 1.4442, "22 Rue du Taur, 31000 Toulouse",        "05-61-22-88-37", "tea-palace.fr",    False, 21, 1, 13.40, True,  0),
+    ("wine-bar-bordeaux",       "Wine Bar Bordeaux",    "wine bar",     "vip",   "33000", 44.8378, -0.5792,"10 Place Saint-Pierre, 33000 Bordeaux", "05-56-44-77-22", "winebar-bdx.fr",   True,  46, 3, 32.70, True,  0),
+    ("juice-lab-montpellier",   "Juice Lab",            "juice bar",    "basic", "34000", 43.6108, 3.8767, "5 Rue Foch, 34000 Montpellier",         "04-67-66-33-21", "",                 False, 17, 1, 8.20,  False, 0),
+    ("salon-elegance-paris",    "Salon Élégance",       "hair salon",   "gold",  "75016", 48.8646, 2.2769, "55 Avenue Victor Hugo, 75016 Paris",    "01-45-53-22-18", "salon-elegance.fr", True, 29, 2, 58.30, True, 0),
+    ("spa-luxe-cannes",         "Spa Luxe",             "spa",          "vip",   "06400", 43.5528, 7.0174, "14 La Croisette, 06400 Cannes",         "04-93-38-72-11", "spaluxe.fr",       True,  36, 2, 89.40, True,  0),
+    ("fit-gym-nantes",          "Fit Gym",              "gym",          "gold",  "44000", 47.2184, -1.5536,"33 Cours des 50 Otages, 44000 Nantes",  "02-40-73-12-45", "fitgym.fr",        True,  51, 3, 42.00, True,  0),
+    ("yoga-zen-paris",          "Yoga Zen Studio",      "yoga",         "basic", "75011", 48.8566, 2.3801, "88 Rue du Faubourg Saint-Antoine, Paris","01-43-57-81-29","yoga-zen-studio.fr", False, 22, 1, 25.00, True, 0),
+    ("dance-floor-toulouse",    "Dance Floor",          "dance",        "basic", "31000", 43.6047, 1.4442, "6 Rue Saint-Rome, 31000 Toulouse",      "05-61-23-77-66", "",                 False, 15, 1, 22.00, False, 0),
+    ("librairie-mollat-bdx",    "Librairie Mollat",     "book store",   "gold",  "33000", 44.8411, -0.5761,"15 Rue Vital-Carles, 33000 Bordeaux",   "05-56-56-40-40", "mollat.com",       False, 34, 2, 24.60, True,  0),
+    ("fleuriste-rose-paris",    "Fleuriste Rose",       "florist",      "basic", "75005", 48.8462, 2.3444, "7 Rue Mouffetard, 75005 Paris",         "01-45-35-22-48", "",                 False, 19, 1, 35.80, True,  0),
+    ("optique-vision-tours",    "Optique Vision",       "optician",     "chain", "37000", 47.3941, 0.6848, "12 Rue Nationale, 37000 Tours",         "02-47-66-15-22", "optique-vision.fr", True,  62, 2, 95.40, True,  2),
+]
+
+SECTOR_CAMPAIGN_TEMPLATES = {
+    "restaurant":   ("Table d'Hôtes", "Dégustation saisonnière : -20% sur la carte du soir"),
+    "pizzeria":     ("Soirée Napolitaine", "Acheté 1 pizza, la 2ème à -50%"),
+    "glacier":      ("Happy Summer", "Cornet gratuit pour 5 boules achetées"),
+    "brasserie":    ("Happy Hour", "-30% sur les plats entre 17h et 19h"),
+    "sushi":        ("Sushi Lover", "Plateau 24 pièces à 19€ au lieu de 28€"),
+    "burger":       ("Cheat Day", "Menu burger à 9,90€ le mardi"),
+    "kebab":        ("Midi Express", "Menu complet à 8€ de 12h à 14h"),
+    "crêperie":     ("Breizh Day", "Galette + crêpe + cidre à 12€"),
+    "chocolatier":  ("Pâques à Venir", "-15% sur tous les œufs de Pâques"),
+    "tea salon":    ("Afternoon Tea", "Formule thé + pâtisserie à 7,50€"),
+    "wine bar":     ("Dégustation", "3 verres + planche à 15€ le jeudi"),
+    "juice bar":    ("Detox Week", "Abonnement 5 jus à -25%"),
+    "hair salon":   ("Nouveau Look", "Coupe + brushing + soin à 39€"),
+    "spa":          ("Rituel Bien-Être", "-20% sur le modelage californien"),
+    "gym":          ("Spring Back in Shape", "Mois d'essai à 19€ + bilan offert"),
+    "yoga":         ("Pleine Conscience", "Carnet 10 séances à -15%"),
+    "dance":        ("Salsa Night", "Cours d'essai offert + carnet à -10%"),
+    "book store":   ("Club Lecteurs", "1 livre acheté = 1 marque-page offert"),
+    "florist":      ("Bouquet du Mois", "-20% sur les bouquets de saison"),
+    "optician":     ("Vision Clarity", "2ème paire à 1€ pour tout achat monture"),
+}
+
+REWARD_BY_SECTOR = {
+    "restaurant": "Un apéritif offert",
+    "pizzeria": "Une pizza margherita offerte",
+    "glacier": "Un cornet 2 boules offert",
+    "brasserie": "Un café gourmand offert",
+    "sushi": "Un plateau 8 pièces offert",
+    "burger": "Un menu cheeseburger offert",
+    "kebab": "Un sandwich kebab offert",
+    "crêperie": "Une crêpe Nutella offerte",
+    "chocolatier": "Une boîte 6 pralinés offerte",
+    "tea salon": "Un thé + une pâtisserie offerts",
+    "wine bar": "Un verre de vin rouge offert",
+    "juice bar": "Un smoothie detox offert",
+    "hair salon": "Un soin capillaire offert",
+    "spa": "Un modelage 20 min offert",
+    "gym": "Une semaine d'accès libre",
+    "yoga": "Un cours d'essai offert",
+    "dance": "Un cours particulier offert",
+    "book store": "Un livre à -50%",
+    "florist": "Un bouquet saisonnier offert",
+    "optician": "Un étui + nettoyage offerts",
+}
+
+def seed_extended_tenants():
+    """Seed 20 varied tenants with owners, customers, visits, campaigns, card templates.
+    Bulk-inserts everything (~8 round-trips instead of ~120) so it stays
+    under Vercel's serverless timeout. Idempotent: skips slugs already present."""
+    NAMES_POOL = [
+        "Antoine Leroy", "Camille Faure", "Nicolas Girard", "Léa Bonnet", "Hugo Lefevre",
+        "Chloé Moreau", "Maxime Durand", "Inès Fontaine", "Lucas Blanc", "Sarah Meyer",
+        "Paul Robert", "Louise Perrin", "Gabriel Noël", "Alice Chevalier", "Raphaël Bertrand",
+        "Manon Garnier", "Jules Perez", "Zoé Lambert", "Arthur Henry", "Juliette Rolland",
+        "Théo Roche", "Jade Simon", "Nathan Muller", "Rose Nicolas", "Ethan Carpentier",
+        "Lola Bonneau", "Adam Fabre", "Clara Giraud", "Samuel Hubert", "Mia Colin",
+        "Tom Vidal", "Elsa Leroux", "Victor Guerin", "Alba Prévost", "Noah Barbier",
+        "Eva Renaud", "Louis Picard", "Iris Lecomte", "Baptiste Boulanger", "Lina Aubert",
+        "Simon Texier", "Lily Marchal", "Rémi Masson", "Anaëlle Poirier", "Enzo Schmitt",
+        "Lisa Klein", "Milo Weiss", "Nora Caron", "Yanis Hamon", "Léna Blanchard",
+        "Axel Pasquier", "Maya Gonzalez", "Basile Dupuis", "Tess Richard", "Gaspard Adam",
+        "Agathe Vallet", "Élise Roux", "Matteo Gay", "Camille Leconte", "Diane Thibault",
+        "Oscar Jacquet", "Salomé Faivre", "Nolan Rey", "Anna Charpentier", "Achille Meunier"
+    ]
+    ACQUISITION_SOURCES = ["qr_store", "instagram", "tiktok", "facebook", "website", "friend", "other"]
+    BIRTHDAY_POOL = [f"{random.randint(1,12):02d}-{random.randint(1,28):02d}" for _ in range(100)]
+
+    now = datetime.now(timezone.utc)
+
+    # One-shot idempotency: pull existing extended slugs in a single query
+    all_slugs = [spec[0] for spec in EXTENDED_TENANTS_SPEC]
+    existing_slugs = set(
+        t["slug"] for t in db.tenants.find({"slug": {"$in": all_slugs}}, {"slug": 1})
+    )
+
+    # Hash the shared demo password ONCE (bcrypt is slow on cold serverless)
+    shared_owner_hash = hash_password("Demo!2026")
+
+    # Accumulators — one insert_many per collection at the end
+    tenants_docs = []
+    users_docs = []
+    customers_docs = []
+    visits_docs = []
+    campaigns_docs = []
+    card_templates_docs = []
+
+    for idx, spec in enumerate(EXTENDED_TENANTS_SPEC):
+        (slug, name, sector, plan, postal, lat, lng, address, phone, website,
+         geo_on, target_cust_count, min_visits_any, avg_spend, has_offer, branch_count) = spec
+
+        tenant_id = f"tenant-ext-{idx+1:02d}"
+
+        # Idempotent skip
+        if slug in existing_slugs:
+            continue
+
+        # Build branches for chain/multi-branch
+        branches = []
+        if branch_count > 0:
+            branches.append({
+                "id": f"branch-{slug}-main",
+                "name": f"{name} - Centre",
+                "address": address,
+                "postal_code": postal,
+                "phone": phone,
+                "is_main": True
+            })
+            for bi in range(branch_count):
+                branches.append({
+                    "id": f"branch-{slug}-{bi+1}",
+                    "name": f"{name} - Succursale {bi+1}",
+                    "address": f"{random.randint(1,99)} Rue {random.choice(['Pasteur','Gambetta','Victor Hugo','Jean Jaurès'])}, {postal}",
+                    "postal_code": postal,
+                    "phone": phone,
+                    "is_main": False
+                })
+
+        tenants_docs.append(Tenant(
+            id=tenant_id,
+            slug=slug,
+            name=name,
+            plan=plan,
+            address=address,
+            phone=phone,
+            website=website,
+            geo_enabled=geo_on,
+            geo_radius_meters=500 if geo_on else None,
+            geo_cooldown_days=1,
+            branches=branches,
+            created_at=now - timedelta(days=random.randint(30, 365))
+        ).model_dump())
+
+        # Owner user — shared password hash reused across all demo owners
+        owner_email = f"owner+{slug}@fidelitour.fr"
+        users_docs.append(UserInDB(
+            email=owner_email,
+            role="business_owner",
+            tenant_id=tenant_id,
+            hashed_password=shared_owner_hash
+        ).model_dump())
+
+        # Customers — always >= 14 to guarantee rich drill-downs everywhere
+        customer_count = max(target_cust_count, 14)
+        customers = []
+        for ci in range(customer_count):
+            # Ensure at least some gold and silver for each tenant
+            if ci < max(3, customer_count // 8):
+                visits = random.randint(20, 40)
+                tier = "gold"
+            elif ci < max(7, customer_count // 3):
+                visits = random.randint(10, 19)
+                tier = "silver"
+            else:
+                visits = random.randint(max(min_visits_any, 1), 9)
+                tier = "bronze"
+
+            spend = round(visits * random.uniform(avg_spend * 0.7, avg_spend * 1.3), 2)
+            source = random.choices(
+                ACQUISITION_SOURCES,
+                weights=[4, 3, 2, 2, 2, 2, 1],  # QR + Instagram most common
+                k=1
+            )[0]
+            pass_issued = random.random() < 0.7 if visits >= 3 else random.random() < 0.3
+            last_visit = now - timedelta(days=random.randint(0, 45)) if visits > 0 else None
+
+            customer = Customer(
+                id=f"c-{tenant_id}-{ci:03d}",
+                tenant_id=tenant_id,
+                barcode_id=f"FT-{tenant_id[-4:].upper()}{ci:03d}",
+                name=NAMES_POOL[(idx * 7 + ci) % len(NAMES_POOL)],
+                email=f"c{ci:03d}@{slug}.test",
+                phone=f"06{random.randint(10000000, 99999999)}",
+                postal_code=postal,
+                birthday=BIRTHDAY_POOL[(idx * 11 + ci) % len(BIRTHDAY_POOL)],
+                tier=tier,
+                visits=visits,
+                total_amount_paid=spend,
+                points=visits * 10,
+                pass_issued=pass_issued,
+                acquisition_source=source,
+                last_visit_date=last_visit,
+                created_at=now - timedelta(days=random.randint(1, 180))
+            )
+            customers.append(customer.model_dump())
+        customers_docs.extend(customers)
+
+        # Visits — cap per-customer events at 6 to keep the total tractable
+        for c in customers:
+            num_events = min(c["visits"], random.randint(3, 6))
+            for _ in range(num_events):
+                vt = now - timedelta(days=random.randint(0, 75), hours=random.randint(7, 20))
+                visits_docs.append(Visit(
+                    id=str(uuid.uuid4()),
+                    tenant_id=tenant_id,
+                    customer_id=c["id"],
+                    points_awarded=random.choice([10, 15, 20]),
+                    amount_paid=round(random.uniform(avg_spend * 0.6, avg_spend * 1.4), 2),
+                    visit_time=vt,
+                    created_at=vt
+                ).model_dump())
+
+        # Campaigns — every tenant gets 2-4 campaigns (mix of sent + draft)
+        camp_name, camp_content = SECTOR_CAMPAIGN_TEMPLATES.get(sector, ("Offre Spéciale", "Profitez d'une offre exclusive"))
+        targeted = random.randint(10, min(customer_count, 40))
+        delivered = int(targeted * random.uniform(0.7, 0.95))
+        opens = int(delivered * random.uniform(0.4, 0.8))
+        visits_from = int(opens * random.uniform(0.2, 0.5))
+        recipient_ids = [c["id"] for c in customers[:targeted]]
+
+        campaigns_docs.extend([
+            Campaign(
+                id=f"camp-{tenant_id}-1",
+                tenant_id=tenant_id,
+                name=camp_name,
+                status="sent",
+                content=camp_content,
+                filters={"min_visits": 2},
+                sent_at=now - timedelta(days=random.randint(5, 30)),
+                targeted_count=targeted,
+                delivered_count=delivered,
+                opens=opens,
+                opens_unique=int(opens * 0.85),
+                visits_from_campaign=max(visits_from, 1),
+                recipient_ids=recipient_ids,
+            ).model_dump(),
+            Campaign(
+                id=f"camp-{tenant_id}-2",
+                tenant_id=tenant_id,
+                name=f"Fidélité {name}",
+                status="sent",
+                content=f"Nouveau palier atteint chez {name} ! Récompense offerte.",
+                filters={"tier": "gold"},
+                sent_at=now - timedelta(days=random.randint(40, 70)),
+                targeted_count=max(targeted // 3, 3),
+                delivered_count=max(delivered // 3, 2),
+                opens=max(opens // 3, 1),
+                opens_unique=max(opens // 3, 1),
+                visits_from_campaign=max(visits_from // 2, 1),
+                recipient_ids=recipient_ids[: max(targeted // 3, 3)],
+            ).model_dump(),
+            Campaign(
+                id=f"camp-{tenant_id}-3",
+                tenant_id=tenant_id,
+                name=f"Relance {sector.capitalize()}",
+                status="draft",
+                content="Campagne de relance clients inactifs.",
+                filters={"min_visits": 1},
+            ).model_dump(),
+        ])
+
+        # Card template with active offer (Captain-Wallet-style richness)
+        sector_palette = {
+            "restaurant":  ("#8B4513", "#FFF8DC", "#FFFFFF", "#D2691E"),
+            "pizzeria":    ("#C41E3A", "#FEF6E4", "#FFFFFF", "#FFC857"),
+            "glacier":     ("#EF5DA8", "#FFF0F7", "#FFFFFF", "#A8DADC"),
+            "brasserie":   ("#4A5D23", "#F3EFE7", "#FFFFFF", "#E3A869"),
+            "sushi":       ("#0F1020", "#FFFFFF", "#FFFFFF", "#E63946"),
+            "burger":      ("#E63946", "#FFF8E7", "#FFFFFF", "#FFC300"),
+            "kebab":       ("#A44A3F", "#FFF8E7", "#FFFFFF", "#F1A208"),
+            "crêperie":    ("#E8A87C", "#FFFFFF", "#1C1917", "#C38D9E"),
+            "chocolatier": ("#3E1F11", "#F5E0C3", "#FFFFFF", "#C58F4A"),
+            "tea salon":   ("#7B9B59", "#FAF3E0", "#FFFFFF", "#D1A8A8"),
+            "wine bar":    ("#5D2838", "#F6E3C9", "#FFFFFF", "#C9AE88"),
+            "juice bar":   ("#2FAF68", "#F6FFF6", "#FFFFFF", "#F5D547"),
+            "hair salon":  ("#1C1917", "#FAF3E0", "#FFFFFF", "#D4A574"),
+            "spa":         ("#89B0AE", "#FFFFFF", "#1C1917", "#E0C1B3"),
+            "gym":         ("#0F1020", "#FFFFFF", "#FFFFFF", "#FF6B35"),
+            "yoga":        ("#A8C686", "#FDFBF7", "#1C1917", "#F9C784"),
+            "dance":       ("#6A0572", "#FFF8FC", "#FFFFFF", "#F15BB5"),
+            "book store":  ("#264653", "#FAF3E0", "#FFFFFF", "#E9C46A"),
+            "florist":     ("#FF6B9D", "#FFF8FC", "#FFFFFF", "#95D5B2"),
+            "optician":    ("#1E3A8A", "#F0F6FF", "#FFFFFF", "#F59E0B"),
+        }.get(sector, ("#B85C38", "#1C1917", "#FFFFFF", "#D4A574"))
+        primary, secondary, text_c, accent = sector_palette
+
+        card_template = CardTemplate(
+            tenant_id=tenant_id,
+            logo_url=f"https://dummyimage.com/120x120/{primary.lstrip('#')}/{text_c.lstrip('#')}&text={name[:1]}",
+            active_offer_title=camp_name,
+            active_offer_description=camp_content,
+            active_offer_active=has_offer,
+            design_mode="hexagon_stamps",
+            points_per_visit=10,
+            visits_per_stamp=1,
+            reward_threshold_stamps=random.choice([8, 10, 12]),
+            reward_description=REWARD_BY_SECTOR.get(sector, "Une récompense fidélité"),
+            notify_before_reward=1,
+            bronze_design=TierDesign(
+                primary_color=primary, secondary_color=secondary, text_color=text_c,
+                accent_color=accent, font_family="Inter", gradient_direction="135deg"
+            ),
+            silver_design=TierDesign(
+                primary_color="#A0A0A0", secondary_color=secondary, text_color="#FFFFFF",
+                accent_color="#C0C0C0", font_family="Inter", gradient_direction="135deg"
+            ),
+            gold_design=TierDesign(
+                primary_color="#D4A574", secondary_color=secondary, text_color="#FFFFFF",
+                accent_color="#FFD700", font_family="Inter", gradient_direction="135deg"
+            ),
+            show_customer_name=True,
+            show_customer_birthday=True,
+            show_points=True,
+            show_progress_meter=True,
         )
-        db.customers.insert_one(test_customer.model_dump())
+        card_templates_docs.append(card_template.model_dump())
+
+    # Final bulk insert — one round-trip per collection
+    if tenants_docs:
+        db.tenants.insert_many(tenants_docs)
+    if users_docs:
+        db.users.insert_many(users_docs)
+    if customers_docs:
+        db.customers.insert_many(customers_docs)
+    if visits_docs:
+        db.visits.insert_many(visits_docs)
+    if campaigns_docs:
+        db.campaigns.insert_many(campaigns_docs)
+    if card_templates_docs:
+        db.card_templates.insert_many(card_templates_docs)
+
 
 # Seed data on every cold start (Vercel serverless workaround)
 _seeded = False
@@ -646,6 +1161,97 @@ def get_tenant_details(
 
     return tenant
 
+@app.get("/api/admin/tenants/{tenant_id}/customers")
+def admin_get_tenant_customers(
+    tenant_id: str,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """Admin: list all customers of a specific tenant."""
+    tenant = db.tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    customers = list(db.customers.find({"tenant_id": tenant_id}))
+    for c in customers:
+        c.pop("_id", None)
+    return customers
+
+@app.get("/api/admin/tenants/{tenant_id}/analytics")
+def admin_get_tenant_analytics(
+    tenant_id: str,
+    days: int = 30,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """Admin: full analytics snapshot for a specific tenant (mirrors owner analytics)."""
+    tenant = db.tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    now = datetime.now(timezone.utc)
+    period_start = now - timedelta(days=days)
+
+    total_customers = db.customers.count_documents({"tenant_id": tenant_id})
+    total_visits_period = db.visits.count_documents({
+        "tenant_id": tenant_id,
+        "visit_time": {"$gte": period_start}
+    })
+    all_visits = db.visits.count_documents({"tenant_id": tenant_id})
+
+    # Tier distribution
+    tier_dist = {t: db.customers.count_documents({"tenant_id": tenant_id, "tier": t}) for t in ["bronze", "silver", "gold"]}
+
+    # Revenue (sum amount_paid)
+    revenue_pipeline = [
+        {"$match": {"tenant_id": tenant_id}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount_paid"}}}
+    ]
+    rev = list(db.visits.aggregate(revenue_pipeline))
+    total_revenue = rev[0]["total"] if rev else 0.0
+
+    # Top spenders
+    top_spenders = list(db.customers.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "tier": 1, "total_amount_paid": 1, "visits": 1}
+    ).sort("total_amount_paid", -1).limit(5))
+
+    # Top visitors
+    top_visitors = list(db.customers.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "tier": 1, "total_amount_paid": 1, "visits": 1}
+    ).sort("visits", -1).limit(5))
+
+    # Acquisition-source breakdown
+    acq_pipeline = [
+        {"$match": {"tenant_id": tenant_id}},
+        {"$group": {"_id": "$acquisition_source", "count": {"$sum": 1}}}
+    ]
+    acq_breakdown = {(r["_id"] or "unknown"): r["count"] for r in db.customers.aggregate(acq_pipeline)}
+
+    # Visits per day over the period
+    visits_by_day = {}
+    for v in db.visits.find({"tenant_id": tenant_id, "visit_time": {"$gte": period_start}}):
+        day_key = v["visit_time"].strftime("%Y-%m-%d")
+        visits_by_day[day_key] = visits_by_day.get(day_key, 0) + 1
+
+    # Cards filled
+    cards_filled = db.customers.count_documents({"tenant_id": tenant_id, "pass_issued": True})
+
+    tenant.pop("_id", None)
+
+    return {
+        "tenant": {"id": tenant["id"], "name": tenant["name"], "plan": tenant["plan"], "slug": tenant.get("slug")},
+        "period_days": days,
+        "total_customers": total_customers,
+        "total_visits_period": total_visits_period,
+        "total_visits_all_time": all_visits,
+        "total_revenue": round(total_revenue, 2),
+        "tier_distribution": tier_dist,
+        "top_spenders": top_spenders,
+        "top_visitors": top_visitors,
+        "acquisition_breakdown": acq_breakdown,
+        "visits_by_day": visits_by_day,
+        "cards_filled": cards_filled,
+    }
+
 @app.get("/api/admin/card-template/{tenant_id}")
 def get_card_template_admin(
     tenant_id: str,
@@ -721,46 +1327,104 @@ def get_admin_analytics(token_data: TokenData = Depends(require_role(["super_adm
 
 @app.get("/api/admin/detailed-analytics")
 def get_admin_detailed_analytics(token_data: TokenData = Depends(require_role(["super_admin"]))):
-    """Enhanced admin analytics"""
-    # Plans distribution from actual DB
+    """Enhanced admin analytics — platform-wide aggregates across ALL tenants."""
     tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
+    all_customers = list(db.customers.find({}))
+    all_visits_count = db.visits.count_documents({})
 
-    plan_counts = {"basic": 0, "gold": 0, "vip": 0}
+    # --- Plans distribution (include chain) ---
+    plan_counts = {"basic": 0, "gold": 0, "vip": 0, "chain": 0}
     for t in tenants:
         plan = t.get("plan", "basic")
         if plan in plan_counts:
             plan_counts[plan] += 1
-
     plans_distribution = [
         {"name": "Basic", "value": plan_counts["basic"]},
         {"name": "Gold", "value": plan_counts["gold"]},
-        {"name": "VIP", "value": plan_counts["vip"]}
+        {"name": "VIP", "value": plan_counts["vip"]},
+        {"name": "Chain", "value": plan_counts["chain"]},
     ]
 
-    # Growth data (mock month-based)
-    growth = [
-        {"month": "Jan", "tenants": 10},
-        {"month": "Feb", "tenants": 20},
-        {"month": "Mar", "tenants": 40},
-        {"month": "Apr", "tenants": len(tenants)}
+    # --- Tier distribution across platform ---
+    tier_counts = {"bronze": 0, "silver": 0, "gold": 0}
+    for c in all_customers:
+        t = (c.get("tier") or "bronze").lower()
+        if t in tier_counts:
+            tier_counts[t] += 1
+    tier_distribution = [
+        {"name": "Bronze", "value": tier_counts["bronze"]},
+        {"name": "Silver", "value": tier_counts["silver"]},
+        {"name": "Gold",   "value": tier_counts["gold"]},
     ]
 
-    # Tenant performance: top tenants by visits
-    tenant_performance = []
-    for t in tenants[:5]:
-        visit_count = db.visits.count_documents({"tenant_id": t["id"]})
-        customer_count = db.customers.count_documents({"tenant_id": t["id"]})
-        tenant_performance.append({
-            "name": t["name"],
-            "customers": customer_count,
-            "visits": visit_count,
-            "plan": t.get("plan", "basic")
+    # --- Acquisition sources across platform ---
+    acq_counts = {}
+    for c in all_customers:
+        src = c.get("acquisition_source") or "other"
+        acq_counts[src] = acq_counts.get(src, 0) + 1
+    acquisition_sources = [
+        {"name": k.replace("_", " ").title(), "value": v, "raw": k}
+        for k, v in sorted(acq_counts.items(), key=lambda kv: kv[1], reverse=True)
+    ]
+
+    # --- GPS breakdown ---
+    geo_enabled = sum(1 for t in tenants if t.get("geo_enabled"))
+    gps_breakdown = [
+        {"name": "GPS Enabled",  "value": geo_enabled},
+        {"name": "GPS Disabled", "value": max(len(tenants) - geo_enabled, 0)},
+    ]
+
+    # --- Real growth: tenants created per month, last 6 months ---
+    now = datetime.now(timezone.utc)
+    growth = []
+    for back in range(5, -1, -1):
+        month_start = (now.replace(day=1) - timedelta(days=back * 30)).replace(day=1)
+        next_month = (month_start + timedelta(days=32)).replace(day=1)
+        cnt = sum(
+            1 for t in tenants
+            if t.get("created_at") and month_start <= t["created_at"] < next_month
+        )
+        growth.append({"month": month_start.strftime("%b"), "tenants": cnt, "iso": month_start.strftime("%Y-%m")})
+
+    # --- Top & bottom performers ---
+    perf = []
+    for t in tenants:
+        tid = t["id"]
+        t_customers = [c for c in all_customers if c.get("tenant_id") == tid]
+        cust_count = len(t_customers)
+        total_visits = db.visits.count_documents({"tenant_id": tid})
+        total_rev = round(sum(c.get("total_amount_paid", 0) for c in t_customers), 2)
+        avg_pts = round(sum(c.get("points", 0) for c in t_customers) / max(cust_count, 1), 1) if cust_count else 0
+        perf.append({
+            "id": tid,
+            "name": t.get("name"),
+            "plan": t.get("plan", "basic"),
+            "customers": cust_count,
+            "visits": total_visits,
+            "revenue": total_rev,
+            "avg_points": avg_pts,
+            "geo_enabled": bool(t.get("geo_enabled")),
         })
+    perf_sorted = sorted(perf, key=lambda x: x["visits"], reverse=True)
+
+    # --- Platform totals ---
+    total_revenue_month = sum(PLAN_PRICES.get(t.get("plan"), 0) for t in tenants)
+    total_customer_spend = round(sum(c.get("total_amount_paid", 0) for c in all_customers), 2)
 
     return {
+        "totals": {
+            "tenants": len(tenants),
+            "customers": len(all_customers),
+            "visits": all_visits_count,
+            "subscription_revenue_month": total_revenue_month,
+            "customer_spend_all_time": total_customer_spend,
+        },
         "plans_distribution": plans_distribution,
+        "tier_distribution": tier_distribution,
+        "acquisition_sources": acquisition_sources,
+        "gps_breakdown": gps_breakdown,
         "growth": growth,
-        "tenant_performance": tenant_performance
+        "tenant_performance": perf_sorted,
     }
 
 @app.get("/api/admin/tenants-by-plan/{plan}")
@@ -769,7 +1433,7 @@ def get_tenants_by_plan(
     token_data: TokenData = Depends(require_role(["super_admin"]))
 ):
     """Get list of tenants for a specific plan tier"""
-    if plan not in ["basic", "gold", "vip"]:
+    if plan not in ["basic", "gold", "vip", "chain"]:
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     tenants = list(db.tenants.find({"plan": plan, "is_active": {"$ne": False}}))
@@ -788,6 +1452,106 @@ def get_tenants_by_plan(
         result.append(t)
 
     return result
+
+@app.get("/api/admin/tenants-by-tier/{tier}")
+def get_tenants_by_tier(
+    tier: str,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """Rank tenants by how many customers they have at a given loyalty tier."""
+    tier = tier.lower()
+    if tier not in ["bronze", "silver", "gold"]:
+        raise HTTPException(status_code=400, detail="Invalid tier")
+
+    tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
+    out = []
+    for t in tenants:
+        t.pop("_id", None)
+        tier_cust = db.customers.count_documents({"tenant_id": t["id"], "tier": tier})
+        if tier_cust == 0:
+            continue
+        out.append({
+            "id": t["id"],
+            "name": t.get("name"),
+            "plan": t.get("plan", "basic"),
+            "tier_customer_count": tier_cust,
+            "total_customers": db.customers.count_documents({"tenant_id": t["id"]}),
+        })
+    return sorted(out, key=lambda x: x["tier_customer_count"], reverse=True)
+
+@app.get("/api/admin/tenants-by-acquisition/{source}")
+def get_tenants_by_acquisition(
+    source: str,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """Rank tenants by how many customers they've acquired via a specific channel."""
+    tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
+    out = []
+    for t in tenants:
+        t.pop("_id", None)
+        cnt = db.customers.count_documents({"tenant_id": t["id"], "acquisition_source": source})
+        if cnt == 0:
+            continue
+        out.append({
+            "id": t["id"],
+            "name": t.get("name"),
+            "plan": t.get("plan", "basic"),
+            "acquisition_count": cnt,
+            "total_customers": db.customers.count_documents({"tenant_id": t["id"]}),
+        })
+    return sorted(out, key=lambda x: x["acquisition_count"], reverse=True)
+
+@app.get("/api/admin/tenants-by-geo/{enabled}")
+def get_tenants_by_geo(
+    enabled: str,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """List tenants with geolocation enabled/disabled."""
+    want_enabled = enabled.lower() in ("1", "true", "yes", "enabled", "on")
+    tenants = list(db.tenants.find({"is_active": {"$ne": False}, "geo_enabled": want_enabled}))
+    out = []
+    for t in tenants:
+        t.pop("_id", None)
+        out.append({
+            "id": t["id"],
+            "name": t.get("name"),
+            "plan": t.get("plan", "basic"),
+            "customer_count": db.customers.count_documents({"tenant_id": t["id"]}),
+            "total_visits": db.visits.count_documents({"tenant_id": t["id"]}),
+            "geo_radius_meters": t.get("geo_radius_meters"),
+        })
+    return out
+
+@app.get("/api/admin/tenants-by-month/{iso_month}")
+def get_tenants_by_month(
+    iso_month: str,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """List tenants created in a given month (format YYYY-MM)."""
+    try:
+        year, month = iso_month.split("-")
+        year, month = int(year), int(month)
+    except Exception:
+        raise HTTPException(status_code=400, detail="iso_month must be YYYY-MM")
+
+    month_start = datetime(year, month, 1, tzinfo=timezone.utc)
+    next_month = (month_start + timedelta(days=32)).replace(day=1)
+
+    tenants = list(db.tenants.find({
+        "is_active": {"$ne": False},
+        "created_at": {"$gte": month_start, "$lt": next_month}
+    }))
+    out = []
+    for t in tenants:
+        t.pop("_id", None)
+        out.append({
+            "id": t["id"],
+            "name": t.get("name"),
+            "plan": t.get("plan", "basic"),
+            "customer_count": db.customers.count_documents({"tenant_id": t["id"]}),
+            "created_at": t.get("created_at"),
+        })
+    return out
 
 @app.post("/api/admin/ai-query")
 def admin_ai_query(req: AIQueryRequest, token_data: TokenData = Depends(require_role(["super_admin"]))):
@@ -1273,6 +2037,8 @@ class JoinRequest(BaseModel):
     postal_code: str
     birthday: str
     acquisition_source: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 @app.post("/api/join/{slug}")
 def join_program(slug: str, req: JoinRequest):
@@ -1282,6 +2048,12 @@ def join_program(slug: str, req: JoinRequest):
     tid = t["id"]
     existing = db.customers.find_one({"tenant_id": tid, "email": req.email})
     if existing:
+        # Backfill GPS if newly provided
+        if req.latitude is not None and req.longitude is not None:
+            db.customers.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {"latitude": req.latitude, "longitude": req.longitude}}
+            )
         return {"barcode_id": existing["barcode_id"], "message": "Already joined"}
 
     barcode_id = "FT-" + str(uuid.uuid4().hex[:8]).upper()
@@ -1294,10 +2066,167 @@ def join_program(slug: str, req: JoinRequest):
         phone=req.phone,
         postal_code=req.postal_code,
         birthday=req.birthday,
-        acquisition_source=req.acquisition_source
+        acquisition_source=req.acquisition_source,
+        latitude=req.latitude,
+        longitude=req.longitude
     )
     db.customers.insert_one(c.model_dump())
     return {"barcode_id": barcode_id, "message": "Welcome!"}
+
+# ========================
+# WALLET CARD (public, barcode-keyed) — Captain Wallet style
+# Rich customer-facing card view with offers, push notifications,
+# auto-update toggle, and delete-card action.
+# ========================
+
+def _derive_offers_for_tenant(tenant_id: str) -> List[dict]:
+    """Offers = active card-template offer + sent campaigns (last 45 days)."""
+    offers = []
+    tpl = db.card_templates.find_one({"tenant_id": tenant_id})
+    if tpl and tpl.get("active_offer_active") and tpl.get("active_offer_title"):
+        offers.append({
+            "id": "offer-main",
+            "title": tpl.get("active_offer_title"),
+            "description": tpl.get("active_offer_description") or "",
+            "kind": "primary",
+            "valid_until": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        })
+    cutoff = datetime.now(timezone.utc) - timedelta(days=45)
+    camps = list(db.campaigns.find({
+        "tenant_id": tenant_id, "status": "sent",
+        "sent_at": {"$gte": cutoff}
+    }).sort("sent_at", -1).limit(5))
+    for c in camps:
+        offers.append({
+            "id": c.get("id"),
+            "title": c.get("name"),
+            "description": c.get("content", ""),
+            "kind": "campaign",
+            "valid_until": (c.get("sent_at") + timedelta(days=30)).isoformat() if c.get("sent_at") else None,
+        })
+    return offers
+
+
+def _card_prefs_for(customer_id: str) -> dict:
+    rec = db.card_prefs.find_one({"customer_id": customer_id})
+    if not rec:
+        return {"auto_update": True, "push_enabled": True, "deleted": False}
+    rec.pop("_id", None)
+    return rec
+
+
+def _serialize_card_payload(cust: dict) -> dict:
+    t = db.tenants.find_one({"id": cust["tenant_id"]}) or {}
+    tpl = db.card_templates.find_one({"tenant_id": cust["tenant_id"]}) or {}
+    prefs = _card_prefs_for(cust["id"])
+    offers = _derive_offers_for_tenant(cust["tenant_id"])
+
+    # Tier-aware design
+    tier = (cust.get("tier") or "bronze").lower()
+    design = tpl.get(f"{tier}_design") or tpl.get("bronze_design") or {}
+
+    reward_threshold = tpl.get("reward_threshold_stamps", 10)
+    stamps = min(cust.get("visits", 0), reward_threshold)
+
+    return {
+        "customer": {
+            "id": cust["id"],
+            "name": cust.get("name"),
+            "email": cust.get("email"),
+            "barcode_id": cust.get("barcode_id"),
+            "tier": tier,
+            "visits": cust.get("visits", 0),
+            "points": cust.get("points", 0),
+            "total_amount_paid": cust.get("total_amount_paid", 0),
+            "birthday": cust.get("birthday"),
+            "member_since": cust.get("created_at"),
+        },
+        "tenant": {
+            "id": t.get("id"),
+            "slug": t.get("slug"),
+            "name": t.get("name"),
+            "phone": t.get("phone"),
+            "address": t.get("address"),
+            "website": t.get("website"),
+        },
+        "card": {
+            "logo_url": tpl.get("logo_url"),
+            "reward_description": tpl.get("reward_description", "Une récompense fidélité"),
+            "reward_threshold": reward_threshold,
+            "stamps_earned": stamps,
+            "points_per_visit": tpl.get("points_per_visit", 10),
+            "design": design,
+            "active_offer": {
+                "title": tpl.get("active_offer_title"),
+                "description": tpl.get("active_offer_description"),
+                "active": bool(tpl.get("active_offer_active")),
+            },
+        },
+        "offers": offers,
+        "prefs": prefs,
+        "notifications": _recent_push_notifications_for(cust["id"], cust["tenant_id"]),
+    }
+
+
+def _recent_push_notifications_for(customer_id: str, tenant_id: str) -> List[dict]:
+    # Use sent campaigns as synthetic push log + one "welcome" synthetic entry
+    cutoff = datetime.now(timezone.utc) - timedelta(days=45)
+    items = []
+    for c in db.campaigns.find({"tenant_id": tenant_id, "status": "sent", "sent_at": {"$gte": cutoff}}).sort("sent_at", -1).limit(6):
+        items.append({
+            "id": c.get("id"),
+            "title": c.get("name"),
+            "body": c.get("content", ""),
+            "sent_at": c.get("sent_at").isoformat() if c.get("sent_at") else None,
+            "kind": "campaign",
+        })
+    return items
+
+
+@app.get("/api/card/{barcode_id}")
+def get_wallet_card(barcode_id: str):
+    cust = db.customers.find_one({"barcode_id": barcode_id})
+    if not cust:
+        raise HTTPException(status_code=404, detail="Card not found")
+    return _serialize_card_payload(cust)
+
+
+class CardPrefsRequest(BaseModel):
+    auto_update: Optional[bool] = None
+    push_enabled: Optional[bool] = None
+
+
+@app.put("/api/card/{barcode_id}/prefs")
+def update_card_prefs(barcode_id: str, req: CardPrefsRequest):
+    cust = db.customers.find_one({"barcode_id": barcode_id})
+    if not cust:
+        raise HTTPException(status_code=404, detail="Card not found")
+    update = {"customer_id": cust["id"], "tenant_id": cust["tenant_id"]}
+    if req.auto_update is not None:
+        update["auto_update"] = req.auto_update
+    if req.push_enabled is not None:
+        update["push_enabled"] = req.push_enabled
+    db.card_prefs.update_one({"customer_id": cust["id"]}, {"$set": update}, upsert=True)
+    return _card_prefs_for(cust["id"])
+
+
+@app.delete("/api/card/{barcode_id}")
+def delete_wallet_card(barcode_id: str):
+    cust = db.customers.find_one({"barcode_id": barcode_id})
+    if not cust:
+        raise HTTPException(status_code=404, detail="Card not found")
+    db.card_prefs.update_one(
+        {"customer_id": cust["id"]},
+        {"$set": {
+            "customer_id": cust["id"],
+            "tenant_id": cust["tenant_id"],
+            "deleted": True,
+            "deleted_at": datetime.now(timezone.utc)
+        }},
+        upsert=True
+    )
+    return {"status": "ok", "message": "Card removed from wallet"}
+
 
 # ========================
 # NEW OWNER ENDPOINTS (TRACKING & MAP)
@@ -1305,37 +2234,42 @@ def join_program(slug: str, req: JoinRequest):
 
 @app.post("/api/owner/customers/map")
 def get_customers_map(token_data: TokenData = Depends(require_role(["business_owner"]))):
-    """Get customers with approximated lat/lng for map display"""
+    """Get customers with approximated lat/lng + department for France-wide map display."""
     customers = list(db.customers.find({"tenant_id": token_data.tenant_id}))
     result = []
 
     for cust in customers:
-        postal_code = cust.get("postal_code", "37000")
+        postal_code = cust.get("postal_code", "75001")
 
-        # Get centroid for postal code
-        if postal_code in POSTAL_CODE_CENTROIDS:
-            base_lat, base_lng = POSTAL_CODE_CENTROIDS[postal_code]
+        # Prefer real GPS if captured, else resolve from postal code
+        real_lat = cust.get("latitude")
+        real_lng = cust.get("longitude")
+        if real_lat is not None and real_lng is not None:
+            lat, lng = real_lat, real_lng
         else:
-            base_lat, base_lng = POSTAL_CODE_CENTROIDS["37000"]  # default
+            base_lat, base_lng = get_postal_coords(postal_code)
+            hash_val = int(hashlib.md5(cust["id"].encode()).hexdigest(), 16)
+            jitter_lat = ((hash_val % 200) - 100) / 5000   # ±0.02° ≈ ±2km
+            jitter_lng = (((hash_val // 200) % 200) - 100) / 5000
+            lat = base_lat + jitter_lat
+            lng = base_lng + jitter_lng
 
-        # Add deterministic jitter based on customer ID hash
-        hash_val = int(hashlib.md5(cust["id"].encode()).hexdigest(), 16)
-        jitter_lat = (hash_val % 100) / 10000
-        jitter_lng = ((hash_val // 100) % 100) / 10000
-
-        lat = base_lat + jitter_lat
-        lng = base_lng + jitter_lng
+        dept_code, dept_name = get_department_info(postal_code)
 
         result.append({
             "id": cust["id"],
             "name": cust.get("name", ""),
+            "email": cust.get("email", ""),
             "postal_code": postal_code,
             "lat": lat,
             "lng": lng,
+            "department_code": dept_code,
+            "department_name": dept_name,
             "tier": cust.get("tier", "bronze"),
             "total_visits": cust.get("visits", 0),
             "total_amount_paid": cust.get("total_amount_paid", 0),
-            "acquisition_source": cust.get("acquisition_source")
+            "acquisition_source": cust.get("acquisition_source"),
+            "has_real_gps": real_lat is not None and real_lng is not None,
         })
 
     return result
@@ -1451,11 +2385,10 @@ def track_campaign_open(
 
 @app.get("/api/owner/analytics/highest-paying")
 def get_highest_paying_customers(token_data: TokenData = Depends(require_role(["business_owner"]))):
-    """Get top 20 highest-paying customers"""
+    """Return ALL tenant customers so the dashboard can sort by max/min spent/visits client-side."""
     customers = list(
         db.customers.find({"tenant_id": token_data.tenant_id})
         .sort("total_amount_paid", -1)
-        .limit(20)
     )
 
     result = []
