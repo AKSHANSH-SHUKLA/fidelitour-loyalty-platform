@@ -34,6 +34,15 @@ export const adminAPI = {
   getTenantsByGeo: (enabled) => api.get('/admin/tenants-by-geo/' + (enabled ? 'enabled' : 'disabled')),
   getTenantsByMonth: (iso) => api.get('/admin/tenants-by-month/' + iso),
   getInsights: () => api.get('/admin/insights'),
+  // -- Broadcast (admin → end-customers) --
+  broadcast: (data) => api.post('/admin/broadcast', data),
+  listBroadcasts: () => api.get('/admin/broadcasts'),
+  // -- Upgrade-plan requests inbox --
+  listUpgradeRequests: () => api.get('/admin/upgrade-requests'),
+  resolveUpgradeRequest: (id, status) => api.put('/admin/upgrade-requests/' + id, { status }),
+  // -- Cron trigger (dev/manual) --
+  triggerDailyTasks: (secret) =>
+    api.post('/cron/daily-triggers' + (secret ? '?secret=' + encodeURIComponent(secret) : '')),
 };
 
 export const ownerAPI = {
@@ -79,6 +88,12 @@ export const ownerAPI = {
   trackOfferClick: (campaignId, customerId) =>
     api.post('/campaigns/' + campaignId + '/track-click' + (customerId ? '?customer_id=' + customerId : '')),
   trackPushDismiss: (campaignId) => api.post('/campaigns/' + campaignId + '/track-dismiss'),
+  // -- Scheduled / triggered campaigns --
+  scheduleCampaign: (data) => api.post('/owner/campaigns/schedule', data),
+  listScheduled: () => api.get('/owner/campaigns/scheduled'),
+  deleteScheduled: (id) => api.delete('/owner/campaigns/scheduled/' + id),
+  // -- Upgrade plan request (owner side) --
+  requestUpgrade: (data) => api.post('/owner/request-upgrade', data),
 };
 
 export const publicAPI = {

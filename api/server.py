@@ -167,6 +167,116 @@ POSTAL_CODE_CENTROIDS = POSTAL_CODE_OVERRIDES
 PIXEL_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 PIXEL_PNG_BYTES = base64.b64decode(PIXEL_PNG_BASE64)
 
+# ============================================================
+# Template variable renderer — substitutes {name}, {first_name},
+# {tier}, {points}, {points_to_next_reward}, {business_name},
+# {visits}, {amount_paid}. Used by every email / push send path
+# so personalised offers ("Bonjour {first_name}, il te reste
+# {points_to_next_reward} points pour une récompense !") work.
+# ============================================================
+def _compute_points_to_next_reward(customer: dict, tenant_id: str) -> int:
+    """How many more visits (≈ points) until the next reward for this customer."""
+    try:
+        tpl = db.card_templates.find_one({"tenant_id": tenant_id}) or {}
+        visits_per_stamp = max(int(tpl.get("visits_per_stamp", 1) or 1), 1)
+        reward_threshold_stamps = max(int(tpl.get("reward_threshold_stamps", 10) or 10), 1)
+        visits_needed = visits_per_stamp * reward_threshold_stamps
+        visits = int(customer.get("visits", 0) or 0)
+        remaining_visits = visits_needed - (visits % visits_needed)
+        # When exactly on threshold, remaining_visits == visits_needed (fresh card).
+        return remaining_visits
+    except Exception:
+        return 0
+
+
+def render_template(content: str, customer: dict, tenant: dict = None) -> str:
+    """Replace curly-brace placeholders in a campaign body with per-customer values.
+    Missing values are silently replaced with a neutral fallback so the message never
+    renders a literal `{name}` to the recipient.
+    """
+    if not content:
+        return ""
+    try:
+        name = customer.get("name") or "cher client"
+        first_name = name.split(" ")[0] if name else "cher client"
+        tier = (customer.get("tier") or "bronze").title()
+        points = int(customer.get("points", customer.get("visits", 0) * 10) or 0)
+        visits = int(customer.get("visits", 0) or 0)
+        amount_paid = round(float(customer.get("total_amount_paid", 0) or 0), 2)
+        business_name = (tenant or {}).get("name") or "notre boutique"
+        ptnr = _compute_points_to_next_reward(customer, customer.get("tenant_id") or (tenant or {}).get("id"))
+
+        replacements = {
+            "{name}": name,
+            "{first_name}": first_name,
+            "{tier}": tier,
+            "{points}": str(points),
+            "{points_remaining}": str(ptnr),
+            "{points_to_next_reward}": str(ptnr),
+            "{visits}": str(visits),
+            "{amount_paid}": f"{amount_paid:.2f}€",
+            "{business_name}": business_name,
+            "{sector}": (tenant or {}).get("sector", ""),
+        }
+        rendered = content
+        for token, value in replacements.items():
+            rendered = rendered.replace(token, str(value))
+        return rendered
+    except Exception:
+        return content
+
+
+def send_email_to_customer(to_email: str, from_name: str, subject: str, body_html: str) -> bool:
+    """Best-effort SendGrid dispatch. Returns True on successful send or on missing
+    SendGrid config (treat as mock-delivered for dashboards). Returns False only on
+    an actual network error during send.
+    """
+    if not to_email:
+        return False
+    if not SENDGRID_API_KEY:
+        return True  # mock delivery
+    try:
+        import sendgrid
+        from sendgrid.helpers.mail import Mail, Email, To
+        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+        message = Mail(
+            from_email=Email(SENDGRID_FROM_EMAIL, from_name),
+            to_emails=To(to_email),
+            subject=subject,
+            html_content=body_html,
+        )
+        sg.send(message)
+        return True
+    except Exception as e:
+        print(f"send_email_to_customer error to {to_email}: {e}")
+        return False
+
+
+def _campaign_html(tenant_name: str, subject: str, rendered_body: str, customer: dict) -> str:
+    """Consistent branded email wrapper used by every campaign dispatch path."""
+    tier_title = (customer.get("tier") or "bronze").title()
+    points = int(customer.get("points", customer.get("visits", 0) * 10) or 0)
+    visits = int(customer.get("visits", 0) or 0)
+    # Preserve newlines as <br>
+    body_html = (rendered_body or "").replace("\n", "<br>")
+    return f"""
+<div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px;background:#FDFBF7;">
+  <div style="text-align:center;margin-bottom:30px;">
+    <h1 style="font-family:'Georgia',serif;color:#1C1917;font-size:28px;margin-bottom:5px;">{tenant_name}</h1>
+    <div style="width:50px;height:3px;background:#B85C38;margin:0 auto;"></div>
+  </div>
+  <div style="background:white;border-radius:12px;padding:30px;border:1px solid #E7E5E4;">
+    <h2 style="color:#B85C38;font-size:22px;margin-bottom:15px;">{subject}</h2>
+    <p style="color:#57534E;line-height:1.6;font-size:16px;">{body_html}</p>
+    <div style="margin-top:25px;padding:15px;background:#F3EFE7;border-radius:8px;text-align:center;">
+      <p style="color:#B85C38;font-weight:600;font-size:14px;">Statut fidélité : {tier_title}</p>
+      <p style="color:#57534E;font-size:13px;">Points: {points} | Visites: {visits}</p>
+    </div>
+  </div>
+  <p style="text-align:center;color:#A8A29E;font-size:12px;margin-top:25px;">Envoyé via FidéliTour</p>
+</div>
+"""
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -1701,58 +1811,32 @@ def send_campaign(
     campaign.status = "sent"
     campaign.sent_at = datetime.now(timezone.utc)
     campaign.targeted_count = targeted_count
-    # Send real emails via SendGrid if configured
+    # Send real emails via SendGrid if configured. ALL campaign bodies run through
+    # render_template() so {name}, {first_name}, {tier}, {points_to_next_reward},
+    # {business_name} etc. substitute per-customer. Uses the shared send_email_to_customer
+    # helper so all dispatch paths share the same branded wrapper.
     delivered = 0
-    if SENDGRID_API_KEY:
+    tenant = db.tenants.find_one({"id": token_data.tenant_id}) or {}
+    tenant_name = tenant.get("campaign_sender_name") or tenant.get("name") or "Your Business"
+    campaign_content_raw = campaign.content or campaign.name
+    targeted_customers = list(db.customers.find(query))
+    for cust in targeted_customers:
+        if not cust.get("email"):
+            continue
         try:
-            import sendgrid
-            from sendgrid.helpers.mail import Mail, Email, To, Content
-            sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
-
-            # Get targeted customers
-            targeted_customers = list(db.customers.find(query))
-
-            tenant = db.tenants.find_one({"id": token_data.tenant_id})
-            tenant_name = tenant.get("name", "Your Business") if tenant else "Your Business"
-            campaign_content = campaign.content or campaign.name
-
-            for cust in targeted_customers:
-                if cust.get("email"):
-                    try:
-                        message = Mail(
-                            from_email=Email(SENDGRID_FROM_EMAIL, tenant_name),
-                            to_emails=To(cust["email"]),
-                            subject=f"{tenant_name} - {campaign.name}",
-                            html_content=f"""
-                            <div style="font-family: 'Manrope', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #FDFBF7;">
-                                <div style="text-align: center; margin-bottom: 30px;">
-                                    <h1 style="font-family: 'Georgia', serif; color: #1C1917; font-size: 28px; margin-bottom: 5px;">{tenant_name}</h1>
-                                    <div style="width: 50px; height: 3px; background: #B85C38; margin: 0 auto;"></div>
-                                </div>
-                                <div style="background: white; border-radius: 12px; padding: 30px; border: 1px solid #E7E5E4;">
-                                    <h2 style="color: #B85C38; font-size: 22px; margin-bottom: 15px;">{campaign.name}</h2>
-                                    <p style="color: #57534E; line-height: 1.6; font-size: 16px;">Dear {cust.get('name', 'Valued Customer')},</p>
-                                    <p style="color: #57534E; line-height: 1.6; font-size: 16px;">{campaign_content}</p>
-                                    <div style="margin-top: 25px; padding: 15px; background: #F3EFE7; border-radius: 8px; text-align: center;">
-                                        <p style="color: #B85C38; font-weight: 600; font-size: 14px;">Your Loyalty Status: {cust.get('tier', 'Bronze').title()} Tier</p>
-                                        <p style="color: #57534E; font-size: 13px;">Points: {cust.get('points', cust.get('visits', 0) * 10)} | Visits: {cust.get('visits', 0)}</p>
-                                    </div>
-                                </div>
-                                <p style="text-align: center; color: #A8A29E; font-size: 12px; margin-top: 25px;">Powered by FidéliTour Loyalty Platform</p>
-                            </div>
-                            """
-                        )
-                        sg.send(message)
-                        delivered += 1
-                    except Exception as email_err:
-                        print(f"Email send error for {cust.get('email')}: {email_err}")
-        except ImportError:
-            delivered = targeted_count  # No sendgrid library, assume mock delivery
-        except Exception as sg_err:
-            print(f"SendGrid error: {sg_err}")
-            delivered = targeted_count
-    else:
-        delivered = targeted_count  # No API key, mock delivery
+            rendered_body = render_template(campaign_content_raw, cust, tenant)
+            rendered_subject = render_template(campaign.name, cust, tenant)
+            html = _campaign_html(tenant_name, rendered_subject, rendered_body, cust)
+            sent_ok = send_email_to_customer(
+                to_email=cust["email"],
+                from_name=tenant_name,
+                subject=f"{tenant_name} - {rendered_subject}",
+                body_html=html,
+            )
+            if sent_ok:
+                delivered += 1
+        except Exception as e:
+            print(f"Campaign send failure for {cust.get('email')}: {e}")
 
     campaign.delivered_count = delivered
 
@@ -1808,6 +1892,7 @@ def scan_visit(
         raise HTTPException(status_code=404, detail="Customer not found")
 
     c_obj = Customer(**cust)
+    previous_tier = (c_obj.tier or "bronze").lower()  # snapshot BEFORE update
 
     # Auto-calculate points if amount_paid provided but points not provided
     if req.points is not None:
@@ -1832,8 +1917,30 @@ def scan_visit(
         c_obj.tier = "silver"
     else:
         c_obj.tier = "bronze"
+    new_tier = c_obj.tier
 
     db.customers.update_one({"id": c_obj.id}, {"$set": c_obj.model_dump()})
+
+    # ---- Tier-up congratulation push ("Bravo, vous passez Gold !") ----
+    tier_rank = {"bronze": 0, "silver": 1, "gold": 2}
+    if tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0):
+        tenant_doc = db.tenants.find_one({"id": token_data.tenant_id}) or {}
+        biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "notre équipe"
+        congrats = {
+            "customer_id": c_obj.id,
+            "tenant_id": token_data.tenant_id,
+            "title": f"Bravo, vous passez {new_tier.title()} ! 🎉",
+            "body": f"Félicitations {c_obj.name.split(' ')[0] if c_obj.name else ''} ! Vous débloquez le statut {new_tier.title()} chez {biz}.",
+            "type": "tier_up",
+            "previous_tier": previous_tier,
+            "new_tier": new_tier,
+            "sent_at": datetime.now(timezone.utc),
+        }
+        db.push_notifications.insert_one(congrats)
+        # Also try to send email if we have one on file.
+        if c_obj.email:
+            html = _campaign_html(biz, congrats["title"], congrats["body"], c_obj.model_dump())
+            send_email_to_customer(c_obj.email, biz, f"{biz} - {congrats['title']}", html)
 
     # Record visit with timestamp
     visit_time = datetime.now(timezone.utc)
@@ -1868,18 +1975,24 @@ def scan_visit(
                 "sent_at": datetime.now(timezone.utc)
             }
             db.push_notifications.insert_one(notification)
-        # Check if near reward threshold
+        # Check if near reward threshold — emit BOTH English and "Il te reste N points" FR wording
         elif stamps_earned >= (stamps_for_reward - notify_before_reward) and stamps_earned < stamps_for_reward:
             stamps_remaining = stamps_for_reward - stamps_earned
+            tenant_doc = db.tenants.find_one({"id": token_data.tenant_id}) or {}
+            biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "votre boutique préférée"
             notification = {
                 "customer_id": c_obj.id,
                 "tenant_id": token_data.tenant_id,
                 "title": "Almost there!",
-                "body": f"You're {stamps_remaining} {'stamp' if stamps_remaining == 1 else 'stamps'} away from your reward!",
+                "body": f"Il te reste {stamps_remaining} {'point' if stamps_remaining == 1 else 'points'} pour une récompense chez {biz} !",
                 "type": "near_reward",
+                "points_remaining": stamps_remaining,
                 "sent_at": datetime.now(timezone.utc)
             }
             db.push_notifications.insert_one(notification)
+            if c_obj.email:
+                html = _campaign_html(biz, notification["title"], notification["body"], c_obj.model_dump())
+                send_email_to_customer(c_obj.email, biz, f"{biz} - {notification['title']}", html)
 
     return c_obj.model_dump()
 
@@ -2359,27 +2472,140 @@ def get_customers_map(token_data: TokenData = Depends(require_role(["business_ow
 @app.post("/api/owner/campaigns/send-to-group")
 def send_campaign_to_group(
     req: Dict[str, Any],
-    token_data: TokenData = Depends(require_role(["business_owner"]))
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"]))
 ):
-    """Create and send campaign to specific group of customers"""
-    customer_ids = req.get("customer_ids", [])
+    """Create and send campaign to specific group of customers.
+    Accepts either explicit customer_ids or a segment descriptor (resolved server-side).
+    Segment shapes:
+      {type: 'tier', value: 'gold'}
+      {type: 'inactive_days', value: 30}
+      {type: 'recovered', window_days: 30, inactive_days: 30}
+      {type: 'top_paying_n', n: 20}
+      {type: 'least_paying_n', n: 20}
+      {type: 'max_visits_n', n: 20}
+      {type: 'least_visits_n', n: 20}
+      {type: 'birthday_month', value: 'MM'}
+      {type: 'acquisition', value: 'instagram'}
+      {type: 'postal_code', value: '37000'}
+      {type: 'department_code', value: '37'}
+      {type: 'all'}
+    """
+    tid = token_data.tenant_id
+    tenant = db.tenants.find_one({"id": tid}) or {}
+    customer_ids = req.get("customer_ids") or []
+    segment = req.get("segment") or None
+    now = datetime.now(timezone.utc)
+
+    # Resolve segment → customer list (if no explicit customer_ids given).
+    if not customer_ids and segment:
+        stype = (segment.get("type") or "").lower()
+        q = {"tenant_id": tid}
+        cursor = None
+        if stype == "tier" and segment.get("value"):
+            q["tier"] = segment["value"]
+        elif stype == "inactive_days":
+            days = int(segment.get("value") or 30)
+            q["last_visit_date"] = {"$lt": now - timedelta(days=days)}
+        elif stype == "recovered":
+            inactive = int(segment.get("inactive_days") or 30)
+            window = int(segment.get("window_days") or 30)
+            q["last_visit_date"] = {"$gte": now - timedelta(days=window)}
+            candidates = list(db.customers.find(q))
+            filtered = []
+            for c in candidates:
+                last = c.get("last_visit_date")
+                if not last:
+                    continue
+                # Need a >= inactive-day gap before the recent visit.
+                visits_before_recent = list(db.visits.find({
+                    "tenant_id": tid, "customer_id": c["id"],
+                    "visit_time": {"$lt": last},
+                }).sort("visit_time", -1).limit(1))
+                if not visits_before_recent:
+                    filtered.append(c)
+                else:
+                    gap = (last - visits_before_recent[0]["visit_time"]).days
+                    if gap >= inactive:
+                        filtered.append(c)
+            customer_ids = [c["id"] for c in filtered]
+        elif stype == "top_paying_n":
+            n = int(segment.get("n") or 20)
+            cursor = db.customers.find({"tenant_id": tid}).sort("total_amount_paid", -1).limit(n)
+        elif stype == "least_paying_n":
+            n = int(segment.get("n") or 20)
+            cursor = db.customers.find({"tenant_id": tid, "total_amount_paid": {"$gt": 0}}).sort("total_amount_paid", 1).limit(n)
+        elif stype == "max_visits_n":
+            n = int(segment.get("n") or 20)
+            cursor = db.customers.find({"tenant_id": tid}).sort("visits", -1).limit(n)
+        elif stype == "least_visits_n":
+            n = int(segment.get("n") or 20)
+            cursor = db.customers.find({"tenant_id": tid, "visits": {"$gt": 0}}).sort("visits", 1).limit(n)
+        elif stype == "birthday_month" and segment.get("value"):
+            mm = str(segment["value"]).zfill(2)
+            cursor = db.customers.find({"tenant_id": tid, "birthday": {"$regex": f"^{mm}"}})
+        elif stype == "acquisition" and segment.get("value"):
+            q["acquisition_source"] = segment["value"]
+        elif stype == "postal_code" and segment.get("value"):
+            q["postal_code"] = segment["value"]
+        elif stype == "department_code" and segment.get("value"):
+            dept = str(segment["value"])
+            cursor = db.customers.find({"tenant_id": tid, "postal_code": {"$regex": f"^{dept}"}})
+        elif stype == "all":
+            cursor = db.customers.find({"tenant_id": tid})
+        elif stype == "one_visit_only":
+            cursor = db.customers.find({"tenant_id": tid, "visits": {"$lte": 1}})
+
+        if not customer_ids:
+            if cursor is None:
+                cursor = db.customers.find(q)
+            customer_ids = [c["id"] for c in cursor]
+
     if not customer_ids:
-        raise HTTPException(status_code=400, detail="customer_ids required")
+        raise HTTPException(status_code=400, detail="No recipients: provide customer_ids or a non-empty segment.")
+
+    name = req.get("name") or "Campagne ciblée"
+    content = req.get("content") or ""
+    sender_name = (tenant.get("campaign_sender_name") or tenant.get("name") or "FidéliTour")
+
+    # Dispatch per-customer with template rendering.
+    delivered = 0
+    targeted_customers = list(db.customers.find({"id": {"$in": customer_ids}, "tenant_id": tid}))
+    for cust in targeted_customers:
+        if not cust.get("email"):
+            continue
+        rendered_body = render_template(content, cust, tenant)
+        rendered_subject = render_template(name, cust, tenant)
+        html = _campaign_html(sender_name, rendered_subject, rendered_body, cust)
+        ok = send_email_to_customer(cust["email"], sender_name, f"{sender_name} - {rendered_subject}", html)
+        if ok:
+            delivered += 1
 
     campaign = Campaign(
         id=str(uuid.uuid4()),
-        tenant_id=token_data.tenant_id,
-        name=req.get("name", "Group Campaign"),
-        content=req.get("content", ""),
+        tenant_id=tid,
+        name=name,
+        content=content,
         status="sent",
-        filters={"custom": "group_send"},
-        sent_at=datetime.now(timezone.utc),
-        targeted_count=len(customer_ids),
-        delivered_count=len(customer_ids),
-        recipient_ids=customer_ids
+        filters={"segment": segment or {"type": "custom"}},
+        sent_at=now,
+        targeted_count=len(targeted_customers),
+        delivered_count=delivered,
+        recipient_ids=[c["id"] for c in targeted_customers],
     )
-
     db.campaigns.insert_one(campaign.model_dump())
+
+    # Also log per-customer push notification so wallet cards show the offer.
+    for c in targeted_customers:
+        db.push_notifications.insert_one({
+            "customer_id": c["id"],
+            "tenant_id": tid,
+            "campaign_id": campaign.id,
+            "title": render_template(name, c, tenant),
+            "body": render_template(content, c, tenant),
+            "type": "campaign",
+            "sent_at": now,
+        })
+
     return campaign.model_dump()
 
 @app.get("/api/owner/campaigns/{campaign_id}/tracking")
@@ -3572,6 +3798,412 @@ def get_admin_insights(token_data: TokenData = Depends(require_role(["super_admi
             for k, v in sorted(sector_counts.items(), key=lambda kv: kv[1], reverse=True)
         ],
     }
+
+
+# ============================================================
+# FEATURE ROLLOUT (Apr 2026, part 2): the 8 gaps from the audit
+# 1. Offre anniversaire automatique (birthday auto-send)
+# 2. Niveau VIP atteint — tier-up push (wired in /owner/scan above)
+# 3. Campagnes auto (scheduled + recurring)
+# 4. Offres personnalisées (template vars — render_template())
+# 5. "Il te reste 2 points pour une récompense" (wired in /owner/scan above)
+# 6. Super-admin broadcast to all end-customers
+# 7. Upgrade-plan request flow
+# 8. Triggered campaigns framework (cron drains triggers + schedules)
+# ============================================================
+
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
+
+
+def _dispatch_campaign_to_customers(tenant: dict, name: str, content: str, customer_list: list, trigger_type: str = "manual"):
+    """Shared dispatch helper used by cron triggers + scheduled sends. Creates a
+    Campaign doc and a push_notification per customer, and emails when possible."""
+    if not customer_list:
+        return None
+    tid = tenant.get("id")
+    sender_name = tenant.get("campaign_sender_name") or tenant.get("name") or "FidéliTour"
+    now = datetime.now(timezone.utc)
+    delivered = 0
+    for cust in customer_list:
+        rendered_body = render_template(content, cust, tenant)
+        rendered_subject = render_template(name, cust, tenant)
+        db.push_notifications.insert_one({
+            "customer_id": cust["id"],
+            "tenant_id": tid,
+            "title": rendered_subject,
+            "body": rendered_body,
+            "type": trigger_type,
+            "sent_at": now,
+        })
+        if cust.get("email"):
+            html = _campaign_html(sender_name, rendered_subject, rendered_body, cust)
+            if send_email_to_customer(cust["email"], sender_name, f"{sender_name} - {rendered_subject}", html):
+                delivered += 1
+    campaign = Campaign(
+        id=str(uuid.uuid4()),
+        tenant_id=tid,
+        name=name,
+        content=content,
+        status="sent",
+        filters={"auto_trigger": trigger_type},
+        sent_at=now,
+        targeted_count=len(customer_list),
+        delivered_count=delivered,
+        recipient_ids=[c["id"] for c in customer_list],
+    )
+    db.campaigns.insert_one(campaign.model_dump())
+    return campaign.model_dump()
+
+
+# --- 3 & 8: Scheduled campaigns ------------------------------
+class ScheduleCampaignRequest(BaseModel):
+    name: str
+    content: str
+    run_at: str  # ISO datetime string
+    segment: Optional[Dict[str, Any]] = None
+    recurrence: Optional[str] = None  # None | "daily" | "weekly" | "monthly"
+
+
+@app.post("/api/owner/campaigns/schedule")
+def schedule_campaign(
+    req: ScheduleCampaignRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"]))
+):
+    """Queue a campaign to be dispatched later (or on a recurring cadence)."""
+    try:
+        run_at = datetime.fromisoformat(req.run_at.replace("Z", "+00:00"))
+        if run_at.tzinfo is None:
+            run_at = run_at.replace(tzinfo=timezone.utc)
+    except Exception:
+        raise HTTPException(status_code=400, detail="run_at must be ISO 8601")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": token_data.tenant_id,
+        "name": req.name,
+        "content": req.content,
+        "segment": req.segment or {"type": "all"},
+        "run_at": run_at,
+        "recurrence": req.recurrence,
+        "status": "scheduled",
+        "created_at": datetime.now(timezone.utc),
+    }
+    db.scheduled_campaigns.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@app.get("/api/owner/campaigns/scheduled")
+def list_scheduled(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    rows = list(db.scheduled_campaigns.find({"tenant_id": token_data.tenant_id}).sort("run_at", 1))
+    for r in rows:
+        r.pop("_id", None)
+    return {"scheduled": rows}
+
+
+@app.delete("/api/owner/campaigns/scheduled/{sched_id}")
+def delete_scheduled(sched_id: str, token_data: TokenData = Depends(require_role(["business_owner"]))):
+    res = db.scheduled_campaigns.delete_one({"id": sched_id, "tenant_id": token_data.tenant_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Scheduled campaign not found")
+    return {"status": "ok"}
+
+
+def _resolve_segment(tid: str, segment: dict) -> list:
+    """Shared segment → customer-list resolver. Returns list of customer dicts."""
+    now = datetime.now(timezone.utc)
+    if not segment:
+        return list(db.customers.find({"tenant_id": tid}))
+    stype = (segment.get("type") or "").lower()
+    q = {"tenant_id": tid}
+    if stype == "tier" and segment.get("value"):
+        q["tier"] = segment["value"]
+    elif stype == "inactive_days":
+        days = int(segment.get("value") or 30)
+        q["last_visit_date"] = {"$lt": now - timedelta(days=days)}
+    elif stype == "birthday_month" and segment.get("value"):
+        mm = str(segment["value"]).zfill(2)
+        q["birthday"] = {"$regex": f"^{mm}"}
+    elif stype == "birthday_today":
+        today_mmdd = now.strftime("%m-%d")
+        q["birthday"] = today_mmdd
+    elif stype == "acquisition" and segment.get("value"):
+        q["acquisition_source"] = segment["value"]
+    elif stype == "postal_code" and segment.get("value"):
+        q["postal_code"] = segment["value"]
+    elif stype == "department_code" and segment.get("value"):
+        q["postal_code"] = {"$regex": f"^{segment['value']}"}
+    elif stype == "one_visit_only":
+        q["visits"] = {"$lte": 1}
+    elif stype == "all":
+        pass
+    return list(db.customers.find(q))
+
+
+# --- 1, 8, 3: Daily trigger cron -----------------------------
+@app.post("/api/cron/daily-triggers")
+def run_daily_triggers(request: Request):
+    """Cron endpoint (hit daily by Vercel Cron or manually).
+    Authenticated via Authorization: Bearer <CRON_SECRET> OR ?secret=... OR X-Cron-Secret header.
+    Does 3 things:
+      A. For each tenant, send birthday offer to customers whose MM-DD == today.
+      B. For each tenant, send sector-specific reactivation to customers inactive >30d
+         (cooldown: don't re-trigger within 14 days).
+      C. Drain scheduled_campaigns where run_at <= now and recurrence handling.
+    """
+    # Auth check (lenient: allow empty secret in dev, require in prod)
+    provided = (
+        request.headers.get("x-cron-secret")
+        or (request.headers.get("authorization", "").replace("Bearer ", "") if request.headers.get("authorization") else "")
+        or request.query_params.get("secret", "")
+    )
+    if CRON_SECRET and provided != CRON_SECRET:
+        raise HTTPException(status_code=401, detail="Invalid cron secret")
+
+    now = datetime.now(timezone.utc)
+    today_mmdd = now.strftime("%m-%d")
+    cutoff_inactive = now - timedelta(days=30)
+    cooldown_cutoff = now - timedelta(days=14)
+
+    tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
+    birthday_sent = 0
+    reactivation_sent = 0
+    scheduled_sent = 0
+    tier_up_emitted_count = 0
+
+    for tenant in tenants:
+        tid = tenant["id"]
+        sector = tenant.get("sector") or "restaurant"
+        tpl = REACTIVATION_TEMPLATES_BY_SECTOR.get(sector, {
+            "title": "On vous a manqué ✨",
+            "content": "Revenez cette semaine pour une offre spéciale, {first_name} !"
+        })
+
+        # A. Birthday auto-send
+        bday_customers = list(db.customers.find({"tenant_id": tid, "birthday": today_mmdd}))
+        if bday_customers:
+            birthday_body = f"Joyeux anniversaire {{first_name}} 🎂 ! Pour fêter ça, {tenant.get('name') or 'nous'} vous offre une surprise lors de votre prochaine visite."
+            _dispatch_campaign_to_customers(
+                tenant,
+                name="🎂 Joyeux anniversaire {first_name} !",
+                content=birthday_body,
+                customer_list=bday_customers,
+                trigger_type="birthday",
+            )
+            birthday_sent += len(bday_customers)
+
+        # B. Inactivity reactivation (cooldown-protected)
+        inactive_customers = list(db.customers.find({
+            "tenant_id": tid,
+            "last_visit_date": {"$lt": cutoff_inactive, "$ne": None},
+        }))
+        # Skip customers we already nudged in last 14 days.
+        already_nudged_ids = set()
+        recent_pushes = db.push_notifications.find({
+            "tenant_id": tid, "type": "reactivation",
+            "sent_at": {"$gte": cooldown_cutoff},
+        })
+        for p in recent_pushes:
+            already_nudged_ids.add(p.get("customer_id"))
+        fresh_inactive = [c for c in inactive_customers if c["id"] not in already_nudged_ids]
+        if fresh_inactive:
+            _dispatch_campaign_to_customers(
+                tenant,
+                name=tpl["title"],
+                content=tpl["content"],
+                customer_list=fresh_inactive,
+                trigger_type="reactivation",
+            )
+            reactivation_sent += len(fresh_inactive)
+
+    # C. Drain scheduled campaigns
+    due = list(db.scheduled_campaigns.find({
+        "run_at": {"$lte": now},
+        "status": "scheduled",
+    }))
+    for sc in due:
+        tenant = db.tenants.find_one({"id": sc["tenant_id"]})
+        if not tenant:
+            db.scheduled_campaigns.update_one({"id": sc["id"]}, {"$set": {"status": "cancelled"}})
+            continue
+        recipients = _resolve_segment(sc["tenant_id"], sc.get("segment") or {"type": "all"})
+        _dispatch_campaign_to_customers(
+            tenant,
+            name=sc["name"],
+            content=sc["content"],
+            customer_list=recipients,
+            trigger_type="scheduled",
+        )
+        scheduled_sent += len(recipients)
+
+        # Recurrence: bump run_at and keep scheduled, or mark sent.
+        rec = sc.get("recurrence")
+        if rec == "daily":
+            next_run = sc["run_at"] + timedelta(days=1)
+            db.scheduled_campaigns.update_one({"id": sc["id"]}, {"$set": {"run_at": next_run}})
+        elif rec == "weekly":
+            next_run = sc["run_at"] + timedelta(days=7)
+            db.scheduled_campaigns.update_one({"id": sc["id"]}, {"$set": {"run_at": next_run}})
+        elif rec == "monthly":
+            next_run = sc["run_at"] + timedelta(days=30)
+            db.scheduled_campaigns.update_one({"id": sc["id"]}, {"$set": {"run_at": next_run}})
+        else:
+            db.scheduled_campaigns.update_one({"id": sc["id"]}, {"$set": {"status": "sent", "sent_at": now}})
+
+    return {
+        "status": "ok",
+        "ran_at": now.isoformat(),
+        "birthday_sent": birthday_sent,
+        "reactivation_sent": reactivation_sent,
+        "scheduled_sent": scheduled_sent,
+        "tier_up_emitted": tier_up_emitted_count,
+    }
+
+
+# --- 6: Super-admin broadcast to all end-customers -----------
+class AdminBroadcastRequest(BaseModel):
+    subject: str
+    body: str
+    sender_name: Optional[str] = None  # name displayed as sender
+    filters: Optional[Dict[str, Any]] = None  # {tier, sector, department_code, acquisition, tenant_id}
+
+
+@app.post("/api/admin/broadcast")
+def admin_broadcast(
+    req: AdminBroadcastRequest,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """Admin-authored broadcast to end-customers across tenants.
+    Sends under the admin-chosen sender name.
+    """
+    if not req.subject.strip() or not req.body.strip():
+        raise HTTPException(status_code=400, detail="subject and body required")
+    filters = req.filters or {}
+    sender_name = (req.sender_name or "FidéliTour").strip()
+    now = datetime.now(timezone.utc)
+
+    # Build customer query
+    cust_q = {}
+    if filters.get("tier"):
+        cust_q["tier"] = filters["tier"]
+    if filters.get("acquisition"):
+        cust_q["acquisition_source"] = filters["acquisition"]
+    if filters.get("department_code"):
+        cust_q["postal_code"] = {"$regex": f"^{filters['department_code']}"}
+    if filters.get("tenant_id"):
+        cust_q["tenant_id"] = filters["tenant_id"]
+
+    # If sector filter set, resolve to tenant ids first.
+    if filters.get("sector"):
+        ts = list(db.tenants.find({"sector": filters["sector"]}, {"id": 1}))
+        cust_q["tenant_id"] = {"$in": [t["id"] for t in ts]}
+
+    targets = list(db.customers.find(cust_q))
+    delivered = 0
+    broadcast_id = str(uuid.uuid4())
+    tenant_cache = {}
+    for c in targets:
+        tid = c.get("tenant_id")
+        if tid not in tenant_cache:
+            tenant_cache[tid] = db.tenants.find_one({"id": tid}) or {}
+        tenant = tenant_cache[tid]
+        rendered_subject = render_template(req.subject, c, tenant)
+        rendered_body = render_template(req.body, c, tenant)
+        db.push_notifications.insert_one({
+            "customer_id": c["id"],
+            "tenant_id": tid,
+            "title": rendered_subject,
+            "body": rendered_body,
+            "type": "admin_broadcast",
+            "broadcast_id": broadcast_id,
+            "sender_name": sender_name,
+            "sent_at": now,
+        })
+        if c.get("email"):
+            html = _campaign_html(sender_name, rendered_subject, rendered_body, c)
+            if send_email_to_customer(c["email"], sender_name, f"{sender_name} - {rendered_subject}", html):
+                delivered += 1
+
+    doc = {
+        "id": broadcast_id,
+        "subject": req.subject,
+        "body": req.body,
+        "sender_name": sender_name,
+        "filters": filters,
+        "targeted_count": len(targets),
+        "delivered_count": delivered,
+        "sent_at": now,
+        "sent_by": token_data.email if hasattr(token_data, "email") else None,
+    }
+    db.admin_broadcasts.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@app.get("/api/admin/broadcasts")
+def list_admin_broadcasts(token_data: TokenData = Depends(require_role(["super_admin"]))):
+    rows = list(db.admin_broadcasts.find().sort("sent_at", -1).limit(100))
+    for r in rows:
+        r.pop("_id", None)
+    return {"broadcasts": rows}
+
+
+# --- 7: Upgrade-plan request flow ----------------------------
+class UpgradeRequest(BaseModel):
+    message: Optional[str] = None
+    requested_plan: Optional[str] = None
+
+
+@app.post("/api/owner/request-upgrade")
+def request_upgrade(
+    req: UpgradeRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"]))
+):
+    """Owner signals they want to upgrade their plan (usually when near card cap)."""
+    tid = token_data.tenant_id
+    tenant = db.tenants.find_one({"id": tid}) or {}
+    current_plan = tenant.get("plan", "basic")
+    next_plan = {"basic": "gold", "gold": "vip", "vip": "chain", "chain": None}.get(current_plan)
+    requested = req.requested_plan or next_plan
+    doc = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": tid,
+        "tenant_name": tenant.get("name"),
+        "current_plan": current_plan,
+        "requested_plan": requested,
+        "message": req.message or "",
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc),
+    }
+    db.upgrade_requests.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@app.get("/api/admin/upgrade-requests")
+def list_upgrade_requests(token_data: TokenData = Depends(require_role(["super_admin"]))):
+    rows = list(db.upgrade_requests.find().sort("created_at", -1).limit(200))
+    for r in rows:
+        r.pop("_id", None)
+    return {"requests": rows}
+
+
+@app.put("/api/admin/upgrade-requests/{req_id}")
+def resolve_upgrade_request(
+    req_id: str,
+    body: Dict[str, Any],
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """Mark as approved / declined / completed."""
+    new_status = body.get("status") or "completed"
+    if new_status not in ("approved", "declined", "completed", "pending"):
+        raise HTTPException(status_code=400, detail="invalid status")
+    res = db.upgrade_requests.update_one(
+        {"id": req_id},
+        {"$set": {"status": new_status, "resolved_at": datetime.now(timezone.utc)}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return {"status": "ok", "new_status": new_status}
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import {
 import {
   Users, TrendingUp, Award, Smartphone, Gift, Calendar,
   Activity, X, Trophy, ArrowDown, ArrowUp, CreditCard,
-  AlertCircle,
+  AlertCircle, Send, Megaphone, Clock,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 
@@ -15,41 +15,277 @@ const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
 
 // ------------------------------------------------------------------
-// Small presentational pieces
+// Reusable "Send Campaign" button — plants on every metric / chart card.
+// Clicking opens a composer pre-filled with the given segment descriptor.
+// The parent wires in openComposer(segment, presetName, presetContent).
 // ------------------------------------------------------------------
-const KPICard = ({ icon: Icon, title, value, sublabel, onClick, accent = '#B85C38' }) => (
+const SendCampaignButton = ({ label = 'Send campaign', onClick, compact = false, icon: Icon = Send }) => (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick && onClick();
+    }}
+    className={
+      compact
+        ? 'inline-flex items-center gap-1 text-[11px] px-2 py-1 bg-[#B85C38]/10 text-[#B85C38] rounded-full hover:bg-[#B85C38] hover:text-white transition'
+        : 'inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#B85C38]/10 text-[#B85C38] rounded-full hover:bg-[#B85C38] hover:text-white transition font-medium'
+    }
+    title="Send a campaign to this segment"
+  >
+    <Icon size={compact ? 11 : 13} />
+    {label}
+  </button>
+);
+
+// ------------------------------------------------------------------
+// KPI card with optional Send Campaign CTA in top-right corner.
+// ------------------------------------------------------------------
+const KPICard = ({
+  icon: Icon, title, value, sublabel, onClick, accent = '#B85C38',
+  segment, openComposer, presetName, presetContent,
+}) => (
   <div
     onClick={onClick}
-    className={`bg-white p-5 rounded-xl border border-[#E7E5E4] flex items-center gap-4 ${
+    className={`relative bg-white p-5 rounded-xl border border-[#E7E5E4] ${
       onClick ? 'cursor-pointer hover:shadow-md transition' : ''
     }`}
   >
-    <div
-      className="w-12 h-12 rounded-full flex items-center justify-center text-white"
-      style={{ background: accent }}
-    >
-      <Icon size={22} />
-    </div>
-    <div className="min-w-0">
-      <p className="text-xs text-[#57534E] uppercase tracking-wide font-semibold truncate">{title}</p>
-      <p className="text-2xl font-bold text-[#1C1917] leading-tight">{value}</p>
-      {sublabel && <p className="text-xs text-[#8B8680] mt-0.5 truncate">{sublabel}</p>}
+    {segment && openComposer && (
+      <div className="absolute top-2 right-2">
+        <SendCampaignButton
+          compact
+          label="Send"
+          onClick={() => openComposer(segment, presetName, presetContent)}
+        />
+      </div>
+    )}
+    <div className="flex items-center gap-4">
+      <div
+        className="w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0"
+        style={{ background: accent }}
+      >
+        <Icon size={22} />
+      </div>
+      <div className="min-w-0 pr-6">
+        <p className="text-xs text-[#57534E] uppercase tracking-wide font-semibold truncate">{title}</p>
+        <p className="text-2xl font-bold text-[#1C1917] leading-tight">{value}</p>
+        {sublabel && <p className="text-xs text-[#8B8680] mt-0.5 truncate">{sublabel}</p>}
+      </div>
     </div>
   </div>
 );
 
-const ChartCard = ({ title, hint, children }) => (
+// ------------------------------------------------------------------
+// ChartCard with optional Send CTA
+// ------------------------------------------------------------------
+const ChartCard = ({ title, hint, children, segment, openComposer, presetName, presetContent }) => (
   <div className="bg-white p-6 rounded-xl border border-[#E7E5E4]">
-    <h2
-      className="text-xl font-semibold text-[#1C1917]"
-      style={{ fontFamily: 'Cormorant Garamond' }}
-    >
-      {title}
-    </h2>
+    <div className="flex items-start justify-between gap-3 mb-1">
+      <h2
+        className="text-xl font-semibold text-[#1C1917]"
+        style={{ fontFamily: 'Cormorant Garamond' }}
+      >
+        {title}
+      </h2>
+      {segment && openComposer && (
+        <SendCampaignButton
+          label="Send campaign"
+          onClick={() => openComposer(segment, presetName, presetContent)}
+        />
+      )}
+    </div>
     {hint && <p className="text-xs text-[#8B8680] mt-1 mb-3">{hint}</p>}
     {children}
   </div>
 );
+
+// ------------------------------------------------------------------
+// Campaign composer modal — used for every "Send campaign" CTA.
+// ------------------------------------------------------------------
+const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent }) => {
+  const [name, setName] = useState(presetName || '');
+  const [content, setContent] = useState(presetContent || '');
+  const [sending, setSending] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [scheduleMode, setScheduleMode] = useState('now'); // now | later
+  const [runAt, setRunAt] = useState('');
+  const [recurrence, setRecurrence] = useState('');
+
+  useEffect(() => {
+    setName(presetName || '');
+    setContent(presetContent || '');
+  }, [presetName, presetContent]);
+
+  useEffect(() => {
+    // Preview count for this segment
+    (async () => {
+      try {
+        // For most segments we don't have a preview endpoint, so skip.
+        // If segment is tier-based, we could call preview-segment, but it's optional UX.
+        setPreview(null);
+      } catch (e) { /* ignore */ }
+    })();
+  }, [segment]);
+
+  const send = async () => {
+    if (!name.trim() || !content.trim()) {
+      alert('Merci de remplir le sujet et le message.');
+      return;
+    }
+    setSending(true);
+    try {
+      if (scheduleMode === 'later') {
+        if (!runAt) {
+          alert('Choisissez une date d\'envoi.');
+          setSending(false);
+          return;
+        }
+        await ownerAPI.scheduleCampaign({
+          name,
+          content,
+          run_at: new Date(runAt).toISOString(),
+          segment,
+          recurrence: recurrence || null,
+        });
+        alert(recurrence ? `Campagne programmée en récurrence (${recurrence}) ✓` : 'Campagne programmée ✓');
+      } else {
+        const res = await ownerAPI.sendCampaignToGroup({
+          name,
+          content,
+          segment,
+        });
+        alert(`Campagne envoyée à ${res.data.targeted_count ?? 0} clients ✓`);
+      }
+      onSent && onSent();
+      onClose();
+    } catch (e) {
+      alert('Erreur: ' + (e?.response?.data?.detail || e?.message || 'envoi impossible'));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              <Megaphone className="inline mr-2 text-[#B85C38]" size={22} /> Composer une campagne
+            </h3>
+            <p className="text-xs text-[#8B8680] mt-1">
+              Cible : <span className="font-medium text-[#B85C38]">{segmentLabel(segment)}</span>
+              {preview != null && <span className="ml-2">({preview} destinataires)</span>}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-[#A8A29E] hover:text-[#1C1917]"><X size={22} /></button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Sujet</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex : Offre spéciale {first_name} 🎁"
+              className="w-full px-3 py-2 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Message</label>
+            <textarea
+              rows={6}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Bonjour {first_name}, il te reste {points_to_next_reward} points pour débloquer ta récompense chez {business_name} !"
+              className="w-full px-3 py-2 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38] font-['Manrope']"
+            />
+            <p className="text-[11px] text-[#8B8680] mt-1">
+              Variables : <code>{'{first_name}'}</code>, <code>{'{name}'}</code>, <code>{'{tier}'}</code>, <code>{'{points_to_next_reward}'}</code>, <code>{'{points}'}</code>, <code>{'{business_name}'}</code>
+            </p>
+          </div>
+
+          <div className="p-3 bg-[#F3EFE7] rounded-lg border border-[#E7E5E4]">
+            <div className="flex items-center gap-4 mb-2">
+              <label className="inline-flex items-center gap-1 text-sm">
+                <input type="radio" checked={scheduleMode === 'now'} onChange={() => setScheduleMode('now')} />
+                Envoyer maintenant
+              </label>
+              <label className="inline-flex items-center gap-1 text-sm">
+                <input type="radio" checked={scheduleMode === 'later'} onChange={() => setScheduleMode('later')} />
+                Programmer plus tard
+              </label>
+            </div>
+            {scheduleMode === 'later' && (
+              <div className="flex flex-wrap gap-3 items-center">
+                <input
+                  type="datetime-local"
+                  value={runAt}
+                  onChange={(e) => setRunAt(e.target.value)}
+                  className="px-2 py-1 border border-[#E7E5E4] rounded"
+                />
+                <select
+                  value={recurrence}
+                  onChange={(e) => setRecurrence(e.target.value)}
+                  className="px-2 py-1 border border-[#E7E5E4] rounded text-sm"
+                >
+                  <option value="">Une seule fois</option>
+                  <option value="daily">Quotidien</option>
+                  <option value="weekly">Hebdomadaire</option>
+                  <option value="monthly">Mensuel</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-[#E7E5E4] text-[#1C1917] rounded-lg hover:bg-[#F3EFE7]"
+            >
+              Annuler
+            </button>
+            <button
+              disabled={sending}
+              onClick={send}
+              className="px-5 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              {scheduleMode === 'later' ? <Clock size={16} /> : <Send size={16} />}
+              {sending ? 'Envoi…' : scheduleMode === 'later' ? 'Programmer' : 'Envoyer maintenant'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function segmentLabel(segment) {
+  if (!segment) return 'Tous les clients';
+  switch (segment.type) {
+    case 'all': return 'Tous les clients';
+    case 'tier': return `Tier ${segment.value}`;
+    case 'inactive_days': return `Inactifs ${segment.value || 30} j`;
+    case 'recovered': return 'Clients récupérés';
+    case 'top_paying_n': return `Top ${segment.n || 20} gros payeurs`;
+    case 'least_paying_n': return `${segment.n || 20} plus faibles payeurs`;
+    case 'max_visits_n': return `Top ${segment.n || 20} visites`;
+    case 'least_visits_n': return `${segment.n || 20} plus faibles en visites`;
+    case 'birthday_month': return `Anniversaires en ${segment.value}`;
+    case 'birthday_today': return 'Anniversaires aujourd\'hui';
+    case 'acquisition': return `Source: ${segment.value}`;
+    case 'one_visit_only': return 'Clients 1 visite seulement';
+    default: return 'Segment personnalisé';
+  }
+}
 
 // ------------------------------------------------------------------
 // Page
@@ -69,6 +305,11 @@ const AnalyticsPage = () => {
   const [rankingMode, setRankingMode] = useState('top_paying'); // top_paying | least_paying | max_visits | least_visits
 
   const [drill, setDrill] = useState(null); // { title, rows }
+  const [composer, setComposer] = useState(null); // { segment, presetName, presetContent }
+
+  const openComposer = (segment, presetName, presetContent) => {
+    setComposer({ segment, presetName: presetName || '', presetContent: presetContent || '' });
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -87,7 +328,6 @@ const AnalyticsPage = () => {
       if (cf.status === 'fulfilled') setCardsFilled(cf.value.data);
       if (hp.status === 'fulfilled') setHighestPaying(hp.value.data || []);
       if (acq.status === 'fulfilled') setAcquisition(acq.value.data?.sources || []);
-      // If ALL failed, surface a single error
       const allFailed = results.every((r) => r.status === 'rejected');
       if (allFailed) {
         const first = results[0];
@@ -102,11 +342,8 @@ const AnalyticsPage = () => {
     }
   };
 
-  useEffect(() => {
-    loadAll();
-  }, []);
+  useEffect(() => { loadAll(); }, []);
 
-  // Refetch recovered when the filter changes
   useEffect(() => {
     (async () => {
       try {
@@ -115,15 +352,10 @@ const AnalyticsPage = () => {
           window_days: recoveryWindowDays,
         });
         setRecovered(r.data);
-      } catch (e) {
-        // ignore — keep previous value
-      }
+      } catch (e) { /* ignore */ }
     })();
   }, [recoveryInactiveDays, recoveryWindowDays]);
 
-  // ----------------------------------------------------------------
-  // Derived values — canonical numbers only, no Math.random()
-  // ----------------------------------------------------------------
   const totalCustomers = analytics?.total_customers ?? summary?.total_customers ?? 0;
   const totalVisits = analytics?.total_visits ?? 0;
   const repeatRate = analytics?.repeat_rate_pct ?? 0;
@@ -147,7 +379,7 @@ const AnalyticsPage = () => {
     return Object.entries(analytics.visits_by_day)
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(-30); // show last 30 days in the chart
+      .slice(-30);
   }, [analytics]);
 
   const newCustomersByWeek = useMemo(() => {
@@ -159,11 +391,11 @@ const AnalyticsPage = () => {
     () => (acquisition || []).map((a) => ({
       name: (a.source || 'unknown').replace(/_/g, ' '),
       value: a.count,
+      raw: a.source,
     })),
     [acquisition]
   );
 
-  // Ranking tabs
   const rankedCustomers = useMemo(() => {
     const list = [...(highestPaying || [])];
     switch (rankingMode) {
@@ -171,7 +403,7 @@ const AnalyticsPage = () => {
         return list.sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0)).slice(0, 20);
       case 'least_paying':
         return list
-          .filter((c) => (c.total_amount_paid || 0) > 0) // ignore zero-spend noise
+          .filter((c) => (c.total_amount_paid || 0) > 0)
           .sort((a, b) => (a.total_amount_paid || 0) - (b.total_amount_paid || 0))
           .slice(0, 20);
       case 'max_visits':
@@ -186,9 +418,43 @@ const AnalyticsPage = () => {
     }
   }, [highestPaying, rankingMode]);
 
-  // ----------------------------------------------------------------
-  // Render
-  // ----------------------------------------------------------------
+  const rankingSegment = useMemo(() => {
+    switch (rankingMode) {
+      case 'top_paying': return { type: 'top_paying_n', n: 20 };
+      case 'least_paying': return { type: 'least_paying_n', n: 20 };
+      case 'max_visits': return { type: 'max_visits_n', n: 20 };
+      case 'least_visits': return { type: 'least_visits_n', n: 20 };
+      default: return { type: 'all' };
+    }
+  }, [rankingMode]);
+
+  const rankingPreset = useMemo(() => {
+    switch (rankingMode) {
+      case 'top_paying':
+        return {
+          name: 'Merci pour votre fidélité, {first_name} 🙏',
+          content: 'En tant que client privilégié ({tier}), profitez d\'une attention spéciale lors de votre prochaine visite chez {business_name}.',
+        };
+      case 'least_paying':
+        return {
+          name: 'On vous a préparé quelque chose, {first_name}',
+          content: 'Un geste pour votre prochaine visite chez {business_name} : {points_to_next_reward} points vous séparent de votre récompense.',
+        };
+      case 'max_visits':
+        return {
+          name: 'Vous êtes un(e) habitué(e), {first_name} 🌟',
+          content: 'Bravo pour vos {visits} visites ! Une récompense VIP vous attend chez {business_name}.',
+        };
+      case 'least_visits':
+        return {
+          name: 'Revenez bientôt, {first_name}',
+          content: 'Il te reste {points_to_next_reward} points pour débloquer ta récompense chez {business_name}. À tout de suite !',
+        };
+      default:
+        return {};
+    }
+  }, [rankingMode]);
+
   if (loading) {
     return <div className="p-8 bg-[#FDFBF7] min-h-screen text-[#57534E]">Loading analytics…</div>;
   }
@@ -213,19 +479,24 @@ const AnalyticsPage = () => {
 
   return (
     <div className="p-8 space-y-8 bg-[#FDFBF7] min-h-screen">
-      <header>
-        <h1
-          className="text-4xl font-bold text-[#1C1917] mb-2"
-          style={{ fontFamily: 'Cormorant Garamond' }}
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-4xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Analytics
+          </h1>
+          <p className="text-[#57534E]">
+            Chaque chiffre est live. Cliquez sur <span className="font-semibold text-[#B85C38]">Send</span> ou <span className="font-semibold text-[#B85C38]">Send campaign</span> sur n'importe quel indicateur pour lancer une campagne ciblée.
+          </p>
+        </div>
+        <button
+          onClick={() => openComposer({ type: 'all' }, 'Message à toute ma base', 'Bonjour {first_name}, une nouveauté à partager chez {business_name}…')}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#B85C38] text-white rounded-xl hover:bg-[#9C4E2F] font-medium"
         >
-          Analytics
-        </h1>
-        <p className="text-[#57534E]">
-          Every number on this page is live and matches Dashboard & Insights. Click any card to drill in.
-        </p>
+          <Megaphone size={16} /> Nouvelle campagne
+        </button>
       </header>
 
-      {/* Row 1 — canonical KPIs (same source of truth as Dashboard) */}
+      {/* Row 1 — canonical KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard
           icon={Users}
@@ -233,6 +504,10 @@ const AnalyticsPage = () => {
           value={totalCustomers.toLocaleString()}
           sublabel={`${newThisWeek} new this week`}
           accent="#B85C38"
+          segment={{ type: 'all' }}
+          openComposer={openComposer}
+          presetName="Un message pour toi, {first_name}"
+          presetContent="Merci de faire partie de la famille {business_name} ! Une surprise vous attend lors de votre prochain passage."
         />
         <KPICard
           icon={Activity}
@@ -240,6 +515,10 @@ const AnalyticsPage = () => {
           value={totalVisits.toLocaleString()}
           sublabel="All time"
           accent="#4A5D23"
+          segment={{ type: 'max_visits_n', n: 20 }}
+          openComposer={openComposer}
+          presetName="Merci pour vos {visits} visites 🙏"
+          presetContent="Vos {visits} visites vous rendent VIP, {first_name}. Une attention spéciale vous attend chez {business_name}."
         />
         <KPICard
           icon={TrendingUp}
@@ -247,6 +526,10 @@ const AnalyticsPage = () => {
           value={`${repeatRate.toFixed(1)}%`}
           sublabel={`${activeCustomers} active (30d)`}
           accent="#E3A869"
+          segment={{ type: 'inactive_days', value: 30 }}
+          openComposer={openComposer}
+          presetName="On vous a manqué, {first_name}"
+          presetContent="Ça fait un moment… Revenez cette semaine chez {business_name} pour une offre spéciale."
         />
         <KPICard
           icon={Smartphone}
@@ -254,6 +537,10 @@ const AnalyticsPage = () => {
           value={walletPasses.toLocaleString()}
           sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% of customers`}
           accent="#7B3F00"
+          segment={{ type: 'all' }}
+          openComposer={openComposer}
+          presetName="Ajoutez votre carte au wallet"
+          presetContent="{first_name}, gardez {business_name} à portée de main. Ajoutez votre carte à Apple/Google Wallet."
         />
       </section>
 
@@ -264,6 +551,10 @@ const AnalyticsPage = () => {
           value={cardsFilledTotal.toLocaleString()}
           sublabel={`${cardsFilledThisMonth} this month`}
           accent="#4A5D23"
+          segment={{ type: 'tier', value: 'gold' }}
+          openComposer={openComposer}
+          presetName="Bravo {first_name} — vous êtes {tier} !"
+          presetContent="Vous avez rempli votre carte. Une récompense exclusive {business_name} vous attend."
         />
         <KPICard
           icon={Gift}
@@ -284,6 +575,10 @@ const AnalyticsPage = () => {
             })
           }
           accent="#B85C38"
+          segment={{ type: 'recovered', inactive_days: recoveryInactiveDays, window_days: recoveryWindowDays }}
+          openComposer={openComposer}
+          presetName="Heureux de vous revoir, {first_name} !"
+          presetContent="Pour votre retour chez {business_name}, un petit bonus vous attend. {points_to_next_reward} points vous séparent de votre récompense."
         />
         <KPICard
           icon={Award}
@@ -291,6 +586,10 @@ const AnalyticsPage = () => {
           value={activeCustomers.toLocaleString()}
           sublabel="Visited in last 30 days"
           accent="#E3A869"
+          segment={{ type: 'tier', value: 'gold' }}
+          openComposer={openComposer}
+          presetName="Nos meilleurs clients ont droit à…"
+          presetContent="{first_name}, parce que vous êtes {tier}, voici un avantage exclusif chez {business_name}."
         />
         <KPICard
           icon={Calendar}
@@ -298,12 +597,23 @@ const AnalyticsPage = () => {
           value={newThisWeek.toLocaleString()}
           sublabel="Joined in last 7 days"
           accent="#5B8DEF"
+          segment={{ type: 'one_visit_only' }}
+          openComposer={openComposer}
+          presetName="Bienvenue chez {business_name}, {first_name} !"
+          presetContent="Pour votre 2e visite, une surprise vous attend. Il te reste {points_to_next_reward} points pour ta 1re récompense."
         />
       </section>
 
       {/* Row 2 — visits by day + new customers by week */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Visits over the last 30 days" hint="Daily visits recorded by staff scans.">
+        <ChartCard
+          title="Visits over the last 30 days"
+          hint="Daily visits recorded by staff scans."
+          segment={{ type: 'inactive_days', value: 14 }}
+          openComposer={openComposer}
+          presetName="Revenez nous voir, {first_name}"
+          presetContent="Ça fait 2 semaines… une offre flash vous attend chez {business_name}."
+        >
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={visitsByDay}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
@@ -315,7 +625,14 @@ const AnalyticsPage = () => {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="New customers by week" hint="Weekly registrations over the last 12 weeks.">
+        <ChartCard
+          title="New customers by week"
+          hint="Weekly registrations over the last 12 weeks."
+          segment={{ type: 'one_visit_only' }}
+          openComposer={openComposer}
+          presetName="Bienvenue {first_name}"
+          presetContent="Merci d'avoir rejoint {business_name}. Pour votre 2e visite, une offre de bienvenue vous attend."
+        >
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={newCustomersByWeek}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
@@ -328,16 +645,36 @@ const AnalyticsPage = () => {
         </ChartCard>
       </section>
 
-      {/* Row 3 — tier + acquisition */}
+      {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread.">
-          <ResponsiveContainer width="100%" height={300}>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {tierData.map((t) => (
+              <div key={t.key} className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E7E5E4] bg-[#FDFBF7]">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full" style={{ background: TIER_COLORS[t.key] }}></span>
+                  <span className="text-xs font-semibold text-[#1C1917]">{t.name}</span>
+                </div>
+                <span className="text-lg font-bold">{t.value}</span>
+                <SendCampaignButton
+                  compact
+                  label={`Send to ${t.name}`}
+                  onClick={() => openComposer(
+                    { type: 'tier', value: t.key },
+                    `Offre exclusive ${t.name} pour {first_name}`,
+                    `Parce que vous êtes ${t.name}, voici une attention spéciale de {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.`
+                  )}
+                />
+              </div>
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
                 data={tierData}
                 cx="50%"
                 cy="50%"
-                outerRadius={110}
+                outerRadius={100}
                 dataKey="value"
                 labelLine={false}
                 label={({ name, value }) =>
@@ -357,7 +694,20 @@ const AnalyticsPage = () => {
         </ChartCard>
 
         <ChartCard title="Acquisition Sources" hint="How customers found you in the last 90 days.">
-          <ResponsiveContainer width="100%" height={300}>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {acquisitionChart.map((a, i) => (
+              <SendCampaignButton
+                key={a.raw || i}
+                label={`Send to ${a.name} (${a.value})`}
+                onClick={() => openComposer(
+                  { type: 'acquisition', value: a.raw },
+                  `Un petit mot pour nos clients ${a.name}`,
+                  `Merci de nous avoir découverts via ${a.name}, {first_name} ! Une surprise vous attend chez {business_name}.`
+                )}
+              />
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
             <BarChart data={acquisitionChart} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
               <XAxis type="number" stroke="#57534E" />
@@ -373,14 +723,21 @@ const AnalyticsPage = () => {
         </ChartCard>
       </section>
 
-      {/* Row 4 — Recovered Customers Filter (PROPER LABELS + INPUTS) */}
+      {/* Row 4 — Recovered Filter */}
       <section className="bg-white border border-[#E7E5E4] rounded-xl p-6">
-        <h3
-          className="text-xl font-semibold text-[#1C1917] mb-2"
-          style={{ fontFamily: 'Cormorant Garamond' }}
-        >
-          Customize Recovered Customers Filter
-        </h3>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Customize Recovered Customers Filter
+          </h3>
+          <SendCampaignButton
+            label="Send to this filtered group"
+            onClick={() => openComposer(
+              { type: 'recovered', inactive_days: recoveryInactiveDays, window_days: recoveryWindowDays },
+              'Bon retour parmi nous, {first_name} !',
+              'Merci de revenir chez {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.'
+            )}
+          />
+        </div>
         <p className="text-sm text-[#57534E] mb-4">
           "Customers who were quiet for X days and came back in the last Y days"
         </p>
@@ -415,13 +772,10 @@ const AnalyticsPage = () => {
         </div>
       </section>
 
-      {/* Row 5 — Customer Ranking Tabs */}
+      {/* Row 5 — Ranking Tabs */}
       <section className="bg-white border border-[#E7E5E4] rounded-xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3
-            className="text-xl font-semibold text-[#1C1917]"
-            style={{ fontFamily: 'Cormorant Garamond' }}
-          >
+          <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Customer Ranking
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -448,6 +802,10 @@ const AnalyticsPage = () => {
                 </button>
               );
             })}
+            <SendCampaignButton
+              label="Send to this ranking"
+              onClick={() => openComposer(rankingSegment, rankingPreset.name, rankingPreset.content)}
+            />
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -493,16 +851,10 @@ const AnalyticsPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3
-                className="text-2xl font-bold text-[#1C1917]"
-                style={{ fontFamily: 'Cormorant Garamond' }}
-              >
+              <h3 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
                 {drill.title}
               </h3>
-              <button
-                onClick={() => setDrill(null)}
-                className="text-[#A8A29E] hover:text-[#1C1917]"
-              >
+              <button onClick={() => setDrill(null)} className="text-[#A8A29E] hover:text-[#1C1917]">
                 <X size={22} />
               </button>
             </div>
@@ -532,6 +884,17 @@ const AnalyticsPage = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Campaign composer */}
+      {composer && (
+        <CampaignComposer
+          segment={composer.segment}
+          presetName={composer.presetName}
+          presetContent={composer.presetContent}
+          onClose={() => setComposer(null)}
+          onSent={loadAll}
+        />
       )}
     </div>
   );

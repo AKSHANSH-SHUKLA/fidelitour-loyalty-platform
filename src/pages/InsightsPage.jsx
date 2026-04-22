@@ -258,10 +258,27 @@ export default function InsightsPage() {
             </div>
           </div>
           {activeCards.suggest_upgrade && (
-            <div className="mt-4 p-3 bg-[#B85C38]/10 border border-[#B85C38]/30 rounded-lg">
+            <div className="mt-4 p-3 bg-[#B85C38]/10 border border-[#B85C38]/30 rounded-lg flex flex-wrap items-center gap-3 justify-between">
               <p className="font-semibold text-[#B85C38]">
                 ⚡ Vous approchez de votre limite. Passez à <span className="uppercase">{activeCards.next_plan}</span> pour {activeCards.next_plan_cap?.toLocaleString()} cartes max ({activeCards.next_plan_price}€/mois).
               </p>
+              <button
+                onClick={async () => {
+                  const msg = window.prompt('Un petit mot pour l\'équipe ? (optionnel)', '');
+                  try {
+                    await ownerAPI.requestUpgrade({
+                      requested_plan: activeCards.next_plan,
+                      message: msg || '',
+                    });
+                    alert('Votre demande de montée de plan a été envoyée à l\'équipe FidéliTour. On revient vers vous très vite.');
+                  } catch (e) {
+                    alert('Erreur: ' + (e?.response?.data?.detail || e?.message));
+                  }
+                }}
+                className="px-4 py-2 bg-[#B85C38] text-white rounded-lg text-sm font-medium hover:bg-[#9C4E2F]"
+              >
+                Demander la montée de plan
+              </button>
             </div>
           )}
         </Card>
