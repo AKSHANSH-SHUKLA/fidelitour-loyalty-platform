@@ -28,43 +28,62 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
 
-      const [statsRes, detailedRes, enhancedRes] = await Promise.all([
+      // allSettled so one slow/failing endpoint doesn't zero out the whole page
+      const [statsRes, detailedRes, enhancedRes] = await Promise.allSettled([
         adminAPI.getAnalytics(),
         adminAPI.getDetailedAnalytics(),
         adminAPI.getEnhancedAnalytics(),
       ]);
 
-      setStats({
-        totalBusinesses: statsRes.data.total_tenants || 0,
-        totalCustomers: statsRes.data.total_customers || 0,
-        monthlyRevenue: statsRes.data.monthly_revenue || 0,
-        activeBusinesses30Days: statsRes.data.active_tenants_30d || 0,
-        avgCustomersPerBusiness: statsRes.data.total_tenants > 0
-          ? Math.round(statsRes.data.total_customers / statsRes.data.total_tenants)
-          : 0,
-        platformVisitCount: statsRes.data.total_visits || 0,
-      });
+      let anyFailed = false;
 
-      setPlanDistribution(detailedRes.data.plans_distribution || []);
-      setTenantGrowth((detailedRes.data.growth || []).map(g => ({ date: g.month, count: g.tenants })));
+      if (statsRes.status === 'fulfilled') {
+        const d = statsRes.value.data;
+        setStats({
+          totalBusinesses: d.total_tenants || 0,
+          totalCustomers: d.total_customers || 0,
+          monthlyRevenue: d.monthly_revenue || 0,
+          activeBusinesses30Days: d.active_tenants_30d || 0,
+          avgCustomersPerBusiness: d.total_tenants > 0
+            ? Math.round(d.total_customers / d.total_tenants)
+            : 0,
+          platformVisitCount: d.total_visits || 0,
+        });
+      } else {
+        anyFailed = true;
+        console.error('getAnalytics failed:', statsRes.reason);
+      }
 
-      // Process enhanced analytics
-      setEnhancedAnalytics(enhancedRes.data);
-      setTopPerformers(enhancedRes.data.top_performers || []);
-      setBusinessHealth({
-        regular: {
-          count: enhancedRes.data.business_health.regular || 0,
-          list: enhancedRes.data.business_health.regular_list || [],
-        },
-        growing: {
-          count: enhancedRes.data.business_health.growing || 0,
-          list: enhancedRes.data.business_health.growing_list || [],
-        },
-        declining: {
-          count: enhancedRes.data.business_health.declining || 0,
-          list: enhancedRes.data.business_health.declining_list || [],
-        },
-      });
+      if (detailedRes.status === 'fulfilled') {
+        setPlanDistribution(detailedRes.value.data.plans_distribution || []);
+        setTenantGrowth((detailedRes.value.data.growth || []).map(g => ({ date: g.month, count: g.tenants })));
+      } else {
+        anyFailed = true;
+        console.error('getDetailedAnalytics failed:', detailedRes.reason);
+      }
+
+      if (enhancedRes.status === 'fulfilled') {
+        const d = enhancedRes.value.data;
+        setEnhancedAnalytics(d);
+        setTopPerformers(d.top_performers || []);
+        setBusinessHealth({
+          regular: {
+            count: d.business_health?.regular || 0,
+            list: d.business_health?.regular_list || [],
+          },
+          growing: {
+            count: d.business_health?.growing || 0,
+            list: d.business_health?.growing_list || [],
+          },
+          declining: {
+            count: d.business_health?.declining || 0,
+            list: d.business_health?.declining_list || [],
+          },
+        });
+      } else {
+        anyFailed = true;
+        console.error('getEnhancedAnalytics failed:', enhancedRes.reason);
+      }
 
       // Mock recent activity (in production, this would come from a real endpoint)
       setRecentActivity([
@@ -75,7 +94,7 @@ export default function AdminDashboard() {
         { id: 5, action: 'Customer joined', detail: '12 new customers across platform', timestamp: '1 day ago' },
       ]);
 
-      setSystemStatus('operational');
+      setSystemStatus(anyFailed ? 'degraded' : 'operational');
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       setSystemStatus('degraded');

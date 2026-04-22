@@ -27,6 +27,13 @@ export const adminAPI = {
   saveCardTemplate: (tenantId, data) => api.post('/admin/card-template/' + tenantId, data),
   aiQuery: (data) => api.post('/admin/ai-query', data),
   sendBusinessCampaign: (data) => api.post('/admin/send-business-campaign', data),
+  getTenantCustomers: (tenantId) => api.get('/admin/tenants/' + tenantId + '/customers'),
+  getTenantAnalytics: (tenantId, params) => api.get('/admin/tenants/' + tenantId + '/analytics', { params }),
+  getTenantsByTier: (tier) => api.get('/admin/tenants-by-tier/' + tier),
+  getTenantsByAcquisition: (source) => api.get('/admin/tenants-by-acquisition/' + source),
+  getTenantsByGeo: (enabled) => api.get('/admin/tenants-by-geo/' + (enabled ? 'enabled' : 'disabled')),
+  getTenantsByMonth: (iso) => api.get('/admin/tenants-by-month/' + iso),
+  getInsights: () => api.get('/admin/insights'),
 };
 
 export const ownerAPI = {
@@ -56,6 +63,22 @@ export const ownerAPI = {
   getCustomerMap: () => api.post('/owner/customers/map'),
   sendCampaignToGroup: (data) => api.post('/owner/campaigns/send-to-group', data),
   getCampaignTracking: (id) => api.get('/owner/campaigns/' + id + '/tracking'),
+  // --- 12 new insight endpoints ---
+  getChurn: () => api.get('/owner/analytics/churn'),
+  getLTV: () => api.get('/owner/analytics/ltv'),
+  getAlerts: () => api.get('/owner/analytics/alerts'),
+  getTimeSegmentation: () => api.get('/owner/analytics/time-segmentation'),
+  getCityBreakdown: () => api.get('/owner/analytics/city-breakdown'),
+  getReactivationTemplates: () => api.get('/owner/campaigns/reactivation-templates'),
+  updateSenderName: (name) => api.put('/owner/settings/sender-name', { sender_name: name }),
+  listTeam: () => api.get('/owner/team'),
+  addTeamMember: (data) => api.post('/owner/team', data),
+  removeTeamMember: (email) => api.delete('/owner/team/' + encodeURIComponent(email)),
+  getMonthlyReport: (month) => api.get('/owner/monthly-report' + (month ? '?month=' + month : '')),
+  getActiveCards: () => api.get('/owner/analytics/active-cards'),
+  trackOfferClick: (campaignId, customerId) =>
+    api.post('/campaigns/' + campaignId + '/track-click' + (customerId ? '?customer_id=' + customerId : '')),
+  trackPushDismiss: (campaignId) => api.post('/campaigns/' + campaignId + '/track-dismiss'),
 };
 
 export const publicAPI = {

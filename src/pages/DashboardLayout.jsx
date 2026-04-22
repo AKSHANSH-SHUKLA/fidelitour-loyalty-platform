@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
-  Database, BrainCircuit, Megaphone, MessageSquare, MapPin
+  Database, BrainCircuit, Megaphone, MessageSquare, MapPin, Sparkles
 } from 'lucide-react';
 
 const NavLink = ({ to, icon: Icon, label, currentPath }) => {
@@ -43,18 +43,31 @@ const DashboardLayout = () => {
             <>
               <NavLink to="/dashboard" icon={Home} label="Dashboard" currentPath={currentPath} />
               <NavLink to="/dashboard/analytics" icon={BarChart3} label="Analytics" currentPath={currentPath} />
+              <NavLink to="/dashboard/insights" icon={Sparkles} label="Insights" currentPath={currentPath} />
               <NavLink to="/dashboard/customers" icon={Users} label="Customers" currentPath={currentPath} />
-              <NavLink to="/dashboard/map" icon={MapPin} label="Tours Map" currentPath={currentPath} />
+              <NavLink to="/dashboard/map" icon={MapPin} label="Customer Map" currentPath={currentPath} />
               <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} />
               <NavLink to="/dashboard/campaigns" icon={Megaphone} label="Campaigns" currentPath={currentPath} />
               <NavLink to="/dashboard/ai-assistant" icon={BrainCircuit} label="AI Assistant" currentPath={currentPath} />
               <NavLink to="/dashboard/settings" icon={Settings2} label="Settings" currentPath={currentPath} />
             </>
           )}
+          {user?.role === 'manager' && (
+            <>
+              <NavLink to="/dashboard/analytics" icon={BarChart3} label="Analytics" currentPath={currentPath} />
+              <NavLink to="/dashboard/insights" icon={Sparkles} label="Insights" currentPath={currentPath} />
+              <NavLink to="/dashboard/customers" icon={Users} label="Customers" currentPath={currentPath} />
+              <NavLink to="/dashboard/map" icon={MapPin} label="Customer Map" currentPath={currentPath} />
+            </>
+          )}
+          {user?.role === 'staff' && (
+            <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} />
+          )}
           {user?.role === 'super_admin' && (
             <>
               <NavLink to="/admin" icon={Home} label="Dashboard" currentPath={currentPath} />
               <NavLink to="/admin/analytics" icon={BarChart3} label="Global Analytics" currentPath={currentPath} />
+              <NavLink to="/admin/insights" icon={Sparkles} label="Insights" currentPath={currentPath} />
               <NavLink to="/admin/tenants" icon={Database} label="Manage Businesses" currentPath={currentPath} />
               <NavLink to="/admin/card-designer" icon={Palette} label="Card Designer" currentPath={currentPath} />
               <NavLink to="/admin/campaigns" icon={Megaphone} label="Campaigns" currentPath={currentPath} />

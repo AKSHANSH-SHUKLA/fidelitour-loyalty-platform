@@ -1,466 +1,469 @@
 import React, { useEffect, useState } from 'react';
-import api, { adminAPI } from '../lib/api';
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, Legend } from 'recharts';
-import { X, TrendingDown } from 'lucide-react';
+import { adminAPI } from '../lib/api';
+import {
+  PieChart, Pie, Cell,
+  LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, AreaChart, Area, Legend,
+} from 'recharts';
+import { X, TrendingDown, Users, Euro, Store, MapPin, Award, Megaphone } from 'lucide-react';
 
-const PLAN_COLORS = {
-  'basic': '#4A5D23',
-  'gold': '#E3A869',
-  'vip': '#B85C38',
-};
+const PLAN_COLORS = { basic: '#4A5D23', gold: '#E3A869', vip: '#B85C38', chain: '#7B3F00' };
+const TIER_COLORS = { Bronze: '#8B6914', Silver: '#C0C0C0', Gold: '#E3A869' };
+const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
+const GPS_COLORS = { 'GPS Enabled': '#4A5D23', 'GPS Disabled': '#A8A29E' };
+
+const StatCard = ({ icon: Icon, label, value, sublabel, accent = '#B85C38' }) => (
+  <div className="bg-white p-5 rounded-xl border border-[#E7E5E4] flex items-center gap-4">
+    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ background: accent }}>
+      <Icon size={22} />
+    </div>
+    <div>
+      <p className="text-xs text-[#57534E] uppercase tracking-wide font-semibold">{label}</p>
+      <p className="text-2xl font-bold text-[#1C1917] leading-tight">{value}</p>
+      {sublabel && <p className="text-xs text-[#8B8680] mt-0.5">{sublabel}</p>}
+    </div>
+  </div>
+);
 
 const AdminAnalyticsPage = () => {
   const [data, setData] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(null);
-  const [drillDownData, setDrillDownData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('visits');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [loadError, setLoadError] = useState(null);
+  const [drill, setDrill] = useState(null); // { title, rows, columns }
+  const [drillLoading, setDrillLoading] = useState(false);
 
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, []);
-
-  const fetchAnalyticsData = async () => {
+  const loadAnalytics = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await adminAPI.getDetailedAnalytics();
       setData(res.data);
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
+    } catch (e) {
+      console.error('Failed to fetch admin analytics', e);
+      setLoadError(
+        e?.response?.status
+          ? `Error ${e.response.status}: ${e.response.data?.detail || e.message}`
+          : e?.message || 'Network error'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePieClick = async (entry) => {
-    setSelectedMonth(null);
-    setSelectedPlan(entry.name);
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const openDrill = async (title, fetcher, columns) => {
+    setDrill({ title, rows: [], columns, loading: true });
+    setDrillLoading(true);
     try {
-      const res = await adminAPI.getTenantsByPlan(entry.name.toLowerCase());
-      setDrillDownData(res.data || []);
-    } catch (error) {
-      console.error('Failed to fetch tenants by plan:', error);
-      setDrillDownData([]);
+      const res = await fetcher();
+      const rows = Array.isArray(res.data) ? res.data : [];
+      setDrill({ title, rows, columns });
+    } catch (e) {
+      console.error('Drill failed', e);
+      setDrill({ title, rows: [], columns, error: 'Failed to load' });
+    } finally {
+      setDrillLoading(false);
     }
   };
 
-  const handleLineClick = async (data) => {
-    setSelectedPlan(null);
-    setSelectedMonth(data.date);
-    try {
-      // This would call a backend endpoint to fetch businesses created in a specific month
-      // For now, we'll use mock data
-      setDrillDownData([]);
-    } catch (error) {
-      console.error('Failed to fetch businesses by month:', error);
-    }
-  };
-
-  const getPlanStats = (planName) => {
-    const tenants = drillDownData || [];
-    if (tenants.length === 0) return null;
-
-    const totalCustomers = tenants.reduce((sum, t) => sum + (t.customer_count || 0), 0);
-    const planPrice = { 'basic': 29, 'gold': 79, 'vip': 199 }[planName.toLowerCase()] || 0;
-    const avgCustomersPerBusiness = tenants.length > 0 ? (totalCustomers / tenants.length).toFixed(0) : 0;
-    const totalVisits = tenants.reduce((sum, t) => sum + (t.total_visits || 0), 0);
-
-    return {
-      pricePerMonth: `€${planPrice}`,
-      totalCustomers,
-      avgCustomersPerBusiness,
-      count: tenants.length,
-      totalVisits,
-    };
-  };
-
-  const sortTenants = (tenants) => {
-    return [...tenants].sort((a, b) => {
-      let aVal, bVal;
-      switch (sortBy) {
-        case 'visits':
-          aVal = a.total_visits || 0;
-          bVal = b.total_visits || 0;
-          break;
-        case 'customers':
-          aVal = a.customer_count || 0;
-          bVal = b.customer_count || 0;
-          break;
-        case 'avgpoints':
-          aVal = a.avg_points || 0;
-          bVal = b.avg_points || 0;
-          break;
-        case 'name':
-          aVal = a.name;
-          bVal = b.name;
-          return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-        default:
-          return 0;
-      }
-      return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
-    });
-  };
-
-  if (loading || !data) {
+  if (loading) {
     return <div className="p-8 bg-[#FDFBF7] min-h-screen text-[#57534E]">Loading analytics...</div>;
   }
 
-  const planDistData = data.plans_distribution || [];
-  const growthData = (data.growth || []).map(g => ({ date: g.month, count: g.tenants }));
+  if (loadError || !data) {
+    return (
+      <div className="p-8 bg-[#FDFBF7] min-h-screen">
+        <div className="max-w-xl mx-auto bg-white border border-[#E7E5E4] rounded-xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-[#B85C38] mb-2">Analytics failed to load</h2>
+          <p className="text-[#57534E] text-sm mb-4">{loadError || 'The server did not return data. It may still be warming up.'}</p>
+          <button
+            onClick={loadAnalytics}
+            className="px-4 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F] transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  // Mock customer growth data
-  const customerGrowthData = growthData.map((g, idx) => ({
-    date: g.date,
-    customers: (idx + 1) * 150 + Math.random() * 100,
+  const totals = data.totals || {};
+  const plans = data.plans_distribution || [];
+  const tiers = data.tier_distribution || [];
+  const acquisitions = data.acquisition_sources || [];
+  const gps = data.gps_breakdown || [];
+  const growth = data.growth || [];
+  const performance = data.tenant_performance || [];
+
+  // Customer growth series (derive cumulative from monthly growth, using totals as end-point)
+  const growthLine = growth.map((g, i) => ({
+    date: g.month,
+    iso: g.iso,
+    count: g.tenants,
   }));
 
-  // Mock revenue by plan
-  const revenueByPlanData = planDistData.map(plan => ({
-    name: plan.name,
-    revenue: plan.value * (['basic', 'gold', 'vip'].indexOf(plan.name.toLowerCase()) === 0 ? 29 :
-                           ['basic', 'gold', 'vip'].indexOf(plan.name.toLowerCase()) === 1 ? 79 : 199),
-  }));
+  // Revenue per plan
+  const revenueByPlan = plans.map(p => {
+    const price = ({ basic: 29, gold: 79, vip: 199, chain: 349 })[p.name.toLowerCase()] || 0;
+    return { name: p.name, revenue: p.value * price, count: p.value };
+  });
 
-  // Mock at-risk businesses
-  const businessesAtRisk = (drillDownData || []).filter((t, idx) => idx % 3 === 0).slice(0, 5);
+  // Businesses at risk: bottom-5 by visits
+  const atRisk = [...performance].sort((a, b) => a.visits - b.visits).slice(0, 5);
+
+  // Tenant column sets
+  const COLS_SUMMARY = [
+    { key: 'name', label: 'Business' },
+    { key: 'plan', label: 'Plan', render: (v) => <span className="uppercase text-xs font-bold">{v}</span> },
+    { key: 'customer_count', label: 'Customers' },
+    { key: 'total_visits', label: 'Visits' },
+  ];
+  const COLS_TIER = [
+    { key: 'name', label: 'Business' },
+    { key: 'plan', label: 'Plan' },
+    { key: 'tier_customer_count', label: 'Customers in tier' },
+    { key: 'total_customers', label: 'Total customers' },
+  ];
+  const COLS_ACQ = [
+    { key: 'name', label: 'Business' },
+    { key: 'plan', label: 'Plan' },
+    { key: 'acquisition_count', label: 'Via this source' },
+    { key: 'total_customers', label: 'Total customers' },
+  ];
+  const COLS_GEO = [
+    { key: 'name', label: 'Business' },
+    { key: 'plan', label: 'Plan' },
+    { key: 'customer_count', label: 'Customers' },
+    { key: 'total_visits', label: 'Visits' },
+    { key: 'geo_radius_meters', label: 'GPS radius (m)', render: (v) => v ?? '—' },
+  ];
 
   return (
     <div className="p-8 space-y-8 bg-[#FDFBF7] min-h-screen">
-      <div>
+      <header>
         <h1 className="text-4xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
           Global Analytics
         </h1>
-        <p className="text-[#57534E]">Platform-wide insights and business performance metrics.</p>
-      </div>
+        <p className="text-[#57534E]">Platform-wide insights across every business. Click any chart or metric to drill in.</p>
+      </header>
 
-      {/* Charts Grid - Top Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Business Growth Line Chart (Clickable) */}
-        <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
-          <h2 className="text-xl font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Business Growth Over Time
-          </h2>
-          <p className="text-xs text-[#57534E] mb-3">Click on data points to drill down</p>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={growthData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                <XAxis dataKey="date" stroke="#57534E" />
-                <YAxis stroke="#57534E" label={{ value: 'New Businesses', angle: -90, position: 'insideLeft' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#B85C38"
-                  dot={{ fill: '#B85C38', r: 5 }}
-                  activeDot={{ r: 7 }}
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-sm text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-4">
-            <span className="font-semibold">What does this mean?</span> This shows how many new businesses have joined the platform each month. An upward trend indicates platform growth.
-          </p>
-        </div>
+      {/* Topline KPIs */}
+      <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <StatCard icon={Store}  label="Businesses" value={totals.tenants ?? 0} accent="#B85C38" />
+        <StatCard icon={Users}  label="Customers" value={(totals.customers ?? 0).toLocaleString()} accent="#4A5D23" />
+        <StatCard icon={Award}  label="Visits" value={(totals.visits ?? 0).toLocaleString()} accent="#E3A869" />
+        <StatCard icon={Euro}   label="Subscription MRR" value={`€${(totals.subscription_revenue_month ?? 0).toLocaleString()}`} sublabel="Recurring monthly" accent="#7B3F00" />
+        <StatCard icon={Euro}   label="Customer GMV" value={`€${(totals.customer_spend_all_time ?? 0).toLocaleString()}`} sublabel="Lifetime tenant revenue" accent="#5B8DEF" />
+      </section>
 
-        {/* Plan Distribution Pie Chart (Clickable) */}
-        <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
-          <h2 className="text-xl font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Businesses by Subscription Plan
-          </h2>
-          <p className="text-xs text-[#57534E] mb-3">Click a slice to see businesses</p>
-          <div className="h-80 flex justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={planDistData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  onClick={(entry) => handlePieClick(entry)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {planDistData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PLAN_COLORS[entry.name.toLowerCase()] || '#B85C38'} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-sm text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-4">
-            <span className="font-semibold">What does this mean?</span> This shows how many businesses are on each subscription tier. Click a slice to see which businesses are on that plan.
-          </p>
-        </div>
-      </div>
+      {/* Row 1 — growth + plans */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Business Growth Over Time" hint="Click any dot to see the businesses created that month">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={growthLine}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+              <XAxis dataKey="date" stroke="#57534E" />
+              <YAxis stroke="#57534E" />
+              <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} />
+              <Line
+                type="monotone" dataKey="count" stroke="#B85C38" strokeWidth={2}
+                dot={{ fill: '#B85C38', r: 5, style: { cursor: 'pointer' } }}
+                activeDot={{ r: 7 }}
+                onClick={(p) => p?.payload?.iso && openDrill(
+                  `Businesses created · ${p.payload.date}`,
+                  () => adminAPI.getTenantsByMonth(p.payload.iso),
+                  COLS_SUMMARY,
+                )}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-      {/* Charts Grid - Middle Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Customer Growth Chart */}
-        <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
-          <h2 className="text-xl font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Total Customers Growth
-          </h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={customerGrowthData}>
-                <defs>
-                  <linearGradient id="colorCustomers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#B85C38" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#B85C38" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                <XAxis dataKey="date" stroke="#57534E" />
-                <YAxis stroke="#57534E" label={{ value: 'Total Customers', angle: -90, position: 'insideLeft' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} />
-                <Area
-                  type="monotone"
-                  dataKey="customers"
-                  stroke="#B85C38"
-                  fillOpacity={1}
-                  fill="url(#colorCustomers)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-sm text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-4">
-            <span className="font-semibold">What does this mean?</span> This tracks the cumulative growth of customers across all businesses on the platform.
-          </p>
-        </div>
-
-        {/* Revenue by Plan */}
-        <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
-          <h2 className="text-xl font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Revenue by Plan (Monthly)
-          </h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueByPlanData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                <XAxis dataKey="name" stroke="#57534E" />
-                <YAxis stroke="#57534E" label={{ value: 'Revenue (€)', angle: -90, position: 'insideLeft' }} />
-                <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} />
-                <Bar dataKey="revenue" radius={[8, 8, 0, 0]}>
-                  {revenueByPlanData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PLAN_COLORS[entry.name.toLowerCase()] || '#B85C38'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-sm text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-4">
-            <span className="font-semibold">What does this mean?</span> This shows the monthly revenue breakdown by subscription plan tier.
-          </p>
-        </div>
-      </div>
-
-      {/* Drill-down Section for Plan Selection */}
-      {selectedPlan && drillDownData && drillDownData.length > 0 && (
-        <div className="bg-white p-8 rounded-lg border border-[#E7E5E4]">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-2xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
-                {selectedPlan} Plan Businesses
-              </h3>
-              <p className="text-[#57534E]">Overview of all businesses using the {selectedPlan} subscription plan</p>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedPlan(null);
-                setDrillDownData(null);
-              }}
-              className="text-[#A8A29E] hover:text-[#1C1917] transition-colors"
-            >
-              <X size={24} />
-            </button>
-          </div>
-
-          {/* Summary Stats */}
-          {getPlanStats(selectedPlan) && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8 pb-8 border-b border-[#E7E5E4]">
-              <div className="bg-[#F3EFE7] p-4 rounded-lg">
-                <p className="text-xs text-[#57534E] font-semibold uppercase mb-1">Price Per Month</p>
-                <p className="text-2xl font-bold text-[#1C1917]">{getPlanStats(selectedPlan).pricePerMonth}</p>
-              </div>
-              <div className="bg-[#F3EFE7] p-4 rounded-lg">
-                <p className="text-xs text-[#57534E] font-semibold uppercase mb-1">Total Businesses</p>
-                <p className="text-2xl font-bold text-[#1C1917]">{getPlanStats(selectedPlan).count}</p>
-              </div>
-              <div className="bg-[#F3EFE7] p-4 rounded-lg">
-                <p className="text-xs text-[#57534E] font-semibold uppercase mb-1">Total Customers</p>
-                <p className="text-2xl font-bold text-[#1C1917]">{getPlanStats(selectedPlan).totalCustomers.toLocaleString()}</p>
-              </div>
-              <div className="bg-[#F3EFE7] p-4 rounded-lg">
-                <p className="text-xs text-[#57534E] font-semibold uppercase mb-1">Total Visits</p>
-                <p className="text-2xl font-bold text-[#1C1917]">{getPlanStats(selectedPlan).totalVisits.toLocaleString()}</p>
-              </div>
-              <div className="bg-[#F3EFE7] p-4 rounded-lg">
-                <p className="text-xs text-[#57534E] font-semibold uppercase mb-1">Avg Customers/Business</p>
-                <p className="text-2xl font-bold text-[#1C1917]">{getPlanStats(selectedPlan).avgCustomersPerBusiness}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Sortable Tenants Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-[#E7E5E4]">
-                  <th
-                    className="py-3 px-4 text-sm font-semibold text-[#57534E] cursor-pointer hover:text-[#1C1917]"
-                    onClick={() => { setSortBy('name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-                  >
-                    Business Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th
-                    className="py-3 px-4 text-sm font-semibold text-[#57534E] cursor-pointer hover:text-[#1C1917]"
-                    onClick={() => { setSortBy('customers'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-                  >
-                    Customers {sortBy === 'customers' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th
-                    className="py-3 px-4 text-sm font-semibold text-[#57534E] cursor-pointer hover:text-[#1C1917]"
-                    onClick={() => { setSortBy('visits'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
-                  >
-                    Visits {sortBy === 'visits' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Created Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortTenants(drillDownData).map((tenant, idx) => (
-                  <tr key={idx} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7] transition-colors">
-                    <td className="py-3 px-4 font-medium text-[#1C1917]">{tenant.name}</td>
-                    <td className="py-3 px-4 text-[#57534E]">{tenant.customer_count || 0}</td>
-                    <td className="py-3 px-4 text-[#57534E]">{tenant.total_visits || 0}</td>
-                    <td className="py-3 px-4 text-[#57534E]">{new Date(tenant.created_at).toLocaleDateString()}</td>
-                  </tr>
+        <ChartCard title="Businesses by Subscription Plan" hint="Click a slice to list businesses on that plan">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={plans} cx="50%" cy="50%" outerRadius={110}
+                dataKey="value" labelLine={false}
+                label={({ name, value }) => `${name}: ${value}`}
+                onClick={(entry) => openDrill(
+                  `${entry.name} plan businesses`,
+                  () => adminAPI.getTenantsByPlan(entry.name.toLowerCase()),
+                  COLS_SUMMARY,
+                )}
+                style={{ cursor: 'pointer' }}
+              >
+                {plans.map((e, i) => (
+                  <Cell key={i} fill={PLAN_COLORS[e.name.toLowerCase()] || '#B85C38'} />
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </section>
 
-      {selectedPlan && (!drillDownData || drillDownData.length === 0) && (
-        <div className="bg-[#F3EFE7] p-8 rounded-lg border border-[#E7E5E4] text-center">
-          <p className="text-[#57534E]">No businesses found for the {selectedPlan} plan</p>
-          <button
-            onClick={() => {
-              setSelectedPlan(null);
-              setDrillDownData(null);
-            }}
-            className="mt-4 px-6 py-2 bg-[#B85C38] text-white rounded-lg font-semibold hover:bg-[#A34D2C] transition-colors"
-          >
-            Clear Selection
-          </button>
-        </div>
-      )}
+      {/* Row 2 — tier + acquisition */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Customer Tier Distribution" hint="Click a tier to rank businesses by customers in that tier">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={tiers} cx="50%" cy="50%" outerRadius={110}
+                dataKey="value" labelLine={false}
+                label={({ name, value }) => `${name}: ${value}`}
+                onClick={(entry) => openDrill(
+                  `${entry.name} customers — ranked by business`,
+                  () => adminAPI.getTenantsByTier(entry.name.toLowerCase()),
+                  COLS_TIER,
+                )}
+                style={{ cursor: 'pointer' }}
+              >
+                {tiers.map((e, i) => (
+                  <Cell key={i} fill={TIER_COLORS[e.name] || '#B85C38'} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-      {/* Business Performance Comparison Table */}
-      <div className="bg-white p-8 rounded-lg border border-[#E7E5E4]">
-        <h2 className="text-2xl font-bold text-[#1C1917] mb-6" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Business Performance Comparison
-        </h2>
-        <p className="text-sm text-[#57534E] mb-6">All businesses ranked by key metrics. Click column headers to sort.</p>
+        <ChartCard title="Customer Acquisition Sources" hint="Click a bar to see which businesses acquired via that channel">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={acquisitions} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+              <XAxis type="number" stroke="#57534E" />
+              <YAxis type="category" dataKey="name" stroke="#57534E" width={110} />
+              <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} />
+              <Bar
+                dataKey="value"
+                radius={[0, 8, 8, 0]}
+                cursor="pointer"
+                onClick={(entry) => openDrill(
+                  `Acquisition · ${entry.name}`,
+                  () => adminAPI.getTenantsByAcquisition(entry.raw),
+                  COLS_ACQ,
+                )}
+              >
+                {acquisitions.map((e, i) => (
+                  <Cell key={i} fill={ACQ_COLORS[i % ACQ_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </section>
+
+      {/* Row 3 — revenue + GPS */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Subscription Revenue by Plan (Monthly)" hint="Click a bar to list businesses on that plan">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={revenueByPlan}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+              <XAxis dataKey="name" stroke="#57534E" />
+              <YAxis stroke="#57534E" />
+              <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} formatter={(v) => `€${v.toLocaleString()}`} />
+              <Bar
+                dataKey="revenue"
+                radius={[8, 8, 0, 0]}
+                cursor="pointer"
+                onClick={(entry) => openDrill(
+                  `${entry.name} plan · €${entry.revenue.toLocaleString()}/mo`,
+                  () => adminAPI.getTenantsByPlan(entry.name.toLowerCase()),
+                  COLS_SUMMARY,
+                )}
+              >
+                {revenueByPlan.map((e, i) => (
+                  <Cell key={i} fill={PLAN_COLORS[e.name.toLowerCase()] || '#B85C38'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Geolocation Feature Adoption" hint="Click to see which businesses use GPS proximity">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={gps} cx="50%" cy="50%" outerRadius={110}
+                dataKey="value" labelLine={false}
+                label={({ name, value }) => `${name}: ${value}`}
+                onClick={(entry) => openDrill(
+                  entry.name,
+                  () => adminAPI.getTenantsByGeo(entry.name === 'GPS Enabled'),
+                  COLS_GEO,
+                )}
+                style={{ cursor: 'pointer' }}
+              >
+                {gps.map((e, i) => (
+                  <Cell key={i} fill={GPS_COLORS[e.name] || '#B85C38'} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </section>
+
+      {/* Performance leaderboard */}
+      <section className="bg-white p-6 rounded-xl border border-[#E7E5E4]">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Business Performance Leaderboard
+          </h2>
+          <p className="text-xs text-[#8B8680]">Click a row to see the business's customers</p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#E7E5E4]">
-                <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Business Name</th>
-                <th className="py-3 px-4 text-sm font-semibold text-[#57534E] cursor-pointer hover:text-[#1C1917]">
-                  Visits ↓
-                </th>
-                <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Customers</th>
-                <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Avg Points/Cust</th>
-                <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Plan</th>
+              <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2 px-3">Business</th>
+                <th className="py-2 px-3">Plan</th>
+                <th className="py-2 px-3">Customers</th>
+                <th className="py-2 px-3">Visits</th>
+                <th className="py-2 px-3">Revenue</th>
+                <th className="py-2 px-3">Avg pts</th>
+                <th className="py-2 px-3">GPS</th>
               </tr>
             </thead>
             <tbody>
-              {drillDownData && drillDownData.length > 0 ? sortTenants(drillDownData).map((tenant, idx) => (
-                <tr key={idx} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7] transition-colors">
-                  <td className="py-3 px-4 font-medium text-[#1C1917]">{tenant.name}</td>
-                  <td className="py-3 px-4 text-[#57534E] font-semibold">{tenant.total_visits || 0}</td>
-                  <td className="py-3 px-4 text-[#57534E]">{tenant.customer_count || 0}</td>
-                  <td className="py-3 px-4 text-[#57534E]">{(tenant.avg_points || 0).toFixed(1)}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase
-                      ${tenant.plan === 'vip' ? 'bg-[#B85C38] text-white' :
-                        tenant.plan === 'gold' ? 'bg-[#E3A869] text-[#1C1917]' :
-                        'bg-[#4A5D23] text-white'}`}>
-                      {tenant.plan}
-                    </span>
-                  </td>
+              {performance.map((t, i) => (
+                <tr
+                  key={t.id}
+                  className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7] transition-colors cursor-pointer"
+                  onClick={() => openDrill(
+                    `${t.name} · customers`,
+                    () => adminAPI.getTenantCustomers(t.id),
+                    [
+                      { key: 'name', label: 'Customer' },
+                      { key: 'email', label: 'Email' },
+                      { key: 'tier', label: 'Tier' },
+                      { key: 'visits', label: 'Visits' },
+                      { key: 'total_amount_paid', label: 'Spent', render: (v) => `€${(v || 0).toFixed(2)}` },
+                    ],
+                  )}
+                >
+                  <td className="py-2 px-3 text-[#8B8680]">{i + 1}</td>
+                  <td className="py-2 px-3 font-medium text-[#1C1917]">{t.name}</td>
+                  <td className="py-2 px-3 uppercase text-xs font-bold">{t.plan}</td>
+                  <td className="py-2 px-3">{t.customers}</td>
+                  <td className="py-2 px-3">{t.visits}</td>
+                  <td className="py-2 px-3">€{(t.revenue || 0).toLocaleString()}</td>
+                  <td className="py-2 px-3">{t.avg_points}</td>
+                  <td className="py-2 px-3">{t.geo_enabled ? <MapPin size={14} className="text-[#4A5D23]" /> : '—'}</td>
                 </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" className="py-8 text-center text-[#57534E]">
-                    Select a plan from the pie chart to see business comparisons
-                  </td>
-                </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* Businesses at Risk Section */}
-      <div className="bg-white p-8 rounded-lg border border-[#E7E5E4]">
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingDown size={24} className="text-[#B85C38]" />
-          <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+      {/* At risk */}
+      <section className="bg-white p-6 rounded-xl border border-[#E7E5E4]">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingDown size={20} className="text-[#B85C38]" />
+          <h2 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Businesses at Risk
           </h2>
         </div>
-        <p className="text-sm text-[#57534E] mb-6">Businesses with declining visits compared to previous period</p>
-
-        {businessesAtRisk && businessesAtRisk.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-[#E7E5E4]">
-                  <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Business Name</th>
-                  <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Customers</th>
-                  <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">This Month Visits</th>
-                  <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Last Month Visits</th>
-                  <th className="py-3 px-4 text-sm font-semibold text-[#57534E]">Change</th>
+        <p className="text-sm text-[#57534E] mb-4">Click a row for the customer list — a quick way to target a recovery campaign.</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+                <th className="py-2 px-3">Business</th>
+                <th className="py-2 px-3">Plan</th>
+                <th className="py-2 px-3">Visits</th>
+                <th className="py-2 px-3">Customers</th>
+                <th className="py-2 px-3">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {atRisk.map((t) => (
+                <tr
+                  key={t.id}
+                  className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7] transition-colors cursor-pointer"
+                  onClick={() => openDrill(
+                    `${t.name} · customers`,
+                    () => adminAPI.getTenantCustomers(t.id),
+                    [
+                      { key: 'name', label: 'Customer' },
+                      { key: 'email', label: 'Email' },
+                      { key: 'tier', label: 'Tier' },
+                      { key: 'visits', label: 'Visits' },
+                      { key: 'last_visit_date', label: 'Last visit', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                    ],
+                  )}
+                >
+                  <td className="py-2 px-3 font-medium text-[#1C1917]">{t.name}</td>
+                  <td className="py-2 px-3 uppercase text-xs font-bold">{t.plan}</td>
+                  <td className="py-2 px-3">{t.visits}</td>
+                  <td className="py-2 px-3">{t.customers}</td>
+                  <td className="py-2 px-3">€{(t.revenue || 0).toLocaleString()}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {businessesAtRisk.map((tenant, idx) => {
-                  const lastMonthVisits = Math.max((tenant.total_visits || 0) * 1.3, 10);
-                  const change = ((tenant.total_visits || 0) - lastMonthVisits) / lastMonthVisits * 100;
-                  return (
-                    <tr key={idx} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7] transition-colors">
-                      <td className="py-3 px-4 font-medium text-[#1C1917]">{tenant.name}</td>
-                      <td className="py-3 px-4 text-[#57534E]">{tenant.customer_count || 0}</td>
-                      <td className="py-3 px-4 text-[#57534E]">{tenant.total_visits || 0}</td>
-                      <td className="py-3 px-4 text-[#57534E]">{lastMonthVisits.toFixed(0)}</td>
-                      <td className="py-3 px-4">
-                        <span className="text-[#B85C38] font-semibold">{change.toFixed(1)}%</span>
-                      </td>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Drill-down modal */}
+      {drill && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDrill(null)}>
+          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] overflow-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+                {drill.title}
+              </h3>
+              <button onClick={() => setDrill(null)} className="text-[#A8A29E] hover:text-[#1C1917]"><X size={22} /></button>
+            </div>
+            {drillLoading ? (
+              <p className="text-[#57534E] py-8 text-center">Loading…</p>
+            ) : drill.rows.length === 0 ? (
+              <p className="text-[#57534E] py-8 text-center">No matching records.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+                      {drill.columns.map((c) => <th key={c.key} className="py-2 px-3">{c.label}</th>)}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {drill.rows.map((r, i) => (
+                      <tr key={i} className="border-b border-[#E7E5E4]">
+                        {drill.columns.map((c) => (
+                          <td key={c.key} className="py-2 px-3 text-[#1C1917]">
+                            {c.render ? c.render(r[c.key]) : (r[c.key] ?? '—')}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-[#57534E]">No businesses at risk detected. All businesses are performing well!</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
+
+const ChartCard = ({ title, hint, children }) => (
+  <div className="bg-white p-6 rounded-xl border border-[#E7E5E4]">
+    <h2 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>{title}</h2>
+    {hint && <p className="text-xs text-[#8B8680] mt-1 mb-3">{hint}</p>}
+    {children}
+  </div>
+);
 
 export default AdminAnalyticsPage;

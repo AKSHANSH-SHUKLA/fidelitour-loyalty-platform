@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
+import TierBadge from '../components/TierBadge';
 
 export default function CustomersPage() {
   const [allCustomers, setAllCustomers] = useState([]);
@@ -614,16 +615,7 @@ export default function CustomersPage() {
 
                 {/* Tier */}
                 <div className="flex items-center justify-center">
-                  <span
-                    className="px-3 py-1 rounded-full text-xs font-medium"
-                    style={{
-                      backgroundColor: getTierBadgeColor(customer.tier).bg,
-                      color: getTierBadgeColor(customer.tier).text,
-                      fontFamily: 'Manrope',
-                    }}
-                  >
-                    {customer.tier}
-                  </span>
+                  <TierBadge tier={customer.tier} size="sm" />
                 </div>
 
                 {/* Postal Code */}

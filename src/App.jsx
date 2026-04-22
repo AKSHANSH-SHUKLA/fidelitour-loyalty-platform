@@ -15,6 +15,8 @@ import CampaignsPage from './pages/CampaignsPage';
 import AIAssistantPage from './pages/AIAssistantPage';
 import SettingsPage from './pages/SettingsPage';
 import JoinPage from './pages/JoinPage';
+import MyWalletCardPage from './pages/MyWalletCardPage';
+import InsightsPage from './pages/InsightsPage';
 
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
@@ -22,6 +24,7 @@ import AdminTenantsPage from './pages/AdminTenantsPage';
 import AdminCardDesignerPage from './pages/AdminCardDesignerPage';
 import AdminAIAssistantPage from './pages/AdminAIAssistantPage';
 import AdminCampaignsPage from './pages/AdminCampaignsPage';
+import AdminInsightsPage from './pages/AdminInsightsPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -50,15 +53,17 @@ function App() {
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/join/:slug" element={<JoinPage />} />
+          <Route path="/card/:barcodeId" element={<MyWalletCardPage />} />
 
           {/* Business Owner Routes */}
           <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['business_owner']}>
+            <ProtectedRoute allowedRoles={['business_owner', 'manager', 'staff']}>
               <DashboardLayout />
             </ProtectedRoute>
           }>
             <Route index element={<OwnerDashboard />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="insights" element={<InsightsPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="map" element={<CustomerMapPage />} />
             <Route path="scan" element={<ScanPage />} />
@@ -75,6 +80,7 @@ function App() {
           }>
             <Route index element={<AdminDashboard />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="insights" element={<AdminInsightsPage />} />
             <Route path="tenants" element={<AdminTenantsPage />} />
             <Route path="campaigns" element={<AdminCampaignsPage />} />
             <Route path="card-designer" element={<AdminCardDesignerPage />} />

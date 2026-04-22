@@ -1,13 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ownerAPI } from '../lib/api';
-import { X, MapPin } from 'lucide-react';
-
-const POSTAL_CODE_CENTROIDS = {
-  '37000': { x: 250, y: 200, name: 'Tours Centre' },
-  '37100': { x: 450, y: 150, name: 'Saint-Cyr' },
-  '37200': { x: 250, y: 400, name: 'Tours Sud' },
-  '37300': { x: 450, y: 400, name: 'Tours Est' },
-};
+import { X, MapPin, Navigation, TrendingDown, Users, Euro } from 'lucide-react';
+import TierBadge from '../components/TierBadge';
 
 const TIER_COLORS = {
   bronze: '#B85C38',
@@ -16,20 +10,38 @@ const TIER_COLORS = {
 };
 
 const SOURCE_BADGES = {
-  'qr_store': { emoji: '📱', label: 'QR in store' },
-  'instagram': { emoji: '📸', label: 'Instagram' },
-  'tiktok': { emoji: '🎵', label: 'TikTok' },
-  'facebook': { emoji: '👥', label: 'Facebook' },
-  'website': { emoji: '🌐', label: 'Website' },
-  'friend': { emoji: '💬', label: 'Referral' },
-  'other': { emoji: '—', label: 'Other' },
+  qr_store: { emoji: '📱', label: 'QR in store' },
+  instagram: { emoji: '📸', label: 'Instagram' },
+  tiktok: { emoji: '🎵', label: 'TikTok' },
+  facebook: { emoji: '👥', label: 'Facebook' },
+  website: { emoji: '🌐', label: 'Website' },
+  friend: { emoji: '💬', label: 'Referral' },
+  other: { emoji: '—', label: 'Other' },
 };
+
+// France bounding box for lat/lng → SVG projection
+const FRANCE_BOUNDS = {
+  minLat: 41.3, // Corsica south
+  maxLat: 51.2, // Dunkirk north
+  minLng: -5.2, // Brittany west
+  maxLng: 9.7, // Strasbourg / Nice east
+};
+const SVG_WIDTH = 800;
+const SVG_HEIGHT = 900;
+const PADDING = 40;
+
+function projectToSVG(lat, lng) {
+  const { minLat, maxLat, minLng, maxLng } = FRANCE_BOUNDS;
+  const x = PADDING + ((lng - minLng) / (maxLng - minLng)) * (SVG_WIDTH - 2 * PADDING);
+  const y = PADDING + ((maxLat - lat) / (maxLat - minLat)) * (SVG_HEIGHT - 2 * PADDING);
+  return { x, y };
+}
 
 export default function CustomerMapPage() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPostalCode, setSelectedPostalCode] = useState(null);
+  const [selectedDept, setSelectedDept] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [tierFilter, setTierFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
@@ -38,299 +50,214 @@ export default function CustomerMapPage() {
     const fetchCustomers = async () => {
       try {
         setLoading(true);
-        const res = await ownerAPI.post('/owner/customers/map', {});
+        const res = await ownerAPI.getCustomerMap();
         setCustomers(res.data || []);
       } catch (err) {
-        setError(err.message);
+        setError(err.message || 'Failed to load customer map');
       } finally {
         setLoading(false);
       }
     };
-
     fetchCustomers();
   }, []);
 
   // Filter customers
-  const filteredCustomers = customers.filter((c) => {
-    if (tierFilter !== 'all' && c.tier !== tierFilter) return false;
-    if (sourceFilter !== 'all' && c.acquisition_source !== sourceFilter) return false;
-    if (selectedPostalCode && c.postal_code !== selectedPostalCode) return false;
-    return true;
-  });
+  const filteredCustomers = useMemo(() => {
+    return customers.filter((c) => {
+      if (tierFilter !== 'all' && c.tier !== tierFilter) return false;
+      if (sourceFilter !== 'all' && c.acquisition_source !== sourceFilter) return false;
+      if (selectedDept && c.department_code !== selectedDept) return false;
+      return true;
+    });
+  }, [customers, tierFilter, sourceFilter, selectedDept]);
 
-  // Calculate stats by postal code
-  const getStatsByPostalCode = () => {
-    const stats = {};
-    const allFiltered = customers.filter((c) => {
+  // Aggregate stats by department
+  const deptStats = useMemo(() => {
+    const pool = customers.filter((c) => {
       if (tierFilter !== 'all' && c.tier !== tierFilter) return false;
       if (sourceFilter !== 'all' && c.acquisition_source !== sourceFilter) return false;
       return true;
     });
+    const map = {};
+    for (const c of pool) {
+      const key = c.department_code || 'unknown';
+      if (!map[key]) {
+        map[key] = {
+          code: key,
+          name: c.department_name || 'Unknown',
+          count: 0,
+          revenue: 0,
+          visits: 0,
+          lat: c.lat,
+          lng: c.lng,
+          tierDist: { bronze: 0, silver: 0, gold: 0 },
+        };
+      }
+      map[key].count += 1;
+      map[key].revenue += c.total_amount_paid || 0;
+      map[key].visits += c.total_visits || 0;
+      if (map[key].tierDist[c.tier] !== undefined) map[key].tierDist[c.tier] += 1;
+    }
+    return map;
+  }, [customers, tierFilter, sourceFilter]);
 
-    Object.keys(POSTAL_CODE_CENTROIDS).forEach((code) => {
-      const custs = allFiltered.filter((c) => c.postal_code === code);
-      const totalRevenue = custs.reduce((sum, c) => sum + (c.total_amount_paid || 0), 0);
-      const tierDist = {
-        bronze: custs.filter((c) => c.tier === 'bronze').length,
-        silver: custs.filter((c) => c.tier === 'silver').length,
-        gold: custs.filter((c) => c.tier === 'gold').length,
-      };
+  const weakestDept = useMemo(() => {
+    const entries = Object.values(deptStats);
+    if (entries.length === 0) return null;
+    return entries.reduce((min, d) => (d.count < min.count ? d : min), entries[0]);
+  }, [deptStats]);
 
-      stats[code] = {
-        count: custs.length,
-        totalRevenue,
-        avgPerCustomer: custs.length > 0 ? totalRevenue / custs.length : 0,
-        tierDist,
-      };
-    });
-
-    return stats;
-  };
-
-  const stats = getStatsByPostalCode();
-  const weakestRegion = Object.entries(stats).reduce(
-    (min, [code, s]) => (min === null || s.count < min.stats.count ? { code, stats: s } : min),
-    null
-  ) || { code: '37000', stats: { count: 0, totalRevenue: 0, avgPerCustomer: 0, tierDist: { bronze: 0, silver: 0, gold: 0 } } };
+  const strongestDept = useMemo(() => {
+    const entries = Object.values(deptStats);
+    if (entries.length === 0) return null;
+    return entries.reduce((max, d) => (d.count > max.count ? d : max), entries[0]);
+  }, [deptStats]);
 
   if (loading) {
     return (
-      <div
-        className="p-8"
-        style={{ backgroundColor: '#FDFBF7' }}
-      >
-        <p style={{ color: '#57534E' }}>Loading map...</p>
+      <div className="p-8" style={{ backgroundColor: '#FDFBF7' }}>
+        <p style={{ color: '#57534E' }}>Loading France customer map…</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        className="p-8"
-        style={{ backgroundColor: '#FDFBF7' }}
-      >
-        <p style={{ color: '#B85C38' }}>Error: {error}</p>
+      <div className="p-8" style={{ backgroundColor: '#FDFBF7' }}>
+        <p style={{ color: '#B85C38', fontFamily: 'Manrope' }}>Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <div
-      className="min-h-screen p-8"
-      style={{ backgroundColor: '#FDFBF7' }}
-    >
+    <div className="min-h-screen p-8" style={{ backgroundColor: '#FDFBF7' }}>
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1
           className="text-4xl font-semibold mb-2"
           style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}
         >
-          Tours Customer Map
+          Customer Map — France
         </h1>
         <p style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-          Visualize customer distribution by region and acquisition source
+          Visualize your customer base across French departments and regions.
         </p>
       </div>
 
       {/* Filters */}
       <div
-        className="mb-6 p-4 rounded-lg border"
-        style={{
-          backgroundColor: '#F3EFE7',
-          borderColor: '#E7E5E4',
-        }}
+        className="mb-6 p-4 rounded-lg border flex gap-4 flex-wrap items-end"
+        style={{ backgroundColor: '#F3EFE7', borderColor: '#E7E5E4' }}
       >
-        <div className="flex gap-4 flex-wrap">
-          <div>
-            <label
-              className="block text-sm mb-2"
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-                fontSize: '12px',
-              }}
-            >
-              Tier Filter
-            </label>
-            <select
-              value={tierFilter}
-              onChange={(e) => setTierFilter(e.target.value)}
-              className="px-3 py-2 rounded border text-sm outline-none"
-              style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
-                fontFamily: 'Manrope',
-              }}
-            >
-              <option value="all">All Tiers</option>
-              <option value="bronze">Bronze</option>
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
-            </select>
-          </div>
-          <div>
-            <label
-              className="block text-sm mb-2"
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-                fontSize: '12px',
-              }}
-            >
-              Source Filter
-            </label>
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="px-3 py-2 rounded border text-sm outline-none"
-              style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
-                fontFamily: 'Manrope',
-              }}
-            >
-              <option value="all">All Sources</option>
-              <option value="qr_store">QR in store</option>
-              <option value="instagram">Instagram</option>
-              <option value="tiktok">TikTok</option>
-              <option value="facebook">Facebook</option>
-              <option value="website">Website</option>
-              <option value="friend">Referral</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+        <div>
+          <label className="block text-xs mb-1" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
+            Tier
+          </label>
+          <select
+            value={tierFilter}
+            onChange={(e) => setTierFilter(e.target.value)}
+            className="px-3 py-2 rounded border text-sm outline-none"
+            style={{ backgroundColor: '#FDFBF7', borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
+          >
+            <option value="all">All Tiers</option>
+            <option value="bronze">Bronze</option>
+            <option value="silver">Silver</option>
+            <option value="gold">Gold</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs mb-1" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
+            Acquisition Source
+          </label>
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            className="px-3 py-2 rounded border text-sm outline-none"
+            style={{ backgroundColor: '#FDFBF7', borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
+          >
+            <option value="all">All Sources</option>
+            {Object.entries(SOURCE_BADGES).map(([k, v]) => (
+              <option key={k} value={k}>{v.emoji} {v.label}</option>
+            ))}
+          </select>
+        </div>
+        {selectedDept && (
+          <button
+            onClick={() => setSelectedDept(null)}
+            className="px-3 py-2 rounded border text-sm flex items-center gap-2"
+            style={{ backgroundColor: '#FDFBF7', borderColor: '#B85C38', color: '#B85C38' }}
+          >
+            <X size={14} /> Clear department filter ({selectedDept})
+          </button>
+        )}
+        <div className="ml-auto text-sm" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
+          {filteredCustomers.length} of {customers.length} customers
         </div>
       </div>
 
+      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-        {/* SVG Map */}
+        {/* SVG map */}
         <div className="lg:col-span-3">
           <div
-            className="rounded-lg border p-6"
-            style={{
-              backgroundColor: 'white',
-              borderColor: '#E7E5E4',
-            }}
+            className="rounded-lg border p-4"
+            style={{ backgroundColor: 'white', borderColor: '#E7E5E4' }}
           >
-            <SVGMap
-              customers={customers}
-              filteredCustomers={filteredCustomers}
-              stats={stats}
-              selectedPostalCode={selectedPostalCode}
-              onSelectPostalCode={setSelectedPostalCode}
+            <FranceSVGMap
+              customers={filteredCustomers}
+              deptStats={deptStats}
+              selectedDept={selectedDept}
+              onSelectDept={setSelectedDept}
               onSelectCustomer={setSelectedCustomer}
-              tierFilter={tierFilter}
-              sourceFilter={sourceFilter}
             />
           </div>
         </div>
 
         {/* Sidebar */}
-        <div
-          className="rounded-lg border p-4"
-          style={{
-            backgroundColor: 'white',
-            borderColor: '#E7E5E4',
-          }}
-        >
+        <div className="rounded-lg border p-4" style={{ backgroundColor: 'white', borderColor: '#E7E5E4' }}>
           {selectedCustomer ? (
-            <CustomerDetail
-              customer={selectedCustomer}
-              onClose={() => setSelectedCustomer(null)}
-            />
-          ) : selectedPostalCode ? (
-            <RegionDetail
-              postalCode={selectedPostalCode}
-              stats={stats[selectedPostalCode]}
-              filteredCustomers={filteredCustomers.filter((c) => c.postal_code === selectedPostalCode)}
-              onClose={() => setSelectedPostalCode(null)}
+            <CustomerDetail customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />
+          ) : selectedDept && deptStats[selectedDept] ? (
+            <DepartmentDetail
+              dept={deptStats[selectedDept]}
+              customers={filteredCustomers.filter((c) => c.department_code === selectedDept)}
+              onClose={() => setSelectedDept(null)}
+              onSelectCustomer={setSelectedCustomer}
             />
           ) : (
             <OverviewPanel
-              stats={stats}
-              weakestRegion={weakestRegion}
+              deptStats={deptStats}
               filteredCustomers={filteredCustomers}
+              weakestDept={weakestDept}
+              strongestDept={strongestDept}
+              onSelectDept={setSelectedDept}
             />
           )}
         </div>
       </div>
 
       {/* Legend */}
-      <div
-        className="rounded-lg border p-4"
-        style={{
-          backgroundColor: 'white',
-          borderColor: '#E7E5E4',
-        }}
-      >
-        <h3
-          style={{
-            color: '#1C1917',
-            fontFamily: 'Manrope',
-            fontWeight: '600',
-            marginBottom: '12px',
-          }}
-        >
+      <div className="rounded-lg border p-4" style={{ backgroundColor: 'white', borderColor: '#E7E5E4' }}>
+        <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600, marginBottom: '12px' }}>
           Legend
         </h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4 text-xs" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
           <div>
-            <p
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-                fontSize: '12px',
-                marginBottom: '8px',
-                fontWeight: '600',
-              }}
-            >
-              Tier Colors
-            </p>
-            <div className="flex flex-col gap-2">
-              {Object.entries(TIER_COLORS).map(([tier, color]) => (
-                <div key={tier} className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span
-                    style={{
-                      color: '#57534E',
-                      fontFamily: 'Manrope',
-                      fontSize: '12px',
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {tier}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <p style={{ fontWeight: 600, marginBottom: '6px' }}>Tier colors</p>
+            {Object.entries(TIER_COLORS).map(([tier, color]) => (
+              <div key={tier} className="flex items-center gap-2 mb-1">
+                <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                <span style={{ textTransform: 'capitalize' }}>{tier}</span>
+              </div>
+            ))}
           </div>
           <div>
-            <p
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-                fontSize: '12px',
-                marginBottom: '8px',
-                fontWeight: '600',
-              }}
-            >
-              Marker Size
-            </p>
-            <p
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-                fontSize: '12px',
-              }}
-            >
-              Larger = more spending
-            </p>
+            <p style={{ fontWeight: 600, marginBottom: '6px' }}>Marker size</p>
+            <p>Larger circle = higher total spend</p>
+          </div>
+          <div>
+            <p style={{ fontWeight: 600, marginBottom: '6px' }}>Department bubbles</p>
+            <p>Ring size = customer count. Click to drill down.</p>
           </div>
         </div>
       </div>
@@ -338,579 +265,324 @@ export default function CustomerMapPage() {
   );
 }
 
-function SVGMap({
-  customers,
-  filteredCustomers,
-  stats,
-  selectedPostalCode,
-  onSelectPostalCode,
-  onSelectCustomer,
-  tierFilter,
-  sourceFilter,
-}) {
+// ------- France SVG map component -------
+function FranceSVGMap({ customers, deptStats, selectedDept, onSelectDept, onSelectCustomer }) {
+  const maxCustomers = Math.max(1, ...customers.map((c) => c.total_amount_paid || 0));
+  const deptCounts = Object.values(deptStats).map((d) => d.count);
+  const maxDeptCount = Math.max(1, ...deptCounts);
+
   return (
-    <svg width="100%" height="600" viewBox="0 0 800 600" style={{ border: '1px solid #E7E5E4' }}>
-      {/* Background river curve (Loire) */}
+    <svg
+      viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+      width="100%"
+      height="auto"
+      style={{ maxHeight: '720px', border: '1px solid #E7E5E4', backgroundColor: '#F8FAFC' }}
+    >
       <defs>
-        <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#E0F2FE" />
-          <stop offset="100%" stopColor="#BAE6FD" />
-        </linearGradient>
+        <radialGradient id="franceBg" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor="#EFF6FF" />
+          <stop offset="100%" stopColor="#E0F2FE" />
+        </radialGradient>
       </defs>
 
-      {/* River path (diagonal curve) */}
+      {/* Simplified France outline (approximation) */}
       <path
-        d="M 100 50 Q 300 200, 600 500"
-        stroke="url(#riverGradient)"
-        strokeWidth="40"
-        fill="none"
-        opacity="0.5"
+        d="M 200 120 L 280 100 L 380 90 L 470 100 L 540 130 L 620 180 L 680 260 L 710 340 L 720 430 L 700 520 L 680 600 L 640 680 L 580 740 L 490 780 L 400 790 L 320 780 L 240 750 L 180 700 L 140 620 L 120 540 L 110 440 L 120 360 L 140 280 L 170 200 Z"
+        fill="url(#franceBg)"
+        stroke="#B85C38"
+        strokeWidth="2"
+        strokeOpacity="0.5"
       />
 
-      {/* City name label */}
-      <text
-        x="400"
-        y="30"
-        fontSize="24"
-        fontWeight="bold"
-        textAnchor="middle"
-        fill="#1C1917"
-        fontFamily="Cormorant Garamond"
-      >
-        Tours, France
-      </text>
+      {/* Corsica island */}
+      <ellipse cx="720" cy="770" rx="30" ry="50" fill="url(#franceBg)" stroke="#B85C38" strokeWidth="1.5" strokeOpacity="0.5" />
+      <text x="720" y="775" fontSize="9" textAnchor="middle" fill="#57534E" fontFamily="Manrope">Corse</text>
 
-      {/* Postal code regions with heatmap */}
-      {Object.entries(POSTAL_CODE_CENTROIDS).map(([code, pos]) => {
-        const regionStats = stats[code] || { count: 0, totalRevenue: 0, avgPerCustomer: 0, tierDist: { bronze: 0, silver: 0, gold: 0 } };
-        const counts = Object.values(stats).map((s) => s.count);
-        const maxCount = counts.length > 0 ? Math.max(...counts) : 0;
-        const density = maxCount > 0 ? regionStats.count / maxCount : 0;
-        const backgroundColor = density > 0.7 ? '#B85C3825' : density > 0.4 ? '#B85C3815' : '#B85C380A';
-
+      {/* Major city anchor labels */}
+      {[
+        { name: 'Paris', lat: 48.86, lng: 2.35 },
+        { name: 'Lyon', lat: 45.76, lng: 4.84 },
+        { name: 'Marseille', lat: 43.30, lng: 5.37 },
+        { name: 'Toulouse', lat: 43.60, lng: 1.44 },
+        { name: 'Bordeaux', lat: 44.84, lng: -0.58 },
+        { name: 'Lille', lat: 50.63, lng: 3.06 },
+        { name: 'Nantes', lat: 47.22, lng: -1.55 },
+        { name: 'Strasbourg', lat: 48.57, lng: 7.75 },
+        { name: 'Tours', lat: 47.39, lng: 0.69 },
+        { name: 'Nice', lat: 43.71, lng: 7.26 },
+      ].map((city) => {
+        const { x, y } = projectToSVG(city.lat, city.lng);
         return (
-          <g key={code}>
-            {/* Region circle background */}
-            <circle
-              cx={pos.x}
-              cy={pos.y}
-              r="80"
-              fill={backgroundColor}
-              stroke="#B85C38"
-              strokeWidth="2"
-              opacity="0.6"
-              style={{ cursor: 'pointer' }}
-              onClick={() => onSelectPostalCode(code === selectedPostalCode ? null : code)}
-            />
-
-            {/* Region label */}
-            <text
-              x={pos.x}
-              y={pos.y - 10}
-              fontSize="14"
-              fontWeight="bold"
-              textAnchor="middle"
-              fill="#1C1917"
-              fontFamily="Manrope"
-            >
-              {code}
+          <g key={city.name}>
+            <circle cx={x} cy={y} r="2" fill="#57534E" opacity="0.4" />
+            <text x={x + 6} y={y + 3} fontSize="9" fill="#57534E" opacity="0.7" fontFamily="Manrope">
+              {city.name}
             </text>
-
-            {/* Customer count */}
-            <text
-              x={pos.x}
-              y={pos.y + 15}
-              fontSize="12"
-              textAnchor="middle"
-              fill="#57534E"
-              fontFamily="Manrope"
-            >
-              {regionStats.count} customers
-            </text>
-
-            {/* Customers in this region */}
-            {filteredCustomers
-              .filter((c) => c.postal_code === code)
-              .map((customer, idx) => {
-                // Scatter points in a circle around the centroid
-                const angle = (idx / Math.max(1, filteredCustomers.filter((c) => c.postal_code === code).length)) * Math.PI * 2;
-                const radius = 40 + (idx % 3) * 15;
-                const cx = pos.x + Math.cos(angle) * radius;
-                const cy = pos.y + Math.sin(angle) * radius;
-
-                // Size based on spending
-                const maxSpending = Math.max(...customers.map((c) => c.total_amount_paid || 0));
-                const size = 4 + ((customer.total_amount_paid || 0) / Math.max(1, maxSpending)) * 6;
-
-                return (
-                  <circle
-                    key={`${customer.id}-${idx}`}
-                    cx={cx}
-                    cy={cy}
-                    r={size}
-                    fill={TIER_COLORS[customer.tier]}
-                    stroke="white"
-                    strokeWidth="1"
-                    style={{ cursor: 'pointer' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectCustomer(customer);
-                    }}
-                  >
-                    <title>{customer.name}</title>
-                  </circle>
-                );
-              })}
           </g>
         );
       })}
+
+      {/* Department aggregated bubbles */}
+      {Object.values(deptStats).map((dept) => {
+        if (!dept.lat || !dept.lng) return null;
+        const { x, y } = projectToSVG(dept.lat, dept.lng);
+        const bubbleR = 10 + (dept.count / maxDeptCount) * 24;
+        const isSelected = selectedDept === dept.code;
+        return (
+          <g key={dept.code} style={{ cursor: 'pointer' }} onClick={() => onSelectDept(isSelected ? null : dept.code)}>
+            <circle
+              cx={x}
+              cy={y}
+              r={bubbleR}
+              fill="#B85C38"
+              fillOpacity={isSelected ? 0.35 : 0.15}
+              stroke="#B85C38"
+              strokeWidth={isSelected ? 2.5 : 1.5}
+            />
+            <text
+              x={x}
+              y={y + 3}
+              fontSize="11"
+              textAnchor="middle"
+              fill="#1C1917"
+              fontWeight="600"
+              fontFamily="Manrope"
+              style={{ pointerEvents: 'none' }}
+            >
+              {dept.count}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Individual customer markers */}
+      {customers.map((c) => {
+        if (!c.lat || !c.lng) return null;
+        const { x, y } = projectToSVG(c.lat, c.lng);
+        const size = 3 + ((c.total_amount_paid || 0) / maxCustomers) * 4;
+        return (
+          <circle
+            key={c.id}
+            cx={x}
+            cy={y}
+            r={size}
+            fill={TIER_COLORS[c.tier] || TIER_COLORS.bronze}
+            stroke="white"
+            strokeWidth="0.5"
+            fillOpacity="0.85"
+            style={{ cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectCustomer(c);
+            }}
+          >
+            <title>{c.name} — {c.postal_code}</title>
+          </circle>
+        );
+      })}
+
+      {/* Title */}
+      <text x={SVG_WIDTH / 2} y={30} fontSize="20" fontWeight="600" textAnchor="middle" fill="#1C1917" fontFamily="Cormorant Garamond">
+        France — Customer Distribution
+      </text>
     </svg>
   );
 }
 
-function OverviewPanel({ stats, weakestRegion, filteredCustomers }) {
+// ------- Overview panel -------
+function OverviewPanel({ deptStats, filteredCustomers, weakestDept, strongestDept, onSelectDept }) {
+  const totalRevenue = filteredCustomers.reduce((sum, c) => sum + (c.total_amount_paid || 0), 0);
+  const sortedDepts = Object.values(deptStats).sort((a, b) => b.count - a.count);
+
   return (
     <div>
-      <h3
-        style={{
-          color: '#1C1917',
-          fontFamily: 'Manrope',
-          fontWeight: '600',
-          marginBottom: '12px',
-        }}
-      >
+      <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600, marginBottom: '12px' }}>
         Overview
       </h3>
 
-      <div className="space-y-4">
-        <div
-          style={{
-            backgroundColor: '#F3EFE7',
-            padding: '12px',
-            borderRadius: '8px',
-          }}
-        >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '12px',
-              marginBottom: '4px',
-            }}
-          >
-            Total Customers
-          </p>
-          <p
-            style={{
-              color: '#1C1917',
-              fontFamily: 'Manrope',
-              fontSize: '20px',
-              fontWeight: '600',
-            }}
-          >
-            {filteredCustomers.length}
-          </p>
+      <div
+        style={{ backgroundColor: '#F3EFE7', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}
+      >
+        <div className="flex items-center gap-2 mb-1" style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px' }}>
+          <Users size={12} /> <span>Total customers</span>
         </div>
+        <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '22px', fontWeight: 600 }}>
+          {filteredCustomers.length}
+        </p>
+      </div>
 
+      <div
+        style={{ backgroundColor: '#F3EFE7', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}
+      >
+        <div className="flex items-center gap-2 mb-1" style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px' }}>
+          <Euro size={12} /> <span>Total revenue</span>
+        </div>
+        <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '22px', fontWeight: 600 }}>
+          €{totalRevenue.toFixed(0)}
+        </p>
+      </div>
+
+      {weakestDept && weakestDept.count > 0 && (
         <div
           style={{
             backgroundColor: '#FFFBEB',
             padding: '12px',
             borderRadius: '8px',
             border: '1px solid #FCD34D',
+            marginBottom: '12px',
           }}
         >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '11px',
-              marginBottom: '8px',
-              fontWeight: '600',
-            }}
-          >
-            Weakest Region
+          <div className="flex items-center gap-2 mb-1" style={{ color: '#92400E', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600 }}>
+            <TrendingDown size={12} /> <span>Weakest department</span>
+          </div>
+          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '13px', fontWeight: 600 }}>
+            {weakestDept.name} ({weakestDept.code}) — {weakestDept.count} customers
           </p>
-          <p
-            style={{
-              color: '#1C1917',
-              fontFamily: 'Manrope',
-              fontSize: '14px',
-              fontWeight: '600',
-              marginBottom: '4px',
-            }}
-          >
-            {weakestRegion.code} ({weakestRegion.stats.count} customers)
-          </p>
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '11px',
-              marginBottom: '8px',
-            }}
-          >
-            Consider running a targeted Instagram campaign or partnering with a local business for cross-promotion in this area.
+          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '10px', marginTop: '4px' }}>
+            Consider a targeted Instagram or Facebook campaign here.
           </p>
         </div>
+      )}
 
-        <div>
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '12px',
-              marginBottom: '8px',
-              fontWeight: '600',
-            }}
-          >
-            Customers by Region
+      {strongestDept && (
+        <div style={{ backgroundColor: '#ECFDF5', padding: '12px', borderRadius: '8px', border: '1px solid #6EE7B7', marginBottom: '12px' }}>
+          <p style={{ color: '#065F46', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>
+            Strongest department
           </p>
-          <div className="space-y-2">
-            {Object.entries(stats).map(([code, s]) => (
-              <div key={code} className="flex justify-between items-center text-xs">
-                <span style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-                  {code}
-                </span>
-                <span style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: '600' }}>
-                  {s.count}
-                </span>
-              </div>
-            ))}
-          </div>
+          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '13px', fontWeight: 600 }}>
+            {strongestDept.name} ({strongestDept.code}) — {strongestDept.count} customers
+          </p>
+        </div>
+      )}
+
+      <div>
+        <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
+          Top departments
+        </p>
+        <div className="space-y-1">
+          {sortedDepts.slice(0, 10).map((d) => (
+            <button
+              key={d.code}
+              onClick={() => onSelectDept(d.code)}
+              className="w-full text-left px-2 py-1 rounded hover:bg-[#F3EFE7] flex justify-between items-center"
+              style={{ fontFamily: 'Manrope', fontSize: '12px' }}
+            >
+              <span style={{ color: '#1C1917' }}>{d.code} — {d.name}</span>
+              <span style={{ color: '#B85C38', fontWeight: 600 }}>{d.count}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-function RegionDetail({ postalCode, stats, filteredCustomers, onClose }) {
+// ------- Department detail -------
+function DepartmentDetail({ dept, customers, onClose, onSelectCustomer }) {
   return (
     <div>
-      <div className="flex items-start justify-between mb-4">
-        <h3
-          style={{
-            color: '#1C1917',
-            fontFamily: 'Manrope',
-            fontWeight: '600',
-          }}
-        >
-          Region {postalCode}
-        </h3>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <X size={18} />
-        </button>
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600 }}>
+            {dept.name}
+          </h3>
+          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px' }}>
+            Department {dept.code}
+          </p>
+        </div>
+        <button onClick={onClose}><X size={18} /></button>
       </div>
 
-      <div className="space-y-3">
-        <div
-          style={{
-            backgroundColor: '#F3EFE7',
-            padding: '12px',
-            borderRadius: '8px',
-          }}
-        >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '12px',
-              marginBottom: '4px',
-            }}
-          >
-            Total Customers
-          </p>
-          <p
-            style={{
-              color: '#1C1917',
-              fontFamily: 'Manrope',
-              fontSize: '18px',
-              fontWeight: '600',
-            }}
-          >
-            {stats.count}
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <div style={{ backgroundColor: '#F3EFE7', padding: '10px', borderRadius: '8px' }}>
+          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '10px' }}>Customers</p>
+          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600 }}>
+            {dept.count}
           </p>
         </div>
-
-        <div
-          style={{
-            backgroundColor: '#F3EFE7',
-            padding: '12px',
-            borderRadius: '8px',
-          }}
-        >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '12px',
-              marginBottom: '4px',
-            }}
-          >
-            Total Revenue
-          </p>
-          <p
-            style={{
-              color: '#1C1917',
-              fontFamily: 'Manrope',
-              fontSize: '18px',
-              fontWeight: '600',
-            }}
-          >
-            €{stats.totalRevenue.toFixed(2)}
+        <div style={{ backgroundColor: '#F3EFE7', padding: '10px', borderRadius: '8px' }}>
+          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '10px' }}>Revenue</p>
+          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600 }}>
+            €{dept.revenue.toFixed(0)}
           </p>
         </div>
+      </div>
 
-        <div
-          style={{
-            backgroundColor: '#F3EFE7',
-            padding: '12px',
-            borderRadius: '8px',
-          }}
-        >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '12px',
-              marginBottom: '4px',
-            }}
-          >
-            Avg per Customer
-          </p>
-          <p
-            style={{
-              color: '#1C1917',
-              fontFamily: 'Manrope',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            €{stats.avgPerCustomer.toFixed(2)}
-          </p>
+      <div className="mb-4">
+        <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600, marginBottom: '6px' }}>
+          Tier breakdown
+        </p>
+        <div className="flex gap-2">
+          {Object.entries(dept.tierDist).map(([t, n]) => (
+            <div key={t} className="flex-1 text-center py-2 rounded" style={{ backgroundColor: TIER_COLORS[t] + '33' }}>
+              <p style={{ color: '#1C1917', fontSize: '14px', fontWeight: 600, fontFamily: 'Manrope' }}>{n}</p>
+              <p style={{ color: '#57534E', fontSize: '10px', fontFamily: 'Manrope', textTransform: 'capitalize' }}>{t}</p>
+            </div>
+          ))}
         </div>
+      </div>
 
-        <div>
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '11px',
-              marginBottom: '6px',
-              fontWeight: '600',
-            }}
-          >
-            Tier Distribution
-          </p>
-          <div className="space-y-1">
-            {Object.entries(stats.tierDist).map(([tier, count]) => (
-              <div key={tier} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: TIER_COLORS[tier] }}
-                  />
-                  <span
-                    style={{
-                      color: '#57534E',
-                      fontFamily: 'Manrope',
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {tier}
-                  </span>
-                </div>
-                <span
-                  style={{
-                    color: '#1C1917',
-                    fontFamily: 'Manrope',
-                    fontWeight: '600',
-                  }}
-                >
-                  {count}
-                </span>
-              </div>
-            ))}
-          </div>
+      <div>
+        <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600, marginBottom: '6px' }}>
+          Customers in this department
+        </p>
+        <div className="space-y-1 max-h-60 overflow-auto">
+          {customers.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onSelectCustomer(c)}
+              className="w-full text-left px-2 py-1 rounded hover:bg-[#F3EFE7] flex items-center justify-between"
+              style={{ fontFamily: 'Manrope', fontSize: '12px' }}
+            >
+              <span style={{ color: '#1C1917' }}>{c.name}</span>
+              <TierBadge tier={c.tier} size="xs" showLabel={false} />
+            </button>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
+// ------- Individual customer detail -------
 function CustomerDetail({ customer, onClose }) {
-  const badge = SOURCE_BADGES[customer.acquisition_source] || SOURCE_BADGES.other;
-
+  const src = SOURCE_BADGES[customer.acquisition_source] || SOURCE_BADGES.other;
   return (
     <div>
-      <div className="flex items-start justify-between mb-4">
-        <h3
-          style={{
-            color: '#1C1917',
-            fontFamily: 'Manrope',
-            fontWeight: '600',
-          }}
-        >
+      <div className="flex items-start justify-between mb-3">
+        <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600 }}>
           {customer.name}
         </h3>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <X size={18} />
-        </button>
+        <button onClick={onClose}><X size={18} /></button>
       </div>
 
-      <div className="space-y-3">
-        <div
-          style={{
-            backgroundColor: '#F3EFE7',
-            padding: '12px',
-            borderRadius: '8px',
-          }}
-        >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '11px',
-              marginBottom: '4px',
-            }}
-          >
-            POSTAL CODE
-          </p>
-          <p
-            style={{
-              color: '#1C1917',
-              fontFamily: 'Manrope',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            <MapPin size={14} className="inline mr-1" />
-            {customer.postal_code}
-          </p>
+      <div style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '12px' }}>
+        <p className="mb-2">{customer.email}</p>
+        <div className="flex items-center gap-2 mb-2">
+          <MapPin size={12} /> <span>{customer.postal_code} · {customer.department_name}</span>
         </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div
-            style={{
-              backgroundColor: '#F3EFE7',
-              padding: '12px',
-              borderRadius: '8px',
-            }}
-          >
-            <p
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-                fontSize: '11px',
-                marginBottom: '4px',
-              }}
-            >
-              TIER
-            </p>
-            <p
-              style={{
-                color: TIER_COLORS[customer.tier],
-                fontFamily: 'Manrope',
-                fontSize: '14px',
-                fontWeight: '600',
-                textTransform: 'capitalize',
-              }}
-            >
-              {customer.tier}
-            </p>
+        <div className="mb-2"><TierBadge tier={customer.tier} size="sm" /></div>
+        <div className="flex items-center gap-2 mb-2">
+          <span>{src.emoji}</span> <span>{src.label}</span>
+        </div>
+        {customer.has_real_gps && (
+          <div className="flex items-center gap-2 mb-2" style={{ color: '#065F46' }}>
+            <Navigation size={12} /> <span>Real GPS captured</span>
           </div>
+        )}
+      </div>
 
-          <div
-            style={{
-              backgroundColor: '#F3EFE7',
-              padding: '12px',
-              borderRadius: '8px',
-            }}
-          >
-            <p
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-                fontSize: '11px',
-                marginBottom: '4px',
-              }}
-            >
-              VISITS
-            </p>
-            <p
-              style={{
-                color: '#1C1917',
-                fontFamily: 'Manrope',
-                fontSize: '14px',
-                fontWeight: '600',
-              }}
-            >
-              {customer.total_visits}
-            </p>
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: '#F3EFE7',
-            padding: '12px',
-            borderRadius: '8px',
-          }}
-        >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '11px',
-              marginBottom: '4px',
-            }}
-          >
-            TOTAL SPENT
-          </p>
-          <p
-            style={{
-              color: '#B85C38',
-              fontFamily: 'Manrope',
-              fontSize: '16px',
-              fontWeight: '600',
-            }}
-          >
-            €{customer.total_amount_paid.toFixed(2)}
+      <div className="grid grid-cols-2 gap-2 mt-4">
+        <div style={{ backgroundColor: '#F3EFE7', padding: '8px', borderRadius: '6px' }}>
+          <p style={{ fontFamily: 'Manrope', fontSize: '10px', color: '#57534E' }}>Visits</p>
+          <p style={{ fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600, color: '#1C1917' }}>
+            {customer.total_visits}
           </p>
         </div>
-
-        <div
-          style={{
-            backgroundColor: '#F3EFE7',
-            padding: '12px',
-            borderRadius: '8px',
-          }}
-        >
-          <p
-            style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
-              fontSize: '11px',
-              marginBottom: '4px',
-            }}
-          >
-            ACQUISITION SOURCE
-          </p>
-          <p
-            style={{
-              color: '#1C1917',
-              fontFamily: 'Manrope',
-              fontSize: '13px',
-              fontWeight: '600',
-            }}
-          >
-            {badge.emoji} {badge.label}
+        <div style={{ backgroundColor: '#F3EFE7', padding: '8px', borderRadius: '6px' }}>
+          <p style={{ fontFamily: 'Manrope', fontSize: '10px', color: '#57534E' }}>Total spent</p>
+          <p style={{ fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600, color: '#1C1917' }}>
+            €{(customer.total_amount_paid || 0).toFixed(0)}
           </p>
         </div>
       </div>

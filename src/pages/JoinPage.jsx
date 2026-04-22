@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { publicAPI } from '../lib/api';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -7,19 +7,42 @@ const JoinPage = () => {
   const { slug } = useParams();
   const [tenant, setTenant] = useState(null);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', postal_code: '', birthday: '', acquisition_source: 'qr_store' });
+  const [geoStatus, setGeoStatus] = useState('idle'); // idle | requesting | granted | denied | unsupported
+  const [geoCoords, setGeoCoords] = useState(null);
   const [success, setSuccess] = useState(null);
 
   useEffect(() => {
     publicAPI.getJoinInfo(slug).then(res => setTenant(res.data)).catch(console.error);
   }, [slug]);
 
+  const requestGeolocation = () => {
+    if (!('geolocation' in navigator)) {
+      setGeoStatus('unsupported');
+      return;
+    }
+    setGeoStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        setGeoStatus('granted');
+      },
+      () => setGeoStatus('denied'),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await publicAPI.joinProgram(slug, formData);
+      const payload = { ...formData };
+      if (geoCoords) {
+        payload.latitude = geoCoords.latitude;
+        payload.longitude = geoCoords.longitude;
+      }
+      const res = await publicAPI.joinProgram(slug, payload);
       setSuccess(res.data);
     } catch (err) {
-      alert("Error joining program");
+      alert('Error joining program');
     }
   };
 
@@ -43,6 +66,12 @@ const JoinPage = () => {
               Wallet passes are in simulation mode.
             </div>
             <div className="space-y-3">
+              <Link
+                to={`/card/${success.barcode_id}`}
+                className="block text-center w-full bg-[#B85C38] text-white py-3 rounded-xl font-medium hover:bg-[#9C4E2F] transition-colors"
+              >
+                Ouvrir ma carte de fidélité →
+              </Link>
               <button className="w-full bg-black text-white py-3 rounded-xl font-medium">Add to Apple Wallet</button>
               <button className="w-full bg-[#1C1917] text-white py-3 rounded-xl font-medium">Add to Google Wallet</button>
             </div>
@@ -84,6 +113,30 @@ const JoinPage = () => {
                 <option value="other">✨ Somewhere else</option>
               </select>
             </div>
+            <div className="p-3 rounded-lg border border-[#E7E5E4] bg-[#F3EFE7]">
+              <p className="text-sm font-medium text-[#1C1917] mb-2">📍 Share your location (optional)</p>
+              <p className="text-xs text-[#57534E] mb-3">
+                Helps us send more relevant offers from nearby businesses. Your location is never shared publicly.
+              </p>
+              {geoStatus === 'idle' && (
+                <button
+                  type="button"
+                  onClick={requestGeolocation}
+                  className="text-sm px-3 py-1.5 bg-white border border-[#B85C38] text-[#B85C38] rounded-lg font-medium hover:bg-[#B85C38] hover:text-white transition-colors"
+                >
+                  Share my location
+                </button>
+              )}
+              {geoStatus === 'requesting' && <p className="text-xs text-[#57534E]">Requesting location…</p>}
+              {geoStatus === 'granted' && (
+                <p className="text-xs text-[#065F46] font-medium">
+                  ✓ Location shared ({geoCoords.latitude.toFixed(3)}°, {geoCoords.longitude.toFixed(3)}°)
+                </p>
+              )}
+              {geoStatus === 'denied' && <p className="text-xs text-[#92400E]">Permission denied. You can still join.</p>}
+              {geoStatus === 'unsupported' && <p className="text-xs text-[#92400E]">Location not supported on this browser.</p>}
+            </div>
+
             <button type="submit" className="w-full bg-[#B85C38] text-white py-3 rounded-full font-medium hover:bg-[#9C4E2F] transition-colors mt-6">
               Join Program
             </button>

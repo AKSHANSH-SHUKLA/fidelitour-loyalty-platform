@@ -8,6 +8,7 @@ import {
   Users, TrendingUp, Repeat, Award, DollarSign, Clock,
   ArrowUpRight, ArrowDownRight, UserPlus, Activity, AlertCircle, CheckCircle2, Gift, AlertTriangle
 } from 'lucide-react';
+import TierBadge from '../components/TierBadge';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
@@ -20,6 +21,7 @@ const OwnerDashboard = () => {
   const [recovered, setRecovered] = useState(null);
   const [topSpender, setTopSpender] = useState(null);
   const [highestPaying, setHighestPaying] = useState([]);
+  const [rankingMode, setRankingMode] = useState('max_spent'); // max_spent | min_spent | max_visits | min_visits
   const [showSendOfferModal, setShowSendOfferModal] = useState(null);
   const [sendOfferMessage, setSendOfferMessage] = useState('');
   const [sendOfferLoading, setSendOfferLoading] = useState(false);
@@ -377,39 +379,82 @@ const OwnerDashboard = () => {
         </div>
       </div>
 
-      {/* Highest Paying Customers */}
-      {highestPaying.length > 0 && (
-        <div className="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-sm">
-          <h2 className="text-xl font-bold mb-6" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
-            Highest Paying Customers
-          </h2>
-          <div className="space-y-3">
-            {highestPaying.slice(0, 5).map((customer, idx) => (
-              <div key={idx} className="flex items-center justify-between p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
-                <div className="flex items-center gap-4 flex-1">
-                  <span className="text-2xl font-bold text-[#B85C38]">#{idx + 1}</span>
-                  <div>
-                    <p className="font-semibold text-[#1C1917]" style={{ fontFamily: 'Manrope' }}>{customer.name}</p>
-                    <p className="text-sm text-[#8B8680]">{customer.total_visits} visits</p>
-                  </div>
-                </div>
-                <div className="text-right flex items-center gap-4">
-                  <div>
-                    <p className="font-bold text-[#1C1917]">€{customer.total_amount_paid}</p>
-                    <p className="text-xs text-[#8B8680]">spent</p>
-                  </div>
+      {/* Top Customers with ranking tabs */}
+      {highestPaying.length > 0 && (() => {
+        const sorted = [...highestPaying].sort((a, b) => {
+          switch (rankingMode) {
+            case 'max_spent': return (b.total_amount_paid || 0) - (a.total_amount_paid || 0);
+            case 'min_spent': return (a.total_amount_paid || 0) - (b.total_amount_paid || 0);
+            case 'max_visits': return (b.total_visits || 0) - (a.total_visits || 0);
+            case 'min_visits': return (a.total_visits || 0) - (b.total_visits || 0);
+            default: return 0;
+          }
+        });
+        const titleMap = {
+          max_spent: 'Top Spenders',
+          min_spent: 'Lowest Spenders',
+          max_visits: 'Most Frequent Visitors',
+          min_visits: 'Least Frequent Visitors',
+        };
+        return (
+          <div className="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                {titleMap[rankingMode]}
+              </h2>
+              <div className="flex rounded-lg border border-[#E7E5E4] overflow-hidden text-xs" style={{ fontFamily: 'Manrope' }}>
+                {[
+                  { key: 'max_spent', label: 'Max €' },
+                  { key: 'min_spent', label: 'Min €' },
+                  { key: 'max_visits', label: 'Max Visits' },
+                  { key: 'min_visits', label: 'Min Visits' },
+                ].map((tab) => (
                   <button
-                    onClick={() => setShowSendOfferModal(customer)}
-                    className="px-4 py-2 rounded-lg bg-[#B85C38] text-white font-semibold hover:bg-[#9C4E2F] transition text-sm"
+                    key={tab.key}
+                    onClick={() => setRankingMode(tab.key)}
+                    className="px-3 py-1.5 border-r border-[#E7E5E4] last:border-r-0 transition-colors"
+                    style={{
+                      backgroundColor: rankingMode === tab.key ? '#B85C38' : 'white',
+                      color: rankingMode === tab.key ? 'white' : '#57534E',
+                      fontWeight: rankingMode === tab.key ? 600 : 500,
+                    }}
                   >
-                    Send offer
+                    {tab.label}
                   </button>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div className="space-y-3">
+              {sorted.slice(0, 5).map((customer, idx) => (
+                <div key={customer.id || idx} className="flex items-center justify-between p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+                  <div className="flex items-center gap-4 flex-1">
+                    <span className="text-2xl font-bold text-[#B85C38]">#{idx + 1}</span>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold text-[#1C1917]" style={{ fontFamily: 'Manrope' }}>{customer.name}</p>
+                        <TierBadge tier={customer.tier} size="xs" />
+                      </div>
+                      <p className="text-sm text-[#8B8680]">{customer.total_visits} visits</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-4">
+                    <div>
+                      <p className="font-bold text-[#1C1917]">€{(customer.total_amount_paid || 0).toFixed(0)}</p>
+                      <p className="text-xs text-[#8B8680]">spent</p>
+                    </div>
+                    <button
+                      onClick={() => setShowSendOfferModal(customer)}
+                      className="px-4 py-2 rounded-lg bg-[#B85C38] text-white font-semibold hover:bg-[#9C4E2F] transition text-sm"
+                    >
+                      Send offer
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Bottom Row — Tier Distribution + Campaign Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

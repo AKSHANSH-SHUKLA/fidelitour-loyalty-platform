@@ -78,6 +78,8 @@ class TenantBase(BaseModel):
     geo_enabled: bool = False
     branches: List[Dict[str, Any]] = []
     parent_tenant_id: Optional[str] = None
+    sector: Optional[str] = None  # restaurant, pizzeria, spa, gym, etc. — drives reactivation templates
+    campaign_sender_name: Optional[str] = None  # custom "from" name for push notifications/emails
 
 class Tenant(TenantBase):
     id: str
@@ -163,6 +165,11 @@ class Campaign(BaseModel):
     opens_unique: int = 0
     visits_from_campaign: int = 0
     recipient_ids: List[str] = []
+    # Feature 11: offer interaction tracking
+    offer_clicks: int = 0
+    offer_clicks_unique: int = 0
+    push_dismissals: int = 0  # number of recipients who dismissed the push without opening
+    sender_name: Optional[str] = None  # snapshot of tenant.campaign_sender_name when sent
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AIQueryRequest(BaseModel):

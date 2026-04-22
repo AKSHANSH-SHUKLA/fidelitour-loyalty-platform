@@ -424,6 +424,51 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* MULTI-STORE CTA */}
+      <section id="multi-store" className="max-w-5xl mx-auto px-4 pb-20">
+        <div
+          className="rounded-3xl overflow-hidden shadow-xl border border-[#E7E5E4]"
+          style={{ background: 'linear-gradient(135deg, #1C1917 0%, #3B2418 100%)' }}
+        >
+          <div className="p-10 md:p-14 text-center">
+            <div className="inline-block mb-4 px-4 py-1 rounded-full bg-[#D4A574]/20 text-[#D4A574] text-xs uppercase tracking-widest font-semibold">
+              For Multi-Location Businesses
+            </div>
+            <h2 className="font-['Cormorant_Garamond'] text-3xl md:text-5xl text-white font-bold mb-4">
+              Got multiple stores? Let's talk.
+            </h2>
+            <p className="text-[#D4A574] text-base md:text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+              If you run several locations and want one loyalty platform for all of them — unified
+              customers, shared tiers, consolidated analytics, and per-branch reports — we'll set
+              everything up for you, migrate your existing data, and train your staff.
+            </p>
+            <div className="grid md:grid-cols-3 gap-4 mb-8 max-w-3xl mx-auto text-left">
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold text-sm mb-1">Unified customer base</p>
+                <p className="text-[#C4B5A0] text-xs">One customer card works at every store.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold text-sm mb-1">Per-branch analytics</p>
+                <p className="text-[#C4B5A0] text-xs">Compare performance across locations.</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-white font-semibold text-sm mb-1">Dedicated onboarding</p>
+                <p className="text-[#C4B5A0] text-xs">We handle setup & staff training.</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <a
+                href="mailto:contact@fidelitour.fr?subject=Multi-store%20enquiry"
+                className="inline-block bg-[#D4A574] text-[#1C1917] font-semibold px-8 py-3.5 rounded-xl hover:bg-[#E4B584] transition-colors shadow-lg"
+              >
+                Contact Us
+              </a>
+              <span className="text-[#8A8575] text-sm">or call <span className="text-white font-semibold">+33 2 47 00 00 00</span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer className="bg-white border-t border-[#E7E5E4] py-12">
         <div className="max-w-7xl mx-auto px-4 text-center text-[#57534E]">

@@ -1,1665 +1,534 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ownerAPI } from '../lib/api';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  ReferenceLine,
-  Label as RechartsLabel,
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import {
-  Users,
-  TrendingUp,
-  Award,
-  Smartphone,
-  Gift,
-  Calendar,
-  Filter,
-  MessageSquare,
-  Download,
-  X,
-  ChevronRight,
+  Users, TrendingUp, Award, Smartphone, Gift, Calendar,
+  Activity, X, Trophy, ArrowDown, ArrowUp, CreditCard,
   AlertCircle,
 } from 'lucide-react';
+import TierBadge from '../components/TierBadge';
 
+const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
+const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
+
+// ------------------------------------------------------------------
+// Small presentational pieces
+// ------------------------------------------------------------------
+const KPICard = ({ icon: Icon, title, value, sublabel, onClick, accent = '#B85C38' }) => (
+  <div
+    onClick={onClick}
+    className={`bg-white p-5 rounded-xl border border-[#E7E5E4] flex items-center gap-4 ${
+      onClick ? 'cursor-pointer hover:shadow-md transition' : ''
+    }`}
+  >
+    <div
+      className="w-12 h-12 rounded-full flex items-center justify-center text-white"
+      style={{ background: accent }}
+    >
+      <Icon size={22} />
+    </div>
+    <div className="min-w-0">
+      <p className="text-xs text-[#57534E] uppercase tracking-wide font-semibold truncate">{title}</p>
+      <p className="text-2xl font-bold text-[#1C1917] leading-tight">{value}</p>
+      {sublabel && <p className="text-xs text-[#8B8680] mt-0.5 truncate">{sublabel}</p>}
+    </div>
+  </div>
+);
+
+const ChartCard = ({ title, hint, children }) => (
+  <div className="bg-white p-6 rounded-xl border border-[#E7E5E4]">
+    <h2
+      className="text-xl font-semibold text-[#1C1917]"
+      style={{ fontFamily: 'Cormorant Garamond' }}
+    >
+      {title}
+    </h2>
+    {hint && <p className="text-xs text-[#8B8680] mt-1 mb-3">{hint}</p>}
+    {children}
+  </div>
+);
+
+// ------------------------------------------------------------------
+// Page
+// ------------------------------------------------------------------
 const AnalyticsPage = () => {
-  // ============ STATE ============
-  const [periodFilter, setPeriodFilter] = useState('30d');
-  const [customDays, setCustomDays] = useState(null);
-  const [newCustomerPeriod, setNewCustomerPeriod] = useState('30d');
-  const [newCustomerCustomDays, setNewCustomerCustomDays] = useState(null);
-  const [visitThreshold, setVisitThreshold] = useState(5);
-  const [activeThreshold, setActiveThreshold] = useState(3);
-  const [activeDays, setActiveDays] = useState(30);
-  const [inactiveDays, setInactiveDays] = useState(30);
-  const [atRiskDays, setAtRiskDays] = useState(21);
-  const [frequencyBuckets, setFrequencyBuckets] = useState({
-    veryRegular: 3,
-    occasional: 14,
-  });
-  const [drillDownOpen, setDrillDownOpen] = useState(false);
-  const [drillDownData, setDrillDownData] = useState(null);
-  const [cardsFilled, setCardsFilled] = useState(0);
-  const [highestPayingCustomers, setHighestPayingCustomers] = useState([]);
-  const [recoveredCustomers, setRecoveredCustomers] = useState([]);
-  const [recoveredCount, setRecoveredCount] = useState(0);
-  const [recoveredPercentage, setRecoveredPercentage] = useState(0);
-  const [acquisitionSources, setAcquisitionSources] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [cardsFilled, setCardsFilled] = useState(null);
+  const [highestPaying, setHighestPaying] = useState([]);
+  const [recovered, setRecovered] = useState(null);
+  const [acquisition, setAcquisition] = useState([]);
+
   const [recoveryInactiveDays, setRecoveryInactiveDays] = useState(30);
   const [recoveryWindowDays, setRecoveryWindowDays] = useState(30);
-  const [campaignGroupSendOpen, setCampaignGroupSendOpen] = useState(false);
-  const [campaignGroupForm, setCampaignGroupForm] = useState({ name: '', content: '' });
+  const [rankingMode, setRankingMode] = useState('top_paying'); // top_paying | least_paying | max_visits | least_visits
 
-  // ============ FETCH NEW ENDPOINTS ON MOUNT ============
-  React.useEffect(() => {
-    // Mock data simulation for new endpoints
-    // In production, these would be API calls
-    const mockCardsFilled = Math.floor(Math.random() * 800) + 200;
-    setCardsFilled(mockCardsFilled);
+  const [drill, setDrill] = useState(null); // { title, rows }
 
-    const topPayers = demoData.customers
-      .sort((a, b) => b.total_amount_paid - a.total_amount_paid)
-      .slice(0, 5)
-      .map(c => ({ name: c.name, total_amount_paid: c.total_amount_paid }));
-    setHighestPayingCustomers(topPayers);
+  const loadAll = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const results = await Promise.allSettled([
+        ownerAPI.getAnalytics(),
+        ownerAPI.getAnalyticsSummary(),
+        ownerAPI.getCardsFilled(),
+        ownerAPI.getHighestPaying(),
+        ownerAPI.getAcquisitionSources(),
+      ]);
+      const [a, s, cf, hp, acq] = results;
+      if (a.status === 'fulfilled') setAnalytics(a.value.data);
+      if (s.status === 'fulfilled') setSummary(s.value.data);
+      if (cf.status === 'fulfilled') setCardsFilled(cf.value.data);
+      if (hp.status === 'fulfilled') setHighestPaying(hp.value.data || []);
+      if (acq.status === 'fulfilled') setAcquisition(acq.value.data?.sources || []);
+      // If ALL failed, surface a single error
+      const allFailed = results.every((r) => r.status === 'rejected');
+      if (allFailed) {
+        const first = results[0];
+        setLoadError(first.reason?.response?.status
+          ? `Error ${first.reason.response.status}: ${first.reason.response.data?.detail || first.reason.message}`
+          : first.reason?.message || 'Failed to load analytics');
+      }
+    } catch (e) {
+      setLoadError(e?.message || 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const recovered = demoData.customers.filter(c => {
-      const daysSinceLastVisit = Math.floor((new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24));
-      return daysSinceLastVisit > recoveryInactiveDays && daysSinceLastVisit <= recoveryInactiveDays + recoveryWindowDays;
-    });
-    setRecoveredCustomers(recovered);
-    setRecoveredCount(recovered.length);
-    setRecoveredPercentage(Math.round((recovered.length / totalCustomers) * 100));
-
-    const sources = [
-      { source: 'Direct', count: Math.floor(Math.random() * 120) + 50, percentage: 0 },
-      { source: 'Social Media', count: Math.floor(Math.random() * 100) + 40, percentage: 0 },
-      { source: 'Email', count: Math.floor(Math.random() * 80) + 30, percentage: 0 },
-      { source: 'Referral', count: Math.floor(Math.random() * 60) + 20, percentage: 0 },
-      { source: 'Paid Ads', count: Math.floor(Math.random() * 90) + 35, percentage: 0 },
-    ];
-    const totalSources = sources.reduce((sum, s) => sum + s.count, 0);
-    sources.forEach(s => s.percentage = Math.round((s.count / totalSources) * 100));
-    setAcquisitionSources(sources);
-  }, [recoveryInactiveDays, recoveryWindowDays]);
-
-  // ============ DEMO DATA GENERATION ============
-  const demoData = useMemo(() => {
-    const firstNames = [
-      'Marie', 'Pierre', 'Sophie', 'Lucas', 'Emma', 'Jean', 'Anne', 'Michel',
-      'Claire', 'Thomas', 'Isabelle', 'Claude', 'Nathalie', 'François', 'Martine',
-      'Philippe', 'Véronique', 'Jacques', 'Christine', 'Bernard', 'Monique',
-      'Paul', 'Danielle', 'Laurent', 'Sylvie', 'Denis', 'Dominique', 'Olivier',
-      'Valérie', 'Alain', 'Florence', 'Marc', 'Corinne', 'Serge', 'Sabine',
-    ];
-
-    const lastNames = [
-      'Dubois', 'Lambert', 'Martin', 'Bernard', 'Thomas', 'Moreau',
-      'Simon', 'Laurent', 'Lefevre', 'Michel', 'Garcia', 'David',
-      'Petit', 'Dupont', 'Durand', 'Leroy', 'Henry', 'Renault',
-    ];
-
-    const randomDate = (daysAgo) => {
-      const d = new Date();
-      d.setDate(d.getDate() - Math.floor(Math.random() * daysAgo));
-      return d;
-    };
-
-    const tiers = ['Bronze', 'Silver', 'Gold'];
-    const getTierFromPoints = (points) => {
-      if (points >= 5000) return 'Gold';
-      if (points >= 2000) return 'Silver';
-      return 'Bronze';
-    };
-
-    // Generate 450 demo customers
-    const customers = Array.from({ length: 450 }, (_, i) => {
-      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-      const joinDate = randomDate(365);
-      const totalVisits = Math.floor(Math.random() * 80) + 1;
-      const lastVisitDate = randomDate(60);
-      const points = Math.floor(Math.random() * 8000);
-      const walletPass = Math.random() > 0.25;
-      const tier = getTierFromPoints(points);
-      const spent = Math.floor(Math.random() * 5000) + 500;
-      const total_amount_paid = spent;
-
-      return {
-        id: i + 1,
-        name: `${firstName} ${lastName}`,
-        firstName,
-        joinDate,
-        totalVisits,
-        lastVisitDate,
-        points,
-        walletPass,
-        tier,
-        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
-        spent,
-        total_amount_paid,
-      };
-    });
-
-    // Generate visit history for each customer
-    const visits = customers.flatMap((customer) => {
-      const visitCount = Math.max(1, Math.floor(customer.totalVisits * (0.8 + Math.random() * 0.4)));
-      return Array.from({ length: visitCount }, () => ({
-        customerId: customer.id,
-        date: randomDate(365),
-        spent: Math.floor(Math.random() * 100) + 10,
-      }));
-    });
-
-    // Generate campaigns (sent last 90 days)
-    const campaigns = [
-      {
-        id: 1,
-        name: 'Easter Promo 2026',
-        date: new Date('2026-04-03'),
-        sentCount: 380,
-        visitsAfter: 142,
-      },
-      {
-        id: 2,
-        name: 'Spring Collection Launch',
-        date: new Date('2026-03-20'),
-        sentCount: 415,
-        visitsAfter: 178,
-      },
-      {
-        id: 3,
-        name: 'Gold Tier Exclusive',
-        date: new Date('2026-04-10'),
-        sentCount: 95,
-        visitsAfter: 38,
-      },
-      {
-        id: 4,
-        name: 'Weekend Flash Sale',
-        date: new Date('2026-04-12'),
-        sentCount: 450,
-        visitsAfter: 203,
-      },
-    ];
-
-    return { customers, visits, campaigns };
+  useEffect(() => {
+    loadAll();
   }, []);
 
-  // ============ COMPUTED VALUES ============
-  const getPeriodDays = (period, customDaysValue) => {
-    if (period === 'custom' && customDaysValue) return parseInt(customDaysValue);
-    const map = { '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90 };
-    return map[period] || 30;
-  };
-
-  const periodDays = getPeriodDays(periodFilter, customDays);
-  const newCustomerDays = getPeriodDays(newCustomerPeriod, newCustomerCustomDays);
-
-  const totalCustomers = demoData.customers.length;
-
-  const newCustomersInPeriod = demoData.customers.filter((c) => {
-    const daysSinceJoin = Math.floor(
-      (new Date() - c.joinDate) / (1000 * 60 * 60 * 24)
-    );
-    return daysSinceJoin <= newCustomerDays;
-  }).length;
-
-  const repeatVisitRate = useMemo(() => {
-    const inPeriod = demoData.customers.filter((c) => {
-      const daysSinceLastVisit = Math.floor(
-        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-      );
-      return daysSinceLastVisit <= periodDays;
-    });
-    const repeatCount = inPeriod.filter((c) => c.totalVisits >= visitThreshold).length;
-    return inPeriod.length > 0 ? Math.round((repeatCount / inPeriod.length) * 100) : 0;
-  }, [periodDays, visitThreshold]);
-
-  const walletPassCustomers = demoData.customers.filter((c) => c.walletPass).length;
-  const walletPassPercentage = Math.round((walletPassCustomers / totalCustomers) * 100);
-
-  const avgPointsPerCustomer = Math.round(
-    demoData.customers.reduce((sum, c) => sum + c.points, 0) / totalCustomers
-  );
-
-  // Issue 7: Fix redemption rate to be calculated, not random
-  const redemptionRate = useMemo(() => {
-    const customersWithRedemption = demoData.customers.filter((c) => c.totalVisits >= 10).length;
-    return Math.round((customersWithRedemption / totalCustomers) * 100);
-  }, [totalCustomers]);
-
-  // Issue 11: Calculate total revenue from customer data
-  const totalRevenue = useMemo(() => {
-    return demoData.customers.reduce((sum, c) => sum + c.total_amount_paid, 0);
-  }, [demoData.customers]);
-
-  // Issue 12: Calculate average visit value
-  const totalVisits = useMemo(() => {
-    return demoData.visits.length;
-  }, [demoData.visits]);
-
-  const averageVisitValue = useMemo(() => {
-    return totalVisits > 0 ? (totalRevenue / totalVisits).toFixed(2) : 0;
-  }, [totalRevenue, totalVisits]);
-
-  const activeCustomers = demoData.customers.filter((c) => {
-    const daysSinceLastVisit = Math.floor(
-      (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-    );
-    return daysSinceLastVisit <= activeDays && c.totalVisits >= activeThreshold;
-  }).length;
-
-  const inactiveCustomers = demoData.customers.filter((c) => {
-    const daysSinceLastVisit = Math.floor(
-      (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-    );
-    return daysSinceLastVisit > inactiveDays;
-  }).length;
-
-  const atRiskCustomers = demoData.customers
-    .filter((c) => {
-      const daysSinceLastVisit = Math.floor(
-        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-      );
-      return daysSinceLastVisit > atRiskDays && daysSinceLastVisit <= atRiskDays + 30;
-    })
-    .map((c) => ({
-      ...c,
-      daysSinceLastVisit: Math.floor(
-        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-      ),
-    }))
-    .sort((a, b) => b.daysSinceLastVisit - a.daysSinceLastVisit);
-
-  const tierCounts = {
-    Bronze: demoData.customers.filter((c) => c.tier === 'Bronze').length,
-    Silver: demoData.customers.filter((c) => c.tier === 'Silver').length,
-    Gold: demoData.customers.filter((c) => c.tier === 'Gold').length,
-  };
-
-  const tierMovement = {
-    upgraded: Math.floor(Math.random() * 35) + 8,
-    downgraded: Math.floor(Math.random() * 12) + 2,
-  };
-
-  const frequencyData = [
-    {
-      label: `Very Regular (every ${frequencyBuckets.veryRegular} days or less)`,
-      count: demoData.customers.filter((c) => {
-        const avgDaysBetweenVisits =
-          (new Date() - c.joinDate) / (1000 * 60 * 60 * 24) / c.totalVisits;
-        return avgDaysBetweenVisits <= frequencyBuckets.veryRegular;
-      }).length,
-    },
-    {
-      label: `Occasional (${frequencyBuckets.veryRegular + 1}–${frequencyBuckets.occasional} days)`,
-      count: demoData.customers.filter((c) => {
-        const avgDaysBetweenVisits =
-          (new Date() - c.joinDate) / (1000 * 60 * 60 * 24) / c.totalVisits;
-        return (
-          avgDaysBetweenVisits > frequencyBuckets.veryRegular &&
-          avgDaysBetweenVisits <= frequencyBuckets.occasional
-        );
-      }).length,
-    },
-    {
-      label: `Rare (more than ${frequencyBuckets.occasional} days)`,
-      count: demoData.customers.filter((c) => {
-        const avgDaysBetweenVisits =
-          (new Date() - c.joinDate) / (1000 * 60 * 60 * 24) / c.totalVisits;
-        return avgDaysBetweenVisits > frequencyBuckets.occasional;
-      }).length,
-    },
-  ];
-
-  const visitFrequencyChartData = frequencyData.map((item) => ({
-    name: item.label,
-    value: item.count,
-  }));
-
-  // ============ CHART DATA ============
-  const visitsOverTimeData = useMemo(() => {
-    const days = Array.from({ length: periodDays }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (periodDays - 1 - i));
-      return d.toISOString().split('T')[0];
-    });
-
-    const visitMap = {};
-    days.forEach((day) => {
-      visitMap[day] = 0;
-    });
-
-    demoData.visits.forEach((visit) => {
-      const day = visit.date.toISOString().split('T')[0];
-      if (visitMap.hasOwnProperty(day)) {
-        visitMap[day]++;
+  // Refetch recovered when the filter changes
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await ownerAPI.getRecovered({
+          inactive_days: recoveryInactiveDays,
+          window_days: recoveryWindowDays,
+        });
+        setRecovered(r.data);
+      } catch (e) {
+        // ignore — keep previous value
       }
-    });
+    })();
+  }, [recoveryInactiveDays, recoveryWindowDays]);
 
-    return days.map((day) => ({
-      date: day,
-      visits: visitMap[day],
-      customers: demoData.customers.filter((c) =>
-        demoData.visits.some(v => v.customerId === c.id && v.date.toISOString().split('T')[0] === day)
-      ),
-    }));
-  }, [periodDays, demoData.visits, demoData.customers]);
+  // ----------------------------------------------------------------
+  // Derived values — canonical numbers only, no Math.random()
+  // ----------------------------------------------------------------
+  const totalCustomers = analytics?.total_customers ?? summary?.total_customers ?? 0;
+  const totalVisits = analytics?.total_visits ?? 0;
+  const repeatRate = analytics?.repeat_rate_pct ?? 0;
+  const walletPasses = analytics?.wallet_passes_issued ?? 0;
+  const activeCustomers = summary?.active_customers ?? 0;
+  const newThisWeek = summary?.new_this_week ?? 0;
+  const cardsFilledTotal = cardsFilled?.total_cards_filled ?? 0;
+  const cardsFilledThisMonth = cardsFilled?.cards_filled_this_month ?? 0;
 
-  const newCustomersOverTimeData = useMemo(() => {
-    const weeks = Array.from({ length: Math.ceil(periodDays / 7) }, (_, i) => {
-      const start = new Date();
-      start.setDate(start.getDate() - (periodDays - 1 - i * 7));
-      const end = new Date(start);
-      end.setDate(end.getDate() + 6);
-      return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
-    });
+  const tierData = useMemo(() => {
+    const td = analytics?.tier_distribution || {};
+    return [
+      { name: 'Bronze', value: td.bronze || 0, key: 'bronze' },
+      { name: 'Silver', value: td.silver || 0, key: 'silver' },
+      { name: 'Gold', value: td.gold || 0, key: 'gold' },
+    ];
+  }, [analytics]);
 
-    let cumulativeNew = 0;
-    return weeks.map((week) => {
-      const newInWeek = demoData.customers.filter((c) => {
-        const joinDay = c.joinDate.toISOString().split('T')[0];
-        return joinDay >= week.start && joinDay <= week.end;
-      });
-      cumulativeNew += newInWeek.length;
-      return {
-        week: week.start.substring(5),
-        new: newInWeek.length,
-        cumulative: cumulativeNew,
-        customers: newInWeek,
-      };
-    });
-  }, [periodDays, demoData.customers]);
+  const visitsByDay = useMemo(() => {
+    if (!analytics?.visits_by_day) return [];
+    return Object.entries(analytics.visits_by_day)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-30); // show last 30 days in the chart
+  }, [analytics]);
 
-  const tierChartData = [
-    { name: 'Bronze', value: tierCounts.Bronze, fill: '#8B6914' },
-    { name: 'Silver', value: tierCounts.Silver, fill: '#C0C0C0' },
-    { name: 'Gold', value: tierCounts.Gold, fill: '#E3A869' },
-  ];
+  const newCustomersByWeek = useMemo(() => {
+    const w = analytics?.new_customers_by_week || {};
+    return Object.entries(w).map(([week, count]) => ({ week, count }));
+  }, [analytics]);
 
-  const visitRecencyData = [
-    {
-      range: '0–7 days',
-      count: demoData.customers.filter((c) => {
-        const d = Math.floor((new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24));
-        return d <= 7;
-      }).length,
-    },
-    {
-      range: '8–14 days',
-      count: demoData.customers.filter((c) => {
-        const d = Math.floor((new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24));
-        return d > 7 && d <= 14;
-      }).length,
-    },
-    {
-      range: '15–30 days',
-      count: demoData.customers.filter((c) => {
-        const d = Math.floor((new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24));
-        return d > 14 && d <= 30;
-      }).length,
-    },
-    {
-      range: '31–60 days',
-      count: demoData.customers.filter((c) => {
-        const d = Math.floor((new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24));
-        return d > 30 && d <= 60;
-      }).length,
-    },
-    {
-      range: '60+ days',
-      count: demoData.customers.filter((c) => {
-        const d = Math.floor((new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24));
-        return d > 60;
-      }).length,
-    },
-  ];
+  const acquisitionChart = useMemo(
+    () => (acquisition || []).map((a) => ({
+      name: (a.source || 'unknown').replace(/_/g, ' '),
+      value: a.count,
+    })),
+    [acquisition]
+  );
 
-  const heatmapData = useMemo(() => {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const times = ['Morning (6–11am)', 'Afternoon (12–5pm)', 'Evening (6–11pm)'];
-    const matrix = [];
-
-    days.forEach((day, dayIdx) => {
-      times.forEach((time, timeIdx) => {
-        const visitorsAtTime = demoData.visits.filter((v) => {
-          const dayOfWeek = v.date.getDay();
-          const hour = v.date.getHours();
-          const matchDay = (dayOfWeek + 6) % 7 === dayIdx;
-          const matchTime =
-            (timeIdx === 0 && hour >= 6 && hour < 12) ||
-            (timeIdx === 1 && hour >= 12 && hour < 17) ||
-            (timeIdx === 2 && hour >= 17 && hour < 24);
-          return matchDay && matchTime;
-        });
-
-        const visits = visitorsAtTime.length;
-        const customers = Array.from(new Set(visitorsAtTime.map(v => v.customerId)))
-          .map(id => demoData.customers.find(c => c.id === id))
-          .filter(Boolean);
-
-        matrix.push({
-          day,
-          time,
-          visits,
-          customers,
-          intensity: visits > 30 ? 'high' : visits > 15 ? 'medium' : 'low',
-        });
-      });
-    });
-
-    return matrix;
-  }, [demoData.visits, demoData.customers]);
-
-  // ============ PERIOD LABEL ============
-  const getPeriodLabel = (period, customDaysValue) => {
-    if (period === 'custom' && customDaysValue) return `last ${customDaysValue} days`;
-    const map = {
-      '7d': 'last 7 days',
-      '14d': 'last 14 days',
-      '30d': 'last 30 days',
-      '60d': 'last 60 days',
-      '90d': 'last 90 days',
-    };
-    return map[period] || 'last 30 days';
-  };
-
-  // ============ DRILL DOWN HANDLER ============
-  const openDrillDown = (title, customers) => {
-    setDrillDownData({ title, customers });
-    setDrillDownOpen(true);
-  };
-
-  // ============ CSV EXPORT ============
-  const exportCSV = (customers) => {
-    if (!customers || customers.length === 0) {
-      alert('No customers to export');
-      return;
+  // Ranking tabs
+  const rankedCustomers = useMemo(() => {
+    const list = [...(highestPaying || [])];
+    switch (rankingMode) {
+      case 'top_paying':
+        return list.sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0)).slice(0, 20);
+      case 'least_paying':
+        return list
+          .filter((c) => (c.total_amount_paid || 0) > 0) // ignore zero-spend noise
+          .sort((a, b) => (a.total_amount_paid || 0) - (b.total_amount_paid || 0))
+          .slice(0, 20);
+      case 'max_visits':
+        return list.sort((a, b) => (b.total_visits || 0) - (a.total_visits || 0)).slice(0, 20);
+      case 'least_visits':
+        return list
+          .filter((c) => (c.total_visits || 0) > 0)
+          .sort((a, b) => (a.total_visits || 0) - (b.total_visits || 0))
+          .slice(0, 20);
+      default:
+        return list.slice(0, 20);
     }
+  }, [highestPaying, rankingMode]);
 
-    const headers = ['Name', 'Email', 'Tier', 'Total Visits', 'Last Visit', 'Points', 'Total Spent', 'Acquisition Source'];
-    const rows = customers.map((c) => [
-      c.name,
-      c.email,
-      c.tier,
-      c.totalVisits || 0,
-      c.lastVisitDate ? c.lastVisitDate.toLocaleDateString() : '',
-      c.points || 0,
-      c.total_amount_paid || 0,
-      c.acquisition_source || 'Unknown',
-    ]);
+  // ----------------------------------------------------------------
+  // Render
+  // ----------------------------------------------------------------
+  if (loading) {
+    return <div className="p-8 bg-[#FDFBF7] min-h-screen text-[#57534E]">Loading analytics…</div>;
+  }
 
-    const csv = [headers, ...rows]
-      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `customers-${Date.now()}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // ============ COMPONENTS ============
-  const PeriodSelector = ({ value, customValue, onChange, onCustomChange, label }) => (
-    <div className="flex items-center gap-2">
-      {label && <span className="text-sm text-[#57534E]">{label}</span>}
-      <div className="flex gap-2">
-        {['7d', '14d', '30d', '60d', '90d'].map((period) => (
+  if (loadError && !analytics) {
+    return (
+      <div className="p-8 bg-[#FDFBF7] min-h-screen">
+        <div className="max-w-xl mx-auto bg-white border border-[#E7E5E4] rounded-xl p-8 text-center">
+          <AlertCircle className="mx-auto mb-2 text-[#B85C38]" size={32} />
+          <h2 className="text-2xl font-bold text-[#B85C38] mb-2">Analytics failed to load</h2>
+          <p className="text-[#57534E] text-sm mb-4">{loadError}</p>
           <button
-            key={period}
-            onClick={() => onChange(period)}
-            className={`px-3 py-1 text-sm rounded transition ${
-              value === period
-                ? 'bg-[#B85C38] text-[#FDFBF7]'
-                : 'bg-[#E7E5E4] text-[#57534E] hover:bg-[#D3D1D0]'
-            }`}
+            onClick={loadAll}
+            className="px-4 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F]"
           >
-            {period}
+            Retry
           </button>
-        ))}
-        <div className="flex gap-1">
-          <input
-            type="number"
-            placeholder="Days"
-            value={customValue || ''}
-            onChange={(e) => {
-              onCustomChange(e.target.value);
-              onChange('custom');
-            }}
-            className="w-16 px-2 py-1 text-sm border border-[#E7E5E4] rounded"
-          />
-          {customValue && (
-            <button
-              onClick={() => onChange('custom')}
-              className={`px-3 py-1 text-sm rounded transition ${
-                value === 'custom'
-                  ? 'bg-[#B85C38] text-[#FDFBF7]'
-                  : 'bg-[#E7E5E4] text-[#57534E] hover:bg-[#D3D1D0]'
-              }`}
-            >
-              custom
-            </button>
-          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const KPICard = ({ icon: Icon, title, value, label, subtitle, onClick, action }) => (
-    <div
-      onClick={onClick}
-      className="bg-[#FDFBF7] border border-[#E7E5E4] rounded-lg p-6 hover:shadow-md transition cursor-pointer"
-    >
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-[#F3EFE7] rounded">
-          <Icon className="w-5 h-5 text-[#B85C38]" />
-        </div>
-        <h3 className="font-cormorant text-lg font-semibold text-[#1C1917]">{title}</h3>
-      </div>
-      <div className="text-3xl font-bold text-[#1C1917] mb-2">{value}</div>
-      <p className="text-sm text-[#57534E] mb-2">{label}</p>
-      {subtitle && <p className="text-xs text-[#8B8680]">{subtitle}</p>}
-      {action && <button className="mt-3 text-xs bg-[#B85C38] text-[#FDFBF7] px-3 py-1 rounded hover:bg-[#A24D2E] transition">{action}</button>}
-    </div>
-  );
-
-  const SectionHeader = ({ title, description }) => (
-    <div className="mb-6">
-      <h2 className="font-cormorant text-3xl font-bold text-[#1C1917] mb-1">{title}</h2>
-      {description && <p className="text-sm text-[#8B8680]">{description}</p>}
-    </div>
-  );
-
-  const AcquisitionSourcesChart = () => (
-    <ChartContainer
-      title="Where your customers came from"
-      description="This shows you which channels are bringing in the most loyalty sign-ups — so you know where to focus your marketing."
-    >
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart
-          data={acquisitionSources}
-          margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-          <XAxis
-            dataKey="source"
-            stroke="#8B8680"
-            label={{ value: 'Source', position: 'insideBottomRight', offset: -5 }}
-          />
-          <YAxis
-            stroke="#8B8680"
-            label={{ value: 'Number of Signups', angle: -90, position: 'insideLeft' }}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#FDFBF7',
-              border: '1px solid #E7E5E4',
-            }}
-            formatter={(value, name) => {
-              if (name === 'count') return value;
-              return value;
-            }}
-          />
-          <Bar dataKey="count" fill="#B85C38" onClick={(state) => {
-            // Future: filter drill-down by source
-          }} cursor="pointer" />
-        </BarChart>
-      </ResponsiveContainer>
-    </ChartContainer>
-  );
-
-  const ChartContainer = ({ children, title, description }) => (
-    <div className="bg-[#FDFBF7] border border-[#E7E5E4] rounded-lg p-6 mb-8">
-      <div className="mb-6">
-        <h3 className="font-cormorant text-2xl font-semibold text-[#1C1917] mb-1">{title}</h3>
-        {description && <p className="text-sm text-[#8B8680]">{description}</p>}
-      </div>
-      {children}
-    </div>
-  );
-
-  // ============ RENDER ============
   return (
-    <div className="min-h-screen bg-[#FDFBF7] p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-cormorant text-4xl font-bold text-[#1C1917] mb-2">
-            Your Loyalty Programme
-          </h1>
-          <p className="text-[#57534E]">
-            See how your customers are engaging with FidéliTour
-          </p>
-        </div>
-
-        {/* Section 1: Top KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-          <KPICard
-            icon={Users}
-            title="Total Customers"
-            value={totalCustomers.toLocaleString()}
-            label="People who have joined your loyalty programme"
-            onClick={() =>
-              openDrillDown('All Customers', demoData.customers)
-            }
-          />
-
-          <KPICard
-            icon={Award}
-            title="Total Cards Filled"
-            value={cardsFilled.toLocaleString()}
-            label="Complete reward cycles earned across all customers"
-            subtitle="This month / last month: 145 / 128"
-            onClick={() =>
-              openDrillDown('Cards Filled Leaders', demoData.customers.filter(c => c.totalVisits > 15))
-            }
-          />
-
-          <KPICard
-            icon={Gift}
-            title="Recovered Customers"
-            value={recoveredCount}
-            label={`Customers inactive for ${recoveryInactiveDays}+ days who came back in last ${recoveryWindowDays} days`}
-            subtitle={`${recoveredPercentage}% of total`}
-            onClick={() => openDrillDown('Recovered Customers', recoveredCustomers)}
-          />
-
-          <KPICard
-            icon={TrendingUp}
-            title="Average Visit Value"
-            value={`€${averageVisitValue}`}
-            label="Total revenue divided by visits"
-          />
-        </div>
-
-        {/* Section 1B: Secondary KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-          <KPICard
-            icon={TrendingUp}
-            title="New Customers"
-            value={newCustomersInPeriod}
-            label={`New people who signed up in the ${getPeriodLabel(newCustomerPeriod, newCustomerCustomDays)}`}
-            subtitle={<PeriodSelector
-              value={newCustomerPeriod}
-              customValue={newCustomerCustomDays}
-              onChange={setNewCustomerPeriod}
-              onCustomChange={setNewCustomerCustomDays}
-            />}
-            onClick={() => {
-              const newCustomersInRange = demoData.customers.filter((c) => {
-                const daysSinceJoin = Math.floor(
-                  (new Date() - c.joinDate) / (1000 * 60 * 60 * 24)
-                );
-                return daysSinceJoin <= newCustomerDays;
-              });
-              openDrillDown('New Customers', newCustomersInRange);
-            }}
-          />
-
-          <KPICard
-            icon={Award}
-            title="Repeat Visit Rate"
-            value={`${repeatVisitRate}%`}
-            label={`Out of everyone who visited, how many came back at least ${visitThreshold} times — your most loyal regulars`}
-            subtitle={
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-[#8B8680]">Visit threshold:</label>
-                <input
-                  type="number"
-                  min="2"
-                  value={visitThreshold}
-                  onChange={(e) => setVisitThreshold(parseInt(e.target.value) || 5)}
-                  className="w-12 px-1 py-1 border border-[#E7E5E4] rounded text-xs"
-                />
-              </div>
-            }
-            onClick={() => {
-              const repeaters = demoData.customers.filter(
-                (c) =>
-                  c.totalVisits >= visitThreshold &&
-                  Math.floor((new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)) <=
-                    periodDays
-              );
-              openDrillDown(`Customers with ${visitThreshold}+ visits`, repeaters);
-            }}
-          />
-
-          <KPICard
-            icon={Gift}
-            title="Average Points Per Customer"
-            value={avgPointsPerCustomer.toLocaleString()}
-            label="How many reward points each customer has earned"
-            subtitle={`Redemption rate: ${redemptionRate}%`}
-          />
-
-          <KPICard
-            icon={Calendar}
-            title="Total Revenue"
-            value={`€${(totalRevenue / 1000).toFixed(0)}K`}
-            label="Sum of all customer spending"
-          />
-        </div>
-
-        {/* Section 1C: Highest Paying Customers Widget */}
-        <div className="bg-[#FDFBF7] border border-[#E7E5E4] rounded-lg p-6 mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-cormorant text-2xl font-semibold text-[#1C1917]">
-                Top Paying Customers
-              </h3>
-              <p className="text-sm text-[#8B8680]">
-                Your highest-value customers
-              </p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {highestPayingCustomers.slice(0, 5).map((customer, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 bg-[#F3EFE7] rounded border border-[#E7E5E4]">
-                <span className="font-semibold text-[#1C1917]">{customer.name}</span>
-                <span className="text-lg font-bold text-[#B85C38]">€{customer.total_amount_paid.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-          {highestPayingCustomers.length > 5 && (
-            <button className="mt-4 w-full text-sm text-[#B85C38] hover:underline font-semibold">
-              View all {highestPayingCustomers.length} top payers
-            </button>
-          )}
-        </div>
-
-        {/* Section 2: Visits Over Time */}
-        <ChartContainer
-          title="Visits Over Time"
-          description="Watch how foot traffic changes. The dashed lines show when you sent a campaign."
+    <div className="p-8 space-y-8 bg-[#FDFBF7] min-h-screen">
+      <header>
+        <h1
+          className="text-4xl font-bold text-[#1C1917] mb-2"
+          style={{ fontFamily: 'Cormorant Garamond' }}
         >
-          <PeriodSelector
-            value={periodFilter}
-            customValue={customDays}
-            onChange={setPeriodFilter}
-            onCustomChange={setCustomDays}
-            label="Period:"
-          />
-          <div className="mt-6 relative">
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={visitsOverTimeData} margin={{ top: 30, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                <XAxis dataKey="date" stroke="#8B8680" label={{ value: 'Date', position: 'insideBottomRight', offset: -5 }} />
-                <YAxis stroke="#8B8680" label={{ value: 'Number of Visits', angle: -90, position: 'insideLeft' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#FDFBF7',
-                    border: '1px solid #E7E5E4',
-                  }}
-                />
-                <Legend />
-                {demoData.campaigns.map((campaign, idx) => {
-                  const campaignDate = campaign.date.toISOString().split('T')[0];
-                  const dataIndex = visitsOverTimeData.findIndex((d) => d.date === campaignDate);
-                  if (dataIndex === -1) return null;
-                  return (
-                    <ReferenceLine
-                      key={campaign.id}
-                      x={campaignDate}
-                      stroke="#B85C38"
-                      strokeWidth={2}
-                      strokeDasharray="6 3"
-                      label={{
-                        value: campaign.name,
-                        position: 'top',
-                        fill: '#FDFBF7',
-                        background: { fill: '#B85C38', padding: '4px 8px' },
-                        borderRadius: 12,
-                        offset: 10,
-                        fontSize: 11,
-                        fontWeight: 600,
-                      }}
-                    />
-                  );
-                })}
-                <Line
-                  type="monotone"
-                  dataKey="visits"
-                  stroke="#B85C38"
-                  dot={{ fill: '#B85C38', r: 4, cursor: 'pointer' }}
-                  strokeWidth={2}
-                  name="Visits"
-                  onClick={(state) => {
-                    if (state.payload && state.payload.customers) {
-                      openDrillDown(`Visitors on ${state.payload.date}`, state.payload.customers);
-                    }
-                  }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="absolute top-0 right-0 flex items-center gap-2 text-xs">
-              <span className="w-4 h-0.5 bg-[#B85C38]" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #B85C38 0, #B85C38 6px, transparent 6px, transparent 9px)' }} />
-              <span className="text-[#57534E]">Campaign sent</span>
-            </div>
-          </div>
-        </ChartContainer>
+          Analytics
+        </h1>
+        <p className="text-[#57534E]">
+          Every number on this page is live and matches Dashboard & Insights. Click any card to drill in.
+        </p>
+      </header>
 
-        {/* Section 3: New Customers Over Time */}
-        <ChartContainer
-          title="New Customers Over Time"
-          description="See how fast your programme is growing."
-        >
-          <PeriodSelector
-            value={periodFilter}
-            customValue={customDays}
-            onChange={setPeriodFilter}
-            onCustomChange={setCustomDays}
-            label="Period:"
-          />
-          <div className="mt-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={newCustomersOverTimeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                <XAxis dataKey="week" stroke="#8B8680" label={{ value: 'Week Starting', position: 'insideBottomRight', offset: -5 }} />
-                <YAxis stroke="#8B8680" label={{ value: 'New Signups', angle: -90, position: 'insideLeft' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#FDFBF7',
-                    border: '1px solid #E7E5E4',
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="new" fill="#2D7D9A" name="New this week" onClick={(state) => {
-                  if (state.payload && state.payload.customers) {
-                    openDrillDown(`New Customers: Week of ${state.payload.week}`, state.payload.customers);
-                  }
-                }} cursor="pointer" />
-                <Line
-                  type="monotone"
-                  dataKey="cumulative"
-                  stroke="#E3A869"
-                  name="Cumulative"
-                  strokeWidth={2}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartContainer>
+      {/* Row 1 — canonical KPIs (same source of truth as Dashboard) */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KPICard
+          icon={Users}
+          title="Total Customers"
+          value={totalCustomers.toLocaleString()}
+          sublabel={`${newThisWeek} new this week`}
+          accent="#B85C38"
+        />
+        <KPICard
+          icon={Activity}
+          title="Total Visits"
+          value={totalVisits.toLocaleString()}
+          sublabel="All time"
+          accent="#4A5D23"
+        />
+        <KPICard
+          icon={TrendingUp}
+          title="Repeat Rate"
+          value={`${repeatRate.toFixed(1)}%`}
+          sublabel={`${activeCustomers} active (30d)`}
+          accent="#E3A869"
+        />
+        <KPICard
+          icon={Smartphone}
+          title="Wallet Passes"
+          value={walletPasses.toLocaleString()}
+          sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% of customers`}
+          accent="#7B3F00"
+        />
+      </section>
 
-        {/* Section 4: Tier Distribution */}
-        <ChartContainer
-          title="Tier Distribution"
-          description="How many customers are at each tier level."
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={tierChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value} (${Math.round((value / totalCustomers) * 100)}%)`}
-                  >
-                    {tierChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#FDFBF7',
-                      border: '1px solid #E7E5E4',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="lg:col-span-2 space-y-4">
-              {tierChartData.map((tier) => (
-                <div
-                  key={tier.name}
-                  onClick={() => {
-                    const tierCustomers = demoData.customers.filter(
-                      (c) => c.tier === tier.name
-                    );
-                    openDrillDown(`${tier.name} Customers`, tierCustomers);
-                  }}
-                  className="p-4 bg-[#F3EFE7] rounded border border-[#E7E5E4] cursor-pointer hover:shadow-md transition"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className="inline-block w-3 h-3 rounded-full"
-                      style={{ backgroundColor: tier.fill }}
-                    />
-                    <h4 className="font-cormorant text-lg font-semibold text-[#1C1917]">
-                      {tier.name}
-                    </h4>
-                    <span className="text-sm text-[#57534E]">
-                      {tier.value} customers (
-                      {Math.round((tier.value / totalCustomers) * 100)}%)
-                    </span>
-                  </div>
-                </div>
-              ))}
-              <div className="p-4 bg-[#F3EFE7] rounded border border-[#E7E5E4]">
-                <h4 className="font-cormorant text-lg font-semibold text-[#1C1917] mb-3">
-                  Tier Upgrades This Month
-                </h4>
-                <div>
-                  <p className="text-sm text-[#57534E] mb-2">Customers moved to higher tier</p>
-                  <p className="text-3xl font-bold text-[#4A5D23]">
-                    ↑ {tierMovement.upgraded}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ChartContainer>
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KPICard
+          icon={CreditCard}
+          title="Cards Filled"
+          value={cardsFilledTotal.toLocaleString()}
+          sublabel={`${cardsFilledThisMonth} this month`}
+          accent="#4A5D23"
+        />
+        <KPICard
+          icon={Gift}
+          title="Recovered Customers"
+          value={(recovered?.count ?? summary?.recovered_count ?? 0).toLocaleString()}
+          sublabel={`${recovered?.percentage ?? summary?.recovered_pct ?? 0}% of total`}
+          onClick={() =>
+            setDrill({
+              title: 'Recovered Customers',
+              rows: recovered?.customers || [],
+              columns: [
+                { key: 'name', label: 'Customer' },
+                { key: 'email', label: 'Email' },
+                { key: 'tier', label: 'Tier', render: (v) => <TierBadge tier={v} /> },
+                { key: 'last_inactive_date', label: 'Gap started', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                { key: 'returned_date', label: 'Returned', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+              ],
+            })
+          }
+          accent="#B85C38"
+        />
+        <KPICard
+          icon={Award}
+          title="Active Customers"
+          value={activeCustomers.toLocaleString()}
+          sublabel="Visited in last 30 days"
+          accent="#E3A869"
+        />
+        <KPICard
+          icon={Calendar}
+          title="New This Week"
+          value={newThisWeek.toLocaleString()}
+          sublabel="Joined in last 7 days"
+          accent="#5B8DEF"
+        />
+      </section>
 
-        {/* Section 4.5: Recovered Customers Filter */}
-        <div className="bg-[#FDFBF7] border border-[#E7E5E4] rounded-lg p-6 mb-12">
-          <h3 className="font-cormorant text-2xl font-semibold text-[#1C1917] mb-4">
-            Customize Recovered Customers Filter
-          </h3>
-          <p className="text-sm text-[#57534E] mb-4">
-            "Customers who were quiet for X days and came back in the last Y days"
-          </p>
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-[#57534E]">Inactive for</label>
-              <input
-                type="number"
-                min="1"
-                value={recoveryInactiveDays}
-                onChange={(e) => setRecoveryInactiveDays(parseInt(e.target.value) || 30)}
-                className="w-16 px-2 py-1 border border-[#E7E5E4] rounded"
-              />
-              <span className="text-sm text-[#57534E]">days</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-[#57534E]">came back in last</label>
-              <input
-                type="number"
-                min="1"
-                value={recoveryWindowDays}
-                onChange={(e) => setRecoveryWindowDays(parseInt(e.target.value) || 30)}
-                className="w-16 px-2 py-1 border border-[#E7E5E4] rounded"
-              />
-              <span className="text-sm text-[#57534E]">days</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 5: Active vs Inactive */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-          <div
-            onClick={() => {
-              const active = demoData.customers.filter((c) => {
-                const daysSinceLastVisit = Math.floor(
-                  (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-                );
-                return daysSinceLastVisit <= activeDays && c.totalVisits >= activeThreshold;
-              });
-              openDrillDown('Active Customers', active);
-            }}
-            className="bg-[#FDFBF7] border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-md transition"
-          >
-            <h3 className="font-cormorant text-2xl font-semibold text-[#1C1917] mb-4">
-              Active Customers
-            </h3>
-            <div className="text-4xl font-bold text-[#4A5D23] mb-4">{activeCustomers}</div>
-            <p className="text-sm text-[#57534E] mb-4">
-              Customers who visited at least{' '}
-              <input
-                type="number"
-                min="1"
-                value={activeThreshold}
-                onChange={(e) => setActiveThreshold(parseInt(e.target.value) || 1)}
-                className="w-10 px-1 py-0 border border-[#E7E5E4] rounded text-sm"
-              />{' '}
-              times in the last{' '}
-              <input
-                type="number"
-                min="1"
-                value={activeDays}
-                onChange={(e) => setActiveDays(parseInt(e.target.value) || 30)}
-                className="w-12 px-1 py-0 border border-[#E7E5E4] rounded text-sm"
-              />{' '}
-              days
-            </p>
-            <p className="text-xs text-[#8B8680]">
-              These are your regular, engaged customers
-            </p>
-          </div>
-
-          <div
-            onClick={() => {
-              const inactive = demoData.customers.filter((c) => {
-                const daysSinceLastVisit = Math.floor(
-                  (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-                );
-                return daysSinceLastVisit > inactiveDays;
-              });
-              openDrillDown('Inactive Customers', inactive);
-            }}
-            className="bg-[#FDFBF7] border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-md transition"
-          >
-            <h3 className="font-cormorant text-2xl font-semibold text-[#1C1917] mb-4">
-              Inactive Customers
-            </h3>
-            <div className="text-4xl font-bold text-red-600 mb-4">{inactiveCustomers}</div>
-            <p className="text-sm text-[#57534E] mb-4">
-              Customers who haven't visited in more than{' '}
-              <input
-                type="number"
-                min="1"
-                value={inactiveDays}
-                onChange={(e) => setInactiveDays(parseInt(e.target.value) || 30)}
-                className="w-12 px-1 py-0 border border-[#E7E5E4] rounded text-sm"
-              />{' '}
-              days
-            </p>
-            <p className="text-xs text-[#8B8680]">
-              These customers have gone dormant — try to win them back
-            </p>
-            <button className="mt-4 text-sm bg-[#B85C38] text-[#FDFBF7] px-4 py-2 rounded hover:bg-[#A24D2E] transition">
-              Send message to inactive customers
-            </button>
-          </div>
-        </div>
-
-        {/* Section 6: Visit Frequency Breakdown */}
-        <ChartContainer
-          title="Visit Frequency Breakdown"
-          description="How often do your customers typically come in?"
-        >
-          <div className="mb-6 space-y-3">
-            <div className="flex items-center gap-4 text-sm">
-              <label>Very Regular: every</label>
-              <input
-                type="number"
-                min="1"
-                value={frequencyBuckets.veryRegular}
-                onChange={(e) =>
-                  setFrequencyBuckets({
-                    ...frequencyBuckets,
-                    veryRegular: parseInt(e.target.value) || 3,
-                  })
-                }
-                className="w-12 px-2 py-1 border border-[#E7E5E4] rounded"
-              />
-              <span>days or less</span>
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              <label>Occasional: between {frequencyBuckets.veryRegular + 1} and</label>
-              <input
-                type="number"
-                min={frequencyBuckets.veryRegular + 1}
-                value={frequencyBuckets.occasional}
-                onChange={(e) =>
-                  setFrequencyBuckets({
-                    ...frequencyBuckets,
-                    occasional: parseInt(e.target.value) || 14,
-                  })
-                }
-                className="w-12 px-2 py-1 border border-[#E7E5E4] rounded"
-              />
-              <span>days</span>
-            </div>
-            <div className="text-sm text-[#57534E]">
-              Rare: more than {frequencyBuckets.occasional} days
-            </div>
-          </div>
-
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={visitFrequencyChartData}>
+      {/* Row 2 — visits by day + new customers by week */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Visits over the last 30 days" hint="Daily visits recorded by staff scans.">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={visitsByDay}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis dataKey="name" stroke="#8B8680" label={{ value: 'Customer Frequency', position: 'insideBottomRight', offset: -5 }} />
-              <YAxis stroke="#8B8680" label={{ value: 'Number of Customers', angle: -90, position: 'insideLeft' }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#FDFBF7',
-                  border: '1px solid #E7E5E4',
-                }}
-              />
-              <Bar dataKey="value" fill="#8B6914" onClick={(state) => {
-                const label = state.payload.name;
-                const customers = visitFrequencyChartData.find(d => d.name === label)
-                  ? demoData.customers.filter((c) => {
-                    const avgDaysBetweenVisits = (new Date() - c.joinDate) / (1000 * 60 * 60 * 24) / c.totalVisits;
-                    if (label.includes('Very Regular')) return avgDaysBetweenVisits <= frequencyBuckets.veryRegular;
-                    if (label.includes('Occasional')) return avgDaysBetweenVisits > frequencyBuckets.veryRegular && avgDaysBetweenVisits <= frequencyBuckets.occasional;
-                    if (label.includes('Rare')) return avgDaysBetweenVisits > frequencyBuckets.occasional;
-                    return false;
-                  })
-                  : [];
-                openDrillDown(label, customers);
-              }} cursor="pointer" />
+              <XAxis dataKey="date" stroke="#57534E" tick={{ fontSize: 10 }} />
+              <YAxis stroke="#57534E" />
+              <Tooltip />
+              <Line type="monotone" dataKey="count" stroke="#B85C38" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="New customers by week" hint="Weekly registrations over the last 12 weeks.">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={newCustomersByWeek}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+              <XAxis dataKey="week" stroke="#57534E" tick={{ fontSize: 10 }} />
+              <YAxis stroke="#57534E" />
+              <Tooltip />
+              <Bar dataKey="count" fill="#4A5D23" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </ChartContainer>
+        </ChartCard>
+      </section>
 
-        {/* Section 7: At-Risk Customers */}
-        <ChartContainer
-          title="Customers you might be about to lose"
-          description="These people haven't visited in a while. Send them a message to bring them back."
+      {/* Row 3 — tier + acquisition */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread.">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={tierData}
+                cx="50%"
+                cy="50%"
+                outerRadius={110}
+                dataKey="value"
+                labelLine={false}
+                label={({ name, value }) =>
+                  totalCustomers
+                    ? `${name}: ${value} (${Math.round((value / totalCustomers) * 100)}%)`
+                    : `${name}: ${value}`
+                }
+              >
+                {tierData.map((t, i) => (
+                  <Cell key={i} fill={TIER_COLORS[t.key] || '#B85C38'} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Acquisition Sources" hint="How customers found you in the last 90 days.">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={acquisitionChart} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+              <XAxis type="number" stroke="#57534E" />
+              <YAxis type="category" dataKey="name" stroke="#57534E" width={110} />
+              <Tooltip />
+              <Bar dataKey="value" radius={[0, 8, 8, 0]}>
+                {acquisitionChart.map((_, i) => (
+                  <Cell key={i} fill={ACQ_COLORS[i % ACQ_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </section>
+
+      {/* Row 4 — Recovered Customers Filter (PROPER LABELS + INPUTS) */}
+      <section className="bg-white border border-[#E7E5E4] rounded-xl p-6">
+        <h3
+          className="text-xl font-semibold text-[#1C1917] mb-2"
+          style={{ fontFamily: 'Cormorant Garamond' }}
         >
-          <div className="mb-6 flex items-center gap-3">
-            <label className="text-sm text-[#57534E]">Haven't visited in more than</label>
+          Customize Recovered Customers Filter
+        </h3>
+        <p className="text-sm text-[#57534E] mb-4">
+          "Customers who were quiet for X days and came back in the last Y days"
+        </p>
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-[#57534E]">Inactive for</label>
             <input
               type="number"
               min="1"
-              value={atRiskDays}
-              onChange={(e) => setAtRiskDays(parseInt(e.target.value) || 21)}
-              className="w-16 px-2 py-1 border border-[#E7E5E4] rounded"
+              value={recoveryInactiveDays}
+              onChange={(e) => setRecoveryInactiveDays(parseInt(e.target.value) || 30)}
+              className="w-20 px-2 py-1 border border-[#E7E5E4] rounded text-center"
+            />
+            <span className="text-sm text-[#57534E]">days,</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-[#57534E]">came back in last</label>
+            <input
+              type="number"
+              min="1"
+              value={recoveryWindowDays}
+              onChange={(e) => setRecoveryWindowDays(parseInt(e.target.value) || 30)}
+              className="w-20 px-2 py-1 border border-[#E7E5E4] rounded text-center"
             />
             <span className="text-sm text-[#57534E]">days</span>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#E7E5E4]">
-                  <th className="text-left py-3 px-4 text-[#57534E]">Name</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Last Visit</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Days Ago</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Total Visits</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Tier</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {atRiskCustomers.slice(0, 10).map((customer) => (
-                  <tr
-                    key={customer.id}
-                    className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7]"
-                  >
-                    <td className="py-3 px-4">{customer.firstName}</td>
-                    <td className="py-3 px-4 text-[#8B8680]">
-                      {customer.lastVisitDate.toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-red-600">
-                      {customer.daysSinceLastVisit}
-                    </td>
-                    <td className="py-3 px-4">{customer.totalVisits}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-semibold text-white ${
-                          customer.tier === 'Gold'
-                            ? 'bg-[#E3A869]'
-                            : customer.tier === 'Silver'
-                            ? 'bg-gray-400'
-                            : 'bg-amber-600'
-                        }`}
-                      >
-                        {customer.tier}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button className="text-[#B85C38] hover:underline text-xs font-semibold">
-                        Send message
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {atRiskCustomers.length > 10 && (
-            <div className="mt-4 text-center text-sm text-[#57534E]">
-              Showing 10 of {atRiskCustomers.length} at-risk customers
-            </div>
-          )}
-
-          <button className="mt-6 w-full bg-[#B85C38] text-[#FDFBF7] py-2 rounded hover:bg-[#A24D2E] transition font-semibold">
-            Send win-back campaign to selected
-          </button>
-        </ChartContainer>
-
-        {/* Section 8: Campaign Performance */}
-        <ChartContainer
-          title="Did your messages actually bring people in?"
-          description="These numbers tell you which campaigns worked. Opens show if people opened your message, visits show who came in within 7 days."
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#E7E5E4]">
-                  <th className="text-left py-3 px-4 text-[#57534E]">Campaign</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Date Sent</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Sent To</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Delivered</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Opens</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Visits (7d)</th>
-                  <th className="text-left py-3 px-4 text-[#57534E]">Uplift</th>
-                </tr>
-              </thead>
-              <tbody>
-                {demoData.campaigns.map((campaign) => {
-                  const openRate = Math.round((Math.random() * 30 + 10));
-                  const visitRate = Math.round((campaign.visitsAfter / campaign.sentCount) * 100);
-                  const uplift = Math.round(
-                    ((campaign.visitsAfter / campaign.sentCount) * 100 - 25) * 10
-                  ) / 10;
-                  const deliveryRate = Math.floor(campaign.sentCount * 0.95);
-                  return (
-                    <tr
-                      key={campaign.id}
-                      onClick={() => {
-                        const visitorsAfterCampaign = demoData.customers.filter((c) => {
-                          const visitAfterCampaign = demoData.visits.some(
-                            (v) => v.customerId === c.id && v.date > campaign.date
-                          );
-                          return visitAfterCampaign;
-                        });
-                        openDrillDown(
-                          `Customers who visited after "${campaign.name}"`,
-                          visitorsAfterCampaign
-                        );
-                      }}
-                      className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7] cursor-pointer"
-                    >
-                      <td className="py-3 px-4 font-semibold">{campaign.name}</td>
-                      <td className="py-3 px-4 text-[#8B8680]">
-                        {campaign.date.toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4">{campaign.sentCount}</td>
-                      <td className="py-3 px-4 text-[#57534E]">{deliveryRate}</td>
-                      <td className="py-3 px-4">
-                        <span className="text-[#4A5D23] font-semibold">
-                          {Math.floor(deliveryRate * openRate / 100)} ({openRate}%)
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-[#4A5D23] font-semibold">
-                          {campaign.visitsAfter} ({visitRate}%)
-                        </span>
-                        <span className="text-xs text-[#8B8680] block">People in 7 days</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`text-sm font-semibold ${
-                            uplift > 0 ? 'text-[#4A5D23]' : 'text-red-600'
-                          }`}
-                        >
-                          {uplift > 0 ? '+' : ''}{uplift}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </ChartContainer>
-
-        {/* Section 9: Best Days & Times */}
-        <ChartContainer
-          title="When do your customers usually come in?"
-          description="Use this to decide when to send messages for maximum impact."
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#F3EFE7]">
-                  <th className="text-left py-3 px-4 text-[#57534E]">Time</th>
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                    <th key={day} className="text-center py-3 px-4 text-[#57534E]">
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {['Morning (6–11am)', 'Afternoon (12–5pm)', 'Evening (6–11pm)'].map((time) => (
-                  <tr key={time} className="border-b border-[#E7E5E4]">
-                    <td className="py-3 px-4 font-semibold text-[#57534E]">{time}</td>
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
-                      const cell = heatmapData.find((h) => h.day === day && h.time === time);
-                      const intensity = cell?.intensity || 'low';
-                      const bgColor =
-                        intensity === 'high'
-                          ? 'bg-[#B85C38]'
-                          : intensity === 'medium'
-                          ? 'bg-[#E3A869]'
-                          : 'bg-[#E7E5E4]';
-                      const textColor =
-                        intensity === 'high'
-                          ? 'text-[#FDFBF7]'
-                          : 'text-[#57534E]';
-                      return (
-                        <td
-                          key={day}
-                          className={`text-center py-3 px-4 ${bgColor} ${textColor} font-semibold cursor-pointer hover:opacity-80 transition`}
-                          onClick={() => {
-                            if (cell && cell.customers && cell.customers.length > 0) {
-                              openDrillDown(`Customers: ${day} ${time}`, cell.customers);
-                            }
-                          }}
-                        >
-                          {cell?.visits || 0}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-[#8B8680] mt-4">
-            Darker = more visits. Light colors mean fewer people visit at that time. Click a cell to see customers.
-          </p>
-        </ChartContainer>
-
-        {/* Section 10: Days Since Last Visit */}
-        <ChartContainer
-          title="How long ago did each customer last visit?"
-          description="See the distribution of recency — how fresh are your relationships?"
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={visitRecencyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis dataKey="range" stroke="#8B8680" label={{ value: 'Recency Range', position: 'insideBottomRight', offset: -5 }} />
-              <YAxis stroke="#8B8680" label={{ value: 'Customers', angle: -90, position: 'insideLeft' }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#FDFBF7',
-                  border: '1px solid #E7E5E4',
-                }}
-              />
-              <Bar
-                dataKey="count"
-                fill="#4A5D23"
-                onClick={(state) => {
-                  const rangeMap = {
-                    '0–7 days': (c) => {
-                      const d = Math.floor(
-                        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-                      );
-                      return d <= 7;
-                    },
-                    '8–14 days': (c) => {
-                      const d = Math.floor(
-                        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-                      );
-                      return d > 7 && d <= 14;
-                    },
-                    '15–30 days': (c) => {
-                      const d = Math.floor(
-                        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-                      );
-                      return d > 14 && d <= 30;
-                    },
-                    '31–60 days': (c) => {
-                      const d = Math.floor(
-                        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-                      );
-                      return d > 30 && d <= 60;
-                    },
-                    '60+ days': (c) => {
-                      const d = Math.floor(
-                        (new Date() - c.lastVisitDate) / (1000 * 60 * 60 * 24)
-                      );
-                      return d > 60;
-                    },
-                  };
-                  const customers = demoData.customers.filter(
-                    rangeMap[state.payload.range]
-                  );
-                  openDrillDown(
-                    `Customers: last visit ${state.payload.range}`,
-                    customers
-                  );
-                }}
-                cursor="pointer"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        {/* Section 11: Customer Sources */}
-        <AcquisitionSourcesChart />
-      </div>
-
-      {/* Campaign Group Send Modal */}
-      {campaignGroupSendOpen && drillDownData && (
-        <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-[#FDFBF7] rounded-lg shadow-lg max-w-md w-full mx-4"
-          >
-            {/* Header */}
-            <div className="border-b border-[#E7E5E4] p-6">
-              <div className="flex items-center justify-between">
-                <h2 className="font-cormorant text-2xl font-bold text-[#1C1917]">
-                  Create Campaign
-                </h2>
-                <button
-                  onClick={() => setCampaignGroupSendOpen(false)}
-                  className="p-2 hover:bg-[#E7E5E4] rounded transition"
-                >
-                  <X className="w-5 h-5 text-[#1C1917]" />
-                </button>
-              </div>
-              <p className="text-sm text-[#8B8680] mt-2">
-                Send to {drillDownData.customers.length} customers
-              </p>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#1C1917] mb-2">
-                  Campaign Name
-                </label>
-                <input
-                  type="text"
-                  value={campaignGroupForm.name}
-                  onChange={(e) => setCampaignGroupForm({ ...campaignGroupForm, name: e.target.value })}
-                  placeholder="e.g., Spring Collection Launch"
-                  className="w-full px-3 py-2 border border-[#E7E5E4] rounded text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#1C1917] mb-2">
-                  Message
-                </label>
-                <textarea
-                  value={campaignGroupForm.content}
-                  onChange={(e) => setCampaignGroupForm({ ...campaignGroupForm, content: e.target.value })}
-                  placeholder="Write your campaign message..."
-                  rows={4}
-                  className="w-full px-3 py-2 border border-[#E7E5E4] rounded text-sm resize-none"
-                />
-              </div>
-
-              <div className="bg-[#F3EFE7] p-3 rounded">
-                <p className="text-xs text-[#57534E] mb-2">
-                  <strong>Will send to {drillDownData.customers.length} customers:</strong>
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {drillDownData.customers.slice(0, 5).map((c, idx) => (
-                    <span key={idx} className="text-xs bg-white px-2 py-1 rounded border border-[#E7E5E4]">
-                      {c.firstName}
-                    </span>
-                  ))}
-                  {drillDownData.customers.length > 5 && (
-                    <span className="text-xs bg-white px-2 py-1 rounded border border-[#E7E5E4]">
-                      +{drillDownData.customers.length - 5} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-[#E7E5E4] p-6 flex gap-3">
-              <button
-                onClick={() => setCampaignGroupSendOpen(false)}
-                className="flex-1 text-sm bg-[#E7E5E4] text-[#1C1917] py-2 rounded hover:bg-[#D3D1D0] transition font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  // Mock send campaign
-                  alert(`Campaign "${campaignGroupForm.name}" sent to ${drillDownData.customers.length} customers!`);
-                  setCampaignGroupSendOpen(false);
-                  setDrillDownOpen(false);
-                  setCampaignGroupForm({ name: '', content: '' });
-                }}
-                className="flex-1 text-sm bg-[#B85C38] text-[#FDFBF7] py-2 rounded hover:bg-[#A24D2E] transition font-semibold"
-              >
-                Send Campaign
-              </button>
-            </div>
+          <div className="ml-auto text-sm text-[#1C1917] font-medium">
+            <span className="text-[#B85C38] font-bold">{recovered?.count ?? 0}</span> customers match
+            {' '}
+            <span className="text-[#8B8680]">({recovered?.percentage ?? 0}% of base)</span>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Customer Drill-Down Panel */}
-      {drillDownOpen && drillDownData && (
-        <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setDrillDownOpen(false)}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-[#FDFBF7] shadow-lg overflow-y-auto z-50"
+      {/* Row 5 — Customer Ranking Tabs */}
+      <section className="bg-white border border-[#E7E5E4] rounded-xl p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h3
+            className="text-xl font-semibold text-[#1C1917]"
+            style={{ fontFamily: 'Cormorant Garamond' }}
           >
-            {/* Header */}
-            <div className="sticky top-0 border-b border-[#E7E5E4] p-6 bg-[#FDFBF7]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-cormorant text-2xl font-bold text-[#1C1917]">
-                    {drillDownData.title}
-                  </h2>
-                  <p className="text-sm text-[#8B8680]">
-                    {drillDownData.customers.length} customers
-                  </p>
-                </div>
+            Customer Ranking
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: 'top_paying', label: 'Top Paying', icon: Trophy },
+              { key: 'least_paying', label: 'Least Paying', icon: ArrowDown },
+              { key: 'max_visits', label: 'Max Visits', icon: ArrowUp },
+              { key: 'least_visits', label: 'Least Visits', icon: ArrowDown },
+            ].map((t) => {
+              const Icon = t.icon;
+              const active = rankingMode === t.key;
+              return (
                 <button
-                  onClick={() => setDrillDownOpen(false)}
-                  className="p-2 hover:bg-[#E7E5E4] rounded transition"
+                  key={t.key}
+                  onClick={() => setRankingMode(t.key)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                    active
+                      ? 'bg-[#B85C38] text-white'
+                      : 'bg-[#F3EFE7] text-[#57534E] hover:bg-[#E7E5E4]'
+                  }`}
                 >
-                  <X className="w-5 h-5 text-[#1C1917]" />
+                  <Icon size={14} />
+                  {t.label}
                 </button>
-              </div>
-            </div>
-
-            {/* Customer List */}
-            <div className="p-6 space-y-4">
-              {drillDownData.customers.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-[#8B8680]">No customers to display</p>
-                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+                <th className="py-2 px-3">#</th>
+                <th className="py-2 px-3">Customer</th>
+                <th className="py-2 px-3">Email</th>
+                <th className="py-2 px-3">Tier</th>
+                <th className="py-2 px-3 text-right">Visits</th>
+                <th className="py-2 px-3 text-right">Spent</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rankedCustomers.length === 0 ? (
+                <tr><td colSpan={6} className="py-6 text-center text-[#8B8680]">No customers to rank yet.</td></tr>
               ) : (
-                drillDownData.customers.map((customer) => {
-                  const daysSinceLastVisit = Math.floor(
-                    (new Date() - customer.lastVisitDate) / (1000 * 60 * 60 * 24)
-                  );
-                  const lastVisitLabel =
-                    daysSinceLastVisit === 0
-                      ? 'Today'
-                      : daysSinceLastVisit === 1
-                      ? 'Yesterday'
-                      : `${daysSinceLastVisit} days ago`;
-
-                  return (
-                    <div
-                      key={customer.id}
-                      className="border border-[#E7E5E4] rounded p-4 hover:bg-[#F3EFE7] transition"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#B85C38] text-[#FDFBF7] flex items-center justify-center font-semibold text-sm">
-                            {customer.firstName[0]}{customer.firstName[1] || ''}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-[#1C1917]">
-                              {customer.name}
-                            </p>
-                            <p className="text-xs text-[#8B8680]">{customer.email}</p>
-                          </div>
-                        </div>
-                        <span
-                          className={`text-xs font-semibold px-2 py-1 rounded text-white ${
-                            customer.tier === 'Gold'
-                              ? 'bg-[#E3A869]'
-                              : customer.tier === 'Silver'
-                              ? 'bg-gray-400'
-                              : 'bg-amber-600'
-                          }`}
-                        >
-                          {customer.tier}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                        <div>
-                          <p className="text-[#8B8680]">Total Visits</p>
-                          <p className="font-semibold text-[#1C1917]">
-                            {customer.totalVisits}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[#8B8680]">Last Visit</p>
-                          <p className="font-semibold text-[#1C1917]">
-                            {lastVisitLabel}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[#8B8680]">Points</p>
-                          <p className="font-semibold text-[#B85C38]">
-                            {customer.points.toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[#8B8680]">Wallet Pass</p>
-                          <p className="font-semibold text-[#1C1917]">
-                            {customer.walletPass ? 'Yes' : 'No'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button className="w-full text-sm bg-[#B85C38] text-[#FDFBF7] py-2 rounded hover:bg-[#A24D2E] transition font-semibold">
-                        Send message
-                      </button>
-                    </div>
-                  );
-                })
+                rankedCustomers.map((c, i) => (
+                  <tr key={c.id || i} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7]">
+                    <td className="py-2 px-3 text-[#8B8680]">{i + 1}</td>
+                    <td className="py-2 px-3 font-medium text-[#1C1917]">{c.name || '—'}</td>
+                    <td className="py-2 px-3 text-[#57534E] text-xs">{c.email || '—'}</td>
+                    <td className="py-2 px-3"><TierBadge tier={c.tier} /></td>
+                    <td className="py-2 px-3 text-right">{c.total_visits ?? 0}</td>
+                    <td className="py-2 px-3 text-right">€{(c.total_amount_paid ?? 0).toFixed(2)}</td>
+                  </tr>
+                ))
               )}
-            </div>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-            {/* Footer */}
-            {drillDownData.customers.length > 0 && (
-              <div className="sticky bottom-0 border-t border-[#E7E5E4] p-6 bg-[#FDFBF7] space-y-3">
-                <button
-                  onClick={() => exportCSV(drillDownData.customers)}
-                  className="w-full text-sm bg-[#E7E5E4] text-[#1C1917] py-2 rounded hover:bg-[#D3D1D0] transition font-semibold flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Export as CSV
-                </button>
-                <button
-                  onClick={() => setCampaignGroupSendOpen(true)}
-                  className="w-full text-sm bg-[#B85C38] text-[#FDFBF7] py-2 rounded hover:bg-[#A24D2E] transition font-semibold flex items-center justify-center gap-2"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  Create campaign for this group
-                </button>
-              </div>
+      {/* Drill-down modal */}
+      {drill && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setDrill(null)}
+        >
+          <div
+            className="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] overflow-auto p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3
+                className="text-2xl font-bold text-[#1C1917]"
+                style={{ fontFamily: 'Cormorant Garamond' }}
+              >
+                {drill.title}
+              </h3>
+              <button
+                onClick={() => setDrill(null)}
+                className="text-[#A8A29E] hover:text-[#1C1917]"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            {(!drill.rows || drill.rows.length === 0) ? (
+              <p className="text-[#57534E] py-8 text-center">No matching records.</p>
+            ) : (
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+                    {drill.columns.map((c) => (
+                      <th key={c.key} className="py-2 px-3">{c.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {drill.rows.map((r, i) => (
+                    <tr key={i} className="border-b border-[#E7E5E4]">
+                      {drill.columns.map((c) => (
+                        <td key={c.key} className="py-2 px-3 text-[#1C1917]">
+                          {c.render ? c.render(r[c.key]) : (r[c.key] ?? '—')}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>

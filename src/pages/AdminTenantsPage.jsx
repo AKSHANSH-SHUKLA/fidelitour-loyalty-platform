@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api, { adminAPI } from '../lib/api';
-import { Search, Filter, MoreVertical, ChevronDown, X, Download, Mail, TrendingUp } from 'lucide-react';
+import { Search, Filter, MoreVertical, ChevronDown, X, Download, Mail, TrendingUp, Users, BarChart3 } from 'lucide-react';
+import TierBadge from '../components/TierBadge';
 
 const AdminTenantsPage = () => {
   const [tenants, setTenants] = useState([]);
@@ -25,6 +26,11 @@ const AdminTenantsPage = () => {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [showCustomersModal, setShowCustomersModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [tenantCustomers, setTenantCustomers] = useState([]);
+  const [tenantAnalytics, setTenantAnalytics] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [newPlan, setNewPlan] = useState('');
   const [campaignSubject, setCampaignSubject] = useState('');
@@ -152,6 +158,36 @@ const AdminTenantsPage = () => {
     setCampaignBody('');
     setShowCampaignModal(true);
     setOpenMenuId(null);
+  };
+
+  const handleViewCustomers = async () => {
+    setOpenMenuId(null);
+    setShowCustomersModal(true);
+    setModalLoading(true);
+    try {
+      const { data } = await adminAPI.getTenantCustomers(selectedTenant.id);
+      setTenantCustomers(data || []);
+    } catch (e) {
+      console.error('Failed to fetch tenant customers:', e);
+      setTenantCustomers([]);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleViewAnalytics = async () => {
+    setOpenMenuId(null);
+    setShowAnalyticsModal(true);
+    setModalLoading(true);
+    try {
+      const { data } = await adminAPI.getTenantAnalytics(selectedTenant.id, { days: 30 });
+      setTenantAnalytics(data);
+    } catch (e) {
+      console.error('Failed to fetch tenant analytics:', e);
+      setTenantAnalytics(null);
+    } finally {
+      setModalLoading(false);
+    }
   };
 
   const confirmChangePlan = async () => {
@@ -469,6 +505,20 @@ const AdminTenantsPage = () => {
                           View Details
                         </button>
                         <button
+                          onClick={handleViewCustomers}
+                          className="w-full text-left px-4 py-2 text-sm text-[#57534E] hover:bg-[#F3EFE7] transition-colors border-t border-[#E7E5E4] flex items-center gap-2"
+                        >
+                          <Users size={14} />
+                          View Customers
+                        </button>
+                        <button
+                          onClick={handleViewAnalytics}
+                          className="w-full text-left px-4 py-2 text-sm text-[#57534E] hover:bg-[#F3EFE7] transition-colors border-t border-[#E7E5E4] flex items-center gap-2"
+                        >
+                          <BarChart3 size={14} />
+                          View Analytics
+                        </button>
+                        <button
                           onClick={handleChangePlan}
                           className="w-full text-left px-4 py-2 text-sm text-[#57534E] hover:bg-[#F3EFE7] transition-colors border-t border-[#E7E5E4]"
                         >
@@ -698,6 +748,167 @@ const AdminTenantsPage = () => {
         </div>
       )}
 
+      {/* Customers Modal */}
+      {showCustomersModal && selectedTenant && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-5xl w-full max-h-[85vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+                  Customers — {selectedTenant.name}
+                </h2>
+                <p className="text-sm text-[#57534E]">{tenantCustomers.length} customers</p>
+              </div>
+              <button onClick={() => setShowCustomersModal(false)} className="text-[#A8A29E] hover:text-[#1C1917]">
+                <X size={20} />
+              </button>
+            </div>
+
+            {modalLoading ? (
+              <p className="text-[#57534E] py-12 text-center">Loading customers…</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E7E5E4]">
+                      <th className="py-2 px-2 font-semibold text-[#57534E]">Name</th>
+                      <th className="py-2 px-2 font-semibold text-[#57534E]">Email</th>
+                      <th className="py-2 px-2 font-semibold text-[#57534E]">Tier</th>
+                      <th className="py-2 px-2 font-semibold text-[#57534E]">Visits</th>
+                      <th className="py-2 px-2 font-semibold text-[#57534E]">Total Paid (€)</th>
+                      <th className="py-2 px-2 font-semibold text-[#57534E]">Postal</th>
+                      <th className="py-2 px-2 font-semibold text-[#57534E]">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tenantCustomers.map((c) => (
+                      <tr key={c.id} className="border-b border-[#F3EFE7] hover:bg-[#F3EFE7]/40">
+                        <td className="py-2 px-2 text-[#1C1917] font-medium">{c.name}</td>
+                        <td className="py-2 px-2 text-[#57534E]">{c.email}</td>
+                        <td className="py-2 px-2"><TierBadge tier={c.tier} size="xs" /></td>
+                        <td className="py-2 px-2 text-[#57534E]">{c.visits || 0}</td>
+                        <td className="py-2 px-2 text-[#57534E]">{(c.total_amount_paid || 0).toFixed(2)}</td>
+                        <td className="py-2 px-2 text-[#57534E]">{c.postal_code || '—'}</td>
+                        <td className="py-2 px-2 text-[#57534E]">{c.acquisition_source || '—'}</td>
+                      </tr>
+                    ))}
+                    {tenantCustomers.length === 0 && (
+                      <tr><td colSpan="7" className="py-10 text-center text-[#57534E]">No customers yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowCustomersModal(false)}
+              className="mt-4 w-full py-2 bg-[#B85C38] text-white rounded-lg font-semibold hover:bg-[#A34D2C] transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Modal */}
+      {showAnalyticsModal && selectedTenant && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[85vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+                Analytics — {selectedTenant.name}
+              </h2>
+              <button onClick={() => setShowAnalyticsModal(false)} className="text-[#A8A29E] hover:text-[#1C1917]">
+                <X size={20} />
+              </button>
+            </div>
+
+            {modalLoading ? (
+              <p className="text-[#57534E] py-12 text-center">Loading analytics…</p>
+            ) : !tenantAnalytics ? (
+              <p className="text-[#57534E] py-12 text-center">No analytics available.</p>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <StatCard label="Customers" value={tenantAnalytics.total_customers} />
+                  <StatCard label={`Visits (${tenantAnalytics.period_days}d)`} value={tenantAnalytics.total_visits_period} />
+                  <StatCard label="Revenue (all-time)" value={`€${tenantAnalytics.total_revenue.toFixed(0)}`} />
+                  <StatCard label="Cards Filled" value={tenantAnalytics.cards_filled} />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond', fontSize: '18px' }}>Tier Distribution</h3>
+                  <div className="flex gap-2">
+                    {Object.entries(tenantAnalytics.tier_distribution).map(([tier, n]) => (
+                      <div key={tier} className="flex-1 p-3 rounded-lg text-center border border-[#E7E5E4]">
+                        <TierBadge tier={tier} size="sm" />
+                        <p className="text-2xl font-bold text-[#1C1917] mt-2">{n}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond', fontSize: '18px' }}>
+                      Top Spenders
+                    </h3>
+                    <div className="space-y-1">
+                      {(tenantAnalytics.top_spenders || []).map((c) => (
+                        <div key={c.id} className="flex justify-between items-center py-1 px-2 rounded hover:bg-[#F3EFE7]">
+                          <div>
+                            <p className="text-sm text-[#1C1917] font-medium">{c.name}</p>
+                            <TierBadge tier={c.tier} size="xs" />
+                          </div>
+                          <p className="text-sm text-[#B85C38] font-bold">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond', fontSize: '18px' }}>
+                      Top Visitors
+                    </h3>
+                    <div className="space-y-1">
+                      {(tenantAnalytics.top_visitors || []).map((c) => (
+                        <div key={c.id} className="flex justify-between items-center py-1 px-2 rounded hover:bg-[#F3EFE7]">
+                          <div>
+                            <p className="text-sm text-[#1C1917] font-medium">{c.name}</p>
+                            <TierBadge tier={c.tier} size="xs" />
+                          </div>
+                          <p className="text-sm text-[#B85C38] font-bold">{c.visits} visits</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond', fontSize: '18px' }}>
+                    Acquisition Sources
+                  </h3>
+                  <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
+                    {Object.entries(tenantAnalytics.acquisition_breakdown || {}).map(([k, n]) => (
+                      <div key={k} className="text-center p-2 bg-[#F3EFE7] rounded-lg">
+                        <p className="text-xs text-[#57534E] capitalize">{k || 'unknown'}</p>
+                        <p className="text-lg font-bold text-[#1C1917]">{n}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowAnalyticsModal(false)}
+              className="mt-4 w-full py-2 bg-[#B85C38] text-white rounded-lg font-semibold hover:bg-[#A34D2C] transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Disable Confirmation Modal */}
       {showDisableModal && selectedTenant && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
@@ -726,5 +937,14 @@ const AdminTenantsPage = () => {
     </div>
   );
 };
+
+function StatCard({ label, value }) {
+  return (
+    <div className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+      <p className="text-xs text-[#57534E] uppercase font-semibold">{label}</p>
+      <p className="text-2xl font-bold text-[#1C1917] mt-1">{value}</p>
+    </div>
+  );
+}
 
 export default AdminTenantsPage;

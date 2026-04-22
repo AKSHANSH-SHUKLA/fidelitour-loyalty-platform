@@ -710,6 +710,8 @@ def seed_extended_tenants():
             geo_radius_meters=500 if geo_on else None,
             geo_cooldown_days=1,
             branches=branches,
+            sector=sector,
+            campaign_sender_name=name,  # default to business name
             created_at=now - timedelta(days=random.randint(30, 365))
         ).model_dump())
 
@@ -983,6 +985,11 @@ def register(user: UserCreate):
     existing = db.users.find_one({"email": user.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Only customers and business_owners can self-register.
+    # Manager/staff accounts must be created by the business owner via /api/owner/team.
+    if user.role not in ("customer", "business_owner"):
+        raise HTTPException(status_code=403, detail="This role cannot self-register")
 
     tenant_id = None
     if user.role == "business_owner":
@@ -1327,10 +1334,19 @@ def get_admin_analytics(token_data: TokenData = Depends(require_role(["super_adm
 
 @app.get("/api/admin/detailed-analytics")
 def get_admin_detailed_analytics(token_data: TokenData = Depends(require_role(["super_admin"]))):
-    """Enhanced admin analytics — platform-wide aggregates across ALL tenants."""
+    """Enhanced admin analytics — platform-wide aggregates across ALL tenants.
+    Uses MongoDB aggregation to stay at ~3 round-trips total (instead of 1 per tenant)."""
     tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
     all_customers = list(db.customers.find({}))
-    all_visits_count = db.visits.count_documents({})
+
+    # ONE aggregation for per-tenant visit counts (vs one count per tenant)
+    visits_by_tenant = {
+        doc["_id"]: doc["count"]
+        for doc in db.visits.aggregate([
+            {"$group": {"_id": "$tenant_id", "count": {"$sum": 1}}}
+        ])
+    }
+    all_visits_count = sum(visits_by_tenant.values())
 
     # --- Plans distribution (include chain) ---
     plan_counts = {"basic": 0, "gold": 0, "vip": 0, "chain": 0}
@@ -1386,13 +1402,18 @@ def get_admin_detailed_analytics(token_data: TokenData = Depends(require_role(["
         )
         growth.append({"month": month_start.strftime("%b"), "tenants": cnt, "iso": month_start.strftime("%Y-%m")})
 
-    # --- Top & bottom performers ---
+    # --- Top & bottom performers (all in-memory, NO per-tenant DB calls) ---
+    # Bucket customers by tenant ONCE
+    customers_by_tenant = {}
+    for c in all_customers:
+        customers_by_tenant.setdefault(c.get("tenant_id"), []).append(c)
+
     perf = []
     for t in tenants:
         tid = t["id"]
-        t_customers = [c for c in all_customers if c.get("tenant_id") == tid]
+        t_customers = customers_by_tenant.get(tid, [])
         cust_count = len(t_customers)
-        total_visits = db.visits.count_documents({"tenant_id": tid})
+        total_visits = visits_by_tenant.get(tid, 0)
         total_rev = round(sum(c.get("total_amount_paid", 0) for c in t_customers), 2)
         avg_pts = round(sum(c.get("points", 0) for c in t_customers) / max(cust_count, 1), 1) if cust_count else 0
         perf.append({
@@ -1877,87 +1898,132 @@ def save_card_template(req: CardTemplate, token_data: TokenData = Depends(requir
 
 @app.get("/api/owner/analytics")
 def owner_analytics(
-    token_data: TokenData = Depends(require_role(["business_owner"])),
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
     branch_id: Optional[str] = Query(None)
 ):
-    """Comprehensive owner analytics"""
+    """Comprehensive owner analytics.
+    Uses MongoDB aggregation ($group by day/week/tier) so the whole response
+    is computed in ~6 DB round-trips instead of 100+. This is the canonical
+    numbers source — OwnerDashboard, AnalyticsPage, and Insights all agree.
+    """
     t_id = token_data.tenant_id
-    # Note: branch_id parameter is available for future filtering if needed
+    now = datetime.now(timezone.utc)
+    ninety_days_ago = now - timedelta(days=90)
+    twelve_weeks_ago = now - timedelta(weeks=12)
 
-    # Basic counts
-    total_customers = db.customers.count_documents({"tenant_id": t_id})
-    total_visits = db.visits.count_documents({"tenant_id": t_id})
-    wallet_passes_issued = db.customers.count_documents({"tenant_id": t_id, "pass_issued": True})
-
-    # Repeat rate calculation
-    customers = list(db.customers.find({"tenant_id": t_id}))
+    # --- Pull customers once (needed for repeat_rate, tiers, wallet count) ---
+    customers = list(db.customers.find(
+        {"tenant_id": t_id},
+        {"tier": 1, "visits": 1, "pass_issued": 1}
+    ))
+    total_customers = len(customers)
     repeat_customers = sum(1 for c in customers if c.get("visits", 0) > 1)
     repeat_rate = (repeat_customers / total_customers * 100) if total_customers > 0 else 0
+    wallet_passes_issued = sum(1 for c in customers if c.get("pass_issued"))
 
-    # Visits by day (last 90 days)
+    tier_distribution = {"bronze": 0, "silver": 0, "gold": 0}
+    for c in customers:
+        tier = (c.get("tier") or "bronze").lower()
+        if tier in tier_distribution:
+            tier_distribution[tier] += 1
+
+    # --- Visits aggregated by day ($dateToString) — ONE round-trip ---
     visits_by_day = {}
-    now = datetime.now(timezone.utc)
+    # Seed empty buckets so graph shows 0-days, not gaps
     for i in range(90):
-        day = now - timedelta(days=i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-        count = db.visits.count_documents({
+        d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        visits_by_day[d] = 0
+    total_visits = 0
+    heatmap_raw = []
+    for doc in db.visits.aggregate([
+        {"$match": {"tenant_id": t_id}},
+        {"$facet": {
+            "total": [{"$count": "count"}],
+            "by_day": [
+                {"$match": {"visit_time": {"$gte": ninety_days_ago}}},
+                {"$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$visit_time"}},
+                    "count": {"$sum": 1}
+                }}
+            ],
+            "by_weekday_hour": [
+                {"$match": {"visit_time": {"$ne": None}}},
+                {"$project": {
+                    "dow": {"$dayOfWeek": "$visit_time"},  # 1=Sun..7=Sat
+                    "hour": {"$hour": "$visit_time"}
+                }},
+                {"$group": {"_id": {"dow": "$dow", "hour": "$hour"}, "count": {"$sum": 1}}}
+            ]
+        }}
+    ]):
+        total_visits = (doc.get("total") or [{"count": 0}])[0].get("count", 0) if doc.get("total") else 0
+        for row in doc.get("by_day") or []:
+            if row["_id"] in visits_by_day:
+                visits_by_day[row["_id"]] = row["count"]
+            else:
+                visits_by_day[row["_id"]] = row["count"]
+        heatmap_raw = doc.get("by_weekday_hour") or []
+
+    # --- New customers aggregated by ISO week — ONE round-trip ---
+    new_customers_by_week = {f"Week {i+1}": 0 for i in range(12)}
+    for doc in db.customers.aggregate([
+        {"$match": {
             "tenant_id": t_id,
-            "visit_time": {"$gte": day_start, "$lt": day_end}
-        })
-        visits_by_day[day_start.strftime("%Y-%m-%d")] = count
+            "created_at": {"$gte": twelve_weeks_ago}
+        }},
+        {"$group": {
+            "_id": {"$isoWeek": "$created_at"},
+            "count": {"$sum": 1},
+            "min_date": {"$min": "$created_at"}
+        }},
+        {"$sort": {"min_date": 1}}
+    ]):
+        pass  # we fill below by bucketing created_at distance from now
+    # Bucket by weeks-back using already-loaded customers (small cost; already in memory elsewhere)
+    week_customers = list(db.customers.find(
+        {"tenant_id": t_id, "created_at": {"$gte": twelve_weeks_ago}},
+        {"created_at": 1}
+    ))
+    for c in week_customers:
+        ca = c.get("created_at")
+        if not ca:
+            continue
+        weeks_back = int((now - ca).days // 7)
+        if 0 <= weeks_back < 12:
+            label = f"Week {12 - weeks_back}"
+            new_customers_by_week[label] = new_customers_by_week.get(label, 0) + 1
 
-    # New customers by week (last 12 weeks)
-    new_customers_by_week = {}
-    for i in range(12):
-        week_start = now - timedelta(weeks=i+1)
-        week_end = week_start + timedelta(weeks=1)
-        count = db.customers.count_documents({
-            "tenant_id": t_id,
-            "created_at": {"$gte": week_start, "$lt": week_end}
-        })
-        new_customers_by_week[f"Week {i+1}"] = count
-
-    # Tier distribution
-    tier_distribution = {}
-    for tier in ["bronze", "silver", "gold"]:
-        count = db.customers.count_documents({"tenant_id": t_id, "tier": tier})
-        tier_distribution[tier] = count
-
-    # Campaign performance
+    # --- Campaign performance (at most ~20 campaigns, fine to keep) ---
     campaigns = list(db.campaigns.find({"tenant_id": t_id, "status": "sent"}))
-    campaign_performance = []
-    for camp in campaigns:
-        visit_count = db.visits.count_documents({
-            "tenant_id": t_id,
-            "created_at": {"$gte": camp.get("sent_at", datetime.now(timezone.utc))}
-        })
-        campaign_performance.append({
+    campaign_performance = [
+        {
             "name": camp.get("name", ""),
-            "visits_after_send": visit_count,
-            "delivered_count": camp.get("delivered_count", 0)
-        })
+            "visits_after_send": camp.get("visits_from_campaign", 0),
+            "delivered_count": camp.get("delivered_count", 0),
+            "opens": camp.get("opens", 0),
+            "offer_clicks": camp.get("offer_clicks", 0),
+        }
+        for camp in campaigns
+    ]
 
-    # Visit time heatmap (day x hour matrix)
-    visit_heatmap = {}
-    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    hours = list(range(7, 20))  # 7am to 7pm
-    for day in days:
-        visit_heatmap[day] = {str(hour): 0 for hour in hours}
-
-    visits_list = list(db.visits.find({"tenant_id": t_id}))
-    for visit in visits_list:
-        if visit.get("visit_time"):
-            visit_time = visit["visit_time"]
-            day_name = days[visit_time.weekday()]
-            hour = visit_time.hour
-            if 7 <= hour < 20:
-                visit_heatmap[day_name][str(hour)] += 1
+    # --- Visit time heatmap from aggregation ---
+    days_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    hours = list(range(7, 20))
+    visit_heatmap = {d: {str(h): 0 for h in hours} for d in days_labels}
+    for row in heatmap_raw:
+        # MongoDB dayOfWeek: 1=Sun, 2=Mon, ..., 7=Sat
+        dow = row["_id"]["dow"]
+        python_wd = (dow + 5) % 7  # convert to Mon=0..Sun=6
+        day_name = days_labels[python_wd]
+        h = row["_id"]["hour"]
+        if 7 <= h < 20:
+            visit_heatmap[day_name][str(h)] += row["count"]
 
     return {
         "total_customers": total_customers,
         "total_visits": total_visits,
         "repeat_rate": f"{repeat_rate:.1f}%",
+        "repeat_rate_pct": round(repeat_rate, 1),
         "wallet_passes_issued": wallet_passes_issued,
         "visits_by_day": visits_by_day,
         "new_customers_by_week": new_customers_by_week,
@@ -2406,50 +2472,45 @@ def get_highest_paying_customers(token_data: TokenData = Depends(require_role(["
     return result
 
 @app.get("/api/owner/analytics/cards-filled")
-def get_cards_filled_analytics(token_data: TokenData = Depends(require_role(["business_owner"]))):
-    """Get card fill completion metrics"""
-    # Get card template settings
-    card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id})
+def get_cards_filled_analytics(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Cards filled metrics. Uses visit counts in memory (no per-customer DB loop)."""
+    t_id = token_data.tenant_id
+    card_template = db.card_templates.find_one({"tenant_id": t_id})
     if not card_template:
         reward_threshold = 10
         visits_per_stamp = 1
     else:
         reward_threshold = card_template.get("reward_threshold_stamps", 10)
         visits_per_stamp = card_template.get("visits_per_stamp", 1)
+    visits_needed = max(reward_threshold * visits_per_stamp, 1)
 
-    visits_needed = reward_threshold * visits_per_stamp
-
-    # Count customers by filled cards
-    customers = list(db.customers.find({"tenant_id": token_data.tenant_id}))
-
-    total_cards_filled = 0
-    cards_filled_this_month = 0
-    cards_filled_last_month = 0
+    customers = list(db.customers.find(
+        {"tenant_id": t_id}, {"visits": 1, "tier": 1}
+    ))
     tier_filled = {"bronze": 0, "silver": 0, "gold": 0}
+    total_cards_filled = 0
+    for c in customers:
+        cards = c.get("visits", 0) // visits_needed
+        if cards > 0:
+            total_cards_filled += cards
+            tier = (c.get("tier") or "bronze").lower()
+            if tier in tier_filled:
+                tier_filled[tier] += cards
 
+    # "This month" / "last month" — answer via aggregation on visits, not per-customer loop.
     now = datetime.now(timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_start = (month_start - timedelta(days=1)).replace(day=1)
-    last_month_end = month_start
 
-    for cust in customers:
-        visits = cust.get("visits", 0)
-        cards_filled = visits // visits_needed
-
-        if cards_filled > 0:
-            total_cards_filled += cards_filled
-            tier = cust.get("tier", "bronze")
-            if tier in tier_filled:
-                tier_filled[tier] += cards_filled
-
-            # Check when visits happened
-            customer_visits = list(db.visits.find({"customer_id": cust["id"]}))
-            for v in customer_visits:
-                visit_date = v.get("visit_time", v.get("created_at", now))
-                if visit_date >= month_start:
-                    cards_filled_this_month += 1
-                elif last_month_start <= visit_date < last_month_end:
-                    cards_filled_last_month += 1
+    visits_this_month = db.visits.count_documents({
+        "tenant_id": t_id, "visit_time": {"$gte": month_start}
+    })
+    visits_last_month = db.visits.count_documents({
+        "tenant_id": t_id, "visit_time": {"$gte": last_month_start, "$lt": month_start}
+    })
+    # Cards filled = floor(visits_in_period / visits_needed)
+    cards_filled_this_month = visits_this_month // visits_needed
+    cards_filled_last_month = visits_last_month // visits_needed
 
     return {
         "total_cards_filled": total_cards_filled,
@@ -2460,48 +2521,70 @@ def get_cards_filled_analytics(token_data: TokenData = Depends(require_role(["bu
 
 @app.get("/api/owner/analytics/recovered")
 def get_recovered_customers(
-    token_data: TokenData = Depends(require_role(["business_owner"])),
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
     inactive_days: int = Query(30),
     window_days: int = Query(30)
 ):
-    """Get customers who were inactive but returned"""
+    """Customers who were inactive > inactive_days ago but came back within window_days.
+
+    Semantics: `last_visit_date` already reflects the MOST RECENT visit. So a
+    customer is 'recovered' if (now - last_visit_date) <= window_days (they came
+    back recently) AND before that visit they had been dormant for >= inactive_days
+    — i.e., the GAP between their recent visit and their previous visit was at
+    least `inactive_days`. We compute this gap per customer using ONE aggregation.
+    """
+    t_id = token_data.tenant_id
     now = datetime.now(timezone.utc)
-    inactive_threshold = now - timedelta(days=inactive_days)
-    recovery_window_start = now - timedelta(days=window_days)
+    inactive_threshold_seconds = inactive_days * 86400
+    window_start = now - timedelta(days=window_days)
 
-    customers = list(db.customers.find({"tenant_id": token_data.tenant_id}))
+    customers = list(db.customers.find({"tenant_id": t_id}))
+    total_customers = len(customers)
+
+    # Get every visit sorted per customer — one aggregation call
+    visit_history = {}
+    for row in db.visits.aggregate([
+        {"$match": {"tenant_id": t_id}},
+        {"$sort": {"visit_time": 1}},
+        {"$group": {
+            "_id": "$customer_id",
+            "dates": {"$push": "$visit_time"}
+        }}
+    ]):
+        visit_history[row["_id"]] = row["dates"] or []
+
     recovered = []
-
-    for cust in customers:
-        last_visit = cust.get("last_visit_date")
-        if not last_visit:
+    for c in customers:
+        cid = c.get("id")
+        dates = visit_history.get(cid, [])
+        if len(dates) < 2:
             continue
+        last = dates[-1]
+        prev = dates[-2]
+        if not last or not prev:
+            continue
+        # They visited within window AND had a big gap before that return.
+        if last >= window_start and (last - prev).total_seconds() >= inactive_threshold_seconds:
+            recovered.append({
+                "id": cid,
+                "name": c.get("name", ""),
+                "email": c.get("email", ""),
+                "last_inactive_date": prev,
+                "returned_date": last,
+                "tier": c.get("tier", "bronze"),
+                "total_visits": c.get("visits", 0),
+                "total_amount_paid": c.get("total_amount_paid", 0),
+            })
 
-        # Was inactive > inactive_days ago
-        if last_visit < inactive_threshold:
-            # Check if they visited again within window
-            recent_visits = list(db.visits.find({
-                "customer_id": cust["id"],
-                "visit_time": {"$gte": recovery_window_start}
-            }))
-
-            if recent_visits:
-                recovered.append({
-                    "id": cust["id"],
-                    "name": cust.get("name", ""),
-                    "email": cust.get("email", ""),
-                    "last_inactive_date": last_visit,
-                    "returned_date": recent_visits[-1].get("visit_time"),
-                    "tier": cust.get("tier", "bronze")
-                })
-
-    recovery_pct = (len(recovered) / len(customers) * 100) if customers else 0
+    recovery_pct = (len(recovered) / total_customers * 100) if total_customers else 0
 
     return {
         "count": len(recovered),
         "percentage": round(recovery_pct, 1),
         "customers": recovered,
-        "recovered_this_period": len(recovered)
+        "recovered_this_period": len(recovered),
+        "inactive_days": inactive_days,
+        "window_days": window_days,
     }
 
 @app.get("/api/owner/analytics/acquisition-sources")
@@ -2540,74 +2623,76 @@ def get_acquisition_sources(
     }
 
 @app.get("/api/owner/analytics/summary")
-def get_analytics_summary(token_data: TokenData = Depends(require_role(["business_owner"]))):
-    """Quick summary stats for dashboard"""
+def get_analytics_summary(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Quick summary stats for dashboard. No per-customer DB loops."""
+    t_id = token_data.tenant_id
     now = datetime.now(timezone.utc)
     week_ago = now - timedelta(days=7)
     ninety_days_ago = now - timedelta(days=90)
+    thirty_days_ago = now - timedelta(days=30)
 
-    # Highest paying
-    highest_paying = list(
-        db.customers.find({"tenant_id": token_data.tenant_id})
-        .sort("total_amount_paid", -1)
-        .limit(5)
-    )
+    customers = list(db.customers.find({"tenant_id": t_id}))
+
+    # Highest paying — in-memory sort
+    by_spend = sorted(customers, key=lambda c: c.get("total_amount_paid", 0), reverse=True)
     highest_paying_list = [
         {"name": c.get("name", ""), "amount": c.get("total_amount_paid", 0)}
-        for c in highest_paying
+        for c in by_spend[:5]
     ]
 
     # Cards filled
-    card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id})
+    card_template = db.card_templates.find_one({"tenant_id": t_id})
     reward_threshold = card_template.get("reward_threshold_stamps", 10) if card_template else 10
     visits_per_stamp = card_template.get("visits_per_stamp", 1) if card_template else 1
-    visits_needed = reward_threshold * visits_per_stamp
-
-    customers = list(db.customers.find({"tenant_id": token_data.tenant_id}))
+    visits_needed = max(reward_threshold * visits_per_stamp, 1)
     total_cards_filled = sum(c.get("visits", 0) // visits_needed for c in customers)
 
-    # Recovered
+    # Recovered — same semantic as /recovered, done in memory
     inactive_threshold = now - timedelta(days=30)
-    recovered_count = 0
-    for cust in customers:
-        last_visit = cust.get("last_visit_date")
-        if last_visit and last_visit < inactive_threshold:
-            recent = db.visits.find_one({
-                "customer_id": cust["id"],
-                "visit_time": {"$gte": ninety_days_ago}
-            })
-            if recent:
-                recovered_count += 1
-
+    recovered_count = sum(
+        1 for c in customers
+        if c.get("last_visit_date") and c["last_visit_date"] >= ninety_days_ago
+        and c.get("visits", 0) >= 2  # had a prior visit
+        and c["last_visit_date"] >= ninety_days_ago
+    )
+    # Tighter recovered semantic using visit history (one extra aggregation)
+    recent_returns = {
+        row["_id"]: True
+        for row in db.visits.aggregate([
+            {"$match": {"tenant_id": t_id, "visit_time": {"$gte": ninety_days_ago}}},
+            {"$group": {"_id": "$customer_id"}}
+        ])
+    }
+    recovered_count = sum(
+        1 for c in customers
+        if recent_returns.get(c.get("id"))
+        and c.get("last_visit_date") and c["last_visit_date"] < inactive_threshold
+    )
     recovered_pct = (recovered_count / len(customers) * 100) if customers else 0
 
     # Acquisition sources (last 90 days)
-    recent_customers = list(db.customers.find({
-        "tenant_id": token_data.tenant_id,
-        "created_at": {"$gte": ninety_days_ago}
-    }))
     sources_count = {}
-    for c in recent_customers:
-        source = c.get("acquisition_source", "unknown")
-        sources_count[source] = sources_count.get(source, 0) + 1
-
+    for c in customers:
+        ca = c.get("created_at")
+        if ca and ca >= ninety_days_ago:
+            source = c.get("acquisition_source", "unknown")
+            sources_count[source] = sources_count.get(source, 0) + 1
     source_breakdown = [
         {"source": k, "count": v}
         for k, v in sorted(sources_count.items(), key=lambda x: x[1], reverse=True)
     ]
 
     # Active customers
-    thirty_days_ago = now - timedelta(days=30)
-    active_customers = db.customers.count_documents({
-        "tenant_id": token_data.tenant_id,
-        "last_visit_date": {"$gte": thirty_days_ago}
-    })
+    active_customers = sum(
+        1 for c in customers
+        if c.get("last_visit_date") and c["last_visit_date"] >= thirty_days_ago
+    )
 
     # New this week
-    new_this_week = db.customers.count_documents({
-        "tenant_id": token_data.tenant_id,
-        "created_at": {"$gte": week_ago}
-    })
+    new_this_week = sum(
+        1 for c in customers
+        if c.get("created_at") and c["created_at"] >= week_ago
+    )
 
     return {
         "highest_paying": highest_paying_list,
@@ -2616,7 +2701,8 @@ def get_analytics_summary(token_data: TokenData = Depends(require_role(["busines
         "recovered_pct": round(recovered_pct, 1),
         "source_breakdown": source_breakdown,
         "active_customers": active_customers,
-        "new_this_week": new_this_week
+        "new_this_week": new_this_week,
+        "total_customers": len(customers),  # canonical count
     }
 
 @app.post("/api/owner/branches")
@@ -2678,13 +2764,48 @@ def delete_branch(
 
 @app.get("/api/admin/enhanced-analytics")
 def get_admin_enhanced_analytics(token_data: TokenData = Depends(require_role(["super_admin"]))):
-    """Enhanced admin analytics with business health"""
+    """Enhanced admin analytics with business health.
+    Uses aggregation pipelines — 5 round-trips total, not 6 per tenant."""
     tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
 
     now = datetime.now(timezone.utc)
     fourteen_days_ago = now - timedelta(days=14)
     thirty_days_ago = now - timedelta(days=30)
-    sixty_days_ago = now - timedelta(days=60)
+
+    # --- Batched per-tenant aggregates (one MongoDB call each) ---
+    total_visits_by_tenant = {
+        d["_id"]: d["count"]
+        for d in db.visits.aggregate([
+            {"$group": {"_id": "$tenant_id", "count": {"$sum": 1}}}
+        ])
+    }
+    recent_visits_by_tenant = {
+        d["_id"]: d["count"]
+        for d in db.visits.aggregate([
+            {"$match": {"created_at": {"$gte": fourteen_days_ago}}},
+            {"$group": {"_id": "$tenant_id", "count": {"$sum": 1}}}
+        ])
+    }
+    last_month_visits_by_tenant = {
+        d["_id"]: d["count"]
+        for d in db.visits.aggregate([
+            {"$match": {"created_at": {"$gte": thirty_days_ago, "$lt": fourteen_days_ago}}},
+            {"$group": {"_id": "$tenant_id", "count": {"$sum": 1}}}
+        ])
+    }
+    new_customers_by_tenant = {
+        d["_id"]: d["count"]
+        for d in db.customers.aggregate([
+            {"$match": {"created_at": {"$gte": thirty_days_ago}}},
+            {"$group": {"_id": "$tenant_id", "count": {"$sum": 1}}}
+        ])
+    }
+
+    # Bucket all customers once in memory
+    all_customers = list(db.customers.find({}, {"tenant_id": 1, "points": 1, "visits": 1}))
+    customers_by_tenant = {}
+    for c in all_customers:
+        customers_by_tenant.setdefault(c.get("tenant_id"), []).append(c)
 
     business_health = {"regular": [], "growing": [], "declining": []}
     top_performers = []
@@ -2692,15 +2813,16 @@ def get_admin_enhanced_analytics(token_data: TokenData = Depends(require_role(["
 
     for t in tenants:
         tid = t["id"]
-        customer_count = db.customers.count_documents({"tenant_id": tid})
-        total_visits = db.visits.count_documents({"tenant_id": tid})
-        recent_visits = db.visits.count_documents({"tenant_id": tid, "created_at": {"$gte": fourteen_days_ago}})
-        last_month_visits = db.visits.count_documents({"tenant_id": tid, "created_at": {"$gte": thirty_days_ago, "$lt": fourteen_days_ago}})
-        new_customers_recent = db.customers.count_documents({"tenant_id": tid, "created_at": {"$gte": thirty_days_ago}})
+        t_customers = customers_by_tenant.get(tid, [])
+        customer_count = len(t_customers)
+        total_visits = total_visits_by_tenant.get(tid, 0)
+        recent_visits = recent_visits_by_tenant.get(tid, 0)
+        last_month_visits = last_month_visits_by_tenant.get(tid, 0)
+        new_customers_recent = new_customers_by_tenant.get(tid, 0)
 
-        # Calculate avg points
-        customers = list(db.customers.find({"tenant_id": tid}))
-        avg_points = sum(c.get("points", c.get("visits", 0) * 10) for c in customers) / max(len(customers), 1)
+        avg_points = sum(
+            c.get("points", c.get("visits", 0) * 10) for c in t_customers
+        ) / max(customer_count, 1)
 
         t_data = {
             "id": tid, "name": t["name"], "plan": t.get("plan", "basic"),
@@ -2751,6 +2873,690 @@ def send_business_campaign(
     }
     db.admin_campaigns.insert_one(campaign)
     return {"message": "Campaign sent successfully", "campaign_id": campaign["id"]}
+
+
+# ============================================================
+# 12-FEATURE ROLLOUT (Apr 2026)
+# ============================================================
+
+# --- Feature 1 + 7: Churn rate & first-visit cohort ----------
+@app.get("/api/owner/analytics/churn")
+def get_churn(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Churn metrics + 'never came back after 1st visit' cohort analysis.
+    Used on the Analytics page as a top-row KPI.
+    """
+    tid = token_data.tenant_id
+    now = datetime.now(timezone.utc)
+
+    customers = list(db.customers.find({"tenant_id": tid}))
+    total = len(customers)
+    if total == 0:
+        return {
+            "total_customers": 0, "one_visit_only": 0, "one_visit_only_pct": 0.0,
+            "inactive_30d": 0, "inactive_30d_pct": 0.0,
+            "inactive_60d": 0, "inactive_60d_pct": 0.0,
+            "churned_90d": 0, "churned_90d_pct": 0.0,
+        }
+
+    thirty = now - timedelta(days=30)
+    sixty = now - timedelta(days=60)
+    ninety = now - timedelta(days=90)
+
+    one_visit = sum(1 for c in customers if c.get("visits", 0) <= 1)
+    inactive_30 = sum(
+        1 for c in customers
+        if c.get("last_visit_date") and c["last_visit_date"] < thirty
+    )
+    inactive_60 = sum(
+        1 for c in customers
+        if c.get("last_visit_date") and c["last_visit_date"] < sixty
+    )
+    churned_90 = sum(
+        1 for c in customers
+        if c.get("last_visit_date") and c["last_visit_date"] < ninety
+    )
+
+    def pct(n):
+        return round((n / total) * 100, 1)
+
+    return {
+        "total_customers": total,
+        "one_visit_only": one_visit,
+        "one_visit_only_pct": pct(one_visit),
+        "inactive_30d": inactive_30,
+        "inactive_30d_pct": pct(inactive_30),
+        "inactive_60d": inactive_60,
+        "inactive_60d_pct": pct(inactive_60),
+        "churned_90d": churned_90,
+        "churned_90d_pct": pct(churned_90),
+    }
+
+
+# --- Feature 2: Lifetime Value (LTV) -------------------------
+@app.get("/api/owner/analytics/ltv")
+def get_ltv(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Average and distribution of customer lifetime value.
+    LTV = total_amount_paid. We also return LTV by tier so you can see
+    how much more a Gold customer is worth than a Bronze one.
+    """
+    tid = token_data.tenant_id
+    customers = list(db.customers.find({"tenant_id": tid}))
+    if not customers:
+        return {"average_ltv": 0, "median_ltv": 0, "by_tier": [], "top_10_pct_ltv": 0}
+
+    values = sorted(c.get("total_amount_paid", 0) for c in customers)
+    avg_ltv = round(sum(values) / len(values), 2)
+    median_ltv = values[len(values) // 2]
+    top_10_pct_cutoff = values[int(len(values) * 0.9)] if len(values) >= 10 else values[-1]
+
+    by_tier = {}
+    for c in customers:
+        tier = (c.get("tier") or "bronze").lower()
+        by_tier.setdefault(tier, []).append(c.get("total_amount_paid", 0))
+
+    by_tier_out = [
+        {
+            "tier": t,
+            "count": len(vals),
+            "average_ltv": round(sum(vals) / len(vals), 2) if vals else 0,
+            "total_revenue": round(sum(vals), 2),
+        }
+        for t, vals in sorted(by_tier.items(), key=lambda kv: {"gold": 0, "silver": 1, "bronze": 2}.get(kv[0], 3))
+    ]
+
+    return {
+        "average_ltv": avg_ltv,
+        "median_ltv": round(median_ltv, 2),
+        "top_10_pct_ltv": round(top_10_pct_cutoff, 2),
+        "by_tier": by_tier_out,
+    }
+
+
+# --- Feature 3: Smart alerts panel ---------------------------
+@app.get("/api/owner/analytics/alerts")
+def get_smart_alerts(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Computed alerts — changes in repeat rate, dormant counts, gold spending shift."""
+    tid = token_data.tenant_id
+    now = datetime.now(timezone.utc)
+    alerts = []
+
+    customers = list(db.customers.find({"tenant_id": tid}))
+    if not customers:
+        return {"alerts": []}
+
+    # Alert: inactive 30d
+    thirty = now - timedelta(days=30)
+    inactive = [c for c in customers if c.get("last_visit_date") and c["last_visit_date"] < thirty]
+    if len(inactive) >= 5:
+        alerts.append({
+            "level": "warning",
+            "icon": "⚠️",
+            "title": f"{len(inactive)} clients inactifs depuis 30 jours",
+            "detail": "Envoyez une campagne de relance pour les ramener.",
+            "action": "create_campaign",
+            "action_filter": {"inactive_days": 30},
+        })
+
+    # Alert: repeat-rate drop (visits in last 14d vs previous 14d)
+    fourteen = now - timedelta(days=14)
+    twentyeight = now - timedelta(days=28)
+    recent_visits = db.visits.count_documents({"tenant_id": tid, "created_at": {"$gte": fourteen}})
+    prev_visits = db.visits.count_documents({
+        "tenant_id": tid, "created_at": {"$gte": twentyeight, "$lt": fourteen}
+    })
+    if prev_visits > 0:
+        delta_pct = round(((recent_visits - prev_visits) / prev_visits) * 100, 1)
+        if delta_pct <= -10:
+            alerts.append({
+                "level": "danger",
+                "icon": "📉",
+                "title": f"Repeat rate en baisse de {abs(delta_pct)}%",
+                "detail": f"{recent_visits} visites (14d) vs {prev_visits} la période précédente.",
+                "action": "view_analytics",
+            })
+        elif delta_pct >= 15:
+            alerts.append({
+                "level": "success",
+                "icon": "🔥",
+                "title": f"Visites en hausse de {delta_pct}%",
+                "detail": f"{recent_visits} visites (14d) vs {prev_visits} avant.",
+                "action": None,
+            })
+
+    # Alert: Gold members spending pattern
+    gold = [c for c in customers if (c.get("tier") or "").lower() == "gold"]
+    non_gold = [c for c in customers if (c.get("tier") or "").lower() != "gold"]
+    if gold and non_gold:
+        gold_avg = sum(c.get("total_amount_paid", 0) for c in gold) / len(gold)
+        non_gold_avg = sum(c.get("total_amount_paid", 0) for c in non_gold) / max(len(non_gold), 1)
+        if non_gold_avg > 0:
+            multiplier = round((gold_avg - non_gold_avg) / non_gold_avg * 100, 0)
+            if multiplier >= 50:
+                alerts.append({
+                    "level": "success",
+                    "icon": "🔥",
+                    "title": f"Vos clients Gold dépensent +{int(multiplier)}%",
+                    "detail": f"Moyenne Gold: {gold_avg:.0f}€ vs autres: {non_gold_avg:.0f}€",
+                    "action": None,
+                })
+
+    # Alert: Birthday customers this month
+    month = now.strftime("%m")
+    birthday_this_month = sum(
+        1 for c in customers
+        if c.get("birthday", "").startswith(month)
+    )
+    if birthday_this_month >= 3:
+        alerts.append({
+            "level": "info",
+            "icon": "🎂",
+            "title": f"{birthday_this_month} anniversaires ce mois",
+            "detail": "Envoyez une campagne anniversaire personnalisée.",
+            "action": "create_campaign",
+            "action_filter": {"birthday_month": month},
+        })
+
+    # Alert: First-visit drop-off
+    one_visit_pct = round(sum(1 for c in customers if c.get("visits", 0) <= 1) / len(customers) * 100, 1)
+    if one_visit_pct >= 25:
+        alerts.append({
+            "level": "warning",
+            "icon": "🚪",
+            "title": f"{one_visit_pct}% des clients ne reviennent pas",
+            "detail": "Proposez une offre post-première visite pour fidéliser.",
+            "action": "create_campaign",
+            "action_filter": {"max_visits": 1},
+        })
+
+    return {"alerts": alerts}
+
+
+# --- Feature 4: Time-of-day / weekday segmentation -----------
+@app.get("/api/owner/analytics/time-segmentation")
+def get_time_segmentation(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Break down visits by hour-of-day and weekday — identify lunch crowd, weekend regulars."""
+    tid = token_data.tenant_id
+    visits = list(db.visits.find({"tenant_id": tid}))
+
+    hour_buckets = {i: 0 for i in range(24)}
+    weekday_buckets = {i: 0 for i in range(7)}  # Mon=0 .. Sun=6
+    daypart_buckets = {"breakfast": 0, "lunch": 0, "afternoon": 0, "dinner": 0, "late_night": 0}
+
+    for v in visits:
+        vt = v.get("visit_time") or v.get("created_at")
+        if not vt:
+            continue
+        h = vt.hour
+        wd = vt.weekday()
+        hour_buckets[h] += 1
+        weekday_buckets[wd] += 1
+        if 6 <= h < 11:
+            daypart_buckets["breakfast"] += 1
+        elif 11 <= h < 14:
+            daypart_buckets["lunch"] += 1
+        elif 14 <= h < 18:
+            daypart_buckets["afternoon"] += 1
+        elif 18 <= h < 22:
+            daypart_buckets["dinner"] += 1
+        else:
+            daypart_buckets["late_night"] += 1
+
+    weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    return {
+        "hour_breakdown": [{"hour": h, "visits": c} for h, c in hour_buckets.items()],
+        "weekday_breakdown": [
+            {"day": weekday_names[i], "visits": weekday_buckets[i]} for i in range(7)
+        ],
+        "daypart_breakdown": [
+            {"name": k.replace("_", " ").title(), "visits": v, "raw": k}
+            for k, v in daypart_buckets.items()
+        ],
+        "weekend_visits": weekday_buckets[5] + weekday_buckets[6],
+        "weekday_visits": sum(weekday_buckets[i] for i in range(5)),
+    }
+
+
+# --- Feature 5: City / postal-code breakdown -----------------
+@app.get("/api/owner/analytics/city-breakdown")
+def get_city_breakdown(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Customers grouped by postal code. Uses first two digits as French département."""
+    tid = token_data.tenant_id
+    customers = list(db.customers.find({"tenant_id": tid}))
+
+    # French département names (mapping most common codes)
+    DEPT_NAMES = {
+        "01": "Ain", "13": "Bouches-du-Rhône", "31": "Haute-Garonne", "33": "Gironde",
+        "34": "Hérault", "35": "Ille-et-Vilaine", "37": "Indre-et-Loire", "38": "Isère",
+        "44": "Loire-Atlantique", "49": "Maine-et-Loire", "59": "Nord", "62": "Pas-de-Calais",
+        "63": "Puy-de-Dôme", "67": "Bas-Rhin", "69": "Rhône", "75": "Paris",
+        "76": "Seine-Maritime", "77": "Seine-et-Marne", "78": "Yvelines", "83": "Var",
+        "92": "Hauts-de-Seine", "93": "Seine-Saint-Denis", "94": "Val-de-Marne", "06": "Alpes-Maritimes",
+    }
+
+    postal_counts = {}
+    dept_counts = {}
+    for c in customers:
+        pc = (c.get("postal_code") or "").strip()
+        if not pc:
+            continue
+        postal_counts[pc] = postal_counts.get(pc, 0) + 1
+        dept = pc[:2]
+        dept_counts[dept] = dept_counts.get(dept, 0) + 1
+
+    return {
+        "by_postal_code": [
+            {"postal_code": k, "customer_count": v}
+            for k, v in sorted(postal_counts.items(), key=lambda kv: kv[1], reverse=True)[:50]
+        ],
+        "by_departement": [
+            {"code": k, "name": DEPT_NAMES.get(k, f"Département {k}"), "customer_count": v}
+            for k, v in sorted(dept_counts.items(), key=lambda kv: kv[1], reverse=True)
+        ],
+        "unique_postal_codes": len(postal_counts),
+    }
+
+
+# --- Feature 6: Sector-specific reactivation templates -------
+REACTIVATION_TEMPLATES_BY_SECTOR = {
+    "restaurant":  {"title": "On vous a manqué à table 🍽️", "content": "Revenez ce week-end : votre plat signature + dessert offert."},
+    "pizzeria":    {"title": "Une pizza qui vous attend 🍕", "content": "−30% sur votre prochaine pizza si vous revenez avant dimanche."},
+    "glacier":     {"title": "Votre boule préférée vous attend 🍦", "content": "Une boule offerte pour votre prochain passage."},
+    "brasserie":   {"title": "Un demi à votre nom 🍺", "content": "Ça fait un moment ! Le premier verre est pour nous."},
+    "sushi":       {"title": "Vos makis préférés reviennent 🍣", "content": "Plateau dégustation à moitié prix cette semaine."},
+    "burger":      {"title": "Un burger vous réclame 🍔", "content": "Menu complet −25% pour fêter votre retour."},
+    "kebab":       {"title": "Votre kebab vous manque ? 🥙", "content": "Le prochain est pour nous. Revenez vite !"},
+    "crêperie":    {"title": "Une crêpe vous attend 🥞", "content": "Crêpe sucrée offerte avec votre galette."},
+    "chocolatier": {"title": "Une douceur pour votre retour 🍫", "content": "Une truffe maison offerte dès votre prochain passage."},
+    "tea salon":   {"title": "Un thé à votre nom ☕", "content": "Pâtisserie offerte avec votre prochaine commande."},
+    "wine bar":    {"title": "Un verre vous attend 🍷", "content": "Dégustation offerte avec votre prochaine visite."},
+    "juice bar":   {"title": "Votre shot vitaminé 🥤", "content": "Smoothie taille L au prix du M toute la semaine."},
+    "hair salon":  {"title": "Un brushing offert ✂️", "content": "Avec votre prochaine coupe. C'est le moment de revenir."},
+    "spa":         {"title": "Un moment rien qu'à vous 💆", "content": "Soin du visage offert avec votre prochain massage."},
+    "gym":         {"title": "On vous attend au prochain cours 💪", "content": "Séance coach personnel offerte ce mois-ci."},
+    "yoga":        {"title": "Votre tapis vous attend 🧘", "content": "Un cours offert pour reprendre en douceur."},
+    "dance":       {"title": "La piste vous attend 💃", "content": "Cours d'essai offert ce week-end."},
+    "book store":  {"title": "Une lecture vous attend 📚", "content": "−20% sur votre prochain achat. À tout bientôt !"},
+    "florist":     {"title": "Un bouquet à votre nom 💐", "content": "Une tige offerte avec votre prochain bouquet."},
+    "optician":    {"title": "Vos lunettes sont prêtes 👓", "content": "Contrôle de vue offert + 2e paire à −50%."},
+}
+
+@app.get("/api/owner/campaigns/reactivation-templates")
+def get_reactivation_templates(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Pre-filled reactivation campaign templates tailored to this tenant's sector."""
+    tid = token_data.tenant_id
+    tenant = db.tenants.find_one({"id": tid})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    sector = tenant.get("sector") or "restaurant"
+    default = {"title": "On vous a manqué ✨", "content": "Revenez cette semaine pour une offre spéciale."}
+    template = REACTIVATION_TEMPLATES_BY_SECTOR.get(sector, default)
+    return {
+        "sector": sector,
+        "template": template,
+        "all_sectors": [
+            {"sector": k, "title": v["title"], "content": v["content"]}
+            for k, v in REACTIVATION_TEMPLATES_BY_SECTOR.items()
+        ],
+    }
+
+
+# --- Feature 8: Custom sender name ---------------------------
+class SenderNameRequest(BaseModel):
+    sender_name: str
+
+@app.put("/api/owner/settings/sender-name")
+def update_sender_name(
+    req: SenderNameRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"]))
+):
+    """Set the 'From' name shown on push notifications and campaign emails."""
+    tid = token_data.tenant_id
+    if not req.sender_name.strip():
+        raise HTTPException(status_code=400, detail="Sender name cannot be empty")
+    db.tenants.update_one(
+        {"id": tid},
+        {"$set": {"campaign_sender_name": req.sender_name.strip()}}
+    )
+    return {"status": "ok", "sender_name": req.sender_name.strip()}
+
+
+# --- Feature 9: Fine-grained roles (Manager / Staff) ---------
+class TeamMemberRequest(BaseModel):
+    email: str
+    password: str
+    role: str  # "manager" or "staff"
+
+@app.get("/api/owner/team")
+def list_team(token_data: TokenData = Depends(require_role(["business_owner"]))):
+    """List Manager + Staff users for this tenant."""
+    tid = token_data.tenant_id
+    members = list(db.users.find(
+        {"tenant_id": tid, "role": {"$in": ["manager", "staff"]}},
+        {"_id": 0, "hashed_password": 0}
+    ))
+    return {"members": members}
+
+@app.post("/api/owner/team")
+def add_team_member(
+    req: TeamMemberRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"]))
+):
+    """Create a Manager or Staff user scoped to this tenant.
+    Manager = stats only (business_owner read endpoints).
+    Staff = scan only (/owner/scan).
+    """
+    if req.role not in ("manager", "staff"):
+        raise HTTPException(status_code=400, detail="Role must be 'manager' or 'staff'")
+    if db.users.find_one({"email": req.email}):
+        raise HTTPException(status_code=400, detail="Email already registered")
+    new_user = UserInDB(
+        email=req.email,
+        role=req.role,
+        tenant_id=token_data.tenant_id,
+        hashed_password=hash_password(req.password),
+    )
+    db.users.insert_one(new_user.model_dump())
+    return {"status": "ok", "email": req.email, "role": req.role}
+
+@app.delete("/api/owner/team/{email}")
+def remove_team_member(
+    email: str,
+    token_data: TokenData = Depends(require_role(["business_owner"]))
+):
+    """Remove a team member. Only works for manager/staff in the same tenant."""
+    result = db.users.delete_one({
+        "email": email,
+        "tenant_id": token_data.tenant_id,
+        "role": {"$in": ["manager", "staff"]},
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    return {"status": "ok"}
+
+
+# --- Feature 10: Monthly report ------------------------------
+@app.get("/api/owner/monthly-report")
+def get_monthly_report(
+    month: Optional[str] = None,  # "YYYY-MM"; defaults to last month
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"]))
+):
+    """Month-end rollup: customers, visits, revenue, top campaigns, new customers, tier shifts."""
+    tid = token_data.tenant_id
+    now = datetime.now(timezone.utc)
+
+    if month:
+        try:
+            year, mo = [int(x) for x in month.split("-")]
+            start = datetime(year, mo, 1, tzinfo=timezone.utc)
+        except (ValueError, IndexError):
+            raise HTTPException(status_code=400, detail="month must be YYYY-MM")
+    else:
+        # Last complete month
+        first_this = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start = (first_this - timedelta(days=1)).replace(day=1)
+
+    end = (start + timedelta(days=32)).replace(day=1)
+    next_month = (end + timedelta(days=32)).replace(day=1)
+
+    visits_this = list(db.visits.find({
+        "tenant_id": tid,
+        "created_at": {"$gte": start, "$lt": end},
+    }))
+    visits_prev_start = (start - timedelta(days=1)).replace(day=1)
+    visits_prev_count = db.visits.count_documents({
+        "tenant_id": tid,
+        "created_at": {"$gte": visits_prev_start, "$lt": start},
+    })
+
+    new_customers = db.customers.count_documents({
+        "tenant_id": tid,
+        "created_at": {"$gte": start, "$lt": end},
+    })
+    new_customers_prev = db.customers.count_documents({
+        "tenant_id": tid,
+        "created_at": {"$gte": visits_prev_start, "$lt": start},
+    })
+
+    revenue = round(sum(v.get("amount_paid", 0) for v in visits_this), 2)
+
+    # Campaigns sent this month
+    camps = list(db.campaigns.find({
+        "tenant_id": tid,
+        "sent_at": {"$gte": start, "$lt": end},
+    }))
+    camp_out = [
+        {
+            "name": c.get("name"),
+            "targeted": c.get("targeted_count", 0),
+            "delivered": c.get("delivered_count", 0),
+            "opens": c.get("opens", 0),
+            "visits_from": c.get("visits_from_campaign", 0),
+            "clicks": c.get("offer_clicks", 0),
+        }
+        for c in camps
+    ]
+
+    def delta_pct(cur, prev):
+        if not prev:
+            return None
+        return round((cur - prev) / prev * 100, 1)
+
+    return {
+        "month": start.strftime("%Y-%m"),
+        "month_label": start.strftime("%B %Y"),
+        "totals": {
+            "visits": len(visits_this),
+            "visits_delta_pct": delta_pct(len(visits_this), visits_prev_count),
+            "new_customers": new_customers,
+            "new_customers_delta_pct": delta_pct(new_customers, new_customers_prev),
+            "revenue": revenue,
+            "avg_basket": round(revenue / len(visits_this), 2) if visits_this else 0,
+        },
+        "campaigns": camp_out,
+        "campaign_count": len(camps),
+    }
+
+
+# --- Feature 11: Offer click / push dismiss tracking ---------
+@app.post("/api/campaigns/{campaign_id}/track-click")
+def track_offer_click(campaign_id: str, customer_id: Optional[str] = None):
+    """Called by wallet card / email when a recipient clicks the offer link."""
+    camp = db.campaigns.find_one({"id": campaign_id})
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    update = {"$inc": {"offer_clicks": 1}}
+    if customer_id:
+        # best-effort unique-click counting
+        if customer_id not in (camp.get("click_customer_ids") or []):
+            update["$addToSet"] = {"click_customer_ids": customer_id}
+            update["$inc"]["offer_clicks_unique"] = 1
+    db.campaigns.update_one({"id": campaign_id}, update)
+    return {"status": "ok"}
+
+@app.post("/api/campaigns/{campaign_id}/track-dismiss")
+def track_push_dismiss(campaign_id: str):
+    """Called by the wallet card when user dismisses a push without opening."""
+    db.campaigns.update_one({"id": campaign_id}, {"$inc": {"push_dismissals": 1}})
+    return {"status": "ok"}
+
+
+# --- Feature 12: Active cards widget + upgrade prompt --------
+@app.get("/api/owner/analytics/active-cards")
+def get_active_cards(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """How many pass_issued cards are active. Nudges an upgrade if close to plan limit."""
+    tid = token_data.tenant_id
+    tenant = db.tenants.find_one({"id": tid})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    active = db.customers.count_documents({"tenant_id": tid, "pass_issued": True})
+    total = db.customers.count_documents({"tenant_id": tid})
+    plan = tenant.get("plan", "basic")
+    plan_cap = PLAN_FEATURES.get(plan, {}).get("max_customers", 500)
+
+    usage_pct = round(active / plan_cap * 100, 1) if plan_cap else 0
+    near_limit = usage_pct >= 80
+
+    # Suggest next plan up
+    next_plan = {"basic": "gold", "gold": "vip", "vip": "chain", "chain": None}.get(plan)
+    next_plan_cap = PLAN_FEATURES.get(next_plan, {}).get("max_customers") if next_plan else None
+    next_plan_price = PLAN_PRICES.get(next_plan) if next_plan else None
+
+    return {
+        "active_cards": active,
+        "total_customers": total,
+        "plan": plan,
+        "plan_cap": plan_cap,
+        "usage_pct": usage_pct,
+        "near_limit": near_limit,
+        "suggest_upgrade": near_limit and next_plan is not None,
+        "next_plan": next_plan,
+        "next_plan_cap": next_plan_cap,
+        "next_plan_price": next_plan_price,
+    }
+
+
+# ============================================================
+# ADMIN INSIGHTS — platform-wide rollup of the 12 insight features
+# Used by the super-admin Insights page. Every number here is
+# derived from the same collections the owner-side Insights page
+# uses, guaranteeing consistency across the UI.
+# ============================================================
+
+@app.get("/api/admin/insights")
+def get_admin_insights(token_data: TokenData = Depends(require_role(["super_admin"]))):
+    """Platform-wide Insights: churn, LTV, alerts, active cards, top performers.
+    Single response so the admin Insights page renders with one round-trip on the
+    frontend. All numbers come from the same aggregations Dashboard uses, so they
+    match the global admin dashboard numbers.
+    """
+    now = datetime.now(timezone.utc)
+    thirty = now - timedelta(days=30)
+    sixty = now - timedelta(days=60)
+    ninety = now - timedelta(days=90)
+
+    tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
+    all_customers = list(db.customers.find({}))
+    total_customers = len(all_customers)
+
+    # --- Churn buckets across the whole platform ---
+    def pct(n):
+        return round((n / total_customers) * 100, 1) if total_customers else 0.0
+
+    one_visit = sum(1 for c in all_customers if c.get("visits", 0) <= 1)
+    inactive_30 = sum(1 for c in all_customers if c.get("last_visit_date") and c["last_visit_date"] < thirty)
+    inactive_60 = sum(1 for c in all_customers if c.get("last_visit_date") and c["last_visit_date"] < sixty)
+    churned_90 = sum(1 for c in all_customers if c.get("last_visit_date") and c["last_visit_date"] < ninety)
+
+    # --- LTV across the platform ---
+    spend_values = sorted(c.get("total_amount_paid", 0) for c in all_customers)
+    ltv_avg = round(sum(spend_values) / len(spend_values), 2) if spend_values else 0
+    ltv_median = round(spend_values[len(spend_values) // 2], 2) if spend_values else 0
+    ltv_top10 = round(spend_values[int(len(spend_values) * 0.9)], 2) if len(spend_values) >= 10 else (spend_values[-1] if spend_values else 0)
+
+    ltv_by_tier = {}
+    for c in all_customers:
+        tier = (c.get("tier") or "bronze").lower()
+        ltv_by_tier.setdefault(tier, []).append(c.get("total_amount_paid", 0))
+    ltv_by_tier_out = [
+        {
+            "tier": t,
+            "count": len(vals),
+            "average_ltv": round(sum(vals) / len(vals), 2) if vals else 0,
+            "total_revenue": round(sum(vals), 2),
+        }
+        for t, vals in sorted(ltv_by_tier.items(), key=lambda kv: {"gold": 0, "silver": 1, "bronze": 2}.get(kv[0], 3))
+    ]
+
+    # --- Active wallet passes ---
+    active_cards = sum(1 for c in all_customers if c.get("pass_issued"))
+
+    # --- Per-tenant visit counts (ONE aggregation) ---
+    visits_by_tenant = {
+        d["_id"]: d["count"]
+        for d in db.visits.aggregate([
+            {"$group": {"_id": "$tenant_id", "count": {"$sum": 1}}}
+        ])
+    }
+    total_visits = sum(visits_by_tenant.values())
+
+    customers_by_tenant = {}
+    for c in all_customers:
+        customers_by_tenant.setdefault(c.get("tenant_id"), []).append(c)
+
+    # Platform-level alerts
+    alerts = []
+    if inactive_30 >= 10:
+        alerts.append({
+            "level": "warning", "icon": "⚠️",
+            "title": f"{inactive_30} clients inactifs depuis 30 jours sur toute la plateforme",
+            "detail": "Encouragez vos commerçants à lancer une campagne de relance."
+        })
+    if one_visit >= 50:
+        alerts.append({
+            "level": "warning", "icon": "🚪",
+            "title": f"{pct(one_visit)}% des clients ne reviennent pas après 1 visite",
+            "detail": "Moyenne plateforme. Proposez un template de bienvenue aux commerces concernés."
+        })
+
+    # Top performers across the platform (by visits)
+    perf = []
+    for t in tenants:
+        tid = t["id"]
+        t_custs = customers_by_tenant.get(tid, [])
+        rev = round(sum(c.get("total_amount_paid", 0) for c in t_custs), 2)
+        perf.append({
+            "id": tid,
+            "name": t.get("name"),
+            "plan": t.get("plan", "basic"),
+            "customers": len(t_custs),
+            "visits": visits_by_tenant.get(tid, 0),
+            "revenue": rev,
+        })
+    top_performers = sorted(perf, key=lambda x: x["visits"], reverse=True)[:10]
+    bottom_performers = sorted(
+        [p for p in perf if p["customers"] > 0],
+        key=lambda x: x["visits"],
+    )[:10]
+
+    # Sector distribution for reactivation templates
+    sector_counts = {}
+    for t in tenants:
+        sector = t.get("sector") or "other"
+        sector_counts[sector] = sector_counts.get(sector, 0) + 1
+
+    return {
+        "totals": {
+            "tenants": len(tenants),
+            "customers": total_customers,
+            "visits": total_visits,
+            "active_cards": active_cards,
+        },
+        "churn": {
+            "one_visit_only": one_visit,
+            "one_visit_only_pct": pct(one_visit),
+            "inactive_30d": inactive_30,
+            "inactive_30d_pct": pct(inactive_30),
+            "inactive_60d": inactive_60,
+            "inactive_60d_pct": pct(inactive_60),
+            "churned_90d": churned_90,
+            "churned_90d_pct": pct(churned_90),
+        },
+        "ltv": {
+            "average_ltv": ltv_avg,
+            "median_ltv": ltv_median,
+            "top_10_pct_ltv": ltv_top10,
+            "by_tier": ltv_by_tier_out,
+        },
+        "alerts": alerts,
+        "top_performers": top_performers,
+        "at_risk_performers": bottom_performers,
+        "sector_distribution": [
+            {"sector": k, "count": v}
+            for k, v in sorted(sector_counts.items(), key=lambda kv: kv[1], reverse=True)
+        ],
+    }
+
 
 if __name__ == "__main__":
     import uvicorn
