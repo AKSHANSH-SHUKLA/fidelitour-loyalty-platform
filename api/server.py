@@ -37,10 +37,10 @@ app.add_middleware(
 MONGODB_URI = os.environ.get("MONGODB_URI", "")
 
 if MONGODB_URI:
-    client = pymongo.MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+    client = pymongo.MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000, tz_aware=True)
     db = client.fidelitour_db
 else:
-    client = pymongo.MongoClient()
+    client = pymongo.MongoClient(tz_aware=True)
     db = client.fidelitour_db
 
 # SendGrid email config
@@ -190,7 +190,7 @@ def generate_varied_customers(tenant_id: str, count: int = 15) -> List[dict]:
         "33000", "59000", "44000", "31000",    # Bordeaux, Lille, Nantes, Toulouse
         "06000", "67000", "34000",             # Nice, Strasbourg, Montpellier
     ]
-    acquisition_sources = ["qr_store", "instagram", "tiktok", "facebook", "website", "friend", "other"]
+    acquisition_sources = ["qr_store", "instagram", "facebook", "tiktok"]
 
     now = datetime.now(timezone.utc)
     for i in range(count):
@@ -645,7 +645,8 @@ def seed_extended_tenants():
         "Agathe Vallet", "Élise Roux", "Matteo Gay", "Camille Leconte", "Diane Thibault",
         "Oscar Jacquet", "Salomé Faivre", "Nolan Rey", "Anna Charpentier", "Achille Meunier"
     ]
-    ACQUISITION_SOURCES = ["qr_store", "instagram", "tiktok", "facebook", "website", "friend", "other"]
+    # Only 4 permitted sources (business rule — no friend/website/other)
+    ACQUISITION_SOURCES = ["qr_store", "instagram", "facebook", "tiktok"]
     BIRTHDAY_POOL = [f"{random.randint(1,12):02d}-{random.randint(1,28):02d}" for _ in range(100)]
 
     now = datetime.now(timezone.utc)
@@ -742,7 +743,7 @@ def seed_extended_tenants():
             spend = round(visits * random.uniform(avg_spend * 0.7, avg_spend * 1.3), 2)
             source = random.choices(
                 ACQUISITION_SOURCES,
-                weights=[4, 3, 2, 2, 2, 2, 1],  # QR + Instagram most common
+                weights=[5, 4, 3, 2],  # QR + Instagram most common, then FB, then TikTok
                 k=1
             )[0]
             pass_issued = random.random() < 0.7 if visits >= 3 else random.random() < 0.3
@@ -2096,6 +2097,8 @@ def get_join_info(slug: str):
     t.pop("_id", None)
     return t
 
+ALLOWED_ACQUISITION_SOURCES = {"instagram", "facebook", "tiktok", "qr_store"}
+
 class JoinRequest(BaseModel):
     name: str
     email: str
@@ -2108,6 +2111,19 @@ class JoinRequest(BaseModel):
 
 @app.post("/api/join/{slug}")
 def join_program(slug: str, req: JoinRequest):
+    # Normalize acquisition_source to exactly the 4 allowed values
+    if req.acquisition_source:
+        src = (req.acquisition_source or "").strip().lower().replace(" ", "_")
+        # Map a few common variants to canonical values
+        alias = {
+            "qr": "qr_store", "qr_code": "qr_store", "qrcode": "qr_store",
+            "qr_code_in_store": "qr_store", "in_store": "qr_store", "store": "qr_store",
+            "insta": "instagram", "ig": "instagram",
+            "fb": "facebook",
+            "tik_tok": "tiktok",
+        }
+        src = alias.get(src, src)
+        req.acquisition_source = src if src in ALLOWED_ACQUISITION_SOURCES else "qr_store"
     t = db.tenants.find_one({"slug": slug})
     if not t:
         raise HTTPException(status_code=404, detail="Tenant not found")

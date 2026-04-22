@@ -103,14 +103,10 @@ const JoinPage = () => {
             <div>
               <label className="block text-sm font-medium mb-1 text-[#57534E]">How did you hear about us? (optional)</label>
               <select className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.acquisition_source} onChange={e => setFormData({...formData, acquisition_source: e.target.value})}>
-                <option value="">Select...</option>
                 <option value="qr_store">📱 QR code in the store</option>
                 <option value="instagram">📸 Instagram</option>
-                <option value="tiktok">🎵 TikTok</option>
                 <option value="facebook">👥 Facebook</option>
-                <option value="website">🌐 Website</option>
-                <option value="friend">💬 A friend told me</option>
-                <option value="other">✨ Somewhere else</option>
+                <option value="tiktok">🎵 TikTok</option>
               </select>
             </div>
             <div className="p-3 rounded-lg border border-[#E7E5E4] bg-[#F3EFE7]">

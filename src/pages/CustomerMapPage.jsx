@@ -1,181 +1,193 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ownerAPI } from '../lib/api';
-import { X, MapPin, Navigation, TrendingDown, Users, Euro } from 'lucide-react';
+import {
+  X, MapPin, Users, Euro, TrendingUp, TrendingDown, Award,
+  Search, ChevronRight, ChevronDown, Building2, Activity,
+} from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 
-const TIER_COLORS = {
-  bronze: '#B85C38',
-  silver: '#A0A0A0',
-  gold: '#D4A574',
-};
+const TIER_COLORS = { bronze: '#B85C38', silver: '#A0A0A0', gold: '#D4A574' };
 
 const SOURCE_BADGES = {
   qr_store: { emoji: '📱', label: 'QR in store' },
   instagram: { emoji: '📸', label: 'Instagram' },
-  tiktok: { emoji: '🎵', label: 'TikTok' },
   facebook: { emoji: '👥', label: 'Facebook' },
-  website: { emoji: '🌐', label: 'Website' },
-  friend: { emoji: '💬', label: 'Referral' },
-  other: { emoji: '—', label: 'Other' },
+  tiktok: { emoji: '🎵', label: 'TikTok' },
 };
 
-// France bounding box for lat/lng → SVG projection
-const FRANCE_BOUNDS = {
-  minLat: 41.3, // Corsica south
-  maxLat: 51.2, // Dunkirk north
-  minLng: -5.2, // Brittany west
-  maxLng: 9.7, // Strasbourg / Nice east
-};
-const SVG_WIDTH = 800;
-const SVG_HEIGHT = 900;
-const PADDING = 40;
-
-function projectToSVG(lat, lng) {
+// --------------------- France bounding box for SVG mini-map ---------------------
+const FRANCE_BOUNDS = { minLat: 41.3, maxLat: 51.2, minLng: -5.2, maxLng: 9.7 };
+const SVG_W = 520, SVG_H = 580, PAD = 24;
+const projectToSVG = (lat, lng) => {
   const { minLat, maxLat, minLng, maxLng } = FRANCE_BOUNDS;
-  const x = PADDING + ((lng - minLng) / (maxLng - minLng)) * (SVG_WIDTH - 2 * PADDING);
-  const y = PADDING + ((maxLat - lat) / (maxLat - minLat)) * (SVG_HEIGHT - 2 * PADDING);
-  return { x, y };
-}
+  return {
+    x: PAD + ((lng - minLng) / (maxLng - minLng)) * (SVG_W - 2 * PAD),
+    y: PAD + ((maxLat - lat) / (maxLat - minLat)) * (SVG_H - 2 * PAD),
+  };
+};
 
+// --------------------- Main page ---------------------
 export default function CustomerMapPage() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedDept, setSelectedDept] = useState(null);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedDept, setSelectedDept] = useState(null);     // e.g. "37"
+  const [expandedPostals, setExpandedPostals] = useState(new Set()); // postal codes whose customer list is open
   const [tierFilter, setTierFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const fetchCustomers = async () => {
+    (async () => {
       try {
         setLoading(true);
         const res = await ownerAPI.getCustomerMap();
         setCustomers(res.data || []);
       } catch (err) {
-        setError(err.message || 'Failed to load customer map');
+        setError(err?.message || 'Failed to load customer map');
       } finally {
         setLoading(false);
       }
-    };
-    fetchCustomers();
+    })();
   }, []);
 
-  // Filter customers
-  const filteredCustomers = useMemo(() => {
+  // Apply tier / source / search filters *before* grouping
+  const filteredAll = useMemo(() => {
     return customers.filter((c) => {
       if (tierFilter !== 'all' && c.tier !== tierFilter) return false;
       if (sourceFilter !== 'all' && c.acquisition_source !== sourceFilter) return false;
-      if (selectedDept && c.department_code !== selectedDept) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const hit =
+          (c.name || '').toLowerCase().includes(q) ||
+          (c.email || '').toLowerCase().includes(q) ||
+          (c.postal_code || '').includes(q);
+        if (!hit) return false;
+      }
       return true;
     });
-  }, [customers, tierFilter, sourceFilter, selectedDept]);
+  }, [customers, tierFilter, sourceFilter, search]);
 
-  // Aggregate stats by department
-  const deptStats = useMemo(() => {
-    const pool = customers.filter((c) => {
-      if (tierFilter !== 'all' && c.tier !== tierFilter) return false;
-      if (sourceFilter !== 'all' && c.acquisition_source !== sourceFilter) return false;
-      return true;
-    });
-    const map = {};
-    for (const c of pool) {
-      const key = c.department_code || 'unknown';
-      if (!map[key]) {
-        map[key] = {
-          code: key,
-          name: c.department_name || 'Unknown',
-          count: 0,
+  // ---------- Group customers by department ----------
+  const deptMap = useMemo(() => {
+    const m = {};
+    for (const c of filteredAll) {
+      const code = c.department_code || '00';
+      if (!m[code]) {
+        m[code] = {
+          code,
+          name: c.department_name || 'Inconnu',
+          lat: c.lat, lng: c.lng,
+          customers: [],
           revenue: 0,
           visits: 0,
-          lat: c.lat,
-          lng: c.lng,
           tierDist: { bronze: 0, silver: 0, gold: 0 },
+          postalGroups: {}, // postal_code -> { code, customers[], revenue, visits }
         };
       }
-      map[key].count += 1;
-      map[key].revenue += c.total_amount_paid || 0;
-      map[key].visits += c.total_visits || 0;
-      if (map[key].tierDist[c.tier] !== undefined) map[key].tierDist[c.tier] += 1;
+      m[code].customers.push(c);
+      m[code].revenue += c.total_amount_paid || 0;
+      m[code].visits += c.total_visits || 0;
+      if (m[code].tierDist[c.tier] !== undefined) m[code].tierDist[c.tier] += 1;
+      const p = c.postal_code || '00000';
+      if (!m[code].postalGroups[p]) {
+        m[code].postalGroups[p] = { code: p, customers: [], revenue: 0, visits: 0 };
+      }
+      m[code].postalGroups[p].customers.push(c);
+      m[code].postalGroups[p].revenue += c.total_amount_paid || 0;
+      m[code].postalGroups[p].visits += c.total_visits || 0;
     }
-    return map;
-  }, [customers, tierFilter, sourceFilter]);
+    return m;
+  }, [filteredAll]);
 
-  const weakestDept = useMemo(() => {
-    const entries = Object.values(deptStats);
-    if (entries.length === 0) return null;
-    return entries.reduce((min, d) => (d.count < min.count ? d : min), entries[0]);
-  }, [deptStats]);
+  const deptList = useMemo(
+    () => Object.values(deptMap).sort((a, b) => b.customers.length - a.customers.length),
+    [deptMap]
+  );
 
-  const strongestDept = useMemo(() => {
-    const entries = Object.values(deptStats);
-    if (entries.length === 0) return null;
-    return entries.reduce((max, d) => (d.count > max.count ? d : max), entries[0]);
-  }, [deptStats]);
+  const strongest = deptList[0];
+  const weakest = deptList[deptList.length - 1];
+  const totalRevenue = filteredAll.reduce((s, c) => s + (c.total_amount_paid || 0), 0);
+  const totalVisits = filteredAll.reduce((s, c) => s + (c.total_visits || 0), 0);
+
+  const activeDept = selectedDept ? deptMap[selectedDept] : null;
+  const postalList = activeDept
+    ? Object.values(activeDept.postalGroups).sort((a, b) => b.customers.length - a.customers.length)
+    : [];
+
+  const togglePostal = (p) => {
+    setExpandedPostals((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p);
+      else next.add(p);
+      return next;
+    });
+  };
 
   if (loading) {
-    return (
-      <div className="p-8" style={{ backgroundColor: '#FDFBF7' }}>
-        <p style={{ color: '#57534E' }}>Loading France customer map…</p>
-      </div>
-    );
+    return <div className="p-8 min-h-screen bg-[#FDFBF7] text-[#57534E]">Loading customer map…</div>;
   }
-
   if (error) {
-    return (
-      <div className="p-8" style={{ backgroundColor: '#FDFBF7' }}>
-        <p style={{ color: '#B85C38', fontFamily: 'Manrope' }}>Error: {error}</p>
-      </div>
-    );
+    return <div className="p-8 min-h-screen bg-[#FDFBF7] text-[#B85C38]">Error: {error}</div>;
   }
 
   return (
-    <div className="min-h-screen p-8" style={{ backgroundColor: '#FDFBF7' }}>
+    <div className="p-8 bg-[#FDFBF7] min-h-screen space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1
-          className="text-4xl font-semibold mb-2"
-          style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}
-        >
-          Customer Map — France
-        </h1>
-        <p style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-          Visualize your customer base across French departments and regions.
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <MapPin className="text-[#B85C38]" size={28} />
+          <h1 className="text-4xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Customer Map
+          </h1>
+        </div>
+        <p className="text-[#57534E] max-w-3xl">
+          Your customer base by French <strong>département</strong>. Click a département to see
+          customers grouped by postal code, with revenue, visits and top spenders per area.
         </p>
       </div>
 
-      {/* Filters */}
-      <div
-        className="mb-6 p-4 rounded-lg border flex gap-4 flex-wrap items-end"
-        style={{ backgroundColor: '#F3EFE7', borderColor: '#E7E5E4' }}
-      >
+      {/* Overview stat pills */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatPill icon={Users} label="Customers" value={filteredAll.length.toLocaleString()} />
+        <StatPill icon={Euro} label="Total Revenue" value={`€${Math.round(totalRevenue).toLocaleString()}`} />
+        <StatPill icon={Activity} label="Total Visits" value={totalVisits.toLocaleString()} />
+        <StatPill icon={Building2} label="Départements Covered" value={deptList.length} />
+      </div>
+
+      {/* Filters row */}
+      <div className="bg-white border border-[#E7E5E4] rounded-xl p-4 flex flex-wrap items-end gap-3">
+        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+          <Search size={16} className="text-[#8B8680]" />
+          <input
+            type="text"
+            placeholder="Search customer name, email or postal code…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-3 py-2 border border-[#E7E5E4] rounded text-sm outline-none focus:border-[#B85C38]"
+          />
+        </div>
         <div>
-          <label className="block text-xs mb-1" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-            Tier
-          </label>
+          <label className="block text-xs mb-1 text-[#57534E]">Tier</label>
           <select
             value={tierFilter}
             onChange={(e) => setTierFilter(e.target.value)}
-            className="px-3 py-2 rounded border text-sm outline-none"
-            style={{ backgroundColor: '#FDFBF7', borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
+            className="px-3 py-2 rounded border border-[#E7E5E4] text-sm"
           >
-            <option value="all">All Tiers</option>
+            <option value="all">All tiers</option>
             <option value="bronze">Bronze</option>
             <option value="silver">Silver</option>
             <option value="gold">Gold</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs mb-1" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-            Acquisition Source
-          </label>
+          <label className="block text-xs mb-1 text-[#57534E]">Source</label>
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="px-3 py-2 rounded border text-sm outline-none"
-            style={{ backgroundColor: '#FDFBF7', borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
+            className="px-3 py-2 rounded border border-[#E7E5E4] text-sm"
           >
-            <option value="all">All Sources</option>
+            <option value="all">All sources</option>
             {Object.entries(SOURCE_BADGES).map(([k, v]) => (
               <option key={k} value={k}>{v.emoji} {v.label}</option>
             ))}
@@ -183,409 +195,437 @@ export default function CustomerMapPage() {
         </div>
         {selectedDept && (
           <button
-            onClick={() => setSelectedDept(null)}
-            className="px-3 py-2 rounded border text-sm flex items-center gap-2"
-            style={{ backgroundColor: '#FDFBF7', borderColor: '#B85C38', color: '#B85C38' }}
+            onClick={() => { setSelectedDept(null); setExpandedPostals(new Set()); }}
+            className="px-3 py-2 rounded border border-[#B85C38] text-[#B85C38] text-sm flex items-center gap-1 bg-white hover:bg-[#FEF2F0]"
           >
-            <X size={14} /> Clear department filter ({selectedDept})
+            <X size={14} /> Clear {selectedDept}
           </button>
         )}
-        <div className="ml-auto text-sm" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-          {filteredCustomers.length} of {customers.length} customers
-        </div>
       </div>
 
-      {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-        {/* SVG map */}
-        <div className="lg:col-span-3">
-          <div
-            className="rounded-lg border p-4"
-            style={{ backgroundColor: 'white', borderColor: '#E7E5E4' }}
-          >
-            <FranceSVGMap
-              customers={filteredCustomers}
-              deptStats={deptStats}
-              selectedDept={selectedDept}
-              onSelectDept={setSelectedDept}
-              onSelectCustomer={setSelectedCustomer}
+      {/* Smart signals: strongest + weakest */}
+      {!activeDept && deptList.length > 1 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {strongest && (
+            <SignalCard
+              tone="success"
+              icon={TrendingUp}
+              title={`Strongest: ${strongest.name} (${strongest.code})`}
+              detail={`${strongest.customers.length} customers · €${Math.round(strongest.revenue).toLocaleString()} revenue`}
+              action={() => setSelectedDept(strongest.code)}
             />
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="rounded-lg border p-4" style={{ backgroundColor: 'white', borderColor: '#E7E5E4' }}>
-          {selectedCustomer ? (
-            <CustomerDetail customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />
-          ) : selectedDept && deptStats[selectedDept] ? (
-            <DepartmentDetail
-              dept={deptStats[selectedDept]}
-              customers={filteredCustomers.filter((c) => c.department_code === selectedDept)}
-              onClose={() => setSelectedDept(null)}
-              onSelectCustomer={setSelectedCustomer}
-            />
-          ) : (
-            <OverviewPanel
-              deptStats={deptStats}
-              filteredCustomers={filteredCustomers}
-              weakestDept={weakestDept}
-              strongestDept={strongestDept}
-              onSelectDept={setSelectedDept}
+          )}
+          {weakest && weakest.code !== strongest?.code && (
+            <SignalCard
+              tone="warning"
+              icon={TrendingDown}
+              title={`Quietest: ${weakest.name} (${weakest.code})`}
+              detail={`Only ${weakest.customers.length} customers here. Consider a local Instagram or Facebook push.`}
+              action={() => setSelectedDept(weakest.code)}
             />
           )}
         </div>
-      </div>
+      )}
 
-      {/* Legend */}
-      <div className="rounded-lg border p-4" style={{ backgroundColor: 'white', borderColor: '#E7E5E4' }}>
-        <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600, marginBottom: '12px' }}>
-          Legend
-        </h3>
-        <div className="grid grid-cols-3 gap-4 text-xs" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-          <div>
-            <p style={{ fontWeight: 600, marginBottom: '6px' }}>Tier colors</p>
-            {Object.entries(TIER_COLORS).map(([tier, color]) => (
-              <div key={tier} className="flex items-center gap-2 mb-1">
-                <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                <span style={{ textTransform: 'capitalize' }}>{tier}</span>
+      {/* Body: two columns. Left = départements list + mini-map. Right = detail panel. */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Départements list (takes 2/5) */}
+        <div className="lg:col-span-2 bg-white border border-[#E7E5E4] rounded-xl p-5 min-h-[500px]">
+          <h2 className="text-xl font-semibold mb-3 text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Départements {activeDept && <span className="text-sm font-normal text-[#8B8680]">({deptList.length})</span>}
+          </h2>
+          <p className="text-xs text-[#8B8680] mb-4">
+            Click a département to drill into customers by postal code.
+          </p>
+          <div className="space-y-1 max-h-[560px] overflow-y-auto pr-1">
+            {deptList.length === 0 && (
+              <p className="text-sm text-[#8B8680] italic">No customers match the current filters.</p>
+            )}
+            {deptList.map((d) => {
+              const isActive = selectedDept === d.code;
+              const pct = filteredAll.length
+                ? Math.round((d.customers.length / filteredAll.length) * 100)
+                : 0;
+              return (
+                <button
+                  key={d.code}
+                  onClick={() => {
+                    setSelectedDept(isActive ? null : d.code);
+                    setExpandedPostals(new Set());
+                  }}
+                  className={`w-full text-left rounded-lg px-3 py-2.5 transition flex items-center justify-between ${
+                    isActive
+                      ? 'bg-[#B85C38] text-white'
+                      : 'bg-[#F3EFE7] text-[#1C1917] hover:bg-[#E7E5E4]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                      isActive ? 'bg-white/20' : 'bg-white'
+                    }`}>
+                      {d.code}
+                    </span>
+                    <div>
+                      <div className="font-semibold text-sm">{d.name}</div>
+                      <div className={`text-xs ${isActive ? 'text-white/80' : 'text-[#8B8680]'}`}>
+                        {d.customers.length} customers · €{Math.round(d.revenue).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57534E]'}`}>
+                      {pct}%
+                    </span>
+                    <ChevronRight size={16} className={isActive ? 'text-white' : 'text-[#8B8680]'} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right detail panel (3/5) */}
+        <div className="lg:col-span-3 space-y-6">
+          {activeDept ? (
+            <DepartmentDetail
+              dept={activeDept}
+              postalList={postalList}
+              expandedPostals={expandedPostals}
+              togglePostal={togglePostal}
+            />
+          ) : (
+            <>
+              {/* Mini France map (decorative) */}
+              <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+                <h3 className="text-xl font-semibold mb-2 text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+                  At a glance
+                </h3>
+                <p className="text-xs text-[#8B8680] mb-4">
+                  Bubble size = customer count in that département. Click a département on the left list to drill in.
+                </p>
+                <FranceMiniMap deptList={deptList} selectedDept={selectedDept} onSelect={setSelectedDept} />
               </div>
-            ))}
-          </div>
-          <div>
-            <p style={{ fontWeight: 600, marginBottom: '6px' }}>Marker size</p>
-            <p>Larger circle = higher total spend</p>
-          </div>
-          <div>
-            <p style={{ fontWeight: 600, marginBottom: '6px' }}>Department bubbles</p>
-            <p>Ring size = customer count. Click to drill down.</p>
-          </div>
+
+              {/* Top 5 customers platform-wide */}
+              <TopCustomersCard customers={filteredAll} />
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ------- France SVG map component -------
-function FranceSVGMap({ customers, deptStats, selectedDept, onSelectDept, onSelectCustomer }) {
-  const maxCustomers = Math.max(1, ...customers.map((c) => c.total_amount_paid || 0));
-  const deptCounts = Object.values(deptStats).map((d) => d.count);
-  const maxDeptCount = Math.max(1, ...deptCounts);
+// --------------------- Subcomponents ---------------------
+
+function StatPill({ icon: Icon, label, value }) {
+  return (
+    <div className="bg-white border border-[#E7E5E4] rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-1 text-[#57534E]">
+        <Icon size={14} />
+        <span className="text-xs uppercase tracking-wide font-semibold">{label}</span>
+      </div>
+      <p className="text-2xl font-bold text-[#1C1917]">{value}</p>
+    </div>
+  );
+}
+
+function SignalCard({ tone, icon: Icon, title, detail, action }) {
+  const styles = tone === 'success'
+    ? 'bg-green-50 border-green-200 text-green-900'
+    : 'bg-amber-50 border-amber-200 text-amber-900';
+  return (
+    <div className={`p-4 rounded-xl border ${styles}`}>
+      <div className="flex items-start gap-3">
+        <Icon size={20} />
+        <div className="flex-1">
+          <p className="font-semibold">{title}</p>
+          <p className="text-sm opacity-80 mt-0.5">{detail}</p>
+          {action && (
+            <button
+              onClick={action}
+              className="text-xs font-semibold underline mt-2"
+            >
+              Open details →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
+  const topSpenders = [...dept.customers]
+    .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
+    .slice(0, 5);
+  const avgSpend = dept.customers.length
+    ? dept.revenue / dept.customers.length
+    : 0;
+  const avgVisits = dept.customers.length
+    ? dept.visits / dept.customers.length
+    : 0;
 
   return (
+    <div className="space-y-6">
+      {/* Summary header */}
+      <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="px-2 py-1 rounded bg-[#B85C38] text-white font-bold text-sm">
+            {dept.code}
+          </span>
+          <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            {dept.name}
+          </h2>
+        </div>
+        <p className="text-sm text-[#8B8680] mb-4">
+          {dept.customers.length} customer{dept.customers.length !== 1 ? 's' : ''}
+          {' · '}
+          {Object.keys(dept.postalGroups).length} postal code{Object.keys(dept.postalGroups).length !== 1 ? 's' : ''}
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <MiniStat label="Customers" value={dept.customers.length} />
+          <MiniStat label="Revenue" value={`€${Math.round(dept.revenue).toLocaleString()}`} />
+          <MiniStat label="Avg spend" value={`€${avgSpend.toFixed(0)}`} />
+          <MiniStat label="Avg visits" value={avgVisits.toFixed(1)} />
+        </div>
+
+        {/* Tier mix */}
+        <div className="mt-4">
+          <p className="text-xs uppercase tracking-wide font-semibold text-[#57534E] mb-2">Tier mix</p>
+          <div className="flex gap-2">
+            {['gold', 'silver', 'bronze'].map((t) => {
+              const n = dept.tierDist[t] || 0;
+              const pct = dept.customers.length ? Math.round((n / dept.customers.length) * 100) : 0;
+              return (
+                <div
+                  key={t}
+                  className="flex-1 p-2 rounded text-center"
+                  style={{ backgroundColor: TIER_COLORS[t] + '25' }}
+                >
+                  <div className="text-sm font-bold text-[#1C1917]">{n}</div>
+                  <div className="text-xs text-[#57534E] capitalize">{t} ({pct}%)</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Top spenders in department */}
+      {topSpenders.length > 0 && (
+        <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Award size={18} className="text-[#B85C38]" />
+            <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              Top spenders in {dept.name}
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {topSpenders.map((c, i) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-[#1C1917]">{c.name}</span>
+                      <TierBadge tier={c.tier} size="xs" />
+                    </div>
+                    <p className="text-xs text-[#8B8680]">
+                      {c.postal_code} · {c.total_visits} visits
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                  <p className="text-xs text-[#8B8680]">spent</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Postal-code segmentation */}
+      <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+        <h3 className="text-xl font-semibold mb-1 text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          Customers by postal code
+        </h3>
+        <p className="text-xs text-[#8B8680] mb-4">
+          Each postal code (code postal) is one block or neighbourhood. Click to see the full list.
+        </p>
+        <div className="space-y-2">
+          {postalList.map((p) => {
+            const expanded = expandedPostals.has(p.code);
+            const pct = dept.customers.length
+              ? Math.round((p.customers.length / dept.customers.length) * 100)
+              : 0;
+            return (
+              <div key={p.code} className="border border-[#E7E5E4] rounded-lg overflow-hidden">
+                <button
+                  onClick={() => togglePostal(p.code)}
+                  className="w-full flex items-center justify-between p-3 bg-[#FDFBF7] hover:bg-[#F3EFE7] transition"
+                >
+                  <div className="flex items-center gap-3">
+                    {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    <span className="font-bold text-[#1C1917]">{p.code}</span>
+                    <span className="text-sm text-[#57534E]">
+                      {p.customers.length} customer{p.customers.length !== 1 ? 's' : ''}
+                      {' · '}
+                      €{Math.round(p.revenue).toLocaleString()}
+                      {' · '}
+                      {p.visits} visit{p.visits !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <span className="text-xs font-semibold text-[#B85C38]">{pct}%</span>
+                </button>
+                {expanded && (
+                  <div className="divide-y divide-[#E7E5E4]">
+                    {p.customers
+                      .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
+                      .map((c) => {
+                        const src = SOURCE_BADGES[c.acquisition_source];
+                        return (
+                          <div
+                            key={c.id}
+                            className="p-3 flex items-center justify-between text-sm"
+                          >
+                            <div className="flex items-center gap-3">
+                              <TierBadge tier={c.tier} size="xs" />
+                              <div>
+                                <p className="font-medium text-[#1C1917]">{c.name}</p>
+                                <p className="text-xs text-[#8B8680]">{c.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {src && (
+                                <span className="text-xs text-[#57534E]" title={src.label}>
+                                  {src.emoji}
+                                </span>
+                              )}
+                              <div className="text-right">
+                                <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                                <p className="text-xs text-[#8B8680]">{c.total_visits} visits</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="p-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+      <p className="text-[10px] uppercase tracking-wide text-[#57534E] font-semibold">{label}</p>
+      <p className="text-lg font-bold text-[#1C1917]">{value}</p>
+    </div>
+  );
+}
+
+function TopCustomersCard({ customers }) {
+  const top = [...customers]
+    .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
+    .slice(0, 5);
+  if (top.length === 0) return null;
+  return (
+    <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Award size={18} className="text-[#B85C38]" />
+        <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          Your top 5 customers
+        </h3>
+      </div>
+      <div className="space-y-2">
+        {top.map((c, i) => (
+          <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7]">
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-[#1C1917]">{c.name}</span>
+                  <TierBadge tier={c.tier} size="xs" />
+                </div>
+                <p className="text-xs text-[#8B8680]">
+                  {c.postal_code} · {c.department_name} · {c.total_visits} visits
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+              <p className="text-xs text-[#8B8680]">spent</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FranceMiniMap({ deptList, selectedDept, onSelect }) {
+  const maxCount = Math.max(1, ...deptList.map((d) => d.customers.length));
+  return (
     <svg
-      viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-      width="100%"
-      height="auto"
-      style={{ maxHeight: '720px', border: '1px solid #E7E5E4', backgroundColor: '#F8FAFC' }}
+      viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+      className="w-full h-auto"
+      style={{ maxHeight: 540, border: '1px solid #E7E5E4', background: '#F8FAFC', borderRadius: 8 }}
     >
-      <defs>
-        <radialGradient id="franceBg" cx="50%" cy="50%" r="60%">
-          <stop offset="0%" stopColor="#EFF6FF" />
-          <stop offset="100%" stopColor="#E0F2FE" />
-        </radialGradient>
-      </defs>
-
-      {/* Simplified France outline (approximation) */}
+      {/* Simplified France silhouette */}
       <path
-        d="M 200 120 L 280 100 L 380 90 L 470 100 L 540 130 L 620 180 L 680 260 L 710 340 L 720 430 L 700 520 L 680 600 L 640 680 L 580 740 L 490 780 L 400 790 L 320 780 L 240 750 L 180 700 L 140 620 L 120 540 L 110 440 L 120 360 L 140 280 L 170 200 Z"
-        fill="url(#franceBg)"
+        d="M 140 80 L 200 70 L 270 65 L 330 75 L 380 95 L 430 125 L 460 180 L 475 240 L 480 300 L 470 360 L 455 420 L 430 470 L 390 510 L 340 530 L 280 535 L 220 525 L 170 500 L 130 450 L 110 390 L 100 320 L 105 250 L 115 180 L 125 120 Z"
+        fill="#E0F2FE"
         stroke="#B85C38"
-        strokeWidth="2"
-        strokeOpacity="0.5"
+        strokeOpacity="0.4"
+        strokeWidth="1.5"
       />
+      <ellipse cx="470" cy="520" rx="18" ry="30" fill="#E0F2FE" stroke="#B85C38" strokeOpacity="0.4" strokeWidth="1" />
 
-      {/* Corsica island */}
-      <ellipse cx="720" cy="770" rx="30" ry="50" fill="url(#franceBg)" stroke="#B85C38" strokeWidth="1.5" strokeOpacity="0.5" />
-      <text x="720" y="775" fontSize="9" textAnchor="middle" fill="#57534E" fontFamily="Manrope">Corse</text>
-
-      {/* Major city anchor labels */}
-      {[
-        { name: 'Paris', lat: 48.86, lng: 2.35 },
-        { name: 'Lyon', lat: 45.76, lng: 4.84 },
-        { name: 'Marseille', lat: 43.30, lng: 5.37 },
-        { name: 'Toulouse', lat: 43.60, lng: 1.44 },
-        { name: 'Bordeaux', lat: 44.84, lng: -0.58 },
-        { name: 'Lille', lat: 50.63, lng: 3.06 },
-        { name: 'Nantes', lat: 47.22, lng: -1.55 },
-        { name: 'Strasbourg', lat: 48.57, lng: 7.75 },
-        { name: 'Tours', lat: 47.39, lng: 0.69 },
-        { name: 'Nice', lat: 43.71, lng: 7.26 },
-      ].map((city) => {
-        const { x, y } = projectToSVG(city.lat, city.lng);
+      {/* Department bubbles */}
+      {deptList.map((d) => {
+        if (!d.lat || !d.lng) return null;
+        const { x, y } = projectToSVG(d.lat, d.lng);
+        const r = 6 + (d.customers.length / maxCount) * 18;
+        const isActive = selectedDept === d.code;
         return (
-          <g key={city.name}>
-            <circle cx={x} cy={y} r="2" fill="#57534E" opacity="0.4" />
-            <text x={x + 6} y={y + 3} fontSize="9" fill="#57534E" opacity="0.7" fontFamily="Manrope">
-              {city.name}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Department aggregated bubbles */}
-      {Object.values(deptStats).map((dept) => {
-        if (!dept.lat || !dept.lng) return null;
-        const { x, y } = projectToSVG(dept.lat, dept.lng);
-        const bubbleR = 10 + (dept.count / maxDeptCount) * 24;
-        const isSelected = selectedDept === dept.code;
-        return (
-          <g key={dept.code} style={{ cursor: 'pointer' }} onClick={() => onSelectDept(isSelected ? null : dept.code)}>
+          <g
+            key={d.code}
+            style={{ cursor: 'pointer' }}
+            onClick={() => onSelect(isActive ? null : d.code)}
+          >
             <circle
               cx={x}
               cy={y}
-              r={bubbleR}
+              r={r}
               fill="#B85C38"
-              fillOpacity={isSelected ? 0.35 : 0.15}
+              fillOpacity={isActive ? 0.7 : 0.28}
               stroke="#B85C38"
-              strokeWidth={isSelected ? 2.5 : 1.5}
+              strokeWidth={isActive ? 2 : 1.2}
             />
             <text
               x={x}
               y={y + 3}
-              fontSize="11"
+              fontSize="9"
               textAnchor="middle"
               fill="#1C1917"
-              fontWeight="600"
-              fontFamily="Manrope"
+              fontWeight="700"
               style={{ pointerEvents: 'none' }}
             >
-              {dept.count}
+              {d.customers.length}
             </text>
           </g>
         );
       })}
-
-      {/* Individual customer markers */}
-      {customers.map((c) => {
-        if (!c.lat || !c.lng) return null;
-        const { x, y } = projectToSVG(c.lat, c.lng);
-        const size = 3 + ((c.total_amount_paid || 0) / maxCustomers) * 4;
-        return (
-          <circle
-            key={c.id}
-            cx={x}
-            cy={y}
-            r={size}
-            fill={TIER_COLORS[c.tier] || TIER_COLORS.bronze}
-            stroke="white"
-            strokeWidth="0.5"
-            fillOpacity="0.85"
-            style={{ cursor: 'pointer' }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectCustomer(c);
-            }}
-          >
-            <title>{c.name} — {c.postal_code}</title>
-          </circle>
-        );
-      })}
-
-      {/* Title */}
-      <text x={SVG_WIDTH / 2} y={30} fontSize="20" fontWeight="600" textAnchor="middle" fill="#1C1917" fontFamily="Cormorant Garamond">
-        France — Customer Distribution
-      </text>
     </svg>
-  );
-}
-
-// ------- Overview panel -------
-function OverviewPanel({ deptStats, filteredCustomers, weakestDept, strongestDept, onSelectDept }) {
-  const totalRevenue = filteredCustomers.reduce((sum, c) => sum + (c.total_amount_paid || 0), 0);
-  const sortedDepts = Object.values(deptStats).sort((a, b) => b.count - a.count);
-
-  return (
-    <div>
-      <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600, marginBottom: '12px' }}>
-        Overview
-      </h3>
-
-      <div
-        style={{ backgroundColor: '#F3EFE7', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}
-      >
-        <div className="flex items-center gap-2 mb-1" style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px' }}>
-          <Users size={12} /> <span>Total customers</span>
-        </div>
-        <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '22px', fontWeight: 600 }}>
-          {filteredCustomers.length}
-        </p>
-      </div>
-
-      <div
-        style={{ backgroundColor: '#F3EFE7', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}
-      >
-        <div className="flex items-center gap-2 mb-1" style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px' }}>
-          <Euro size={12} /> <span>Total revenue</span>
-        </div>
-        <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '22px', fontWeight: 600 }}>
-          €{totalRevenue.toFixed(0)}
-        </p>
-      </div>
-
-      {weakestDept && weakestDept.count > 0 && (
-        <div
-          style={{
-            backgroundColor: '#FFFBEB',
-            padding: '12px',
-            borderRadius: '8px',
-            border: '1px solid #FCD34D',
-            marginBottom: '12px',
-          }}
-        >
-          <div className="flex items-center gap-2 mb-1" style={{ color: '#92400E', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600 }}>
-            <TrendingDown size={12} /> <span>Weakest department</span>
-          </div>
-          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '13px', fontWeight: 600 }}>
-            {weakestDept.name} ({weakestDept.code}) — {weakestDept.count} customers
-          </p>
-          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '10px', marginTop: '4px' }}>
-            Consider a targeted Instagram or Facebook campaign here.
-          </p>
-        </div>
-      )}
-
-      {strongestDept && (
-        <div style={{ backgroundColor: '#ECFDF5', padding: '12px', borderRadius: '8px', border: '1px solid #6EE7B7', marginBottom: '12px' }}>
-          <p style={{ color: '#065F46', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600, marginBottom: '4px' }}>
-            Strongest department
-          </p>
-          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '13px', fontWeight: 600 }}>
-            {strongestDept.name} ({strongestDept.code}) — {strongestDept.count} customers
-          </p>
-        </div>
-      )}
-
-      <div>
-        <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
-          Top departments
-        </p>
-        <div className="space-y-1">
-          {sortedDepts.slice(0, 10).map((d) => (
-            <button
-              key={d.code}
-              onClick={() => onSelectDept(d.code)}
-              className="w-full text-left px-2 py-1 rounded hover:bg-[#F3EFE7] flex justify-between items-center"
-              style={{ fontFamily: 'Manrope', fontSize: '12px' }}
-            >
-              <span style={{ color: '#1C1917' }}>{d.code} — {d.name}</span>
-              <span style={{ color: '#B85C38', fontWeight: 600 }}>{d.count}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ------- Department detail -------
-function DepartmentDetail({ dept, customers, onClose, onSelectCustomer }) {
-  return (
-    <div>
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600 }}>
-            {dept.name}
-          </h3>
-          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px' }}>
-            Department {dept.code}
-          </p>
-        </div>
-        <button onClick={onClose}><X size={18} /></button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <div style={{ backgroundColor: '#F3EFE7', padding: '10px', borderRadius: '8px' }}>
-          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '10px' }}>Customers</p>
-          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600 }}>
-            {dept.count}
-          </p>
-        </div>
-        <div style={{ backgroundColor: '#F3EFE7', padding: '10px', borderRadius: '8px' }}>
-          <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '10px' }}>Revenue</p>
-          <p style={{ color: '#1C1917', fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600 }}>
-            €{dept.revenue.toFixed(0)}
-          </p>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600, marginBottom: '6px' }}>
-          Tier breakdown
-        </p>
-        <div className="flex gap-2">
-          {Object.entries(dept.tierDist).map(([t, n]) => (
-            <div key={t} className="flex-1 text-center py-2 rounded" style={{ backgroundColor: TIER_COLORS[t] + '33' }}>
-              <p style={{ color: '#1C1917', fontSize: '14px', fontWeight: 600, fontFamily: 'Manrope' }}>{n}</p>
-              <p style={{ color: '#57534E', fontSize: '10px', fontFamily: 'Manrope', textTransform: 'capitalize' }}>{t}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '11px', fontWeight: 600, marginBottom: '6px' }}>
-          Customers in this department
-        </p>
-        <div className="space-y-1 max-h-60 overflow-auto">
-          {customers.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => onSelectCustomer(c)}
-              className="w-full text-left px-2 py-1 rounded hover:bg-[#F3EFE7] flex items-center justify-between"
-              style={{ fontFamily: 'Manrope', fontSize: '12px' }}
-            >
-              <span style={{ color: '#1C1917' }}>{c.name}</span>
-              <TierBadge tier={c.tier} size="xs" showLabel={false} />
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ------- Individual customer detail -------
-function CustomerDetail({ customer, onClose }) {
-  const src = SOURCE_BADGES[customer.acquisition_source] || SOURCE_BADGES.other;
-  return (
-    <div>
-      <div className="flex items-start justify-between mb-3">
-        <h3 style={{ color: '#1C1917', fontFamily: 'Manrope', fontWeight: 600 }}>
-          {customer.name}
-        </h3>
-        <button onClick={onClose}><X size={18} /></button>
-      </div>
-
-      <div style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '12px' }}>
-        <p className="mb-2">{customer.email}</p>
-        <div className="flex items-center gap-2 mb-2">
-          <MapPin size={12} /> <span>{customer.postal_code} · {customer.department_name}</span>
-        </div>
-        <div className="mb-2"><TierBadge tier={customer.tier} size="sm" /></div>
-        <div className="flex items-center gap-2 mb-2">
-          <span>{src.emoji}</span> <span>{src.label}</span>
-        </div>
-        {customer.has_real_gps && (
-          <div className="flex items-center gap-2 mb-2" style={{ color: '#065F46' }}>
-            <Navigation size={12} /> <span>Real GPS captured</span>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        <div style={{ backgroundColor: '#F3EFE7', padding: '8px', borderRadius: '6px' }}>
-          <p style={{ fontFamily: 'Manrope', fontSize: '10px', color: '#57534E' }}>Visits</p>
-          <p style={{ fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600, color: '#1C1917' }}>
-            {customer.total_visits}
-          </p>
-        </div>
-        <div style={{ backgroundColor: '#F3EFE7', padding: '8px', borderRadius: '6px' }}>
-          <p style={{ fontFamily: 'Manrope', fontSize: '10px', color: '#57534E' }}>Total spent</p>
-          <p style={{ fontFamily: 'Manrope', fontSize: '18px', fontWeight: 600, color: '#1C1917' }}>
-            €{(customer.total_amount_paid || 0).toFixed(0)}
-          </p>
-        </div>
-      </div>
-    </div>
   );
 }

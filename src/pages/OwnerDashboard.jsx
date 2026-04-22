@@ -31,43 +31,47 @@ const OwnerDashboard = () => {
   }, [selectedBranch]);
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // Fetch branches
-      const branchRes = await ownerAPI.getBranches();
-      const branchList = branchRes.data || [];
-      setBranches(branchList);
-
-      // If tenant has multiple branches and none selected, show selector
-      if (branchList.length > 1 && !selectedBranch) {
-        setSelectedBranch(null); // Show "All branches"
-      } else if (branchList.length === 1 && !selectedBranch) {
-        setSelectedBranch(branchList[0].id);
+      // Branches first (lightweight, may affect selectedBranch)
+      let branchList = [];
+      try {
+        const branchRes = await ownerAPI.getBranches();
+        branchList = branchRes.data || [];
+        setBranches(branchList);
+      } catch (e) {
+        console.warn('Branches fetch failed:', e?.message);
       }
 
-      // Fetch main analytics with branch filter
       const analyticsParams = selectedBranch ? { branch_id: selectedBranch } : {};
-      const analyticsRes = await ownerAPI.getAnalytics(analyticsParams);
-      setMetrics(analyticsRes.data);
 
-      // Fetch new KPIs
-      const cardsRes = await ownerAPI.getCardsFilled(analyticsParams);
-      setCardsFilled(cardsRes.data);
+      // Fetch all in parallel. ONE failure must NOT blank the whole dashboard.
+      const [analyticsRes, cardsRes, recoveredRes, topRes] = await Promise.allSettled([
+        ownerAPI.getAnalytics(analyticsParams),
+        ownerAPI.getCardsFilled(analyticsParams),
+        ownerAPI.getRecovered({ inactive_days: 30, window_days: 30, ...analyticsParams }),
+        ownerAPI.getHighestPaying(analyticsParams),
+      ]);
 
-      const recoveredRes = await ownerAPI.getRecovered({ inactive_days: 30, window_days: 30, ...analyticsParams });
-      setRecovered(recoveredRes.data);
-
-      const topRes = await ownerAPI.getHighestPaying(analyticsParams);
-      const topList = topRes.data || [];
-      setHighestPaying(topList);
-      if (topList.length > 0) {
-        setTopSpender(topList[0]);
+      if (analyticsRes.status === 'fulfilled') {
+        setMetrics(analyticsRes.value.data);
+      } else {
+        console.warn('Analytics fetch failed:', analyticsRes.reason?.message);
+        // Provide an empty scaffold so the page still renders (with zeroed KPIs)
+        setMetrics({
+          total_customers: 0, total_visits: 0, repeat_rate: '0%',
+          tier_distribution: {}, visits_by_day: {}, new_customers_by_week: {},
+          campaign_performance: [], visit_time_heatmap: {},
+        });
       }
-
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      if (cardsRes.status === 'fulfilled') setCardsFilled(cardsRes.value.data);
+      if (recoveredRes.status === 'fulfilled') setRecovered(recoveredRes.value.data);
+      if (topRes.status === 'fulfilled') {
+        const topList = topRes.value.data || [];
+        setHighestPaying(topList);
+        if (topList.length > 0) setTopSpender(topList[0]);
+      }
+    } finally {
       setLoading(false);
     }
   };

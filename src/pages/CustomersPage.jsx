@@ -88,16 +88,13 @@ export default function CustomersPage() {
       filtered = filtered.filter((customer) => (customer.total_amount_paid || 0) >= min);
     }
 
-    // Source filter
+    // Source filter — only the 4 allowed sources
     if (sourceFilter !== 'All') {
       const sourceMap = {
         'QR in store': 'qr_store',
         'Instagram': 'instagram',
-        'TikTok': 'tiktok',
         'Facebook': 'facebook',
-        'Website': 'website',
-        'Referral': 'friend',
-        'Other': 'other',
+        'TikTok': 'tiktok',
       };
       const sourceValue = sourceMap[sourceFilter];
       filtered = filtered.filter((customer) => customer.acquisition_source === sourceValue);
@@ -159,13 +156,10 @@ export default function CustomersPage() {
     const badges = {
       'qr_store': { emoji: '📱', label: 'QR in store', bg: '#EBE5F5' },
       'instagram': { emoji: '📸', label: 'Instagram', bg: '#FCE7F3' },
-      'tiktok': { emoji: '🎵', label: 'TikTok', bg: '#E0F7F4' },
       'facebook': { emoji: '👥', label: 'Facebook', bg: '#F3EFFF' },
-      'website': { emoji: '🌐', label: 'Website', bg: '#FFFBEB' },
-      'friend': { emoji: '💬', label: 'Referral', bg: '#E7F8F0' },
-      'other': { emoji: '—', label: 'Other', bg: '#F3F3F2' },
+      'tiktok': { emoji: '🎵', label: 'TikTok', bg: '#E0F7F4' },
     };
-    return badges[source] || badges['other'];
+    return badges[source] || { emoji: '—', label: '—', bg: '#F3F3F2' };
   };
 
   const exportToCSV = () => {
@@ -381,11 +375,8 @@ export default function CustomersPage() {
               <option>All</option>
               <option>QR in store</option>
               <option>Instagram</option>
-              <option>TikTok</option>
               <option>Facebook</option>
-              <option>Website</option>
-              <option>Referral</option>
-              <option>Other</option>
+              <option>TikTok</option>
             </select>
           </div>
 
