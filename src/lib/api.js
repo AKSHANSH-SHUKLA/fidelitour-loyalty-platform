@@ -94,6 +94,11 @@ export const ownerAPI = {
   deleteScheduled: (id) => api.delete('/owner/campaigns/scheduled/' + id),
   // -- Upgrade plan request (owner side) --
   requestUpgrade: (data) => api.post('/owner/request-upgrade', data),
+  // -- Modern card designer --
+  savePromotion: (data, notify = false) =>
+    api.post('/owner/card-template/promotion' + (notify ? '?notify=true' : ''), data),
+  saveCardDetails: (data) => api.post('/owner/card-template/details', data),
+  sendCardNotification: (data) => api.post('/owner/card-notifications', data),
 };
 
 export const publicAPI = {

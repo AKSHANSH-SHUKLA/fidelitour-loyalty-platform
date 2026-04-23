@@ -8,7 +8,8 @@ from pydantic import BaseModel
 
 from models import (
     UserInDB, UserCreate, Tenant, Customer, Visit, CardTemplate, Campaign, PaymentTransaction, AIQueryRequest,
-    PLAN_FEATURES, PLAN_PRICES, TierDesign
+    PLAN_FEATURES, PLAN_PRICES, TierDesign,
+    CardPromotion, CardDetails, CardTypedNotification,
 )
 from auth import (
     hash_password, verify_password, create_access_token, get_current_user_data,
@@ -2007,8 +2008,149 @@ def get_card_template(token_data: TokenData = Depends(require_role(["business_ow
 @app.post("/api/owner/card-template")
 def save_card_template(req: CardTemplate, token_data: TokenData = Depends(require_role(["business_owner"]))):
     req.tenant_id = token_data.tenant_id
-    db.card_templates.update_one({"tenant_id": token_data.tenant_id}, {"$set": req.model_dump()}, upsert=True)
-    return req.model_dump()
+    # Keep show_meter and show_progress_meter in sync — older renderers read the latter.
+    payload = req.model_dump()
+    if "show_meter" in payload and "show_progress_meter" not in payload:
+        payload["show_progress_meter"] = payload["show_meter"]
+    db.card_templates.update_one({"tenant_id": token_data.tenant_id}, {"$set": payload}, upsert=True)
+    return payload
+
+
+# ---------------------------------------------------------------------------
+# New card-designer endpoints: promotion, details, typed card notifications
+# ---------------------------------------------------------------------------
+
+@app.post("/api/owner/card-template/promotion")
+def save_card_promotion(
+    req: CardPromotion,
+    notify: bool = Query(False),
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Save the promotion block that can replace the logo area on the card.
+
+    If notify=true, emit a push notification ("Nouvelle offre sur votre carte")
+    to every customer of this tenant so their card refreshes.
+    """
+    t_id = token_data.tenant_id
+    promo_payload = req.model_dump()
+    promo_payload["updated_at"] = datetime.now(timezone.utc)
+    db.card_templates.update_one(
+        {"tenant_id": t_id},
+        {"$set": {"promotion": promo_payload, "tenant_id": t_id}},
+        upsert=True,
+    )
+
+    sent = 0
+    if notify and req.enabled:
+        tenant_doc = db.tenants.find_one({"id": t_id}) or {}
+        biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "votre boutique"
+        now = datetime.now(timezone.utc)
+        title = (req.title or "Nouvelle offre disponible").strip()
+        body = (req.subtitle or req.body or "Ouvrez votre carte pour en savoir plus.").strip()
+        cursor = db.customers.find({"tenant_id": t_id}, {"id": 1, "name": 1})
+        rows = []
+        for c in cursor:
+            rows.append({
+                "customer_id": c["id"],
+                "tenant_id": t_id,
+                "title": title,
+                "body": body,
+                "type": "promotion_update",
+                "link": req.link,
+                "sent_at": now,
+                "sender_name": biz,
+            })
+        if rows:
+            db.push_notifications.insert_many(rows)
+            sent = len(rows)
+
+    return {"promotion": promo_payload, "notified": sent}
+
+
+@app.post("/api/owner/card-template/details")
+def save_card_details(
+    req: CardDetails,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Save the tap-to-expand details section (about / hours / address / ...)."""
+    t_id = token_data.tenant_id
+    payload = req.model_dump()
+    db.card_templates.update_one(
+        {"tenant_id": t_id},
+        {"$set": {"details": payload, "tenant_id": t_id}},
+        upsert=True,
+    )
+    return {"details": payload}
+
+
+@app.post("/api/owner/card-notifications")
+def send_card_notification(
+    req: CardTypedNotification,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Send a typed push notification to this tenant's customers.
+
+    Types: news | offer | flash_sale | voucher_expiry | event |
+           order_status | safety | custom. Filters may narrow the audience:
+      - tier: bronze | silver | gold
+      - sector: matches tenant (noop here; owner endpoints are always tenant-scoped)
+      - customer_ids: [..]  (specific recipients)
+      - birthday_month: bool
+    """
+    t_id = token_data.tenant_id
+    tenant_doc = db.tenants.find_one({"id": t_id}) or {}
+    biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "votre boutique"
+
+    flt: Dict[str, Any] = {"tenant_id": t_id}
+    f = req.filters or {}
+    if f.get("tier"):
+        flt["tier"] = (f["tier"] or "").lower()
+    if f.get("customer_ids"):
+        flt["id"] = {"$in": list(f["customer_ids"])}
+    if f.get("birthday_month"):
+        today = datetime.now(timezone.utc)
+        mm = f"{today.month:02d}"
+        flt["birthday"] = {"$regex": f"^{mm}-"}
+
+    now = datetime.now(timezone.utc)
+    rows = []
+    emails = []
+    for c in db.customers.find(flt, {"id": 1, "name": 1, "email": 1}):
+        body_rendered = render_template(req.body, c, tenant_doc)
+        title_rendered = render_template(req.title, c, tenant_doc)
+        rows.append({
+            "customer_id": c["id"],
+            "tenant_id": t_id,
+            "title": title_rendered,
+            "body": body_rendered,
+            "type": req.type,
+            "link": req.link,
+            "expires_at": req.expires_at,
+            "sent_at": now,
+            "sender_name": biz,
+        })
+        if c.get("email"):
+            emails.append((c["email"], title_rendered, body_rendered, c))
+
+    if rows:
+        db.push_notifications.insert_many(rows)
+
+    # Best-effort email dispatch (mock when SENDGRID_API_KEY is missing)
+    email_sent = 0
+    for email, title, body, c in emails:
+        try:
+            html = _campaign_html(biz, title, body, c)
+            if send_email_to_customer(email, biz, f"{biz} - {title}", html):
+                email_sent += 1
+        except Exception:
+            pass
+
+    return {
+        "sent": len(rows),
+        "emails_sent": email_sent,
+        "type": req.type,
+        "title": req.title,
+    }
 
 @app.get("/api/owner/analytics")
 def owner_analytics(
@@ -2356,6 +2498,18 @@ def _serialize_card_payload(cust: dict) -> dict:
                 "description": tpl.get("active_offer_description"),
                 "active": bool(tpl.get("active_offer_active")),
             },
+            # --- New modern-designer fields ---
+            "elements": tpl.get("elements") or {},
+            "stamp_style": tpl.get("stamp_style") or tpl.get("design_mode") or "hexagon",
+            "show_meter": tpl.get("show_meter") if tpl.get("show_meter") is not None else tpl.get("show_progress_meter", True),
+            "promotion": tpl.get("promotion") or {"enabled": False},
+            "details": tpl.get("details") or {},
+            # Surface flat brand colors too (modern designer writes these via `elements`
+            # and keeps these for legacy/fallback rendering).
+            "primary_color": tpl.get("primary_color"),
+            "secondary_color": tpl.get("secondary_color"),
+            "accent_color": tpl.get("accent_color"),
+            "background_image_url": tpl.get("background_image_url"),
         },
         "offers": offers,
         "prefs": prefs,

@@ -1,6 +1,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+/* Card-designer font catalogue (25+ families, grouped to one request) */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Oswald:wght@400;700&family=Bebas+Neue&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=PT+Serif:wght@400;700&family=Lora:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Libre+Baskerville:wght@400;700&family=Inter:wght@400;700&family=Nunito:wght@400;700&family=Quicksand:wght@400;700&family=Work+Sans:wght@400;700&family=Rubik:wght@400;700&family=DM+Serif+Display&family=Abril+Fatface&family=Pacifico&family=Dancing+Script:wght@400;700&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Special+Elite&family=Press+Start+2P&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
