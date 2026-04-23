@@ -36,6 +36,7 @@ export const adminAPI = {
   getInsights: () => api.get('/admin/insights'),
   // -- Broadcast (admin → end-customers) --
   broadcast: (data) => api.post('/admin/broadcast', data),
+  broadcastPreview: (filters) => api.post('/admin/broadcast/preview', { filters }),
   listBroadcasts: () => api.get('/admin/broadcasts'),
   // -- Upgrade-plan requests inbox --
   listUpgradeRequests: () => api.get('/admin/upgrade-requests'),

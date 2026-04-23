@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ownerAPI } from '../lib/api';
-import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera } from 'lucide-react';
+import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2 } from 'lucide-react';
+
+const BRANCH_STORAGE_KEY = 'fidelitour_scan_branch_id';
 
 const ScanPage = () => {
   const [mode, setMode] = useState('manual'); // 'manual' or 'camera'
@@ -12,6 +14,23 @@ const ScanPage = () => {
   const [loading, setLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [scanResult, setScanResult] = useState(null); // Enhanced post-scan result
+  const [branches, setBranches] = useState([]);
+  const [branchId, setBranchId] = useState(() => {
+    try { return localStorage.getItem(BRANCH_STORAGE_KEY) || ''; } catch (e) { return ''; }
+  });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await ownerAPI.getBranches();
+        setBranches(r.data || []);
+      } catch (e) { /* no branches, plan doesn't support — fine */ }
+    })();
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem(BRANCH_STORAGE_KEY, branchId || ''); } catch (e) {}
+  }, [branchId]);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -138,7 +157,8 @@ const ScanPage = () => {
       const res = await ownerAPI.scanVisit({
         barcode_id: barcode.trim(),
         points: finalPoints > 0 ? finalPoints : undefined,
-        amount_paid: parsedAmount
+        amount_paid: parsedAmount,
+        branch_id: branchId || undefined,
       });
 
       // Backend returns full customer object, transform it for UI
@@ -173,6 +193,25 @@ const ScanPage = () => {
         <h1 className="text-4xl font-['Cormorant_Garamond'] font-bold text-[#1C1917] mb-2">Record Visit</h1>
         <p className="text-[#57534E]">Enter the customer's wallet barcode and the transaction value to log loyalty tracking.</p>
       </div>
+
+      {branches.length > 0 && (
+        <div className="w-full max-w-2xl bg-white border border-[#E7E5E4] rounded-xl p-4 flex items-center gap-3">
+          <Building2 size={18} className="text-[#B85C38]" />
+          <div className="flex-1">
+            <label className="block text-xs font-bold text-[#57534E] uppercase tracking-wider">Scanning at branch</label>
+            <select
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+              className="w-full mt-1 px-2 py-1 text-sm border border-[#E7E5E4] rounded"
+            >
+              <option value="">— Not tagged (counts toward "all branches" only) —</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>{b.name || b.id}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Mode Tabs */}
       <div className="w-full max-w-2xl flex gap-4 border-b border-[#E7E5E4]">

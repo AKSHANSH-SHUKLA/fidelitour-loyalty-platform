@@ -69,6 +69,9 @@ const BusinessCampaignSection = () => {
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [isComposing, setIsComposing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [planFilter, setPlanFilter] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState('');
   const [campaignForm, setCampaignForm] = useState({ subject: '', body: '' });
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
@@ -87,11 +90,21 @@ const BusinessCampaignSection = () => {
     }
   };
 
-  const filteredTenants = tenants.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.slug.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTenants = tenants.filter((t) => {
+    const q = searchTerm.trim().toLowerCase();
+    const matchesSearch = !q ||
+      (t.name || '').toLowerCase().includes(q) ||
+      (t.slug || '').toLowerCase().includes(q);
+    const matchesPlan = !planFilter || (t.plan || '').toLowerCase() === planFilter.toLowerCase();
+    const matchesSector = !sectorFilter ||
+      (t.sector || '').toLowerCase().includes(sectorFilter.toLowerCase());
+    const matchesDept = !deptFilter ||
+      String(t.department_code || t.dept_code || '').toLowerCase().includes(deptFilter.toLowerCase());
+    return matchesSearch && matchesPlan && matchesSector && matchesDept;
+  });
+
+  const uniquePlans = Array.from(new Set(tenants.map((t) => t.plan).filter(Boolean))).sort();
+  const uniqueSectors = Array.from(new Set(tenants.map((t) => t.sector).filter(Boolean))).sort();
 
   const handleSelectTenant = (tenant) => {
     setSelectedTenant(tenant);
@@ -156,15 +169,62 @@ const BusinessCampaignSection = () => {
             <Users className="inline-block mr-2 w-6 h-6 text-[#B85C38]" />
             Select a Business
           </h2>
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-[#A8A29E]" />
-            <input
-              type="text"
-              placeholder="Search by business name or slug..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
-            />
+          <div className="mb-6 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 w-5 h-5 text-[#A8A29E]" />
+              <input
+                type="text"
+                placeholder="Search by business name or slug..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <select
+                value={planFilter}
+                onChange={(e) => setPlanFilter(e.target.value)}
+                className="px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+              >
+                <option value="">All plans</option>
+                {uniquePlans.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+              <select
+                value={sectorFilter}
+                onChange={(e) => setSectorFilter(e.target.value)}
+                className="px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+              >
+                <option value="">All sectors</option>
+                {uniqueSectors.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                placeholder="Dept code (e.g. 37)"
+                className="px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+              />
+              <div className="flex items-center justify-between px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm text-[#57534E] bg-[#F3EFE7]">
+                <span>{filteredTenants.length} of {tenants.length} matching</span>
+                {(searchTerm || planFilter || sectorFilter || deptFilter) && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setPlanFilter('');
+                      setSectorFilter('');
+                      setDeptFilter('');
+                    }}
+                    className="text-[#B85C38] font-semibold hover:underline text-xs"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
           {filteredTenants.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -279,6 +339,8 @@ const BroadcastSection = () => {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
   const [history, setHistory] = useState([]);
+  const [preview, setPreview] = useState(null);  // { count, with_email } | null
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const fetchHistory = async () => {
     try {
@@ -287,6 +349,28 @@ const BroadcastSection = () => {
     } catch (e) { /* ignore */ }
   };
   useEffect(() => { fetchHistory(); }, []);
+
+  // Reset preview whenever a filter changes, so the stale number isn't shown.
+  useEffect(() => {
+    setPreview(null);
+  }, [form.tier, form.sector, form.department_code, form.acquisition]);
+
+  const runPreview = async () => {
+    try {
+      setPreviewLoading(true);
+      const filters = {};
+      if (form.tier) filters.tier = form.tier;
+      if (form.sector) filters.sector = form.sector;
+      if (form.department_code) filters.department_code = form.department_code;
+      if (form.acquisition) filters.acquisition = form.acquisition;
+      const res = await adminAPI.broadcastPreview(filters);
+      setPreview(res.data || { count: 0, with_email: 0 });
+    } catch (e) {
+      setToast({ type: 'error', message: 'Preview failed: ' + (e?.response?.data?.detail || e?.message) });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const send = async () => {
     if (!form.subject.trim() || !form.body.trim() || !form.sender_name.trim()) {
@@ -407,7 +491,23 @@ const BroadcastSection = () => {
           </select>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={runPreview}
+              disabled={previewLoading}
+              className="px-4 py-2 border rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+              style={{ borderColor: '#B85C38', color: '#B85C38' }}
+            >
+              <Search size={14} /> {previewLoading ? 'Previewing…' : 'Preview audience'}
+            </button>
+            {preview && (
+              <div className="text-sm text-[#57534E]">
+                <span className="font-bold text-[#B85C38]">{preview.count}</span> customer{preview.count === 1 ? '' : 's'} match
+                {' '}— <span className="font-semibold">{preview.with_email}</span> have an email on file
+              </div>
+            )}
+          </div>
           <button
             disabled={submitting}
             onClick={send}

@@ -94,6 +94,7 @@ class CustomerBase(BaseModel):
     birthday: str
 
 class Customer(CustomerBase):
+    model_config = ConfigDict(extra="allow")
     id: str
     tenant_id: str
     barcode_id: str
@@ -106,14 +107,17 @@ class Customer(CustomerBase):
     acquisition_source: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    branch_id: Optional[str] = None      # primary branch the customer is tied to
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Visit(BaseModel):
+    model_config = ConfigDict(extra="allow")
     id: str
     tenant_id: str
     customer_id: str
     points_awarded: int
     amount_paid: float = 0.0
+    branch_id: Optional[str] = None      # where this scan happened
     visit_time: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

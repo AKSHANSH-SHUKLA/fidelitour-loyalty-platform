@@ -7,7 +7,7 @@ import {
 import {
   Users, TrendingUp, Award, Smartphone, Gift, Calendar,
   Activity, X, Trophy, ArrowDown, ArrowUp, CreditCard,
-  AlertCircle, Send, Megaphone, Clock,
+  AlertCircle, Send, Megaphone, Clock, Building2,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 
@@ -288,6 +288,18 @@ function segmentLabel(segment) {
 }
 
 // ------------------------------------------------------------------
+// Columns for the drill-down modal when listing customers
+// ------------------------------------------------------------------
+const CUSTOMER_DRILL_COLUMNS = [
+  { key: 'name', label: 'Customer' },
+  { key: 'email', label: 'Email' },
+  { key: 'tier', label: 'Tier', render: (v) => <TierBadge tier={v} /> },
+  { key: 'visits', label: 'Visits' },
+  { key: 'total_amount_paid', label: 'Spent', render: (v) => `€${(v ?? 0).toFixed(0)}` },
+  { key: 'last_visit_date', label: 'Last visit', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+];
+
+// ------------------------------------------------------------------
 // Page
 // ------------------------------------------------------------------
 const AnalyticsPage = () => {
@@ -300,27 +312,58 @@ const AnalyticsPage = () => {
   const [recovered, setRecovered] = useState(null);
   const [acquisition, setAcquisition] = useState([]);
 
+  // Branch selector — drives every API call below
+  const [branches, setBranches] = useState([]);
+  const [branchId, setBranchId] = useState(''); // '' means "All branches"
+
   const [recoveryInactiveDays, setRecoveryInactiveDays] = useState(30);
   const [recoveryWindowDays, setRecoveryWindowDays] = useState(30);
   const [rankingMode, setRankingMode] = useState('top_paying'); // top_paying | least_paying | max_visits | least_visits
 
   const [drill, setDrill] = useState(null); // { title, rows }
+  const [drillLoading, setDrillLoading] = useState(false);
   const [composer, setComposer] = useState(null); // { segment, presetName, presetContent }
 
   const openComposer = (segment, presetName, presetContent) => {
     setComposer({ segment, presetName: presetName || '', presetContent: presetContent || '' });
   };
 
+  // Build the param object for every API call, adding branch scope when set.
+  const params = (extra = {}) => ({ ...(branchId ? { branch_id: branchId } : {}), ...extra });
+
+  // Click-to-drill helper used by every KPI card.
+  const drillCustomers = async (title, filters) => {
+    setDrill({ title, rows: [], columns: CUSTOMER_DRILL_COLUMNS });
+    setDrillLoading(true);
+    try {
+      const res = await ownerAPI.getCustomers(params(filters));
+      setDrill({ title, rows: res.data || [], columns: CUSTOMER_DRILL_COLUMNS });
+    } catch (e) {
+      setDrill({ title, rows: [], columns: CUSTOMER_DRILL_COLUMNS, error: e?.message || 'Failed to load' });
+    } finally {
+      setDrillLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await ownerAPI.getBranches();
+        setBranches(r.data || []);
+      } catch (e) { /* no branches — owner on basic plan, fine */ }
+    })();
+  }, []);
+
   const loadAll = async () => {
     setLoading(true);
     setLoadError(null);
     try {
       const results = await Promise.allSettled([
-        ownerAPI.getAnalytics(),
-        ownerAPI.getAnalyticsSummary(),
-        ownerAPI.getCardsFilled(),
-        ownerAPI.getHighestPaying(),
-        ownerAPI.getAcquisitionSources(),
+        ownerAPI.getAnalytics(params()),
+        ownerAPI.getAnalyticsSummary(params()),
+        ownerAPI.getCardsFilled(params()),
+        ownerAPI.getHighestPaying(params()),
+        ownerAPI.getAcquisitionSources(params()),
       ]);
       const [a, s, cf, hp, acq] = results;
       if (a.status === 'fulfilled') setAnalytics(a.value.data);
@@ -342,19 +385,20 @@ const AnalyticsPage = () => {
     }
   };
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [branchId]);
 
   useEffect(() => {
     (async () => {
       try {
-        const r = await ownerAPI.getRecovered({
+        const r = await ownerAPI.getRecovered(params({
           inactive_days: recoveryInactiveDays,
           window_days: recoveryWindowDays,
-        });
+        }));
         setRecovered(r.data);
       } catch (e) { /* ignore */ }
     })();
-  }, [recoveryInactiveDays, recoveryWindowDays]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recoveryInactiveDays, recoveryWindowDays, branchId]);
 
   const totalCustomers = analytics?.total_customers ?? summary?.total_customers ?? 0;
   const totalVisits = analytics?.total_visits ?? 0;
@@ -485,25 +529,44 @@ const AnalyticsPage = () => {
             Analytics
           </h1>
           <p className="text-[#57534E]">
-            Chaque chiffre est live. Cliquez sur <span className="font-semibold text-[#B85C38]">Send</span> ou <span className="font-semibold text-[#B85C38]">Send campaign</span> sur n'importe quel indicateur pour lancer une campagne ciblée.
+            Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante.
           </p>
         </div>
-        <button
-          onClick={() => openComposer({ type: 'all' }, 'Message à toute ma base', 'Bonjour {first_name}, une nouveauté à partager chez {business_name}…')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#B85C38] text-white rounded-xl hover:bg-[#9C4E2F] font-medium"
-        >
-          <Megaphone size={16} /> Nouvelle campagne
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {branches.length > 0 && (
+            <div className="flex items-center gap-2 bg-white border border-[#E7E5E4] rounded-xl px-3 py-2">
+              <Building2 size={16} className="text-[#B85C38]" />
+              <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Branch</label>
+              <select
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className="text-sm bg-transparent outline-none"
+              >
+                <option value="">All branches</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name || b.id}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button
+            onClick={() => openComposer({ type: 'all' }, 'Message à toute ma base', 'Bonjour {first_name}, une nouveauté à partager chez {business_name}…')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#B85C38] text-white rounded-xl hover:bg-[#9C4E2F] font-medium"
+          >
+            <Megaphone size={16} /> Nouvelle campagne
+          </button>
+        </div>
       </header>
 
-      {/* Row 1 — canonical KPIs */}
+      {/* Row 1 — canonical KPIs. Each card is click-to-drill. */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard
           icon={Users}
           title="Total Customers"
           value={totalCustomers.toLocaleString()}
-          sublabel={`${newThisWeek} new this week`}
+          sublabel={`${newThisWeek} new this week${branchId ? ' · this branch' : ''} · click to view`}
           accent="#B85C38"
+          onClick={() => drillCustomers('All customers', {})}
           segment={{ type: 'all' }}
           openComposer={openComposer}
           presetName="Un message pour toi, {first_name}"
@@ -513,8 +576,9 @@ const AnalyticsPage = () => {
           icon={Activity}
           title="Total Visits"
           value={totalVisits.toLocaleString()}
-          sublabel="All time"
+          sublabel="All time · click to view top visitors"
           accent="#4A5D23"
+          onClick={() => drillCustomers('Customers with ≥ 1 visit', { min_visits: 1 })}
           segment={{ type: 'max_visits_n', n: 20 }}
           openComposer={openComposer}
           presetName="Merci pour vos {visits} visites 🙏"
@@ -524,8 +588,9 @@ const AnalyticsPage = () => {
           icon={TrendingUp}
           title="Repeat Rate"
           value={`${repeatRate.toFixed(1)}%`}
-          sublabel={`${activeCustomers} active (30d)`}
+          sublabel={`${activeCustomers} active (30d) · click to view repeat customers`}
           accent="#E3A869"
+          onClick={() => drillCustomers('Repeat customers (≥ 2 visits)', { min_visits: 2 })}
           segment={{ type: 'inactive_days', value: 30 }}
           openComposer={openComposer}
           presetName="On vous a manqué, {first_name}"
@@ -535,8 +600,9 @@ const AnalyticsPage = () => {
           icon={Smartphone}
           title="Wallet Passes"
           value={walletPasses.toLocaleString()}
-          sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% of customers`}
+          sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% of customers · click to view`}
           accent="#7B3F00"
+          onClick={() => drillCustomers('Wallet pass holders', { has_wallet_pass: true })}
           segment={{ type: 'all' }}
           openComposer={openComposer}
           presetName="Ajoutez votre carte au wallet"
@@ -549,8 +615,9 @@ const AnalyticsPage = () => {
           icon={CreditCard}
           title="Cards Filled"
           value={cardsFilledTotal.toLocaleString()}
-          sublabel={`${cardsFilledThisMonth} this month`}
+          sublabel={`${cardsFilledThisMonth} this month · click to view`}
           accent="#4A5D23"
+          onClick={() => drillCustomers('Customers who filled at least one card', { cards_filled: true })}
           segment={{ type: 'tier', value: 'gold' }}
           openComposer={openComposer}
           presetName="Bravo {first_name} — vous êtes {tier} !"
@@ -560,7 +627,7 @@ const AnalyticsPage = () => {
           icon={Gift}
           title="Recovered Customers"
           value={(recovered?.count ?? summary?.recovered_count ?? 0).toLocaleString()}
-          sublabel={`${recovered?.percentage ?? summary?.recovered_pct ?? 0}% of total`}
+          sublabel={`${recovered?.percentage ?? summary?.recovered_pct ?? 0}% of total · click to view`}
           onClick={() =>
             setDrill({
               title: 'Recovered Customers',
@@ -584,8 +651,9 @@ const AnalyticsPage = () => {
           icon={Award}
           title="Active Customers"
           value={activeCustomers.toLocaleString()}
-          sublabel="Visited in last 30 days"
+          sublabel="Visited in last 30 days · click to view"
           accent="#E3A869"
+          onClick={() => drillCustomers('Active customers (visited in last 30 days)', { active_30d: true })}
           segment={{ type: 'tier', value: 'gold' }}
           openComposer={openComposer}
           presetName="Nos meilleurs clients ont droit à…"
@@ -595,8 +663,9 @@ const AnalyticsPage = () => {
           icon={Calendar}
           title="New This Week"
           value={newThisWeek.toLocaleString()}
-          sublabel="Joined in last 7 days"
+          sublabel="Joined in last 7 days · click to view"
           accent="#5B8DEF"
+          onClick={() => drillCustomers('New customers (last 7 days)', { created_within_days: 7 })}
           segment={{ type: 'one_visit_only' }}
           openComposer={openComposer}
           presetName="Bienvenue chez {business_name}, {first_name} !"
@@ -858,7 +927,11 @@ const AnalyticsPage = () => {
                 <X size={22} />
               </button>
             </div>
-            {(!drill.rows || drill.rows.length === 0) ? (
+            {drillLoading ? (
+              <p className="text-[#57534E] py-8 text-center">Loading customers…</p>
+            ) : drill.error ? (
+              <p className="text-[#B85C38] py-8 text-center">Error: {drill.error}</p>
+            ) : (!drill.rows || drill.rows.length === 0) ? (
               <p className="text-[#57534E] py-8 text-center">No matching records.</p>
             ) : (
               <table className="w-full text-left border-collapse text-sm">

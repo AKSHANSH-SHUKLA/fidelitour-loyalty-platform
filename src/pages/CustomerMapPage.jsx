@@ -3,8 +3,39 @@ import { ownerAPI } from '../lib/api';
 import {
   X, MapPin, Users, Euro, TrendingUp, TrendingDown, Award,
   Search, ChevronRight, ChevronDown, Building2, Activity,
+  Compass, ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
+
+// --------------------- Quadrant helpers ---------------------
+// Given a set of customers (each with lat/lng) and a reference "city center"
+// point (center_lat, center_lng), classify each customer into N / S / E / W
+// based on which axis dominates the delta. Returns {N,S,E,W, total}.
+function computeQuadrants(customers, center) {
+  const out = { N: [], S: [], E: [], W: [] };
+  for (const c of customers) {
+    if (c.lat == null || c.lng == null) continue;
+    const dLat = c.lat - center.lat;
+    const dLng = c.lng - center.lng;
+    if (Math.abs(dLat) < 1e-6 && Math.abs(dLng) < 1e-6) continue; // city-center dwellers
+    if (Math.abs(dLat) >= Math.abs(dLng)) {
+      if (dLat > 0) out.N.push(c); else out.S.push(c);
+    } else {
+      if (dLng > 0) out.E.push(c); else out.W.push(c);
+    }
+  }
+  return out;
+}
+
+function centroid(customers) {
+  let lat = 0, lng = 0, n = 0;
+  for (const c of customers) {
+    if (c.lat != null && c.lng != null) {
+      lat += c.lat; lng += c.lng; n++;
+    }
+  }
+  return n ? { lat: lat / n, lng: lng / n } : null;
+}
 
 const TIER_COLORS = { bronze: '#B85C38', silver: '#A0A0A0', gold: '#D4A574' };
 
@@ -412,6 +443,19 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
         </div>
       </div>
 
+      {/* Compass breakdown — where the département's customers are, geographically */}
+      <div className="bg-white border border-[#E7E5E4] rounded-xl">
+        <div className="p-5 pb-0">
+          <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Customer regions within {dept.name}
+          </h3>
+          <p className="text-xs text-[#8B8680]">
+            Quickly see whether most of your {dept.code} customers live to the north, south, east or west of the département's center.
+          </p>
+        </div>
+        <QuadrantBreakdown customers={dept.customers} label={dept.name} />
+      </div>
+
       {/* Top spenders in department */}
       {topSpenders.length > 0 && (
         <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
@@ -483,44 +527,142 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
                   <span className="text-xs font-semibold text-[#B85C38]">{pct}%</span>
                 </button>
                 {expanded && (
-                  <div className="divide-y divide-[#E7E5E4]">
-                    {p.customers
-                      .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
-                      .map((c) => {
-                        const src = SOURCE_BADGES[c.acquisition_source];
-                        return (
-                          <div
-                            key={c.id}
-                            className="p-3 flex items-center justify-between text-sm"
-                          >
-                            <div className="flex items-center gap-3">
-                              <TierBadge tier={c.tier} size="xs" />
-                              <div>
-                                <p className="font-medium text-[#1C1917]">{c.name}</p>
-                                <p className="text-xs text-[#8B8680]">{c.email}</p>
+                  <>
+                    <QuadrantBreakdown customers={p.customers} label={p.code} />
+                    <div className="divide-y divide-[#E7E5E4]">
+                      {p.customers
+                        .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
+                        .map((c) => {
+                          const src = SOURCE_BADGES[c.acquisition_source];
+                          return (
+                            <div
+                              key={c.id}
+                              className="p-3 flex items-center justify-between text-sm"
+                            >
+                              <div className="flex items-center gap-3">
+                                <TierBadge tier={c.tier} size="xs" />
+                                <div>
+                                  <p className="font-medium text-[#1C1917]">{c.name}</p>
+                                  <p className="text-xs text-[#8B8680]">{c.email}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                {src && (
+                                  <span className="text-xs text-[#57534E]" title={src.label}>
+                                    {src.emoji}
+                                  </span>
+                                )}
+                                <div className="text-right">
+                                  <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                                  <p className="text-xs text-[#8B8680]">{c.total_visits} visits</p>
+                                </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                              {src && (
-                                <span className="text-xs text-[#57534E]" title={src.label}>
-                                  {src.emoji}
-                                </span>
-                              )}
-                              <div className="text-right">
-                                <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-                                <p className="text-xs text-[#8B8680]">{c.total_visits} visits</p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
+                          );
+                        })}
+                    </div>
+                  </>
                 )}
               </div>
             );
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Shows "where do this city's customers live relative to the city center" as
+// N / S / E / W counts. Clicking a quadrant reveals the list of customers
+// in that direction. Center is the centroid of the city's customer lat/lng.
+function QuadrantBreakdown({ customers, label }) {
+  const [active, setActive] = useState(null); // 'N' | 'S' | 'E' | 'W'
+  const center = useMemo(() => centroid(customers), [customers]);
+  const quads = useMemo(
+    () => (center ? computeQuadrants(customers, center) : { N: [], S: [], E: [], W: [] }),
+    [customers, center]
+  );
+
+  if (!center) {
+    return (
+      <div className="p-3 text-xs text-[#8B8680] italic">
+        We don't have enough geolocation data to map compass directions for {label}.
+      </div>
+    );
+  }
+
+  const total = quads.N.length + quads.S.length + quads.E.length + quads.W.length;
+  const tiles = [
+    { key: 'N', label: 'North', icon: ArrowUp, color: '#4A5D23' },
+    { key: 'E', label: 'East',  icon: ArrowRight, color: '#5B8DEF' },
+    { key: 'S', label: 'South', icon: ArrowDown, color: '#B85C38' },
+    { key: 'W', label: 'West',  icon: ArrowLeft, color: '#7B3F00' },
+  ];
+
+  const activeList = active ? quads[active] : [];
+
+  return (
+    <div className="p-3 border-t border-[#E7E5E4] bg-[#FDFBF7]">
+      <div className="flex items-center gap-2 mb-2">
+        <Compass size={14} className="text-[#B85C38]" />
+        <p className="text-xs uppercase tracking-wide font-semibold text-[#57534E]">
+          Where customers live (from {label}'s center)
+        </p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {tiles.map((t) => {
+          const count = quads[t.key].length;
+          const pct = total ? Math.round((count / total) * 100) : 0;
+          const isActive = active === t.key;
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActive(isActive ? null : t.key)}
+              className={`p-3 rounded-lg border text-left transition ${
+                isActive
+                  ? 'bg-[#B85C38] text-white border-[#B85C38]'
+                  : 'bg-white border-[#E7E5E4] hover:border-[#B85C38]'
+              }`}
+              style={isActive ? {} : { borderLeft: `4px solid ${t.color}` }}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57534E]'}`}>{t.label}</span>
+                <Icon size={14} className={isActive ? 'text-white' : ''} style={isActive ? {} : { color: t.color }} />
+              </div>
+              <div className={`text-2xl font-bold mt-1 ${isActive ? 'text-white' : 'text-[#1C1917]'}`}>{count}</div>
+              <div className={`text-[11px] ${isActive ? 'text-white/80' : 'text-[#8B8680]'}`}>{pct}%</div>
+            </button>
+          );
+        })}
+      </div>
+      {active && activeList.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <p className="text-[11px] text-[#8B8680] mb-1">
+            {activeList.length} customer{activeList.length !== 1 ? 's' : ''} in the {active === 'N' ? 'north' : active === 'S' ? 'south' : active === 'E' ? 'east' : 'west'} of {label}
+          </p>
+          <div className="max-h-56 overflow-y-auto divide-y divide-[#E7E5E4] border border-[#E7E5E4] rounded-lg bg-white">
+            {activeList
+              .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
+              .slice(0, 50)
+              .map((c) => (
+                <div key={c.id} className="p-2.5 flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <TierBadge tier={c.tier} size="xs" />
+                    <div>
+                      <p className="font-medium text-[#1C1917]">{c.name}</p>
+                      <p className="text-[11px] text-[#8B8680]">{c.email}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                    <p className="text-[11px] text-[#8B8680]">{c.total_visits} visits</p>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

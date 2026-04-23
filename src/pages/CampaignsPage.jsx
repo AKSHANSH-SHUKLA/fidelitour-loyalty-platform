@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
 
@@ -15,6 +15,22 @@ export default function CampaignsPage() {
   const [viewingTrackingId, setViewingTrackingId] = useState(null);
   const [trackingData, setTrackingData] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
+
+  // --- Quick Send (filter-and-send on the main page) ---
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickName, setQuickName] = useState('');
+  const [quickMessage, setQuickMessage] = useState('');
+  const [quickFilters, setQuickFilters] = useState({
+    tiers: [],
+    hasWalletPass: 'any',
+    minPoints: 0,
+    minVisits: 0,
+    postalCodes: '',
+    minAmountPaid: 0,
+  });
+  const [quickPreviewCount, setQuickPreviewCount] = useState(null);
+  const [quickPreviewLoading, setQuickPreviewLoading] = useState(false);
+  const [quickSending, setQuickSending] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -191,6 +207,83 @@ export default function CampaignsPage() {
     setPreviewCount(null);
   };
 
+  // ---- Quick Send helpers ----
+  const buildQuickFilterPayload = () => ({
+    tiers: quickFilters.tiers.length > 0 ? quickFilters.tiers : undefined,
+    hasWalletPass: quickFilters.hasWalletPass !== 'any' ? quickFilters.hasWalletPass === 'yes' : undefined,
+    minPoints: quickFilters.minPoints > 0 ? quickFilters.minPoints : undefined,
+    minVisits: quickFilters.minVisits > 0 ? quickFilters.minVisits : undefined,
+    postalCodes: quickFilters.postalCodes
+      ? quickFilters.postalCodes.split(',').map((c) => c.trim()).filter(Boolean)
+      : undefined,
+    minAmountPaid: quickFilters.minAmountPaid > 0 ? quickFilters.minAmountPaid : undefined,
+  });
+
+  const quickPreview = async () => {
+    try {
+      setQuickPreviewLoading(true);
+      const res = await api.post('/owner/campaigns/preview-segment', {
+        filters: buildQuickFilterPayload(),
+      });
+      setQuickPreviewCount(res.data.count || 0);
+    } catch (e) {
+      setQuickPreviewCount(0);
+    } finally {
+      setQuickPreviewLoading(false);
+    }
+  };
+
+  const quickToggleTier = (tier) => {
+    setQuickFilters((prev) => ({
+      ...prev,
+      tiers: prev.tiers.includes(tier) ? prev.tiers.filter((t) => t !== tier) : [...prev.tiers, tier],
+    }));
+  };
+
+  const quickSend = async () => {
+    if (!quickName.trim() || !quickMessage.trim()) {
+      alert('Please fill in a campaign name and message.');
+      return;
+    }
+    if (quickPreviewCount === 0) {
+      alert('No customers match these filters. Adjust them and try again.');
+      return;
+    }
+    const recipients = quickPreviewCount != null ? quickPreviewCount : '(unknown — preview first)';
+    if (!window.confirm(`Send "${quickName}" to ${recipients} customer(s) now?`)) return;
+    try {
+      setQuickSending(true);
+      const created = await api.post('/owner/campaigns', {
+        name: quickName,
+        message: quickMessage,
+        filters: buildQuickFilterPayload(),
+      });
+      const id = created?.data?.id || created?.data?._id;
+      if (id) {
+        await api.post(`/owner/campaigns/${id}/send`);
+      }
+      setQuickName('');
+      setQuickMessage('');
+      setQuickFilters({
+        tiers: [],
+        hasWalletPass: 'any',
+        minPoints: 0,
+        minVisits: 0,
+        postalCodes: '',
+        minAmountPaid: 0,
+      });
+      setQuickPreviewCount(null);
+      setQuickOpen(false);
+      await fetchCampaigns();
+      alert('Campaign sent.');
+    } catch (e) {
+      console.error('Quick send error:', e);
+      alert('Failed to send: ' + (e?.response?.data?.detail || e?.message || 'unknown error'));
+    } finally {
+      setQuickSending(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusStyles = {
       draft: 'bg-gray-200 text-gray-800',
@@ -252,6 +345,181 @@ export default function CampaignsPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
+
+        {/* ============= Quick Send panel ============= */}
+        <div className="mb-6 rounded-lg border" style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}>
+          <button
+            onClick={() => setQuickOpen((v) => !v)}
+            className="w-full flex items-center justify-between p-4 hover:bg-[#F3EFE7] transition rounded-lg"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#B85C38]/10 flex items-center justify-center">
+                <Zap size={20} style={{ color: '#B85C38' }} />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-[#1C1917]" style={{ fontFamily: 'Manrope' }}>
+                  Quick Send — Filter customers and send in one shot
+                </p>
+                <p className="text-xs text-[#57534E]">
+                  Pick filters, preview how many customers match, write your message, hit send. No drafts.
+                </p>
+              </div>
+            </div>
+            {quickOpen ? <ChevronUp size={20} style={{ color: '#57534E' }} /> : <ChevronDown size={20} style={{ color: '#57534E' }} />}
+          </button>
+
+          {quickOpen && (
+            <div className="p-4 border-t" style={{ borderColor: '#E7E5E4' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Campaign Name</label>
+                  <input
+                    type="text"
+                    value={quickName}
+                    onChange={(e) => setQuickName(e.target.value)}
+                    placeholder="e.g. Weekend Offer"
+                    className="w-full px-3 py-2 border rounded-lg"
+                    style={{ borderColor: '#E7E5E4' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Message</label>
+                  <input
+                    type="text"
+                    value={quickMessage}
+                    onChange={(e) => setQuickMessage(e.target.value)}
+                    placeholder="Hi {first_name}, 20% off this Saturday..."
+                    className="w-full px-3 py-2 border rounded-lg"
+                    style={{ borderColor: '#E7E5E4' }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                {/* Tiers */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Tiers</label>
+                  <div className="flex gap-2">
+                    {['bronze', 'silver', 'gold'].map((tier) => (
+                      <button
+                        key={tier}
+                        type="button"
+                        onClick={() => quickToggleTier(tier)}
+                        className={`px-2 py-1 text-xs rounded border ${
+                          quickFilters.tiers.includes(tier)
+                            ? 'bg-[#B85C38] text-white border-[#B85C38]'
+                            : 'bg-white text-[#57534E] border-[#E7E5E4]'
+                        }`}
+                      >
+                        {tier[0].toUpperCase() + tier.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Wallet Pass */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Wallet Pass</label>
+                  <select
+                    value={quickFilters.hasWalletPass}
+                    onChange={(e) => setQuickFilters({ ...quickFilters, hasWalletPass: e.target.value })}
+                    className="w-full px-2 py-1.5 border rounded-lg text-sm"
+                    style={{ borderColor: '#E7E5E4' }}
+                  >
+                    <option value="any">Any</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+
+                {/* Min Points */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Points</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={quickFilters.minPoints}
+                    onChange={(e) => setQuickFilters({ ...quickFilters, minPoints: parseInt(e.target.value) || 0 })}
+                    className="w-full px-2 py-1.5 border rounded-lg text-sm"
+                    style={{ borderColor: '#E7E5E4' }}
+                  />
+                </div>
+
+                {/* Min Visits */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Visits</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={quickFilters.minVisits}
+                    onChange={(e) => setQuickFilters({ ...quickFilters, minVisits: parseInt(e.target.value) || 0 })}
+                    className="w-full px-2 py-1.5 border rounded-lg text-sm"
+                    style={{ borderColor: '#E7E5E4' }}
+                  />
+                </div>
+
+                {/* Postal Codes */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Postal Codes</label>
+                  <input
+                    type="text"
+                    value={quickFilters.postalCodes}
+                    onChange={(e) => setQuickFilters({ ...quickFilters, postalCodes: e.target.value })}
+                    placeholder="75001,75002"
+                    className="w-full px-2 py-1.5 border rounded-lg text-sm"
+                    style={{ borderColor: '#E7E5E4' }}
+                  />
+                </div>
+
+                {/* Min Amount Paid */}
+                <div>
+                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Paid (€)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={quickFilters.minAmountPaid}
+                    onChange={(e) => setQuickFilters({ ...quickFilters, minAmountPaid: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-2 py-1.5 border rounded-lg text-sm"
+                    style={{ borderColor: '#E7E5E4' }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={quickPreview}
+                  disabled={quickPreviewLoading}
+                  className="px-4 py-2 border rounded-lg text-sm font-semibold flex items-center gap-2"
+                  style={{ borderColor: '#B85C38', color: '#B85C38' }}
+                >
+                  <Filter size={16} />
+                  {quickPreviewLoading ? 'Previewing…' : 'Preview matches'}
+                </button>
+                {quickPreviewCount !== null && (
+                  <span className="text-sm text-[#57534E]">
+                    Will reach <span className="font-bold text-[#B85C38]">{quickPreviewCount}</span> customer{quickPreviewCount === 1 ? '' : 's'}
+                  </span>
+                )}
+                <div className="flex-1" />
+                <button
+                  onClick={quickSend}
+                  disabled={quickSending}
+                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-50"
+                  style={{ backgroundColor: '#B85C38' }}
+                >
+                  <Send size={16} />
+                  {quickSending ? 'Sending…' : `Send to ${quickPreviewCount ?? '…'} now`}
+                </button>
+              </div>
+              <p className="text-xs text-[#57534E] mt-3">
+                Quick Send creates the campaign and fires it immediately. For scheduled sends or drafts, use "New Campaign" in the header.
+              </p>
+            </div>
+          )}
+        </div>
+        {/* ============= /Quick Send panel ============= */}
+
         {/* Unread Campaign Warnings */}
         {!loading && campaigns.length > 0 && (() => {
           const lowOpenRateCampaigns = campaigns.filter(

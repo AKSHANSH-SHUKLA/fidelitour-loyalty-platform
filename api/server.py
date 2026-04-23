@@ -1714,34 +1714,55 @@ def update_tenant(req: Tenant, token_data: TokenData = Depends(require_role(["bu
 
 @app.get("/api/owner/customers")
 def list_customers(
-    token_data: TokenData = Depends(require_role(["business_owner"])),
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
     tier: Optional[str] = Query(None),
     min_visits: Optional[int] = Query(None),
     max_visits: Optional[int] = Query(None),
     min_amount: Optional[float] = Query(None),
     postal_code: Optional[str] = Query(None),
     source: Optional[str] = Query(None),
-    search: Optional[str] = Query(None)
+    search: Optional[str] = Query(None),
+    branch_id: Optional[str] = Query(None),
+    has_wallet_pass: Optional[bool] = Query(None),
+    active_30d: Optional[bool] = Query(None),
+    created_within_days: Optional[int] = Query(None),
+    cards_filled: Optional[bool] = Query(None),
 ):
-    """List customers with advanced filtering"""
+    """List customers with advanced filtering. Supports branch filtering + click-to-drill segments from the dashboard."""
     query = {"tenant_id": token_data.tenant_id}
 
     if tier:
         query["tier"] = tier
     if min_visits is not None:
-        query["visits"] = query.get("visits", {})
-        query["visits"]["$gte"] = min_visits
+        query.setdefault("visits", {})["$gte"] = min_visits
     if max_visits is not None:
-        query["visits"] = query.get("visits", {})
-        query["visits"]["$lte"] = max_visits
+        query.setdefault("visits", {})["$lte"] = max_visits
     if min_amount is not None:
         query["total_amount_paid"] = {"$gte": min_amount}
     if postal_code:
         query["postal_code"] = postal_code
     if source:
         query["acquisition_source"] = source
+    if branch_id:
+        query["branch_id"] = branch_id
+    if has_wallet_pass is True:
+        query["pass_issued"] = True
+    elif has_wallet_pass is False:
+        query["pass_issued"] = {"$ne": True}
+    if active_30d is True:
+        query["last_visit_date"] = {"$gte": datetime.now(timezone.utc) - timedelta(days=30)}
+    if created_within_days is not None and created_within_days > 0:
+        query["created_at"] = {"$gte": datetime.now(timezone.utc) - timedelta(days=created_within_days)}
 
     customers = list(db.customers.find(query))
+
+    # "Cards filled" filter: a customer has filled at least one card (visits >= reward threshold)
+    if cards_filled is True:
+        tpl = db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
+        reward_threshold = tpl.get("reward_threshold_stamps", 10)
+        visits_per_stamp = tpl.get("visits_per_stamp", 1)
+        needed = max(reward_threshold * visits_per_stamp, 1)
+        customers = [c for c in customers if c.get("visits", 0) >= needed]
 
     # Client-side search filtering for name/email
     if search:
@@ -1881,6 +1902,7 @@ class ScanRequest(BaseModel):
     barcode_id: str
     points: Optional[int] = None
     amount_paid: float = 0.0
+    branch_id: Optional[str] = None  # branch where the scan happened
 
 @app.post("/api/owner/scan")
 def scan_visit(
@@ -1910,6 +1932,12 @@ def scan_visit(
     c_obj.visits += 1
     c_obj.total_amount_paid += req.amount_paid
     c_obj.last_visit_date = datetime.now(timezone.utc)
+
+    # Record which branch is the customer's "home" branch: the first branch
+    # they ever scan at. This way analytics filtered by branch surface the
+    # right customers without needing every scan to be re-labelled.
+    if req.branch_id and not getattr(c_obj, "branch_id", None):
+        c_obj.branch_id = req.branch_id
 
     # Update tier
     if c_obj.visits >= 20:
@@ -1951,7 +1979,8 @@ def scan_visit(
         customer_id=c_obj.id,
         points_awarded=points_to_add,
         amount_paid=req.amount_paid,
-        visit_time=visit_time
+        visit_time=visit_time,
+        branch_id=req.branch_id or getattr(c_obj, "branch_id", None),
     )
     db.visits.insert_one(v.model_dump())
 
@@ -2167,9 +2196,19 @@ def owner_analytics(
     ninety_days_ago = now - timedelta(days=90)
     twelve_weeks_ago = now - timedelta(weeks=12)
 
+    # Branch-aware base filter. When branch_id is provided, scope customers
+    # and visits to that branch. Legacy records without a branch_id are
+    # excluded from a branch-filtered view on purpose — otherwise each branch
+    # would double-count the same "unbranched" rows.
+    customer_filter = {"tenant_id": t_id}
+    visit_filter = {"tenant_id": t_id}
+    if branch_id:
+        customer_filter["branch_id"] = branch_id
+        visit_filter["branch_id"] = branch_id
+
     # --- Pull customers once (needed for repeat_rate, tiers, wallet count) ---
     customers = list(db.customers.find(
-        {"tenant_id": t_id},
+        customer_filter,
         {"tier": 1, "visits": 1, "pass_issued": 1}
     ))
     total_customers = len(customers)
@@ -2192,7 +2231,7 @@ def owner_analytics(
     total_visits = 0
     heatmap_raw = []
     for doc in db.visits.aggregate([
-        {"$match": {"tenant_id": t_id}},
+        {"$match": visit_filter},
         {"$facet": {
             "total": [{"$count": "count"}],
             "by_day": [
@@ -2222,11 +2261,10 @@ def owner_analytics(
 
     # --- New customers aggregated by ISO week — ONE round-trip ---
     new_customers_by_week = {f"Week {i+1}": 0 for i in range(12)}
+    week_filter = dict(customer_filter)
+    week_filter["created_at"] = {"$gte": twelve_weeks_ago}
     for doc in db.customers.aggregate([
-        {"$match": {
-            "tenant_id": t_id,
-            "created_at": {"$gte": twelve_weeks_ago}
-        }},
+        {"$match": week_filter},
         {"$group": {
             "_id": {"$isoWeek": "$created_at"},
             "count": {"$sum": 1},
@@ -2237,7 +2275,7 @@ def owner_analytics(
         pass  # we fill below by bucketing created_at distance from now
     # Bucket by weeks-back using already-loaded customers (small cost; already in memory elsewhere)
     week_customers = list(db.customers.find(
-        {"tenant_id": t_id, "created_at": {"$gte": twelve_weeks_ago}},
+        week_filter,
         {"created_at": 1}
     ))
     for c in week_customers:
@@ -2250,7 +2288,12 @@ def owner_analytics(
             new_customers_by_week[label] = new_customers_by_week.get(label, 0) + 1
 
     # --- Campaign performance (at most ~20 campaigns, fine to keep) ---
-    campaigns = list(db.campaigns.find({"tenant_id": t_id, "status": "sent"}))
+    # Campaigns aren't branch-scoped, but if a branch_id is set we leave
+    # campaign performance empty so that UI doesn't misattribute totals.
+    if branch_id:
+        campaigns = []
+    else:
+        campaigns = list(db.campaigns.find({"tenant_id": t_id, "status": "sent"}))
     campaign_performance = [
         {
             "name": camp.get("name", ""),
@@ -2848,11 +2891,16 @@ def track_campaign_open(
     return Response(content=PIXEL_PNG_BYTES, media_type="image/png")
 
 @app.get("/api/owner/analytics/highest-paying")
-def get_highest_paying_customers(token_data: TokenData = Depends(require_role(["business_owner"]))):
+def get_highest_paying_customers(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
     """Return ALL tenant customers so the dashboard can sort by max/min spent/visits client-side."""
+    q = {"tenant_id": token_data.tenant_id}
+    if branch_id:
+        q["branch_id"] = branch_id
     customers = list(
-        db.customers.find({"tenant_id": token_data.tenant_id})
-        .sort("total_amount_paid", -1)
+        db.customers.find(q).sort("total_amount_paid", -1)
     )
 
     result = []
@@ -2870,7 +2918,10 @@ def get_highest_paying_customers(token_data: TokenData = Depends(require_role(["
     return result
 
 @app.get("/api/owner/analytics/cards-filled")
-def get_cards_filled_analytics(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+def get_cards_filled_analytics(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
     """Cards filled metrics. Uses visit counts in memory (no per-customer DB loop)."""
     t_id = token_data.tenant_id
     card_template = db.card_templates.find_one({"tenant_id": t_id})
@@ -2882,8 +2933,14 @@ def get_cards_filled_analytics(token_data: TokenData = Depends(require_role(["bu
         visits_per_stamp = card_template.get("visits_per_stamp", 1)
     visits_needed = max(reward_threshold * visits_per_stamp, 1)
 
+    cust_q = {"tenant_id": t_id}
+    visit_q = {"tenant_id": t_id}
+    if branch_id:
+        cust_q["branch_id"] = branch_id
+        visit_q["branch_id"] = branch_id
+
     customers = list(db.customers.find(
-        {"tenant_id": t_id}, {"visits": 1, "tier": 1}
+        cust_q, {"visits": 1, "tier": 1}
     ))
     tier_filled = {"bronze": 0, "silver": 0, "gold": 0}
     total_cards_filled = 0
@@ -2900,12 +2957,10 @@ def get_cards_filled_analytics(token_data: TokenData = Depends(require_role(["bu
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_start = (month_start - timedelta(days=1)).replace(day=1)
 
-    visits_this_month = db.visits.count_documents({
-        "tenant_id": t_id, "visit_time": {"$gte": month_start}
-    })
-    visits_last_month = db.visits.count_documents({
-        "tenant_id": t_id, "visit_time": {"$gte": last_month_start, "$lt": month_start}
-    })
+    this_month_q = dict(visit_q, visit_time={"$gte": month_start})
+    last_month_q = dict(visit_q, visit_time={"$gte": last_month_start, "$lt": month_start})
+    visits_this_month = db.visits.count_documents(this_month_q)
+    visits_last_month = db.visits.count_documents(last_month_q)
     # Cards filled = floor(visits_in_period / visits_needed)
     cards_filled_this_month = visits_this_month // visits_needed
     cards_filled_last_month = visits_last_month // visits_needed
@@ -2921,7 +2976,8 @@ def get_cards_filled_analytics(token_data: TokenData = Depends(require_role(["bu
 def get_recovered_customers(
     token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
     inactive_days: int = Query(30),
-    window_days: int = Query(30)
+    window_days: int = Query(30),
+    branch_id: Optional[str] = Query(None),
 ):
     """Customers who were inactive > inactive_days ago but came back within window_days.
 
@@ -2936,13 +2992,19 @@ def get_recovered_customers(
     inactive_threshold_seconds = inactive_days * 86400
     window_start = now - timedelta(days=window_days)
 
-    customers = list(db.customers.find({"tenant_id": t_id}))
+    cust_q = {"tenant_id": t_id}
+    visit_q = {"tenant_id": t_id}
+    if branch_id:
+        cust_q["branch_id"] = branch_id
+        visit_q["branch_id"] = branch_id
+
+    customers = list(db.customers.find(cust_q))
     total_customers = len(customers)
 
     # Get every visit sorted per customer — one aggregation call
     visit_history = {}
     for row in db.visits.aggregate([
-        {"$match": {"tenant_id": t_id}},
+        {"$match": visit_q},
         {"$sort": {"visit_time": 1}},
         {"$group": {
             "_id": "$customer_id",
@@ -2987,18 +3049,22 @@ def get_recovered_customers(
 
 @app.get("/api/owner/analytics/acquisition-sources")
 def get_acquisition_sources(
-    token_data: TokenData = Depends(require_role(["business_owner"])),
-    days: int = Query(90)
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    days: int = Query(90),
+    branch_id: Optional[str] = Query(None),
 ):
     """Get breakdown of customer acquisition sources"""
     now = datetime.now(timezone.utc)
     period_start = now - timedelta(days=days)
 
     # Get customers in period with acquisition_source
-    customers = list(db.customers.find({
+    q = {
         "tenant_id": token_data.tenant_id,
         "created_at": {"$gte": period_start}
-    }))
+    }
+    if branch_id:
+        q["branch_id"] = branch_id
+    customers = list(db.customers.find(q))
 
     sources_count = {}
     for cust in customers:
@@ -3021,7 +3087,10 @@ def get_acquisition_sources(
     }
 
 @app.get("/api/owner/analytics/summary")
-def get_analytics_summary(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+def get_analytics_summary(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
     """Quick summary stats for dashboard. No per-customer DB loops."""
     t_id = token_data.tenant_id
     now = datetime.now(timezone.utc)
@@ -3029,7 +3098,13 @@ def get_analytics_summary(token_data: TokenData = Depends(require_role(["busines
     ninety_days_ago = now - timedelta(days=90)
     thirty_days_ago = now - timedelta(days=30)
 
-    customers = list(db.customers.find({"tenant_id": t_id}))
+    cust_q = {"tenant_id": t_id}
+    visit_q = {"tenant_id": t_id}
+    if branch_id:
+        cust_q["branch_id"] = branch_id
+        visit_q["branch_id"] = branch_id
+
+    customers = list(db.customers.find(cust_q))
 
     # Highest paying — in-memory sort
     by_spend = sorted(customers, key=lambda c: c.get("total_amount_paid", 0), reverse=True)
@@ -3054,10 +3129,11 @@ def get_analytics_summary(token_data: TokenData = Depends(require_role(["busines
         and c["last_visit_date"] >= ninety_days_ago
     )
     # Tighter recovered semantic using visit history (one extra aggregation)
+    recent_returns_match = dict(visit_q, visit_time={"$gte": ninety_days_ago})
     recent_returns = {
         row["_id"]: True
         for row in db.visits.aggregate([
-            {"$match": {"tenant_id": t_id, "visit_time": {"$gte": ninety_days_ago}}},
+            {"$match": recent_returns_match},
             {"$group": {"_id": "$customer_id"}}
         ])
     }
@@ -4293,6 +4369,35 @@ def admin_broadcast(
     db.admin_broadcasts.insert_one(doc)
     doc.pop("_id", None)
     return doc
+
+
+class AdminBroadcastPreviewRequest(BaseModel):
+    filters: Optional[Dict[str, Any]] = None
+
+
+@app.post("/api/admin/broadcast/preview")
+def admin_broadcast_preview(
+    req: AdminBroadcastPreviewRequest,
+    token_data: TokenData = Depends(require_role(["super_admin"])),
+):
+    """Returns the number of end-customers that would match the given broadcast filters,
+    without sending anything. Mirrors the filter logic of /api/admin/broadcast."""
+    filters = req.filters or {}
+    cust_q: Dict[str, Any] = {}
+    if filters.get("tier"):
+        cust_q["tier"] = filters["tier"]
+    if filters.get("acquisition"):
+        cust_q["acquisition_source"] = filters["acquisition"]
+    if filters.get("department_code"):
+        cust_q["postal_code"] = {"$regex": f"^{filters['department_code']}"}
+    if filters.get("tenant_id"):
+        cust_q["tenant_id"] = filters["tenant_id"]
+    if filters.get("sector"):
+        ts = list(db.tenants.find({"sector": filters["sector"]}, {"id": 1}))
+        cust_q["tenant_id"] = {"$in": [t["id"] for t in ts]}
+    count = db.customers.count_documents(cust_q)
+    with_email = db.customers.count_documents({**cust_q, "email": {"$exists": True, "$ne": ""}})
+    return {"count": count, "with_email": with_email}
 
 
 @app.get("/api/admin/broadcasts")
