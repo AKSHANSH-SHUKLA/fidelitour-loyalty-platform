@@ -19,10 +19,11 @@ export default function CampaignsPage() {
   // --- Quick Send (filter-and-send on the main page) ---
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickName, setQuickName] = useState('');
+  const [quickSource, setQuickSource] = useState('push');
   const [quickMessage, setQuickMessage] = useState('');
   const [quickFilters, setQuickFilters] = useState({
     tiers: [],
-    hasWalletPass: 'any',
+    walletPassOnly: false,
     minPoints: 0,
     minVisits: 0,
     postalCodes: '',
@@ -36,9 +37,10 @@ export default function CampaignsPage() {
   const [formData, setFormData] = useState({
     campaignName: '',
     message: '',
+    source: 'push',
     filters: {
       tiers: [],
-      hasWalletPass: 'any',
+      walletPassOnly: false,
       minPoints: 0,
       minVisits: 0,
       postalCodes: '',
@@ -96,7 +98,7 @@ export default function CampaignsPage() {
   const buildFilterPayload = () => {
     return {
       tiers: formData.filters.tiers.length > 0 ? formData.filters.tiers : undefined,
-      hasWalletPass: formData.filters.hasWalletPass !== 'any' ? formData.filters.hasWalletPass === 'yes' : undefined,
+      hasWalletPass: formData.filters.walletPassOnly ? true : undefined,
       minPoints: formData.filters.minPoints > 0 ? formData.filters.minPoints : undefined,
       minVisits: formData.filters.minVisits > 0 ? formData.filters.minVisits : undefined,
       postalCodes: formData.filters.postalCodes ? formData.filters.postalCodes.split(',').map((code) => code.trim()) : undefined,
@@ -130,6 +132,7 @@ export default function CampaignsPage() {
         const payload = {
           name: formData.campaignName,
           message: formData.message,
+          source: formData.source || 'push',
           filters: buildFilterPayload(),
         };
         await api.post('/owner/campaigns', payload);
@@ -195,9 +198,10 @@ export default function CampaignsPage() {
     setFormData({
       campaignName: '',
       message: '',
+      source: 'push',
       filters: {
         tiers: [],
-        hasWalletPass: 'any',
+        walletPassOnly: false,
         minPoints: 0,
         minVisits: 0,
         postalCodes: '',
@@ -210,7 +214,7 @@ export default function CampaignsPage() {
   // ---- Quick Send helpers ----
   const buildQuickFilterPayload = () => ({
     tiers: quickFilters.tiers.length > 0 ? quickFilters.tiers : undefined,
-    hasWalletPass: quickFilters.hasWalletPass !== 'any' ? quickFilters.hasWalletPass === 'yes' : undefined,
+    hasWalletPass: quickFilters.walletPassOnly ? true : undefined,
     minPoints: quickFilters.minPoints > 0 ? quickFilters.minPoints : undefined,
     minVisits: quickFilters.minVisits > 0 ? quickFilters.minVisits : undefined,
     postalCodes: quickFilters.postalCodes
@@ -257,6 +261,7 @@ export default function CampaignsPage() {
         name: quickName,
         message: quickMessage,
         filters: buildQuickFilterPayload(),
+        source: quickSource || 'push',
       });
       const id = created?.data?.id || created?.data?._id;
       if (id) {
@@ -266,7 +271,7 @@ export default function CampaignsPage() {
       setQuickMessage('');
       setQuickFilters({
         tiers: [],
-        hasWalletPass: 'any',
+        walletPassOnly: false,
         minPoints: 0,
         minVisits: 0,
         postalCodes: '',
@@ -395,6 +400,39 @@ export default function CampaignsPage() {
                 </div>
               </div>
 
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">
+                  Channel / Source
+                  <span className="ml-2 normal-case text-[10px] text-[#8B8680] font-normal">
+                    (tags this campaign so you can see its performance per channel)
+                  </span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'push', label: 'Wallet Push' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'instagram', label: 'Instagram' },
+                    { key: 'facebook', label: 'Facebook' },
+                    { key: 'tiktok', label: 'TikTok' },
+                    { key: 'sms', label: 'SMS' },
+                    { key: 'other', label: 'Other' },
+                  ].map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => setQuickSource(s.key)}
+                      className={`px-3 py-1 text-xs rounded-full border transition ${
+                        quickSource === s.key
+                          ? 'bg-[#B85C38] text-white border-[#B85C38]'
+                          : 'bg-white text-[#57534E] border-[#E7E5E4] hover:border-[#B85C38]'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                 {/* Tiers */}
                 <div>
@@ -420,16 +458,17 @@ export default function CampaignsPage() {
                 {/* Wallet Pass */}
                 <div>
                   <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Wallet Pass</label>
-                  <select
-                    value={quickFilters.hasWalletPass}
-                    onChange={(e) => setQuickFilters({ ...quickFilters, hasWalletPass: e.target.value })}
-                    className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E7E5E4' }}
+                  <button
+                    type="button"
+                    onClick={() => setQuickFilters({ ...quickFilters, walletPassOnly: !quickFilters.walletPassOnly })}
+                    className={`w-full px-2 py-1.5 text-sm rounded-lg border transition ${
+                      quickFilters.walletPassOnly
+                        ? 'bg-[#B85C38] text-white border-[#B85C38]'
+                        : 'bg-white text-[#57534E] border-[#E7E5E4]'
+                    }`}
                   >
-                    <option value="any">Any</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
+                    {quickFilters.walletPassOnly ? '✓ Wallet pass only' : 'Wallet pass only'}
+                  </button>
                 </div>
 
                 {/* Min Points */}
@@ -520,6 +559,53 @@ export default function CampaignsPage() {
         </div>
         {/* ============= /Quick Send panel ============= */}
 
+        {/* Per-channel performance summary */}
+        {!loading && campaigns.length > 0 && (() => {
+          const sent = campaigns.filter((c) => c.status === 'sent');
+          if (sent.length === 0) return null;
+          const perSource = {};
+          sent.forEach((c) => {
+            const src = c.source || 'push';
+            if (!perSource[src]) perSource[src] = { count: 0, delivered: 0, opens: 0, visits: 0 };
+            const row = perSource[src];
+            row.count += 1;
+            row.delivered += c.delivered_count || 0;
+            row.opens += c.opens_unique || 0;
+            row.visits += c.visits_from_campaign || 0;
+          });
+          const rows = Object.entries(perSource).sort((a, b) => b[1].delivered - a[1].delivered);
+          return (
+            <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E7E5E4' }}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                  Campaign performance by channel
+                </h2>
+                <span className="text-xs text-[#8B8680]">
+                  How each publishing channel is performing — openings and visits in absolute numbers and %.
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                {rows.map(([src, row]) => {
+                  const openPct = row.delivered > 0 ? Math.round((row.opens / row.delivered) * 100) : 0;
+                  const visitPct = row.delivered > 0 ? Math.round((row.visits / row.delivered) * 100) : 0;
+                  const label = src === 'push' ? 'Wallet Push' : src[0].toUpperCase() + src.slice(1);
+                  return (
+                    <div key={src} className="p-3 rounded-lg border" style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}>
+                      <p className="text-xs font-semibold text-[#B85C38] uppercase tracking-wider">{label}</p>
+                      <p className="text-2xl font-bold text-[#1C1917]">{row.count}</p>
+                      <p className="text-[11px] text-[#8B8680]">campaigns · {row.delivered} delivered</p>
+                      <div className="mt-2 text-xs text-[#57534E] space-y-0.5">
+                        <div>Opens: <b>{row.opens}</b> <span className="text-[#8B8680]">({openPct}%)</span></div>
+                        <div>Visits: <b>{row.visits}</b> <span className="text-[#8B8680]">({visitPct}%)</span></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Unread Campaign Warnings */}
         {!loading && campaigns.length > 0 && (() => {
           const lowOpenRateCampaigns = campaigns.filter(
@@ -566,8 +652,28 @@ export default function CampaignsPage() {
                       <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
                         {campaign.name}
                       </h3>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         {getStatusBadge(campaign.status)}
+                        {campaign.source && (
+                          <span
+                            className="px-2 py-0.5 text-xs rounded-full font-semibold capitalize"
+                            style={{
+                              backgroundColor:
+                                campaign.source === 'instagram' ? '#FCE4EC'
+                                : campaign.source === 'facebook' ? '#E3F2FD'
+                                : campaign.source === 'tiktok' ? '#111'
+                                : campaign.source === 'push' ? '#F3EFE7'
+                                : campaign.source === 'email' ? '#E8F5E9'
+                                : campaign.source === 'sms' ? '#FFF3E0'
+                                : '#F5F4F0',
+                              color:
+                                campaign.source === 'tiktok' ? '#fff'
+                                : '#1C1917',
+                            }}
+                          >
+                            {campaign.source === 'push' ? 'Wallet Push' : campaign.source}
+                          </span>
+                        )}
                         <div style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '14px' }} className="flex items-center gap-4">
                           <span className="flex items-center gap-1">
                             <Users size={16} />
@@ -737,6 +843,40 @@ export default function CampaignsPage() {
                 />
               </div>
 
+              {/* Channel / Source */}
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                  Channel / Source
+                  <span className="ml-2 text-xs text-[#8B8680] font-normal">
+                    Where this campaign is published — used to measure per-channel performance.
+                  </span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'push', label: 'Wallet Push' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'instagram', label: 'Instagram' },
+                    { key: 'facebook', label: 'Facebook' },
+                    { key: 'tiktok', label: 'TikTok' },
+                    { key: 'sms', label: 'SMS' },
+                    { key: 'other', label: 'Other' },
+                  ].map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, source: s.key }))}
+                      className={`px-3 py-1 text-xs rounded-full border transition ${
+                        (formData.source || 'push') === s.key
+                          ? 'bg-[#B85C38] text-white border-[#B85C38]'
+                          : 'bg-white text-[#57534E] border-[#E7E5E4] hover:border-[#B85C38]'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* By Customers Mode */}
               {selectedCampaignTab === 'by-customers' && (
                 <div className="p-4 rounded border-2" style={{ borderColor: '#E3A869', backgroundColor: '#F3EFE7' }}>
@@ -788,19 +928,17 @@ export default function CampaignsPage() {
 
                 {/* Has Wallet Pass */}
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Has Wallet Pass
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.filters.walletPassOnly}
+                      onChange={(e) => handleFilterChange('walletPassOnly', e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-semibold" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                      Only customers with a Wallet Pass
+                    </span>
                   </label>
-                  <select
-                    value={formData.filters.hasWalletPass}
-                    onChange={(e) => handleFilterChange('hasWalletPass', e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
-                  >
-                    <option value="any">Any</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
                 </div>
 
                 {/* Min Points */}

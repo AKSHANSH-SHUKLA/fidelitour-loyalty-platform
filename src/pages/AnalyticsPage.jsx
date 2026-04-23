@@ -320,6 +320,11 @@ const AnalyticsPage = () => {
   const [recoveryWindowDays, setRecoveryWindowDays] = useState(30);
   const [rankingMode, setRankingMode] = useState('top_paying'); // top_paying | least_paying | max_visits | least_visits
 
+  // Custom threshold for "Inactive customers" KPI. Default 30 days — owner can change it.
+  const [inactiveThreshold, setInactiveThreshold] = useState(30);
+  // Period preset for the whole page — 7/30/90 days or "all time". Applied everywhere a window makes sense.
+  const [periodDays, setPeriodDays] = useState(30);
+
   const [drill, setDrill] = useState(null); // { title, rows }
   const [drillLoading, setDrillLoading] = useState(false);
   const [composer, setComposer] = useState(null); // { segment, presetName, presetContent }
@@ -408,6 +413,13 @@ const AnalyticsPage = () => {
   const newThisWeek = summary?.new_this_week ?? 0;
   const cardsFilledTotal = cardsFilled?.total_cards_filled ?? 0;
   const cardsFilledThisMonth = cardsFilled?.cards_filled_this_month ?? 0;
+  // New summary-backed KPIs
+  const newToday = summary?.new_today_count ?? 0;
+  const inactiveCount = summary?.inactive_count ?? 0;
+  const aboutToLoseCount = summary?.about_to_lose_count ?? 0;
+  const cardsFilledToday = summary?.cards_filled_today ?? 0;
+  const inactivePct = totalCustomers ? Math.round((inactiveCount / totalCustomers) * 100) : 0;
+  const aboutToLosePct = totalCustomers ? Math.round((aboutToLoseCount / totalCustomers) * 100) : 0;
 
   const tierData = useMemo(() => {
     const td = analytics?.tier_distribution || {};
@@ -549,6 +561,33 @@ const AnalyticsPage = () => {
               </select>
             </div>
           )}
+          <div className="flex items-center gap-1 bg-white border border-[#E7E5E4] rounded-xl px-2 py-1.5">
+            <Calendar size={14} className="text-[#B85C38] mx-1" />
+            <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider mr-1">Period</label>
+            {[7, 30, 90].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setPeriodDays(d)}
+                className={`text-xs px-2 py-1 rounded-md transition ${
+                  periodDays === d
+                    ? 'bg-[#B85C38] text-white'
+                    : 'text-[#57534E] hover:bg-[#F5F4F0]'
+                }`}
+              >
+                {d}d
+              </button>
+            ))}
+            <input
+              type="number"
+              min="1"
+              max="730"
+              value={periodDays}
+              onChange={(e) => setPeriodDays(Math.max(1, Number(e.target.value) || 1))}
+              className="w-14 text-xs px-2 py-1 border border-[#E7E5E4] rounded-md ml-1"
+              title="Custom days"
+            />
+          </div>
           <button
             onClick={() => openComposer({ type: 'all' }, 'Message à toute ma base', 'Bonjour {first_name}, une nouveauté à partager chez {business_name}…')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#B85C38] text-white rounded-xl hover:bg-[#9C4E2F] font-medium"
@@ -673,6 +712,109 @@ const AnalyticsPage = () => {
         />
       </section>
 
+      {/* Row 1b — Retention health: first-time today, inactive (custom), about-to-lose, cards filled today */}
+      <section className="bg-white border border-[#E7E5E4] rounded-xl p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              Retention health
+            </h3>
+            <p className="text-xs text-[#8B8680]">
+              First-time signups today, inactive customers (your own threshold), at-risk customers about to churn, and card completions today. Click any card to see the customer list.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Inactive ≥</label>
+            <div className="flex gap-1">
+              {[7, 14, 21, 30, 60, 90].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setInactiveThreshold(d)}
+                  className={`text-xs px-2 py-1 rounded-md transition ${
+                    inactiveThreshold === d
+                      ? 'bg-[#B85C38] text-white'
+                      : 'bg-[#F5F4F0] text-[#57534E] hover:bg-[#E7E5E4]'
+                  }`}
+                >
+                  {d}d
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              min="1"
+              max="730"
+              value={inactiveThreshold}
+              onChange={(e) => setInactiveThreshold(Math.max(1, Number(e.target.value) || 1))}
+              className="w-16 text-xs px-2 py-1 border border-[#E7E5E4] rounded-md"
+              title="Custom inactivity threshold in days"
+            />
+            <span className="text-xs text-[#8B8680]">days</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KPICard
+            icon={Users}
+            title="First-time cards today"
+            value={newToday.toLocaleString()}
+            sublabel="Signed up today · click to view"
+            accent="#4A5D23"
+            onClick={() => drillCustomers('First-time cards today', { created_within_days: 1 })}
+            segment={{ type: 'one_visit_only' }}
+            openComposer={openComposer}
+            presetName="Bienvenue chez {business_name}, {first_name} !"
+            presetContent="Merci d'avoir rejoint {business_name}. Pour votre 2e visite, une attention spéciale vous attend."
+          />
+          <KPICard
+            icon={AlertCircle}
+            title={`Inactive ≥ ${inactiveThreshold}d`}
+            value={inactiveCount.toLocaleString()}
+            sublabel={`${inactivePct}% of base · click to view & win back`}
+            accent="#B85C38"
+            onClick={() =>
+              drillCustomers(
+                `Inactive ≥ ${inactiveThreshold} days`,
+                { inactive_days_min: inactiveThreshold }
+              )
+            }
+            segment={{ type: 'inactive_days', value: inactiveThreshold }}
+            openComposer={openComposer}
+            presetName="On vous a manqué, {first_name}"
+            presetContent={`Ça fait plus de ${inactiveThreshold} jours… une offre flash vous attend chez {business_name}.`}
+          />
+          <KPICard
+            icon={Clock}
+            title="About to lose (14–29d)"
+            value={aboutToLoseCount.toLocaleString()}
+            sublabel={`${aboutToLosePct}% of base · at risk of churning`}
+            accent="#E3A869"
+            onClick={() =>
+              drillCustomers('About to lose (14–29 days since last visit)', {
+                inactive_days_min: 14,
+                inactive_days_max: 29,
+              })
+            }
+            segment={{ type: 'inactive_days', value: 14 }}
+            openComposer={openComposer}
+            presetName="Un petit rappel, {first_name}"
+            presetContent="Ça fait quelques semaines… {business_name} vous attend avec une surprise."
+          />
+          <KPICard
+            icon={CreditCard}
+            title="Cards completed today"
+            value={cardsFilledToday.toLocaleString()}
+            sublabel="Card completions recorded today"
+            accent="#7B3F00"
+            onClick={() => drillCustomers('Customers with at least one completed card', { cards_filled: true })}
+            segment={{ type: 'tier', value: 'gold' }}
+            openComposer={openComposer}
+            presetName="Bravo {first_name} — récompense débloquée !"
+            presetContent="Vous venez de remplir votre carte chez {business_name}. Votre récompense vous attend."
+          />
+        </div>
+      </section>
+
       {/* Row 2 — visits by day + new customers by week */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
@@ -716,15 +858,24 @@ const AnalyticsPage = () => {
 
       {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread.">
+        <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread. Click any tier to see its customers.">
           <div className="grid grid-cols-3 gap-2 mb-4">
             {tierData.map((t) => (
-              <div key={t.key} className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E7E5E4] bg-[#FDFBF7]">
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E7E5E4] bg-[#FDFBF7] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
+                title={`Click to view ${t.name} customers`}
+              >
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full" style={{ background: TIER_COLORS[t.key] }}></span>
                   <span className="text-xs font-semibold text-[#1C1917]">{t.name}</span>
                 </div>
                 <span className="text-lg font-bold">{t.value}</span>
+                <span className="text-[10px] text-[#8B8680]">
+                  {totalCustomers ? `${Math.round((t.value / totalCustomers) * 100)}%` : '—'} · click to view
+                </span>
                 <SendCampaignButton
                   compact
                   label={`Send to ${t.name}`}
@@ -734,7 +885,7 @@ const AnalyticsPage = () => {
                     `Parce que vous êtes ${t.name}, voici une attention spéciale de {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.`
                   )}
                 />
-              </div>
+              </button>
             ))}
           </div>
           <ResponsiveContainer width="100%" height={240}>
@@ -751,6 +902,8 @@ const AnalyticsPage = () => {
                     ? `${name}: ${value} (${Math.round((value / totalCustomers) * 100)}%)`
                     : `${name}: ${value}`
                 }
+                onClick={(data) => data && drillCustomers(`${data.name} tier customers`, { tier: data.key })}
+                style={{ cursor: 'pointer' }}
               >
                 {tierData.map((t, i) => (
                   <Cell key={i} fill={TIER_COLORS[t.key] || '#B85C38'} />

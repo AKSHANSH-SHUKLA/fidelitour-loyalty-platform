@@ -276,6 +276,9 @@ class Campaign(BaseModel):
     offer_clicks_unique: int = 0
     push_dismissals: int = 0  # number of recipients who dismissed the push without opening
     sender_name: Optional[str] = None  # snapshot of tenant.campaign_sender_name when sent
+    # Distribution channel this campaign was published on — used for per-channel performance analysis
+    # Allowed values: 'push' (wallet push), 'email', 'instagram', 'facebook', 'tiktok', 'sms', 'other'
+    source: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AIQueryRequest(BaseModel):

@@ -514,29 +514,111 @@ const OwnerDashboard = () => {
 
         {/* Campaign Performance */}
         <div className="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-sm">
-          <h2 className="text-xl font-bold mb-6" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
-            Campaign Performance
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+              Campaign Performance
+            </h2>
+            <span className="text-[11px] text-[#8B8680]">
+              Opens & visits per campaign, tagged by publishing channel.
+            </span>
+          </div>
           {campaignPerf.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>No campaigns sent yet</p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {campaignPerf.map((camp, i) => (
-                <div key={i} className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold text-[#1C1917] text-sm" style={{ fontFamily: 'Manrope' }}>{camp.name}</h3>
-                    <span className="text-xs px-2 py-1 rounded-full bg-[#4A5D23] text-white font-medium">Sent</span>
+          ) : (() => {
+            // Aggregate per channel for the KPI strip at top
+            const perSource = {};
+            let totalDelivered = 0, totalOpens = 0, totalVisits = 0;
+            campaignPerf.forEach((c) => {
+              const src = c.source || 'push';
+              const row = perSource[src] || { count: 0, delivered: 0, opens: 0, visits: 0 };
+              row.count += 1;
+              row.delivered += c.delivered_count || 0;
+              row.opens += c.opens_unique || c.opens || 0;
+              row.visits += c.visits_after_send || 0;
+              perSource[src] = row;
+              totalDelivered += c.delivered_count || 0;
+              totalOpens += c.opens_unique || c.opens || 0;
+              totalVisits += c.visits_after_send || 0;
+            });
+            const sourceRows = Object.entries(perSource).sort((a, b) => b[1].delivered - a[1].delivered);
+            const globalOpenPct = totalDelivered > 0 ? Math.round((totalOpens / totalDelivered) * 100) : 0;
+            const globalVisitPct = totalDelivered > 0 ? Math.round((totalVisits / totalDelivered) * 100) : 0;
+            return (
+              <div className="space-y-4">
+                {/* Aggregate KPI row */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
+                    <p className="text-[10px] text-[#8B8680] uppercase tracking-wider">Total delivered</p>
+                    <p className="text-xl font-bold text-[#1C1917]">{totalDelivered}</p>
                   </div>
-                  <div className="flex gap-6 text-xs text-[#57534E]" style={{ fontFamily: 'Manrope' }}>
-                    <span>Delivered: <strong className="text-[#1C1917]">{camp.delivered_count}</strong></span>
-                    <span>Visits After: <strong className="text-[#4A5D23]">{camp.visits_after_send}</strong></span>
+                  <div className="p-3 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
+                    <p className="text-[10px] text-[#8B8680] uppercase tracking-wider">Opens</p>
+                    <p className="text-xl font-bold text-[#B85C38]">{totalOpens} <span className="text-xs text-[#8B8680] font-normal">({globalOpenPct}%)</span></p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
+                    <p className="text-[10px] text-[#8B8680] uppercase tracking-wider">Visits after</p>
+                    <p className="text-xl font-bold text-[#4A5D23]">{totalVisits} <span className="text-xs text-[#8B8680] font-normal">({globalVisitPct}%)</span></p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Per-channel breakdown */}
+                {sourceRows.length > 1 && (
+                  <div>
+                    <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wider mb-2">By channel</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {sourceRows.map(([src, row]) => {
+                        const openPct = row.delivered > 0 ? Math.round((row.opens / row.delivered) * 100) : 0;
+                        const visitPct = row.delivered > 0 ? Math.round((row.visits / row.delivered) * 100) : 0;
+                        const label = src === 'push' ? 'Wallet Push' : src[0].toUpperCase() + src.slice(1);
+                        return (
+                          <div key={src} className="p-2.5 rounded bg-[#F3EFE7] border border-[#E7E5E4]">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-[#1C1917]">{label}</span>
+                              <span className="text-[10px] text-[#8B8680]">{row.count} sent</span>
+                            </div>
+                            <div className="text-[11px] text-[#57534E] mt-1">
+                              Opens <b>{openPct}%</b> · Visits <b>{visitPct}%</b>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Latest campaigns list (limit 5) */}
+                <div className="space-y-2">
+                  {campaignPerf.slice(0, 5).map((camp, i) => {
+                    const openPct = camp.delivered_count > 0
+                      ? Math.round(((camp.opens_unique || camp.opens || 0) / camp.delivered_count) * 100)
+                      : 0;
+                    const visitPct = camp.delivered_count > 0
+                      ? Math.round(((camp.visits_after_send || 0) / camp.delivered_count) * 100)
+                      : 0;
+                    const src = camp.source || 'push';
+                    const srcLabel = src === 'push' ? 'Wallet Push' : src[0].toUpperCase() + src.slice(1);
+                    return (
+                      <div key={camp.id || i} className="p-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+                        <div className="flex justify-between items-center mb-1.5 gap-2">
+                          <h3 className="font-semibold text-[#1C1917] text-sm truncate" style={{ fontFamily: 'Manrope' }}>{camp.name}</h3>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-[#E7E5E4] text-[#57534E] font-medium whitespace-nowrap">
+                            {srcLabel}
+                          </span>
+                        </div>
+                        <div className="flex gap-4 text-xs text-[#57534E] flex-wrap" style={{ fontFamily: 'Manrope' }}>
+                          <span>Delivered: <strong className="text-[#1C1917]">{camp.delivered_count}</strong></span>
+                          <span>Opens: <strong className="text-[#B85C38]">{camp.opens_unique || camp.opens || 0}</strong> ({openPct}%)</span>
+                          <span>Visits: <strong className="text-[#4A5D23]">{camp.visits_after_send}</strong> ({visitPct}%)</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

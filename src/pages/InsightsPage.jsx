@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ownerAPI } from '../lib/api';
 import {
   AlertTriangle, TrendingDown, Euro, Users, Clock, MapPin, Calendar,
-  Send, UserPlus, Trash2, CreditCard, Zap, RefreshCw, ChevronRight, X
+  Send, UserPlus, Trash2, CreditCard, Zap, RefreshCw, ChevronRight, X,
+  Sparkles, Wand2,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -56,6 +57,36 @@ export default function InsightsPage() {
   const [senderNameSaving, setSenderNameSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [addTeamForm, setAddTeamForm] = useState({ email: '', password: '', role: 'staff' });
+
+  // AI suggestions panel state
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiAnswer, setAiAnswer] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+  const AI_PRESET_QUESTIONS = [
+    "What are the 3 most urgent things I should do this week?",
+    "Which customer segments should I reactivate first — and with what offer?",
+    "My best-paying customers: what do they have in common?",
+    "Why is my churn rate where it is, and how do I lower it?",
+    "Which day/time should I send my next campaign for maximum opens?",
+    "Write me a re-engagement message for customers who haven't visited in 30 days.",
+  ];
+
+  const askAI = async (question) => {
+    const q = (question ?? aiQuestion).trim();
+    if (!q) return;
+    setAiLoading(true);
+    setAiError(null);
+    setAiAnswer('');
+    try {
+      const res = await ownerAPI.aiQuery({ message: q });
+      setAiAnswer(res?.data?.response || res?.data?.answer || res?.data?.message || 'No response.');
+    } catch (e) {
+      setAiError(e?.response?.data?.detail || e?.message || 'AI request failed');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -150,6 +181,71 @@ export default function InsightsPage() {
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
+
+      {/* AI Suggestions Panel */}
+      <Card className="bg-gradient-to-br from-white to-[#FDFBF7]">
+        <SectionHead
+          icon={Sparkles}
+          title="Ask the AI — your business advisor"
+          subtitle="Powered by your own customer data. Ask anything about growth, retention, campaigns, or customers, and get a personalised recommendation."
+        />
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {AI_PRESET_QUESTIONS.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => { setAiQuestion(q); askAI(q); }}
+                disabled={aiLoading}
+                className="text-xs px-3 py-1.5 rounded-full border border-[#E7E5E4] bg-white hover:bg-[#B85C38] hover:text-white hover:border-[#B85C38] transition disabled:opacity-60"
+                title="Ask this question"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-2">
+            <input
+              type="text"
+              value={aiQuestion}
+              onChange={(e) => setAiQuestion(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !aiLoading) askAI(); }}
+              placeholder="e.g. How do I win back gold-tier customers who went quiet last month?"
+              className="flex-1 px-4 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+              disabled={aiLoading}
+            />
+            <button
+              type="button"
+              onClick={() => askAI()}
+              disabled={aiLoading || !aiQuestion.trim()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#B85C38] text-white text-sm font-semibold hover:bg-[#9C4E2F] disabled:opacity-60"
+            >
+              <Wand2 size={14} />
+              {aiLoading ? 'Thinking…' : 'Get a recommendation'}
+            </button>
+          </div>
+
+          {aiError && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800">
+              {aiError}
+            </div>
+          )}
+
+          {aiAnswer && (
+            <div className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+              <div className="flex items-start gap-2 mb-2">
+                <Sparkles size={16} className="text-[#B85C38] shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold text-[#B85C38] uppercase tracking-wider">AI recommendation</p>
+              </div>
+              <div className="text-sm text-[#1C1917] whitespace-pre-wrap leading-relaxed">{aiAnswer}</div>
+              <div className="mt-3 pt-3 border-t border-[#E7E5E4] text-[11px] text-[#8B8680]">
+                Tip: every insight below (churn, LTV, alerts, city breakdown…) can also be fed back into this box. Copy a number, paste it here, and ask "what does this mean for me?"
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
 
       {/* Feature 3: Smart Alerts */}
       <Card>

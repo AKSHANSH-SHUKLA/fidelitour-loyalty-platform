@@ -67,6 +67,8 @@ export default function CustomerMapPage() {
   const [tierFilter, setTierFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [search, setSearch] = useState('');
+  // Full details modal — set to a customer object to open
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -338,11 +340,19 @@ export default function CustomerMapPage() {
               </div>
 
               {/* Top 5 customers platform-wide */}
-              <TopCustomersCard customers={filteredAll} />
+              <TopCustomersCard customers={filteredAll} onSelect={setSelectedCustomer} />
             </>
           )}
         </div>
       </div>
+
+      {/* Full customer details modal */}
+      {selectedCustomer && (
+        <CustomerDetailsModal
+          customer={selectedCustomer}
+          onClose={() => setSelectedCustomer(null)}
+        />
+      )}
     </div>
   );
 }
@@ -467,9 +477,12 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
           </div>
           <div className="space-y-2">
             {topSpenders.map((c, i) => (
-              <div
+              <button
                 key={c.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7]"
+                type="button"
+                onClick={() => setSelectedCustomer(c)}
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7] hover:bg-[#E7E5E4] transition text-left"
+                title="Click to view full customer details"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
@@ -487,7 +500,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
                   <p className="font-bold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
                   <p className="text-xs text-[#8B8680]">spent</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -528,16 +541,19 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
                 </button>
                 {expanded && (
                   <>
-                    <QuadrantBreakdown customers={p.customers} label={p.code} />
+                    <QuadrantBreakdown customers={p.customers} label={p.code} onSelectCustomer={setSelectedCustomer} />
                     <div className="divide-y divide-[#E7E5E4]">
                       {p.customers
                         .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
                         .map((c) => {
                           const src = SOURCE_BADGES[c.acquisition_source];
                           return (
-                            <div
+                            <button
                               key={c.id}
-                              className="p-3 flex items-center justify-between text-sm"
+                              type="button"
+                              onClick={() => setSelectedCustomer(c)}
+                              className="w-full p-3 flex items-center justify-between text-sm hover:bg-[#F3EFE7] transition text-left"
+                              title="Click to view full customer details"
                             >
                               <div className="flex items-center gap-3">
                                 <TierBadge tier={c.tier} size="xs" />
@@ -556,8 +572,9 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
                                   <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
                                   <p className="text-xs text-[#8B8680]">{c.total_visits} visits</p>
                                 </div>
+                                <ChevronRight size={14} className="text-[#B85C38]" />
                               </div>
-                            </div>
+                            </button>
                           );
                         })}
                     </div>
@@ -575,7 +592,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
 // Shows "where do this city's customers live relative to the city center" as
 // N / S / E / W counts. Clicking a quadrant reveals the list of customers
 // in that direction. Center is the centroid of the city's customer lat/lng.
-function QuadrantBreakdown({ customers, label }) {
+function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
   const [active, setActive] = useState(null); // 'N' | 'S' | 'E' | 'W'
   const center = useMemo(() => centroid(customers), [customers]);
   const quads = useMemo(
@@ -646,7 +663,13 @@ function QuadrantBreakdown({ customers, label }) {
               .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
               .slice(0, 50)
               .map((c) => (
-                <div key={c.id} className="p-2.5 flex items-center justify-between text-sm">
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => onSelectCustomer && onSelectCustomer(c)}
+                  className="w-full p-2.5 flex items-center justify-between text-sm hover:bg-[#F3EFE7] transition text-left"
+                  title="Click to view full customer details"
+                >
                   <div className="flex items-center gap-2">
                     <TierBadge tier={c.tier} size="xs" />
                     <div>
@@ -658,7 +681,7 @@ function QuadrantBreakdown({ customers, label }) {
                     <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
                     <p className="text-[11px] text-[#8B8680]">{c.total_visits} visits</p>
                   </div>
-                </div>
+                </button>
               ))}
           </div>
         </div>
@@ -676,7 +699,7 @@ function MiniStat({ label, value }) {
   );
 }
 
-function TopCustomersCard({ customers }) {
+function TopCustomersCard({ customers, onSelect }) {
   const top = [...customers]
     .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
     .slice(0, 5);
@@ -691,7 +714,13 @@ function TopCustomersCard({ customers }) {
       </div>
       <div className="space-y-2">
         {top.map((c, i) => (
-          <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7]">
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onSelect && onSelect(c)}
+            className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7] hover:bg-[#E7E5E4] transition text-left"
+            title="Click to view full customer details"
+          >
             <div className="flex items-center gap-3">
               <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
               <div>
@@ -708,9 +737,127 @@ function TopCustomersCard({ customers }) {
               <p className="font-bold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
               <p className="text-xs text-[#8B8680]">spent</p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Full-detail customer modal shown when clicking any customer anywhere on this page.
+// Covers all the fields the map API returns plus derived / humanised labels.
+function CustomerDetailsModal({ customer, onClose }) {
+  const c = customer || {};
+  const fmt = (v) => {
+    if (!v) return '—';
+    try { return new Date(v).toLocaleString(); } catch { return String(v); }
+  };
+  const fmtDate = (v) => {
+    if (!v) return '—';
+    try { return new Date(v).toLocaleDateString(); } catch { return String(v); }
+  };
+  const daysSinceLast = (() => {
+    if (!c.last_visit_date) return null;
+    const d = new Date(c.last_visit_date);
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  })();
+  const src = SOURCE_BADGES[c.acquisition_source];
+  const onBackdrop = (e) => {
+    if (e.target === e.currentTarget) onClose && onClose();
+  };
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto"
+      onClick={onBackdrop}
+    >
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-5 border-b border-[#E7E5E4] flex items-start justify-between gap-3 sticky top-0 bg-white rounded-t-2xl">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+                {c.name || 'Customer'}
+              </h2>
+              <TierBadge tier={c.tier} />
+            </div>
+            <p className="text-xs text-[#8B8680] mt-1">{c.email}{c.phone ? ` · ${c.phone}` : ''}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-[#F3EFE7] transition"
+            aria-label="Close"
+          >
+            <X size={20} className="text-[#57534E]" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MiniStat label="Total spent" value={`€${(c.total_amount_paid || 0).toFixed(0)}`} />
+            <MiniStat label="Visits" value={c.total_visits ?? 0} />
+            <MiniStat label="Points" value={c.points ?? 0} />
+            <MiniStat
+              label="Wallet pass"
+              value={c.pass_issued ? 'Issued' : 'Not issued'}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
+              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Contact</p>
+              <Row label="Name" value={c.name || '—'} />
+              <Row label="Email" value={c.email || '—'} />
+              <Row label="Phone" value={c.phone || '—'} />
+              <Row label="Birthday" value={fmtDate(c.birthday)} />
+            </div>
+            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
+              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Location</p>
+              <Row label="Address" value={c.address || '—'} />
+              <Row label="City" value={c.city || c.department_name || '—'} />
+              <Row label="Postal code" value={c.postal_code || '—'} />
+              <Row label="Département" value={c.department_code ? `${c.department_code} — ${c.department_name}` : (c.department_name || '—')} />
+              <Row label="GPS" value={(c.lat != null && c.lng != null) ? `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}${c.has_real_gps ? '' : ' (approx.)'}` : '—'} />
+            </div>
+            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
+              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Loyalty</p>
+              <Row label="Tier" value={c.tier || '—'} />
+              <Row label="Visits" value={c.total_visits ?? 0} />
+              <Row label="Total paid" value={`€${(c.total_amount_paid || 0).toFixed(2)}`} />
+              <Row label="Points" value={c.points ?? 0} />
+              <Row label="Avg ticket" value={c.total_visits > 0 ? `€${((c.total_amount_paid || 0) / c.total_visits).toFixed(2)}` : '—'} />
+            </div>
+            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
+              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Journey</p>
+              <Row
+                label="Acquired via"
+                value={src ? `${src.emoji} ${src.label}` : (c.acquisition_source || '—')}
+              />
+              <Row label="Signed up" value={fmt(c.created_at)} />
+              <Row label="Last visit" value={fmt(c.last_visit_date)} />
+              <Row
+                label="Days since last visit"
+                value={daysSinceLast == null ? '—' : `${daysSinceLast} day${daysSinceLast === 1 ? '' : 's'}`}
+              />
+              <Row label="Branch" value={c.branch_id || '—'} />
+            </div>
+          </div>
+
+          {c.notes && (
+            <div className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-1">Notes</p>
+              <p className="text-sm text-[#1C1917] whitespace-pre-wrap">{c.notes}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-1">
+      <span className="text-xs text-[#8B8680] min-w-[90px]">{label}</span>
+      <span className="text-sm text-[#1C1917] text-right break-all">{value}</span>
     </div>
   );
 }

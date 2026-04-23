@@ -1338,12 +1338,13 @@ def admin_get_tenant_analytics(
         {"_id": 0, "id": 1, "name": 1, "email": 1, "tier": 1, "total_amount_paid": 1, "visits": 1}
     ).sort("visits", -1).limit(5))
 
-    # Acquisition-source breakdown
+    # Acquisition-source breakdown — only 4 permitted sources, no friend/other
+    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok"}
     acq_pipeline = [
-        {"$match": {"tenant_id": tenant_id}},
+        {"$match": {"tenant_id": tenant_id, "acquisition_source": {"$in": list(ALLOWED_SOURCES)}}},
         {"$group": {"_id": "$acquisition_source", "count": {"$sum": 1}}}
     ]
-    acq_breakdown = {(r["_id"] or "unknown"): r["count"] for r in db.customers.aggregate(acq_pipeline)}
+    acq_breakdown = {r["_id"]: r["count"] for r in db.customers.aggregate(acq_pipeline)}
 
     # Visits per day over the period
     visits_by_day = {}
@@ -1486,10 +1487,13 @@ def get_admin_detailed_analytics(token_data: TokenData = Depends(require_role(["
     ]
 
     # --- Acquisition sources across platform ---
+    # Only the 4 permitted sources — no 'friend', no 'other' bucket.
+    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok"}
     acq_counts = {}
     for c in all_customers:
-        src = c.get("acquisition_source") or "other"
-        acq_counts[src] = acq_counts.get(src, 0) + 1
+        src = c.get("acquisition_source")
+        if src in ALLOWED_SOURCES:
+            acq_counts[src] = acq_counts.get(src, 0) + 1
     acquisition_sources = [
         {"name": k.replace("_", " ").title(), "value": v, "raw": k}
         for k, v in sorted(acq_counts.items(), key=lambda kv: kv[1], reverse=True)
@@ -1727,6 +1731,10 @@ def list_customers(
     active_30d: Optional[bool] = Query(None),
     created_within_days: Optional[int] = Query(None),
     cards_filled: Optional[bool] = Query(None),
+    # Inactivity window filters — "about to lose" uses min=14 & max=29;
+    # "inactive" uses min=30 (no upper bound).
+    inactive_days_min: Optional[int] = Query(None),
+    inactive_days_max: Optional[int] = Query(None),
 ):
     """List customers with advanced filtering. Supports branch filtering + click-to-drill segments from the dashboard."""
     query = {"tenant_id": token_data.tenant_id}
@@ -1753,6 +1761,16 @@ def list_customers(
         query["last_visit_date"] = {"$gte": datetime.now(timezone.utc) - timedelta(days=30)}
     if created_within_days is not None and created_within_days > 0:
         query["created_at"] = {"$gte": datetime.now(timezone.utc) - timedelta(days=created_within_days)}
+    # Inactivity window:
+    #   inactive_days_min=30 → last_visit_date <= now-30d (OR never visited)
+    #   inactive_days_min=14, inactive_days_max=29 → last_visit_date between 14–29 days ago
+    if inactive_days_min is not None and inactive_days_min > 0:
+        now_utc = datetime.now(timezone.utc)
+        upper = now_utc - timedelta(days=inactive_days_min)
+        lv = {"$lte": upper}
+        if inactive_days_max is not None and inactive_days_max >= inactive_days_min:
+            lv["$gte"] = now_utc - timedelta(days=inactive_days_max)
+        query["last_visit_date"] = lv
 
     customers = list(db.customers.find(query))
 
@@ -1787,13 +1805,18 @@ def create_campaign(
     token_data: TokenData = Depends(require_role(["business_owner"]))
 ):
     """Create campaign for tenant"""
+    # Normalize and validate the channel/source label if provided
+    raw_source = (req.get("source") or "").strip().lower() or None
+    ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
+    source = raw_source if raw_source in ALLOWED_CAMPAIGN_SOURCES else None
     campaign = Campaign(
         id=str(uuid.uuid4()),
         tenant_id=token_data.tenant_id,
         name=req.get("name", "New Campaign"),
         content=req.get("content", ""),
         filters=req.get("filters", {}),
-        status=req.get("status", "draft")
+        status=req.get("status", "draft"),
+        source=source,
     )
     db.campaigns.insert_one(campaign.model_dump())
     return campaign.model_dump()
@@ -2296,11 +2319,15 @@ def owner_analytics(
         campaigns = list(db.campaigns.find({"tenant_id": t_id, "status": "sent"}))
     campaign_performance = [
         {
+            "id": camp.get("id"),
             "name": camp.get("name", ""),
+            "source": camp.get("source") or "push",
             "visits_after_send": camp.get("visits_from_campaign", 0),
             "delivered_count": camp.get("delivered_count", 0),
             "opens": camp.get("opens", 0),
+            "opens_unique": camp.get("opens_unique", 0),
             "offer_clicks": camp.get("offer_clicks", 0),
+            "sent_at": camp.get("sent_at"),
         }
         for camp in campaigns
     ]
@@ -2654,16 +2681,26 @@ def get_customers_map(token_data: TokenData = Depends(require_role(["business_ow
             "id": cust["id"],
             "name": cust.get("name", ""),
             "email": cust.get("email", ""),
+            "phone": cust.get("phone", ""),
             "postal_code": postal_code,
+            "address": cust.get("address", ""),
+            "city": cust.get("city", ""),
             "lat": lat,
             "lng": lng,
             "department_code": dept_code,
             "department_name": dept_name,
             "tier": cust.get("tier", "bronze"),
+            "points": cust.get("points", 0),
             "total_visits": cust.get("visits", 0),
             "total_amount_paid": cust.get("total_amount_paid", 0),
             "acquisition_source": cust.get("acquisition_source"),
             "has_real_gps": real_lat is not None and real_lng is not None,
+            "pass_issued": bool(cust.get("pass_issued", False)),
+            "birthday": cust.get("birthday"),
+            "created_at": cust.get("created_at"),
+            "last_visit_date": cust.get("last_visit_date"),
+            "branch_id": cust.get("branch_id"),
+            "notes": cust.get("notes", ""),
         })
 
     return result
@@ -3066,12 +3103,15 @@ def get_acquisition_sources(
         q["branch_id"] = branch_id
     customers = list(db.customers.find(q))
 
+    # Only the 4 permitted sources — no 'friend' or 'other'.
+    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok"}
     sources_count = {}
     for cust in customers:
-        source = cust.get("acquisition_source", "unknown")
-        sources_count[source] = sources_count.get(source, 0) + 1
+        source = cust.get("acquisition_source")
+        if source in ALLOWED_SOURCES:
+            sources_count[source] = sources_count.get(source, 0) + 1
 
-    total = len(customers)
+    total = sum(sources_count.values())
     sources = []
     for source, count in sorted(sources_count.items(), key=lambda x: x[1], reverse=True):
         sources.append({
@@ -3168,6 +3208,35 @@ def get_analytics_summary(
         if c.get("created_at") and c["created_at"] >= week_ago
     )
 
+    # Additional KPIs
+    today_start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    fourteen_days_ago = now - timedelta(days=14)
+
+    new_today_count = sum(
+        1 for c in customers
+        if c.get("created_at") and c["created_at"] >= today_start
+    )
+    # Inactive = last visit >= 30 days ago (not never — exclude never-visited here)
+    inactive_count = sum(
+        1 for c in customers
+        if c.get("last_visit_date") and c["last_visit_date"] < thirty_days_ago
+    )
+    # About-to-lose = last visit between 14 and 29 days ago
+    about_to_lose_count = sum(
+        1 for c in customers
+        if c.get("last_visit_date")
+        and c["last_visit_date"] < fourteen_days_ago
+        and c["last_visit_date"] >= thirty_days_ago
+    )
+    # Cards filled today — count visits today that tipped the visit count over a card boundary
+    cards_filled_today = 0
+    try:
+        visits_today_q = dict(visit_q, visit_time={"$gte": today_start})
+        visits_today = visits_per_stamp  # just to ensure name used
+        cards_filled_today = db.visits.count_documents(visits_today_q) // max(visits_needed, 1)
+    except Exception:
+        pass
+
     return {
         "highest_paying": highest_paying_list,
         "total_cards_filled": total_cards_filled,
@@ -3176,6 +3245,10 @@ def get_analytics_summary(
         "source_breakdown": source_breakdown,
         "active_customers": active_customers,
         "new_this_week": new_this_week,
+        "new_today_count": new_today_count,
+        "inactive_count": inactive_count,
+        "about_to_lose_count": about_to_lose_count,
+        "cards_filled_today": cards_filled_today,
         "total_customers": len(customers),  # canonical count
     }
 
