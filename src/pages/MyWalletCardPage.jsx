@@ -220,6 +220,7 @@ const MyWalletCardPage = () => {
                   layout={{
                     ...AUCHAN_DEFAULT,
                     ...card.auchan_layout,
+                    meter: { ...AUCHAN_DEFAULT.meter, ...(card.auchan_layout.meter || {}) },
                     slots: { ...AUCHAN_DEFAULT.slots, ...(card.auchan_layout.slots || {}) },
                     push: { ...AUCHAN_DEFAULT.push, ...(card.auchan_layout.push || {}) },
                   }}
@@ -227,10 +228,14 @@ const MyWalletCardPage = () => {
                     first_name: customer.first_name || customer.name?.split(' ')?.[0] || 'Client',
                     name: customer.name,
                     points: customer.points ?? 0,
+                    birthday: customer.birthday || '',
+                    tier: customer.tier,
                     loyalty_number: customer.loyalty_number || customer.barcode_id || customer.id || '—',
                     business_name: tenant.business_name || tenant.name || '',
+                    stamps_earned: card.stamps_earned ?? 0,
+                    stamps_target: card.reward_threshold || 10,
                   }}
-                  scale={1.15}
+                  width={420}
                 />
                 <button
                   onClick={() => setDetailsOpen(true)}
