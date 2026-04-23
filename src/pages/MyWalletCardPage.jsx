@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Bell, RefreshCw, Trash2, Gift, Sparkles, ChevronRight, Store, MapPin, Phone, Globe, CheckCircle2, XCircle, Clock, ChevronDown, X } from 'lucide-react';
 import api from '../lib/api';
 import TierBadge from '../components/TierBadge';
+import { AuchanPreview, DEFAULT_LAYOUT as AUCHAN_DEFAULT } from '../components/AuchanCard';
 
 // ---------------------------------------------------------------------------
 // Element / stamp rendering — mirrors the owner-side designer
@@ -211,15 +212,42 @@ const MyWalletCardPage = () => {
         </div>
 
         <div className="grid lg:grid-cols-[1fr,360px] gap-8">
-          {/* LEFT: Wallet pass card — uses the modern schema when present */}
+          {/* LEFT: Wallet pass card — prefers Auchan layout, falls back to legacy WalletPass */}
           <section>
-            <WalletPass
-              customer={customer}
-              tenant={tenant}
-              card={card}
-              activeOffer={activeOffer}
-              onOpenDetails={() => setDetailsOpen(true)}
-            />
+            {card?.auchan_layout ? (
+              <div className="flex flex-col items-center">
+                <AuchanPreview
+                  layout={{
+                    ...AUCHAN_DEFAULT,
+                    ...card.auchan_layout,
+                    slots: { ...AUCHAN_DEFAULT.slots, ...(card.auchan_layout.slots || {}) },
+                    push: { ...AUCHAN_DEFAULT.push, ...(card.auchan_layout.push || {}) },
+                  }}
+                  ctx={{
+                    first_name: customer.first_name || customer.name?.split(' ')?.[0] || 'Client',
+                    name: customer.name,
+                    points: customer.points ?? 0,
+                    loyalty_number: customer.loyalty_number || customer.barcode_id || customer.id || '—',
+                    business_name: tenant.business_name || tenant.name || '',
+                  }}
+                  scale={1.15}
+                />
+                <button
+                  onClick={() => setDetailsOpen(true)}
+                  className="mt-3 text-sm text-[#B85C38] underline"
+                >
+                  Voir plus d’informations
+                </button>
+              </div>
+            ) : (
+              <WalletPass
+                customer={customer}
+                tenant={tenant}
+                card={card}
+                activeOffer={activeOffer}
+                onOpenDetails={() => setDetailsOpen(true)}
+              />
+            )}
 
             {/* Add-to-wallet buttons */}
             <div className="grid grid-cols-2 gap-3 mt-5">

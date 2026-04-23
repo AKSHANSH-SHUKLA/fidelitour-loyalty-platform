@@ -164,7 +164,20 @@ const AdminAnalyticsPage = () => {
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Business Growth Over Time" hint="Click any dot to see the businesses created that month">
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={growthLine}>
+            <LineChart
+              data={growthLine}
+              onClick={(e) => {
+                const p = e?.activePayload?.[0]?.payload;
+                if (p?.iso) {
+                  openDrill(
+                    `Businesses created · ${p.date}`,
+                    () => adminAPI.getTenantsByMonth(p.iso),
+                    COLS_SUMMARY,
+                  );
+                }
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
               <XAxis dataKey="date" stroke="#57534E" />
               <YAxis stroke="#57534E" />
@@ -172,12 +185,20 @@ const AdminAnalyticsPage = () => {
               <Line
                 type="monotone" dataKey="count" stroke="#B85C38" strokeWidth={2}
                 dot={{ fill: '#B85C38', r: 5, style: { cursor: 'pointer' } }}
-                activeDot={{ r: 7 }}
-                onClick={(p) => p?.payload?.iso && openDrill(
-                  `Businesses created · ${p.payload.date}`,
-                  () => adminAPI.getTenantsByMonth(p.payload.iso),
-                  COLS_SUMMARY,
-                )}
+                activeDot={{
+                  r: 8,
+                  style: { cursor: 'pointer' },
+                  onClick: (_, payload) => {
+                    const p = payload?.payload;
+                    if (p?.iso) {
+                      openDrill(
+                        `Businesses created · ${p.date}`,
+                        () => adminAPI.getTenantsByMonth(p.iso),
+                        COLS_SUMMARY,
+                      );
+                    }
+                  },
+                }}
               />
             </LineChart>
           </ResponsiveContainer>

@@ -2504,6 +2504,8 @@ def _serialize_card_payload(cust: dict) -> dict:
             "show_meter": tpl.get("show_meter") if tpl.get("show_meter") is not None else tpl.get("show_progress_meter", True),
             "promotion": tpl.get("promotion") or {"enabled": False},
             "details": tpl.get("details") or {},
+            # Auchan fixed-layout (primary design path going forward)
+            "auchan_layout": tpl.get("auchan_layout"),
             # Surface flat brand colors too (modern designer writes these via `elements`
             # and keeps these for legacy/fallback rendering).
             "primary_color": tpl.get("primary_color"),
