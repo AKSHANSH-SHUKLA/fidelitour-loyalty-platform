@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 
-const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
+const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#7B3F00' };
 const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
 
 // ------------------------------------------------------------------
@@ -458,6 +458,11 @@ const AnalyticsPage = () => {
   const inactiveCount = summary?.inactive_count ?? 0;
   const aboutToLoseCount = summary?.about_to_lose_count ?? 0;
   const cardsFilledToday = summary?.cards_filled_today ?? 0;
+  // New KPIs from this batch
+  const rewardsRedeemedToday = summary?.rewards_redeemed_today ?? 0;
+  const rewardsRedeemedMonth = summary?.rewards_redeemed_month ?? 0;
+  const birthdaysThisMonth = summary?.birthdays_this_month_count ?? 0;
+  const vipCount = summary?.vip_count ?? 0;
   const inactivePct = totalCustomers ? Math.round((inactiveCount / totalCustomers) * 100) : 0;
   const aboutToLosePct = totalCustomers ? Math.round((aboutToLoseCount / totalCustomers) * 100) : 0;
 
@@ -467,6 +472,7 @@ const AnalyticsPage = () => {
       { name: 'Bronze', value: td.bronze || 0, key: 'bronze' },
       { name: 'Silver', value: td.silver || 0, key: 'silver' },
       { name: 'Gold', value: td.gold || 0, key: 'gold' },
+      { name: 'VIP', value: td.vip || 0, key: 'vip' },
     ];
   }, [analytics]);
 
@@ -870,6 +876,98 @@ const AnalyticsPage = () => {
             openComposer={openComposer}
             presetName="Bravo {first_name} — récompense débloquée !"
             presetContent="Vous venez de remplir votre carte chez {business_name}. Votre récompense vous attend."
+          />
+        </div>
+      </section>
+
+      {/* Row 1c — Rewards & celebrations: redemptions + birthdays + VIPs */}
+      <section className="bg-white border border-[#E7E5E4] rounded-xl p-4 space-y-3">
+        <div>
+          <h3 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Rewards & celebrations
+          </h3>
+          <p className="text-xs text-[#8B8680]">
+            Real-time redemption counts (staff-logged), birthdays coming up this month, and your new VIP tier.
+            Click any card to drill into the customer list.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KPICard
+            icon={Gift}
+            title="Rewards redeemed today"
+            value={rewardsRedeemedToday.toLocaleString()}
+            sublabel={`${rewardsRedeemedMonth} this month · click to view history`}
+            accent="#4A5D23"
+            onClick={async () => {
+              try {
+                const res = await ownerAPI.listRedeemedRewards(params({ days: 30 }));
+                setDrill({
+                  title: 'Rewards redeemed (last 30 days)',
+                  rows: res.data?.redemptions || [],
+                  columns: [
+                    { key: 'customer_name', label: 'Customer' },
+                    { key: 'reward_name', label: 'Reward' },
+                    { key: 'reward_value_eur', label: 'Value (€)', render: (v) => v ? `€${Number(v).toFixed(2)}` : '—' },
+                    { key: 'branch_id', label: 'Branch' },
+                    { key: 'redeemed_at', label: 'Redeemed', render: (v) => v ? new Date(v).toLocaleString() : '—' },
+                  ],
+                });
+              } catch (e) { alert('Failed to load redemptions: ' + (e?.response?.data?.detail || e.message)); }
+            }}
+            segment={{ type: 'all' }}
+            openComposer={openComposer}
+            presetName="Merci d'être fidèle, {first_name}"
+            presetContent="Un grand merci pour votre fidélité chez {business_name}. Un petit bonus vous attend à votre prochaine visite."
+          />
+          <KPICard
+            icon={Calendar}
+            title="Birthdays this month"
+            value={birthdaysThisMonth.toLocaleString()}
+            sublabel="Customers celebrating · click to view & message them"
+            accent="#E3A869"
+            onClick={() => drillCustomers('Birthdays this month', { has_birthday_this_month: true })}
+            segment={{ type: 'birthday_month', value: new Date().toISOString().slice(5, 7) }}
+            openComposer={openComposer}
+            presetName="Joyeux anniversaire, {first_name} ! 🎂"
+            presetContent="Toute l'équipe {business_name} vous souhaite un joyeux anniversaire. Venez le fêter avec nous — une surprise vous attend !"
+          />
+          <KPICard
+            icon={Award}
+            title="VIP customers"
+            value={vipCount.toLocaleString()}
+            sublabel={`Top tier — 40+ visits or avg €60+ ticket`}
+            accent="#7B3F00"
+            onClick={() => drillCustomers('VIP customers', { tier: 'vip' })}
+            segment={{ type: 'tier', value: 'vip' }}
+            openComposer={openComposer}
+            presetName="Pour nos VIPs, {first_name}"
+            presetContent="En tant que membre VIP de {business_name}, un avantage exclusif vous attend lors de votre prochaine visite."
+          />
+          <KPICard
+            icon={Gift}
+            title="Rewards redeemed (month)"
+            value={rewardsRedeemedMonth.toLocaleString()}
+            sublabel="Total redemptions this calendar month"
+            accent="#B85C38"
+            onClick={async () => {
+              try {
+                const res = await ownerAPI.listRedeemedRewards(params({ days: 31 }));
+                setDrill({
+                  title: 'Rewards redeemed — this month',
+                  rows: res.data?.redemptions || [],
+                  columns: [
+                    { key: 'customer_name', label: 'Customer' },
+                    { key: 'reward_name', label: 'Reward' },
+                    { key: 'branch_id', label: 'Branch' },
+                    { key: 'redeemed_at', label: 'Redeemed', render: (v) => v ? new Date(v).toLocaleString() : '—' },
+                  ],
+                });
+              } catch (e) { alert('Failed: ' + (e?.response?.data?.detail || e.message)); }
+            }}
+            segment={{ type: 'all' }}
+            openComposer={openComposer}
+            presetName="Merci d'avoir utilisé votre récompense"
+            presetContent="Nous espérons que votre récompense vous a plu ! Votre prochaine carte est déjà lancée chez {business_name}."
           />
         </div>
       </section>

@@ -1720,17 +1720,31 @@ def update_tenant(req: Tenant, token_data: TokenData = Depends(require_role(["bu
 def list_customers(
     token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
     tier: Optional[str] = Query(None),
+    tiers: Optional[str] = Query(None),       # CSV of tiers: "silver,gold,vip"
     min_visits: Optional[int] = Query(None),
     max_visits: Optional[int] = Query(None),
     min_amount: Optional[float] = Query(None),
+    max_amount: Optional[float] = Query(None),
+    min_avg_ticket: Optional[float] = Query(None),
     postal_code: Optional[str] = Query(None),
+    postal_codes: Optional[str] = Query(None),  # CSV of postal codes
+    city: Optional[str] = Query(None),
     source: Optional[str] = Query(None),
+    sources: Optional[str] = Query(None),        # CSV of sources
     search: Optional[str] = Query(None),
     branch_id: Optional[str] = Query(None),
     has_wallet_pass: Optional[bool] = Query(None),
     active_30d: Optional[bool] = Query(None),
     created_within_days: Optional[int] = Query(None),
     cards_filled: Optional[bool] = Query(None),
+    has_birthday_this_month: Optional[bool] = Query(None),
+    redeemed_reward: Optional[bool] = Query(None),  # True → has redeemed at least once
+    # Pre-built time-of-day segments. Resolves against db.visits timestamps.
+    # "lunch"    → majority of visits between 11:00 and 14:30
+    # "evening"  → majority of visits between 17:00 and 22:00
+    # "weekend"  → majority on Sat/Sun
+    # "weekday"  → majority on Mon-Fri
+    time_segment: Optional[str] = Query(None),
     # Inactivity window filters — "about to lose" uses min=14 & max=29;
     # "inactive" uses min=30 (no upper bound).
     inactive_days_min: Optional[int] = Query(None),
@@ -1742,20 +1756,51 @@ def list_customers(
         _ensure_branch_assignments(token_data.tenant_id)
     query = {"tenant_id": token_data.tenant_id}
 
-    if tier:
+    # Tiers — either one ("?tier=gold") or many ("?tiers=silver,gold,vip")
+    if tiers:
+        tier_list = [t.strip().lower() for t in tiers.split(",") if t.strip()]
+        if tier_list:
+            query["tier"] = {"$in": tier_list}
+    elif tier:
         query["tier"] = tier
     if min_visits is not None:
         query.setdefault("visits", {})["$gte"] = min_visits
     if max_visits is not None:
         query.setdefault("visits", {})["$lte"] = max_visits
     if min_amount is not None:
-        query["total_amount_paid"] = {"$gte": min_amount}
-    if postal_code:
+        query.setdefault("total_amount_paid", {})["$gte"] = min_amount
+    if max_amount is not None:
+        query.setdefault("total_amount_paid", {})["$lte"] = max_amount
+    # Postal codes — one ("?postal_code=75001") or many ("?postal_codes=75001,75002")
+    if postal_codes:
+        pcs = [p.strip() for p in postal_codes.split(",") if p.strip()]
+        if pcs:
+            query["postal_code"] = {"$in": pcs}
+    elif postal_code:
         query["postal_code"] = postal_code
-    if source:
+    if city:
+        # Case-insensitive partial city match — "par" → Paris
+        query["city"] = {"$regex": city, "$options": "i"}
+    # Acquisition sources — one or many
+    if sources:
+        src_list = [s.strip() for s in sources.split(",") if s.strip()]
+        if src_list:
+            query["acquisition_source"] = {"$in": src_list}
+    elif source:
         query["acquisition_source"] = source
     if branch_id:
         query["branch_id"] = branch_id
+    # Birthday in the current calendar month (owner-facing celebration segment)
+    if has_birthday_this_month is True:
+        query["birthday"] = {"$regex": f"^{datetime.now(timezone.utc).strftime('%m')}"}
+    # Customers who've ever redeemed a reward
+    if redeemed_reward is True:
+        query["rewards_redeemed_count"] = {"$gte": 1}
+    elif redeemed_reward is False:
+        query["$or"] = (query.get("$or") or []) + [
+            {"rewards_redeemed_count": {"$exists": False}},
+            {"rewards_redeemed_count": {"$eq": 0}},
+        ]
     if has_wallet_pass is True:
         query["pass_issued"] = True
     elif has_wallet_pass is False:
@@ -1784,6 +1829,55 @@ def list_customers(
         visits_per_stamp = tpl.get("visits_per_stamp", 1)
         needed = max(reward_threshold * visits_per_stamp, 1)
         customers = [c for c in customers if c.get("visits", 0) >= needed]
+
+    # Average ticket floor — for spotting "big basket" customers regardless of
+    # visit count. Computed from (total_amount_paid / visits).
+    if min_avg_ticket is not None and min_avg_ticket > 0:
+        customers = [
+            c for c in customers
+            if (c.get("visits", 0) or 0) > 0 and
+               (c.get("total_amount_paid", 0) or 0) / max(c.get("visits", 1), 1) >= min_avg_ticket
+        ]
+
+    # Time-of-day / day-of-week segmentation — resolved against each customer's
+    # actual visit times. We fetch a mini visit-time histogram once and then
+    # require that >= 50% of a customer's visits land in the chosen window.
+    if time_segment:
+        ts = (time_segment or "").strip().lower()
+        cust_ids = [c.get("id") for c in customers if c.get("id")]
+        if cust_ids and ts in {"lunch", "evening", "morning", "weekend", "weekday"}:
+            # One aggregation: per-customer counts for {total, in_window}.
+            # We build window-membership in Python to avoid dialect-specific
+            # $expr gymnastics.
+            dow_is_weekend = {1, 7}  # Mongo $dayOfWeek: 1=Sun, 7=Sat
+            def in_window(dow, hour):
+                if ts == "lunch":   return 11 <= hour <= 14
+                if ts == "evening": return 17 <= hour <= 22
+                if ts == "morning": return 6 <= hour <= 10
+                if ts == "weekend": return dow in dow_is_weekend
+                if ts == "weekday": return dow not in dow_is_weekend
+                return False
+            tally = {}  # customer_id -> [in_window_count, total_count]
+            for row in db.visits.aggregate([
+                {"$match": {"tenant_id": token_data.tenant_id, "customer_id": {"$in": cust_ids},
+                            "visit_time": {"$ne": None}}},
+                {"$project": {
+                    "customer_id": 1,
+                    "dow": {"$dayOfWeek": "$visit_time"},
+                    "hour": {"$hour": "$visit_time"},
+                }},
+            ]):
+                cid = row["customer_id"]
+                t = tally.setdefault(cid, [0, 0])
+                t[1] += 1
+                if in_window(row.get("dow", 0), row.get("hour", -1)):
+                    t[0] += 1
+            def qualifies(cid):
+                v = tally.get(cid)
+                if not v or v[1] == 0:
+                    return False
+                return (v[0] / v[1]) >= 0.5 and v[1] >= 2  # need ≥ 2 visits to call a pattern
+            customers = [c for c in customers if qualifies(c.get("id"))]
 
     # Client-side search filtering for name/email
     if search:
@@ -1967,8 +2061,14 @@ def scan_visit(
     if req.branch_id and not getattr(c_obj, "branch_id", None):
         c_obj.branch_id = req.branch_id
 
-    # Update tier
-    if c_obj.visits >= 20:
+    # Update tier — VIP (top tier) for 40+ visits OR a consistently big basket.
+    # Avg ticket floor lets a small number of high-spend visits elevate a
+    # customer to VIP without needing 40 visits; otherwise 40+ visits alone
+    # unlocks VIP the way 20+ unlocks Gold.
+    avg_ticket = (c_obj.total_amount_paid / c_obj.visits) if c_obj.visits else 0
+    if c_obj.visits >= 40 or (c_obj.visits >= 10 and avg_ticket >= 60):
+        c_obj.tier = "vip"
+    elif c_obj.visits >= 20:
         c_obj.tier = "gold"
     elif c_obj.visits >= 10:
         c_obj.tier = "silver"
@@ -2005,7 +2105,7 @@ def scan_visit(
         pass
 
     # ---- Tier-up congratulation push ("Bravo, vous passez Gold !") ----
-    tier_rank = {"bronze": 0, "silver": 1, "gold": 2}
+    tier_rank = {"bronze": 0, "silver": 1, "gold": 2, "vip": 3}
     if tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0):
         tenant_doc = db.tenants.find_one({"id": token_data.tenant_id}) or {}
         biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "notre équipe"
@@ -2357,7 +2457,7 @@ def owner_analytics(
     repeat_rate = (repeat_customers / total_customers * 100) if total_customers > 0 else 0
     wallet_passes_issued = sum(1 for c in customers if c.get("pass_issued"))
 
-    tier_distribution = {"bronze": 0, "silver": 0, "gold": 0}
+    tier_distribution = {"bronze": 0, "silver": 0, "gold": 0, "vip": 0}
     for c in customers:
         tier = (c.get("tier") or "bronze").lower()
         if tier in tier_distribution:
@@ -3408,6 +3508,29 @@ def get_analytics_summary(
     except Exception:
         pass
 
+    # --- New KPIs from this batch ---
+    # Rewards redeemed today / this month
+    month_start = today_start.replace(day=1)
+    reward_q = {"tenant_id": t_id}
+    if branch_id:
+        reward_q["branch_id"] = branch_id
+    try:
+        rewards_today = db.rewards_redeemed.count_documents({**reward_q, "redeemed_at": {"$gte": today_start}})
+        rewards_month = db.rewards_redeemed.count_documents({**reward_q, "redeemed_at": {"$gte": month_start}})
+        rewards_total = db.rewards_redeemed.count_documents(reward_q)
+    except Exception:
+        rewards_today = rewards_month = rewards_total = 0
+
+    # Birthdays this month — quick count directly on the customer set.
+    mm = now.strftime("%m")
+    birthdays_this_month_count = sum(
+        1 for c in customers
+        if (c.get("birthday") or "").startswith(mm)
+    )
+
+    # VIP count (new top tier)
+    vip_count = sum(1 for c in customers if (c.get("tier") or "").lower() == "vip")
+
     return {
         "highest_paying": highest_paying_list,
         "total_cards_filled": total_cards_filled,
@@ -3421,6 +3544,12 @@ def get_analytics_summary(
         "about_to_lose_count": about_to_lose_count,
         "cards_filled_today": cards_filled_today,
         "total_customers": len(customers),  # canonical count
+        # New this batch
+        "rewards_redeemed_today": rewards_today,
+        "rewards_redeemed_month": rewards_month,
+        "rewards_redeemed_total": rewards_total,
+        "birthdays_this_month_count": birthdays_this_month_count,
+        "vip_count": vip_count,
     }
 
 @app.post("/api/owner/branches")
@@ -4095,6 +4224,323 @@ def track_offer_click(campaign_id: str, customer_id: Optional[str] = None):
 def track_push_dismiss(campaign_id: str):
     """Called by the wallet card when user dismisses a push without opening."""
     db.campaigns.update_one({"id": campaign_id}, {"$inc": {"push_dismissals": 1}})
+    return {"status": "ok"}
+
+
+# ========================================================================
+# NEW FEATURES (this batch): VIP tier · reward redemption · birthdays ·
+# per-customer visit history · time-of-day segments · proximity push ·
+# saved segments
+# ========================================================================
+
+# --- Reward redemption: record the moment a filled card is cashed in ---------
+class RedeemRewardRequest(BaseModel):
+    barcode_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    reward_name: Optional[str] = None       # e.g. "Free coffee", "10€ off"
+    reward_value_eur: Optional[float] = None
+    branch_id: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@app.post("/api/owner/rewards/redeem")
+def redeem_reward(
+    req: RedeemRewardRequest,
+    token_data: TokenData = Depends(require_role(["business_owner", "manager", "staff"])),
+):
+    """Record that a customer cashed in their reward.
+
+    Works from either barcode_id (staff typical flow) or customer_id.
+    Emits an entry in db.rewards_redeemed for the KPI + history, and decrements
+    the customer's visit counter by one full-card so subsequent cards fill up
+    from zero again (mirrors the real-world "take the stamp card off the wall").
+    """
+    tid = token_data.tenant_id
+    if not req.barcode_id and not req.customer_id:
+        raise HTTPException(status_code=400, detail="Provide barcode_id or customer_id")
+    q = {"tenant_id": tid}
+    if req.customer_id:
+        q["id"] = req.customer_id
+    else:
+        q["barcode_id"] = req.barcode_id
+    cust = db.customers.find_one(q)
+    if not cust:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    # Threshold for a full card (so decrement matches the real card)
+    card_tpl = db.card_templates.find_one({"tenant_id": tid}) or {}
+    threshold = max(int(card_tpl.get("reward_threshold_stamps", 10)) *
+                    int(card_tpl.get("visits_per_stamp", 1)), 1)
+    current_visits = int(cust.get("visits", 0) or 0)
+    if current_visits < threshold:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Customer needs {threshold - current_visits} more visit(s) before redeeming.",
+        )
+
+    reward = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": tid,
+        "customer_id": cust["id"],
+        "customer_name": cust.get("name", ""),
+        "reward_name": req.reward_name or "Reward",
+        "reward_value_eur": req.reward_value_eur,
+        "branch_id": req.branch_id or cust.get("branch_id"),
+        "notes": req.notes or "",
+        "redeemed_at": datetime.now(timezone.utc),
+        "staff_email": getattr(token_data, "email", None),
+    }
+    db.rewards_redeemed.insert_one(reward)
+
+    # Decrement visits by one full-card so their next card starts fresh.
+    db.customers.update_one(
+        {"id": cust["id"]},
+        {"$inc": {"visits": -threshold, "rewards_redeemed_count": 1},
+         "$set": {"last_reward_redeemed_at": reward["redeemed_at"]}},
+    )
+    reward.pop("_id", None)
+    return reward
+
+
+@app.get("/api/owner/rewards/redeemed")
+def list_redeemed_rewards(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+    days: Optional[int] = Query(None),
+):
+    """List recent reward redemptions (default: all; if `days` given, last N days)."""
+    q = {"tenant_id": token_data.tenant_id}
+    if branch_id:
+        q["branch_id"] = branch_id
+    if days and days > 0:
+        q["redeemed_at"] = {"$gte": datetime.now(timezone.utc) - timedelta(days=days)}
+    rows = list(db.rewards_redeemed.find(q).sort("redeemed_at", -1).limit(500))
+    for r in rows:
+        r.pop("_id", None)
+    # Aggregate counters for KPI cards
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start = today_start.replace(day=1)
+    today_q = dict(q); today_q["redeemed_at"] = {"$gte": today_start}
+    month_q = dict(q); month_q["redeemed_at"] = {"$gte": month_start}
+    return {
+        "redemptions": rows,
+        "today_count": db.rewards_redeemed.count_documents(today_q),
+        "month_count": db.rewards_redeemed.count_documents(month_q),
+        "total_count": db.rewards_redeemed.count_documents(q),
+    }
+
+
+# --- Per-customer visit history ---------------------------------------
+@app.get("/api/owner/customers/{customer_id}/visits")
+def customer_visit_history(
+    customer_id: str,
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    limit: int = Query(50),
+):
+    """Last N visits for one customer — date, amount, points, branch."""
+    cust = db.customers.find_one({"id": customer_id, "tenant_id": token_data.tenant_id})
+    if not cust:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    visits = list(
+        db.visits.find({"tenant_id": token_data.tenant_id, "customer_id": customer_id})
+        .sort("visit_time", -1)
+        .limit(max(1, min(limit, 500)))
+    )
+    for v in visits:
+        v.pop("_id", None)
+    # Also include last redemptions so the Journey tab can show the full story.
+    redemptions = list(
+        db.rewards_redeemed.find({"tenant_id": token_data.tenant_id, "customer_id": customer_id})
+        .sort("redeemed_at", -1)
+        .limit(20)
+    )
+    for r in redemptions:
+        r.pop("_id", None)
+    return {
+        "customer_id": customer_id,
+        "visits": visits,
+        "redemptions": redemptions,
+        "total_visits": int(cust.get("visits", 0) or 0),
+        "total_amount_paid": float(cust.get("total_amount_paid", 0) or 0),
+    }
+
+
+# --- Birthdays this month --------------------------------------------
+@app.get("/api/owner/analytics/birthdays-this-month")
+def birthdays_this_month(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
+    """Customers whose birthday falls in the current calendar month."""
+    now = datetime.now(timezone.utc)
+    mm = now.strftime("%m")
+    q = {"tenant_id": token_data.tenant_id, "birthday": {"$regex": f"^{mm}"}}
+    if branch_id:
+        q["branch_id"] = branch_id
+    rows = list(db.customers.find(q).sort("birthday", 1))
+    out = []
+    for c in rows:
+        bd = c.get("birthday") or ""
+        # Compute days until birthday this month (for light sort hinting)
+        try:
+            day = int(bd.split("-")[1]) if "-" in bd else 0
+        except Exception:
+            day = 0
+        out.append({
+            "id": c.get("id"),
+            "name": c.get("name", ""),
+            "email": c.get("email", ""),
+            "phone": c.get("phone", ""),
+            "tier": c.get("tier", "bronze"),
+            "birthday": bd,
+            "day_of_month": day,
+            "total_visits": c.get("visits", 0),
+            "total_amount_paid": c.get("total_amount_paid", 0),
+        })
+    return {"count": len(out), "month": now.strftime("%B"), "customers": out}
+
+
+# --- Real-time proximity push: fired when the wallet-card page pings --
+class ProximityPingRequest(BaseModel):
+    customer_id: str
+    latitude: float
+    longitude: float
+
+
+def _haversine_meters(lat1, lng1, lat2, lng2) -> float:
+    import math
+    R = 6371000.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlng / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+@app.post("/api/public/proximity-ping")
+def proximity_ping(req: ProximityPingRequest):
+    """Customer's wallet-card page calls this every time it's opened with GPS
+    permission granted. If the customer is within the tenant's configured
+    `geo_radius_meters` of a branch (or tenant address) AND their cooldown
+    has elapsed, fire a fresh push notification. Otherwise no-op.
+
+    Public endpoint intentionally — called from the customer's own device,
+    before/after login matters less than the customer_id matching a real
+    record. Rate-limited by the geo_cooldown_days window per customer.
+    """
+    cust = db.customers.find_one({"id": req.customer_id})
+    if not cust:
+        return {"status": "ignored", "reason": "unknown customer"}
+    tid = cust.get("tenant_id")
+    tenant = db.tenants.find_one({"id": tid})
+    if not tenant or not tenant.get("geo_enabled"):
+        return {"status": "ignored", "reason": "geo disabled for tenant"}
+
+    radius_m = float(tenant.get("geo_radius_meters") or 500)
+    cooldown_days = int(tenant.get("geo_cooldown_days") or 1)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=cooldown_days)
+
+    # Last proximity push for this customer — cooldown enforcement.
+    last = db.push_notifications.find_one(
+        {"customer_id": cust["id"], "tenant_id": tid, "type": "proximity"},
+        sort=[("sent_at", -1)],
+    )
+    if last and last.get("sent_at") and last["sent_at"] >= cutoff:
+        return {"status": "cooldown", "next_eligible_at": (last["sent_at"] + timedelta(days=cooldown_days)).isoformat()}
+
+    # Figure out which branch (or the tenant address) they're nearest to.
+    anchors = []
+    for b in tenant.get("branches") or []:
+        # Branches often lack raw lat/lng — resolve from postal_code when needed.
+        blat, blng = b.get("latitude"), b.get("longitude")
+        if blat is None or blng is None:
+            blat, blng = get_postal_coords(b.get("postal_code") or "")
+        if blat is not None:
+            anchors.append({"id": b.get("id"), "name": b.get("name", ""), "lat": blat, "lng": blng})
+    if not anchors:
+        # Fall back to tenant-level address coords
+        tl, tn = get_postal_coords((tenant.get("address") or "").split(",")[-1].strip().split()[0] if tenant.get("address") else "")
+        anchors = [{"id": tid, "name": tenant.get("name", ""), "lat": tl, "lng": tn}]
+
+    nearest = None
+    for a in anchors:
+        dist = _haversine_meters(req.latitude, req.longitude, a["lat"], a["lng"])
+        if nearest is None or dist < nearest["distance_m"]:
+            nearest = {**a, "distance_m": dist}
+
+    if not nearest or nearest["distance_m"] > radius_m:
+        return {"status": "out_of_range", "distance_m": (nearest["distance_m"] if nearest else None)}
+
+    # In range — fire a push.
+    biz = tenant.get("campaign_sender_name") or tenant.get("name") or "votre boutique"
+    first_name = (cust.get("name") or "").split(" ")[0]
+    title = f"{biz} est juste à côté 👋"
+    body = (
+        f"Bonjour {first_name}, vous êtes tout près de {nearest['name'] or biz}. "
+        "Venez scanner votre carte — une attention vous attend !"
+    )
+    db.push_notifications.insert_one({
+        "customer_id": cust["id"],
+        "tenant_id": tid,
+        "title": title,
+        "body": body,
+        "type": "proximity",
+        "branch_id": nearest.get("id"),
+        "distance_m": int(nearest["distance_m"]),
+        "sent_at": datetime.now(timezone.utc),
+    })
+    return {
+        "status": "sent",
+        "branch_id": nearest.get("id"),
+        "distance_m": int(nearest["distance_m"]),
+        "title": title,
+        "body": body,
+    }
+
+
+# --- Saved segments: owners save their favourite filter combos ---------
+class SavedSegmentRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+    filters: Dict[str, Any]                 # UI-shape filters dict
+    segment: Optional[Dict[str, Any]] = None  # alt type-based segment
+
+
+@app.get("/api/owner/segments")
+def list_saved_segments(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    rows = list(db.saved_segments.find({"tenant_id": token_data.tenant_id}).sort("created_at", -1))
+    for r in rows:
+        r.pop("_id", None)
+    return {"segments": rows}
+
+
+@app.post("/api/owner/segments")
+def create_saved_segment(
+    req: SavedSegmentRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": token_data.tenant_id,
+        "name": req.name.strip()[:120] or "Unnamed segment",
+        "description": (req.description or "").strip()[:500],
+        "filters": req.filters or {},
+        "segment": req.segment or None,
+        "created_at": datetime.now(timezone.utc),
+    }
+    db.saved_segments.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@app.delete("/api/owner/segments/{segment_id}")
+def delete_saved_segment(
+    segment_id: str,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    res = db.saved_segments.delete_one({"id": segment_id, "tenant_id": token_data.tenant_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Segment not found")
     return {"status": "ok"}
 
 

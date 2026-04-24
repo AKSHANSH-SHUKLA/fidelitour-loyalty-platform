@@ -341,6 +341,7 @@ export default function CustomerMapPage() {
               <option value="bronze">Bronze</option>
               <option value="silver">Silver</option>
               <option value="gold">Gold</option>
+              <option value="vip">VIP</option>
             </select>
           </div>
           <div>
@@ -976,6 +977,29 @@ function TopCustomersCard({ customers, onSelect }) {
 // a per-customer "send campaign" shortcut.
 function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
   const c = customer || {};
+  const [activeTab, setActiveTab] = useState('details'); // 'details' | 'history'
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyData, setHistoryData] = useState(null); // { visits, redemptions }
+  const [historyError, setHistoryError] = useState(null);
+
+  // Load visit history on first click of the "History" tab.
+  useEffect(() => {
+    if (activeTab !== 'history' || historyData || !c.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setHistoryLoading(true);
+        setHistoryError(null);
+        const res = await ownerAPI.customerVisitHistory(c.id, { limit: 60 });
+        if (!cancelled) setHistoryData(res.data);
+      } catch (e) {
+        if (!cancelled) setHistoryError(e?.response?.data?.detail || e.message || 'Failed to load history');
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, c.id]);
   const fmt = (v) => {
     if (!v) return '—';
     try { return new Date(v).toLocaleString(); } catch { return String(v); }
@@ -1033,6 +1057,92 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
         </div>
 
         <div className="p-5 space-y-5">
+          {/* Tabs */}
+          <div className="flex gap-2 border-b border-[#E7E5E4] -mt-2">
+            {[
+              { key: 'details', label: 'Details' },
+              { key: 'history', label: `Visit history${historyData?.visits ? ` (${historyData.visits.length})` : ''}` },
+            ].map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setActiveTab(t.key)}
+                className={`px-3 py-2 text-sm font-semibold -mb-px border-b-2 ${
+                  activeTab === t.key
+                    ? 'border-[#B85C38] text-[#B85C38]'
+                    : 'border-transparent text-[#57534E] hover:text-[#1C1917]'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'history' && (
+            <div>
+              {historyLoading && (
+                <p className="text-sm text-[#8B8680]">Loading visits…</p>
+              )}
+              {historyError && (
+                <p className="text-sm text-red-600">Error: {historyError}</p>
+              )}
+              {!historyLoading && !historyError && historyData && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <MiniStat label="Total visits" value={historyData.total_visits ?? 0} />
+                    <MiniStat label="Total paid" value={`€${(historyData.total_amount_paid || 0).toFixed(2)}`} />
+                    <MiniStat label="Redemptions" value={historyData.redemptions?.length ?? 0} />
+                  </div>
+                  {(historyData.redemptions || []).length > 0 && (
+                    <div className="p-3 rounded-lg bg-[#FEF9E7] border border-[#E3A869]/40">
+                      <p className="text-xs font-semibold text-[#7B3F00] mb-2">🎁 Rewards redeemed</p>
+                      <ul className="space-y-1 text-sm">
+                        {historyData.redemptions.map((r, i) => (
+                          <li key={r.id || i} className="flex justify-between">
+                            <span>{r.reward_name || 'Reward'}{r.branch_id ? ` · ${r.branch_id}` : ''}</span>
+                            <span className="text-[#8B8680]">{r.redeemed_at ? new Date(r.redeemed_at).toLocaleDateString() : '—'}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="border border-[#E7E5E4] rounded-lg overflow-hidden">
+                    <div className="bg-[#FDFBF7] px-3 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#8B8680] grid grid-cols-4 gap-2">
+                      <span>Date & time</span>
+                      <span className="text-right">Amount</span>
+                      <span className="text-right">Points</span>
+                      <span className="text-right">Branch</span>
+                    </div>
+                    <div className="divide-y divide-[#E7E5E4] max-h-80 overflow-y-auto">
+                      {(historyData.visits || []).length === 0 ? (
+                        <p className="p-3 text-sm text-[#8B8680] italic">No visits recorded yet.</p>
+                      ) : (
+                        historyData.visits.map((v, i) => (
+                          <div key={v.id || i} className="px-3 py-2 text-sm grid grid-cols-4 gap-2 items-center">
+                            <span className="text-[#1C1917]">
+                              {v.visit_time ? new Date(v.visit_time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                            </span>
+                            <span className="text-right text-[#1C1917]">
+                              €{(v.amount_paid || 0).toFixed(2)}
+                            </span>
+                            <span className="text-right text-[#4A5D23] font-semibold">
+                              +{v.points_awarded || 0}
+                            </span>
+                            <span className="text-right text-[#8B8680] text-xs">
+                              {v.branch_id || '—'}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'details' && (
+          <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <MiniStat label="Total spent" value={`€${(c.total_amount_paid || 0).toFixed(0)}`} />
             <MiniStat label="Visits" value={c.total_visits ?? 0} />
@@ -1088,6 +1198,8 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
               <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-1">Notes</p>
               <p className="text-sm text-[#1C1917] whitespace-pre-wrap">{c.notes}</p>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

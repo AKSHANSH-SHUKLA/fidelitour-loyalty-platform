@@ -27,6 +27,14 @@ const TIER_STYLES = {
     crown: '#8C5C15',
     label: 'Gold',
   },
+  vip: {
+    // Deep burgundy → black gradient — clearly "above" gold.
+    bg: 'linear-gradient(135deg, #7B3F00 0%, #1C1917 100%)',
+    border: '#1C1917',
+    text: '#F5D97A',
+    crown: '#F5D97A',
+    label: 'VIP',
+  },
 };
 
 export default function TierBadge({ tier = 'bronze', size = 'md', showLabel = true }) {

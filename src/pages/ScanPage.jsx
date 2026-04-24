@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ownerAPI } from '../lib/api';
-import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2 } from 'lucide-react';
+import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2, Gift } from 'lucide-react';
 
 const BRANCH_STORAGE_KEY = 'fidelitour_scan_branch_id';
 
@@ -14,6 +14,8 @@ const ScanPage = () => {
   const [loading, setLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [scanResult, setScanResult] = useState(null); // Enhanced post-scan result
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemDone, setRedeemDone] = useState(false);
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState(() => {
     try { return localStorage.getItem(BRANCH_STORAGE_KEY) || ''; } catch (e) { return ''; }
@@ -164,14 +166,20 @@ const ScanPage = () => {
       // Backend returns full customer object, transform it for UI
       const customerData = res.data;
       const pointsEarned = finalPoints > 0 ? finalPoints : 10; // default 10 points per visit
+      const stampsCurrent = Math.floor(customerData.visits);
+      const stampsRequired = 10; // matches default card template
+      const canRedeem = stampsCurrent >= stampsRequired;
 
       setScanResult({
+        customer_id: customerData.id,
+        barcode_id: customerData.barcode_id,
         customer_name: customerData.name,
         points_earned: pointsEarned,
-        stamps_current: Math.floor(customerData.visits),
-        stamps_required: 10, // Standard reward threshold
-        reward_unlocked: false, // Would need additional logic from backend
-        tier_upgraded: false // Would need previous tier to compare
+        stamps_current: stampsCurrent,
+        stamps_required: stampsRequired,
+        reward_unlocked: canRedeem,
+        tier_upgraded: false, // Would need previous tier to compare
+        branch_id: branchId || customerData.branch_id || null,
       });
       setStatus({ type: 'success', message: 'Visit recorded successfully!' });
       setBarcode('');
@@ -373,11 +381,50 @@ const ScanPage = () => {
                   </div>
                 )}
 
-                {/* Reward Unlocked Banner */}
+                {/* Reward Unlocked Banner — now with a live "Mark as redeemed" action */}
                 {scanResult.reward_unlocked && (
-                  <div className="bg-[#4A5D23] text-white p-6 rounded-lg mb-6 text-center">
-                    <p className="text-2xl font-bold mb-2">🎉 Reward unlocked!</p>
-                    <p className="text-lg font-semibold">Customer earned: {scanResult.reward_earned || 'A reward'}</p>
+                  <div className="bg-[#4A5D23] text-white p-6 rounded-lg mb-6">
+                    <div className="text-center mb-4">
+                      <p className="text-2xl font-bold mb-1">🎉 Reward unlocked!</p>
+                      <p className="text-sm opacity-90">
+                        {scanResult.customer_name || 'This customer'} has earned their reward.
+                      </p>
+                    </div>
+                    {redeemDone ? (
+                      <div className="bg-white/10 rounded-lg p-3 text-center">
+                        <p className="font-bold flex items-center justify-center gap-2">
+                          <CheckCircle2 size={18} /> Reward redeemed — logged & their card reset.
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            setRedeemLoading(true);
+                            await ownerAPI.redeemReward({
+                              customer_id: scanResult.customer_id,
+                              barcode_id: scanResult.barcode_id,
+                              reward_name: 'Loyalty reward',
+                              branch_id: scanResult.branch_id || undefined,
+                            });
+                            setRedeemDone(true);
+                          } catch (e) {
+                            alert('Failed to redeem: ' + (e?.response?.data?.detail || e.message));
+                          } finally {
+                            setRedeemLoading(false);
+                          }
+                        }}
+                        disabled={redeemLoading}
+                        className="w-full py-3 rounded-lg bg-white text-[#4A5D23] font-bold hover:bg-[#F3EFE7] transition flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        <Gift size={18} />
+                        {redeemLoading ? 'Redeeming…' : 'Give reward & mark redeemed'}
+                      </button>
+                    )}
+                    <p className="text-xs text-white/80 text-center mt-3">
+                      Logs this redemption to analytics. Their card resets to 0 stamps.
+                    </p>
                   </div>
                 )}
 
@@ -392,6 +439,8 @@ const ScanPage = () => {
                   onClick={() => {
                     setScanResult(null);
                     setStatus(null);
+                    setRedeemDone(false);
+                    setRedeemLoading(false);
                   }}
                   className="w-full py-4 rounded-lg bg-[#B85C38] text-white font-bold hover:bg-[#9C4E2F] transition"
                 >

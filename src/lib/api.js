@@ -100,11 +100,26 @@ export const ownerAPI = {
     api.post('/owner/card-template/promotion' + (notify ? '?notify=true' : ''), data),
   saveCardDetails: (data) => api.post('/owner/card-template/details', data),
   sendCardNotification: (data) => api.post('/owner/card-notifications', data),
+  // -- Reward redemption (this batch) --
+  redeemReward: (data) => api.post('/owner/rewards/redeem', data),
+  listRedeemedRewards: (params) => api.get('/owner/rewards/redeemed', { params }),
+  // -- Per-customer visit history --
+  customerVisitHistory: (customerId, params) =>
+    api.get('/owner/customers/' + customerId + '/visits', { params }),
+  // -- Birthdays this month --
+  birthdaysThisMonth: (params) =>
+    api.get('/owner/analytics/birthdays-this-month', { params }),
+  // -- Saved segments --
+  listSavedSegments: () => api.get('/owner/segments'),
+  createSavedSegment: (data) => api.post('/owner/segments', data),
+  deleteSavedSegment: (id) => api.delete('/owner/segments/' + id),
 };
 
 export const publicAPI = {
   getJoinInfo: (slug) => api.get('/join/' + slug),
   joinProgram: (slug, data) => api.post('/join/' + slug, data),
+  // -- Real-time proximity push (wallet card calls this with device GPS) --
+  proximityPing: (data) => api.post('/public/proximity-ping', data),
 };
 
 export default api;

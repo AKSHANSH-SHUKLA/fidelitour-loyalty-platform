@@ -1,9 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map } from 'lucide-react';
+import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map, Clock, Gift, Calendar, TrendingDown, Zap, Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ownerAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
 
+// Pre-built segments that power one-click targeting. Server-side fields map to
+// the extended GET /api/owner/customers filters.
+const QUICK_SEGMENTS = [
+  { key: 'vip',          label: 'VIPs',                 icon: Award,      serverParams: { tier: 'vip' } },
+  { key: 'big_spenders', label: 'Big spenders €300+',   icon: Zap,        serverParams: { min_amount: 300 } },
+  { key: 'loyal_5',      label: 'Loyal (5+ visits)',    icon: Award,      serverParams: { min_visits: 5 } },
+  { key: 'birthday',     label: 'Birthday this month',  icon: Calendar,   serverParams: { has_birthday_this_month: true } },
+  { key: 'one_and_done', label: 'One-and-done',         icon: TrendingDown, serverParams: { max_visits: 1 } },
+  { key: 'dormant',      label: 'Dormant (30d+)',       icon: Clock,      serverParams: { inactive_days_min: 30 } },
+  { key: 'at_risk',      label: 'At risk (14–29d)',     icon: Clock,      serverParams: { inactive_days_min: 14, inactive_days_max: 29 } },
+  { key: 'lunch',        label: 'Lunch regulars',       icon: Clock,      serverParams: { time_segment: 'lunch' } },
+  { key: 'evening',      label: 'Evening regulars',     icon: Clock,      serverParams: { time_segment: 'evening' } },
+  { key: 'weekend',      label: 'Weekend regulars',     icon: Calendar,   serverParams: { time_segment: 'weekend' } },
+  { key: 'weekday',      label: 'Weekday regulars',     icon: Calendar,   serverParams: { time_segment: 'weekday' } },
+  { key: 'redeemed',     label: 'Has redeemed reward',  icon: Gift,       serverParams: { redeemed_reward: true } },
+];
+
 export default function CustomersPage() {
+  const navigate = useNavigate();
   const [allCustomers, setAllCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,23 +37,115 @@ export default function CustomersPage() {
   const [postalCode, setPostalCode] = useState('');
   const [minTotalSpent, setMinTotalSpent] = useState('');
   const [sourceFilter, setSourceFilter] = useState('All');
+  const [activeQuickSegment, setActiveQuickSegment] = useState(null); // which pill is pressed
+  // Saved segments (owner's custom combos)
+  const [savedSegments, setSavedSegments] = useState([]);
+  const [savingSegment, setSavingSegment] = useState(false);
+  const [segmentName, setSegmentName] = useState('');
 
-  // Fetch customers on mount
+  // Re-fetch customers with the current server-side filter set. Used both on
+  // mount (no filters) and whenever a quick-pick segment toggles.
+  const fetchCustomers = async (serverParams = {}) => {
+    try {
+      setLoading(true);
+      const res = await ownerAPI.getCustomers(serverParams);
+      setAllCustomers(res.data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch customers + saved segments on mount
   useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setLoading(true);
-        const res = await ownerAPI.getCustomers();
-        setAllCustomers(res.data || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCustomers();
+    (async () => {
+      try {
+        const r = await ownerAPI.listSavedSegments();
+        setSavedSegments(r.data?.segments || []);
+      } catch (_e) { /* non-fatal */ }
+    })();
   }, []);
+
+  const applyQuickSegment = (seg) => {
+    // Tap the same pill again to clear it — restores full list.
+    if (activeQuickSegment === seg.key) {
+      setActiveQuickSegment(null);
+      fetchCustomers();
+      return;
+    }
+    setActiveQuickSegment(seg.key);
+    fetchCustomers(seg.serverParams || {});
+  };
+
+  // Persist the current filter combo as a named segment.
+  const saveCurrentAsSegment = async () => {
+    const name = (segmentName || '').trim() || window.prompt('Name this segment (e.g. "VIPs in Paris"):');
+    if (!name) return;
+    try {
+      setSavingSegment(true);
+      const filters = {
+        tier: tierFilter !== 'All' ? tierFilter.toLowerCase() : undefined,
+        min_visits: minVisits ? Number(minVisits) : undefined,
+        max_visits: maxVisits ? Number(maxVisits) : undefined,
+        min_amount: minAmountPaid ? Number(minAmountPaid) : undefined,
+        postal_codes: postalCode ? postalCode.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+        source: sourceFilter !== 'All' ? sourceFilter : undefined,
+        quick_segment: activeQuickSegment || undefined,
+      };
+      const res = await ownerAPI.createSavedSegment({ name, filters });
+      setSavedSegments((cur) => [res.data, ...cur]);
+      setSegmentName('');
+    } catch (e) {
+      alert('Failed to save: ' + (e?.response?.data?.detail || e.message));
+    } finally {
+      setSavingSegment(false);
+    }
+  };
+
+  const loadSavedSegment = (seg) => {
+    const f = seg.filters || {};
+    setTierFilter(f.tier ? f.tier.charAt(0).toUpperCase() + f.tier.slice(1) : 'All');
+    setMinVisits(f.min_visits ?? '');
+    setMaxVisits(f.max_visits ?? '');
+    setMinAmountPaid(f.min_amount ?? '');
+    setPostalCode(Array.isArray(f.postal_codes) ? f.postal_codes.join(',') : '');
+    setSourceFilter(f.source || 'All');
+    if (f.quick_segment) {
+      const q = QUICK_SEGMENTS.find(s => s.key === f.quick_segment);
+      if (q) applyQuickSegment(q); else fetchCustomers();
+    } else {
+      setActiveQuickSegment(null);
+      fetchCustomers();
+    }
+  };
+
+  const deleteSavedSegment = async (id) => {
+    if (!window.confirm('Delete this saved segment?')) return;
+    try {
+      await ownerAPI.deleteSavedSegment(id);
+      setSavedSegments((cur) => cur.filter(s => s.id !== id));
+    } catch (e) { alert('Failed: ' + (e?.response?.data?.detail || e.message)); }
+  };
+
+  // Send a campaign to whoever is currently filtered on the page.
+  const sendCampaignToFiltered = () => {
+    if (!filteredCustomers.length) { alert('No customers in the current view.'); return; }
+    if (!window.confirm(`Send a campaign to ${filteredCustomers.length} filtered customer(s)?`)) return;
+    const activeLabel = activeQuickSegment
+      ? (QUICK_SEGMENTS.find(s => s.key === activeQuickSegment)?.label || 'Segment')
+      : 'Ciblage clients';
+    try {
+      sessionStorage.setItem('campaignHandoff', JSON.stringify({
+        customer_ids: filteredCustomers.map(c => c.id),
+        suggested_name: activeLabel,
+        suggested_message: 'Bonjour {first_name}, une attention pour vous chez {business_name} — à très vite !',
+        source: 'push',
+      }));
+    } catch (_e) {}
+    navigate('/dashboard/campaigns');
+  };
 
   // Apply filters
   useEffect(() => {
@@ -51,9 +162,10 @@ export default function CustomersPage() {
       );
     }
 
-    // Tier filter
+    // Tier filter (case-insensitive — backend uses lowercase, UI uses Title-case)
     if (tierFilter !== 'All') {
-      filtered = filtered.filter((customer) => customer.tier === tierFilter);
+      const t = tierFilter.toLowerCase();
+      filtered = filtered.filter((customer) => (customer.tier || '').toLowerCase() === t);
     }
 
     // Min visits
@@ -296,6 +408,97 @@ export default function CustomersPage() {
         </div>
       </div>
 
+      {/* Quick-pick segments — one click to isolate a marketing target */}
+      <div className="mb-6 p-4 rounded-lg border bg-white" style={{ borderColor: '#E7E5E4' }}>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Zap size={18} style={{ color: '#B85C38' }} />
+            <span className="font-bold text-[#1C1917]">Quick segments</span>
+            <span className="text-xs text-[#8B8680]">One click → isolate a marketing target, then send a campaign</span>
+          </div>
+          <button
+            onClick={sendCampaignToFiltered}
+            disabled={!filteredCustomers.length}
+            className="px-3 py-1.5 rounded-lg text-sm font-bold text-white flex items-center gap-2 disabled:opacity-40"
+            style={{ backgroundColor: '#B85C38' }}
+          >
+            <Megaphone size={14} />
+            Send campaign to {filteredCustomers.length}
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {QUICK_SEGMENTS.map((seg) => {
+            const Icon = seg.icon;
+            const active = activeQuickSegment === seg.key;
+            return (
+              <button
+                key={seg.key}
+                type="button"
+                onClick={() => applyQuickSegment(seg)}
+                className={`px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 border transition ${
+                  active
+                    ? 'bg-[#B85C38] text-white border-[#B85C38]'
+                    : 'bg-white text-[#57534E] border-[#E7E5E4] hover:border-[#B85C38]'
+                }`}
+              >
+                <Icon size={13} />
+                {seg.label}
+              </button>
+            );
+          })}
+          {activeQuickSegment && (
+            <button
+              type="button"
+              onClick={() => { setActiveQuickSegment(null); fetchCustomers(); }}
+              className="px-3 py-1.5 rounded-full text-sm font-semibold border border-[#E7E5E4] text-[#57534E] hover:bg-[#FEF2F0]"
+            >
+              <X size={12} className="inline -mt-0.5 mr-1" /> Clear
+            </button>
+          )}
+        </div>
+
+        {/* Saved segments — owner's custom combos */}
+        <div className="mt-4 pt-3 border-t border-[#E7E5E4]">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <span className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Saved segments</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={segmentName}
+                onChange={(e) => setSegmentName(e.target.value)}
+                placeholder="Name this filter combo…"
+                className="px-2 py-1 text-xs border border-[#E7E5E4] rounded"
+              />
+              <button
+                onClick={saveCurrentAsSegment}
+                disabled={savingSegment}
+                className="px-2 py-1 text-xs rounded border border-[#B85C38] text-[#B85C38] font-bold hover:bg-[#FEF2F0] disabled:opacity-40"
+              >
+                {savingSegment ? 'Saving…' : '+ Save current'}
+              </button>
+            </div>
+          </div>
+          {savedSegments.length === 0 ? (
+            <p className="text-xs text-[#8B8680] italic">
+              Tune any filter combination and click "Save current" to reuse it later.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {savedSegments.map((s) => (
+                <div key={s.id} className="flex items-center gap-1 border border-[#E7E5E4] rounded-full pl-3 pr-1 py-0.5 bg-[#FDFBF7]">
+                  <button onClick={() => loadSavedSegment(s)} className="text-xs font-semibold text-[#1C1917]">
+                    {s.name}
+                  </button>
+                  <button onClick={() => deleteSavedSegment(s.id)} className="text-[#8B8680] hover:text-red-600 p-1" title="Delete">
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Filter Section */}
       <div
         className="mb-6 p-4 rounded-lg border"
@@ -346,6 +549,7 @@ export default function CustomersPage() {
               <option>Bronze</option>
               <option>Silver</option>
               <option>Gold</option>
+              <option>VIP</option>
             </select>
           </div>
 

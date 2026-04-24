@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Bell, RefreshCw, Trash2, Gift, Sparkles, ChevronRight, Store, MapPin, Phone, Globe, CheckCircle2, XCircle, Clock, ChevronDown, X } from 'lucide-react';
-import api from '../lib/api';
+import api, { publicAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
 import { AuchanPreview, DEFAULT_LAYOUT as AUCHAN_DEFAULT } from '../components/AuchanCard';
 
@@ -136,6 +136,39 @@ const MyWalletCardPage = () => {
       }
     })();
   }, [barcodeId]);
+
+  // Real-time proximity push: when the wallet card page opens AND the user has
+  // already granted geolocation, ping the backend with the current GPS. If the
+  // customer is within the tenant's configured radius, a proximity push is
+  // logged and shown as a toast. Rate-limited on the server side by the
+  // tenant's geo_cooldown_days.
+  useEffect(() => {
+    if (!data?.customer?.id || !navigator.geolocation) return;
+    // Only ping once per card view, and stay silent if permissions are denied
+    // (don't pop a prompt — we let the Join flow ask for geo explicitly).
+    let ignored = false;
+    navigator.permissions?.query({ name: 'geolocation' }).then((perm) => {
+      if (perm.state !== 'granted') return;
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          if (ignored) return;
+          try {
+            const res = await publicAPI.proximityPing({
+              customer_id: data.customer.id,
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            });
+            if (res?.data?.status === 'sent') {
+              showToast(`📍 ${res.data.title || 'Vous êtes juste à côté !'}`);
+            }
+          } catch (_e) { /* best-effort; ignore */ }
+        },
+        () => { /* user-denied or timeout — silent */ },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+      );
+    }).catch(() => {});
+    return () => { ignored = true; };
+  }, [data?.customer?.id]);
 
   const showToast = (msg) => {
     setToast(msg);
