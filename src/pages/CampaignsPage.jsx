@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2 } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
 
@@ -16,6 +16,13 @@ export default function CampaignsPage() {
   const [trackingData, setTrackingData] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
+  // --- Scheduling state (composer modal) ---
+  const [sendMode, setSendMode] = useState('now'); // 'now' | 'schedule'
+  const [scheduleAt, setScheduleAt] = useState('');      // yyyy-MM-ddTHH:mm, local TZ
+  const [scheduleRecurrence, setScheduleRecurrence] = useState(''); // '' | daily | weekly | monthly
+  const [scheduledCampaigns, setScheduledCampaigns] = useState([]);
+  const [scheduledLoading, setScheduledLoading] = useState(false);
+
   // --- Quick Send (filter-and-send on the main page) ---
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickName, setQuickName] = useState('');
@@ -23,7 +30,6 @@ export default function CampaignsPage() {
   const [quickMessage, setQuickMessage] = useState('');
   const [quickFilters, setQuickFilters] = useState({
     tiers: [],
-    walletPassOnly: false,
     minPoints: 0,
     minVisits: 0,
     postalCodes: '',
@@ -40,7 +46,6 @@ export default function CampaignsPage() {
     source: 'push',
     filters: {
       tiers: [],
-      walletPassOnly: false,
       minPoints: 0,
       minVisits: 0,
       postalCodes: '',
@@ -48,10 +53,51 @@ export default function CampaignsPage() {
     },
   });
 
-  // Load campaigns on mount
+  // Load campaigns + scheduled list on mount. Also pick up any handoff from
+  // Customer Map (a list of customer IDs the user wants to campaign to).
   useEffect(() => {
     fetchCampaigns();
+    fetchScheduled();
+    try {
+      const raw = sessionStorage.getItem('campaignHandoff');
+      if (raw) {
+        const handoff = JSON.parse(raw);
+        sessionStorage.removeItem('campaignHandoff');
+        if (handoff && Array.isArray(handoff.customer_ids) && handoff.customer_ids.length) {
+          // Pre-open the composer in "by-customers" mode with the ID list baked in.
+          setSelectedCampaignTab('by-customers');
+          setCampaignCustomers(handoff.customer_ids.join('\n'));
+          setFormData((prev) => ({
+            ...prev,
+            campaignName: handoff.suggested_name || 'Ciblage carte',
+            message: handoff.suggested_message || '',
+            source: handoff.source || 'push',
+          }));
+          setShowCreateModal(true);
+        }
+      }
+    } catch (_e) { /* ignore */ }
   }, []);
+
+  const fetchScheduled = async () => {
+    try {
+      setScheduledLoading(true);
+      const res = await ownerAPI.listScheduled();
+      setScheduledCampaigns(res.data?.scheduled || []);
+    } catch (_e) { /* non-fatal */ } finally {
+      setScheduledLoading(false);
+    }
+  };
+
+  const cancelScheduled = async (id) => {
+    if (!window.confirm('Cancel this scheduled campaign?')) return;
+    try {
+      await ownerAPI.deleteScheduled(id);
+      await fetchScheduled();
+    } catch (e) {
+      alert('Failed to cancel: ' + (e?.response?.data?.detail || e.message));
+    }
+  };
 
   const fetchCampaigns = async () => {
     try {
@@ -98,7 +144,6 @@ export default function CampaignsPage() {
   const buildFilterPayload = () => {
     return {
       tiers: formData.filters.tiers.length > 0 ? formData.filters.tiers : undefined,
-      hasWalletPass: formData.filters.walletPassOnly ? true : undefined,
       minPoints: formData.filters.minPoints > 0 ? formData.filters.minPoints : undefined,
       minVisits: formData.filters.minVisits > 0 ? formData.filters.minVisits : undefined,
       postalCodes: formData.filters.postalCodes ? formData.filters.postalCodes.split(',').map((code) => code.trim()) : undefined,
@@ -125,10 +170,39 @@ export default function CampaignsPage() {
       alert('Please fill in campaign name and message');
       return;
     }
+    // Validate schedule if scheduling
+    if (sendMode === 'schedule') {
+      if (!scheduleAt) {
+        alert('Please pick a date/time to schedule.');
+        return;
+      }
+      const when = new Date(scheduleAt);
+      if (isNaN(when.getTime()) || when.getTime() <= Date.now() - 60_000) {
+        alert('Please pick a date/time in the future.');
+        return;
+      }
+    }
 
     try {
-      if (selectedCampaignTab === 'by-filter') {
-        // Original filter-based flow
+      if (sendMode === 'schedule') {
+        // Scheduled campaign — queue it. The daily cron (or on-demand runner)
+        // will dispatch it when run_at is reached.
+        if (selectedCampaignTab === 'by-customers') {
+          alert('Scheduled sends currently support filter-based audiences only. Switch to "By Filter" to schedule.');
+          return;
+        }
+        const payload = {
+          name: formData.campaignName,
+          content: formData.message,
+          source: formData.source || 'push',
+          filters: buildFilterPayload(),
+          run_at: new Date(scheduleAt).toISOString(),
+          recurrence: scheduleRecurrence || undefined,
+        };
+        await ownerAPI.scheduleCampaign(payload);
+        await fetchScheduled();
+      } else if (selectedCampaignTab === 'by-filter') {
+        // Original filter-based flow (send now)
         const payload = {
           name: formData.campaignName,
           message: formData.message,
@@ -137,7 +211,9 @@ export default function CampaignsPage() {
         };
         await api.post('/owner/campaigns', payload);
       } else {
-        // Send directly to selected customers
+        // Send directly to selected customers. Campaign Map handoff sends
+        // customer IDs; manual entry may send names or emails. We accept both
+        // via the same endpoint and let the server reconcile.
         const customerList = campaignCustomers
           .split('\n')
           .map(s => s.trim())
@@ -148,11 +224,20 @@ export default function CampaignsPage() {
           return;
         }
 
-        // Parse customer names or emails and send
-        await ownerAPI.sendCampaignToGroup({
-          customer_names: customerList,
-          message: formData.message,
-        });
+        // Heuristic: if it looks like a UUID-ish ID list (letters+digits+dashes,
+        // no spaces, >12 chars), send as customer_ids — otherwise as names.
+        const looksLikeIds = customerList.every(
+          (s) => /^[a-zA-Z0-9_-]{10,}$/.test(s) && !s.includes('@')
+        );
+        const body = {
+          name: formData.campaignName,
+          content: formData.message,
+          source: formData.source || 'push',
+        };
+        if (looksLikeIds) body.customer_ids = customerList;
+        else body.customer_names = customerList;
+
+        await ownerAPI.sendCampaignToGroup(body);
       }
 
       resetForm();
@@ -162,7 +247,7 @@ export default function CampaignsPage() {
       await fetchCampaigns();
     } catch (error) {
       console.error('Error creating campaign:', error);
-      alert('Failed to create campaign');
+      alert('Failed to ' + (sendMode === 'schedule' ? 'schedule' : 'create') + ' campaign: ' + (error?.response?.data?.detail || error.message));
     }
   };
 
@@ -201,7 +286,6 @@ export default function CampaignsPage() {
       source: 'push',
       filters: {
         tiers: [],
-        walletPassOnly: false,
         minPoints: 0,
         minVisits: 0,
         postalCodes: '',
@@ -209,12 +293,14 @@ export default function CampaignsPage() {
       },
     });
     setPreviewCount(null);
+    setSendMode('now');
+    setScheduleAt('');
+    setScheduleRecurrence('');
   };
 
   // ---- Quick Send helpers ----
   const buildQuickFilterPayload = () => ({
     tiers: quickFilters.tiers.length > 0 ? quickFilters.tiers : undefined,
-    hasWalletPass: quickFilters.walletPassOnly ? true : undefined,
     minPoints: quickFilters.minPoints > 0 ? quickFilters.minPoints : undefined,
     minVisits: quickFilters.minVisits > 0 ? quickFilters.minVisits : undefined,
     postalCodes: quickFilters.postalCodes
@@ -271,7 +357,6 @@ export default function CampaignsPage() {
       setQuickMessage('');
       setQuickFilters({
         tiers: [],
-        walletPassOnly: false,
         minPoints: 0,
         minVisits: 0,
         postalCodes: '',
@@ -308,9 +393,6 @@ export default function CampaignsPage() {
       campaign.filters.tiers.forEach((tier) => {
         badges.push(`${tier[0].toUpperCase() + tier.slice(1)} Tier`);
       });
-    }
-    if (campaign.filters?.hasWalletPass) {
-      badges.push('Has Wallet Pass');
     }
     if (campaign.filters?.minPoints > 0) {
       badges.push(`Min ${campaign.filters.minPoints} Points`);
@@ -453,22 +535,6 @@ export default function CampaignsPage() {
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* Wallet Pass */}
-                <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Wallet Pass</label>
-                  <button
-                    type="button"
-                    onClick={() => setQuickFilters({ ...quickFilters, walletPassOnly: !quickFilters.walletPassOnly })}
-                    className={`w-full px-2 py-1.5 text-sm rounded-lg border transition ${
-                      quickFilters.walletPassOnly
-                        ? 'bg-[#B85C38] text-white border-[#B85C38]'
-                        : 'bg-white text-[#57534E] border-[#E7E5E4]'
-                    }`}
-                  >
-                    {quickFilters.walletPassOnly ? '✓ Wallet pass only' : 'Wallet pass only'}
-                  </button>
                 </div>
 
                 {/* Min Points */}
@@ -924,21 +990,6 @@ export default function CampaignsPage() {
                       </label>
                     ))}
                   </div>
-                </div>
-
-                {/* Has Wallet Pass */}
-                <div className="mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.filters.walletPassOnly}
-                      onChange={(e) => handleFilterChange('walletPassOnly', e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm font-semibold" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                      Only customers with a Wallet Pass
-                    </span>
-                  </label>
                 </div>
 
                 {/* Min Points */}

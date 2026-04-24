@@ -1,12 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { publicAPI } from '../lib/api';
 import { QRCodeSVG } from 'qrcode.react';
 
+const ALLOWED_SOURCES = ['qr_store', 'instagram', 'facebook', 'tiktok'];
+
+// Accept common synonyms so a marketer can write `?src=ig` or `?utm_source=fb` etc.
+const SOURCE_ALIASES = {
+  qr: 'qr_store', qr_store: 'qr_store', store: 'qr_store', instore: 'qr_store', in_store: 'qr_store',
+  ig: 'instagram', insta: 'instagram', instagram: 'instagram',
+  fb: 'facebook', facebook: 'facebook', meta: 'facebook',
+  tt: 'tiktok', tik: 'tiktok', tiktok: 'tiktok',
+};
+
+function resolveSourceFromUrl(searchParams) {
+  // Accept ?src=, ?source=, ?utm_source= — first one wins
+  const raw = (
+    searchParams.get('src') ||
+    searchParams.get('source') ||
+    searchParams.get('utm_source') ||
+    ''
+  ).trim().toLowerCase().replace(/[^a-z_]/g, '');
+  if (!raw) return null;
+  const resolved = SOURCE_ALIASES[raw] || raw;
+  return ALLOWED_SOURCES.includes(resolved) ? resolved : null;
+}
+
 const JoinPage = () => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const lockedSource = useMemo(() => resolveSourceFromUrl(searchParams), [searchParams]);
   const [tenant, setTenant] = useState(null);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', postal_code: '', birthday: '', acquisition_source: 'qr_store' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    postal_code: '',
+    birthday: '',
+    acquisition_source: lockedSource || 'qr_store',
+  });
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | requesting | granted | denied | unsupported
   const [geoCoords, setGeoCoords] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -100,15 +132,22 @@ const JoinPage = () => {
                 <input required type="text" placeholder="MM-DD" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.birthday} onChange={e => setFormData({...formData, birthday: e.target.value})} />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-[#57534E]">How did you hear about us? (optional)</label>
-              <select className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.acquisition_source} onChange={e => setFormData({...formData, acquisition_source: e.target.value})}>
-                <option value="qr_store">📱 QR code in the store</option>
-                <option value="instagram">📸 Instagram</option>
-                <option value="facebook">👥 Facebook</option>
-                <option value="tiktok">🎵 TikTok</option>
-              </select>
-            </div>
+            {lockedSource ? (
+              // Source was deterministically tagged by the landing URL
+              // (e.g. /join/<slug>?src=instagram). We hide the picker
+              // entirely so it can't be changed — attribution stays clean.
+              <input type="hidden" value={formData.acquisition_source} readOnly />
+            ) : (
+              <div>
+                <label className="block text-sm font-medium mb-1 text-[#57534E]">How did you hear about us? (optional)</label>
+                <select className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.acquisition_source} onChange={e => setFormData({...formData, acquisition_source: e.target.value})}>
+                  <option value="qr_store">📱 QR code in the store</option>
+                  <option value="instagram">📸 Instagram</option>
+                  <option value="facebook">👥 Facebook</option>
+                  <option value="tiktok">🎵 TikTok</option>
+                </select>
+              </div>
+            )}
             <div className="p-3 rounded-lg border border-[#E7E5E4] bg-[#F3EFE7]">
               <p className="text-sm font-medium text-[#1C1917] mb-2">📍 Share your location (optional)</p>
               <p className="text-xs text-[#57534E] mb-3">

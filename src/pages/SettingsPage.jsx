@@ -61,6 +61,20 @@ const SettingsPage = () => {
         setTimeout(() => setMessage(null), 2000);
     };
 
+    const channelLinks = [
+        { key: 'qr_store',  label: 'In-store QR code',  emoji: '📱', desc: 'Print this URL as a QR code for your counter/menu.' },
+        { key: 'instagram', label: 'Instagram',          emoji: '📸', desc: 'Paste as the link in your Instagram bio or stories.' },
+        { key: 'facebook',  label: 'Facebook',           emoji: '👥', desc: 'Paste on your Facebook page or post links.' },
+        { key: 'tiktok',    label: 'TikTok',             emoji: '🎵', desc: 'Paste as your TikTok profile link.' },
+    ];
+
+    const handleCopyChannel = (source) => {
+        const url = `${joinUrl}?src=${source}`;
+        navigator.clipboard.writeText(url);
+        setMessage({ type: 'success', text: `${source} link copied — every signup through it will auto-tag as ${source}.` });
+        setTimeout(() => setMessage(null), 2500);
+    };
+
     if (loading) {
         return <div className="p-8 bg-[#FDFBF7] min-h-screen">Loading settings...</div>;
     }
@@ -182,6 +196,43 @@ const SettingsPage = () => {
                             </button>
                         </div>
                         <p className="text-xs text-[#57534E]">Customers can scan the QR code or click this link to join your program.</p>
+                    </div>
+
+                    {/* Per-channel pre-tagged links */}
+                    <div className="mt-8 pt-6 border-t border-[#E7E5E4]">
+                        <h3 className="text-lg font-bold font-['Cormorant_Garamond'] text-[#1C1917] mb-2">Per-channel links (auto-tagged)</h3>
+                        <p className="text-sm text-[#57534E] mb-4">
+                            Use these channel-specific URLs so every signup is attributed automatically — no need for the customer to pick a source.
+                            Your analytics (Customer Map, Acquisition breakdown, Campaign targeting) will update in real time.
+                        </p>
+                        <div className="space-y-3 max-w-2xl">
+                            {channelLinks.map(({ key, label, emoji, desc }) => {
+                                const url = `${joinUrl}?src=${key}`;
+                                return (
+                                    <div key={key} className="p-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+                                        <div className="flex items-start gap-3">
+                                            <div className="text-2xl leading-none pt-1">{emoji}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-[#1C1917]">{label}</div>
+                                                <div className="text-xs text-[#57534E] mb-2">{desc}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1 px-3 py-2 rounded bg-white border border-[#E7E5E4] text-xs font-mono text-[#1C1917] break-all">
+                                                        {url}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCopyChannel(key)}
+                                                        className="px-3 py-2 bg-[#B85C38] text-white rounded font-bold text-xs hover:bg-[#9C4E2F] transition-colors whitespace-nowrap"
+                                                    >
+                                                        Copy
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 

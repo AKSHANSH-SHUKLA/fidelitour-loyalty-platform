@@ -322,8 +322,13 @@ const AnalyticsPage = () => {
 
   // Custom threshold for "Inactive customers" KPI. Default 30 days — owner can change it.
   const [inactiveThreshold, setInactiveThreshold] = useState(30);
+  const [inactiveDraft, setInactiveDraft] = useState('30');
   // Period preset for the whole page — 7/30/90 days or "all time". Applied everywhere a window makes sense.
   const [periodDays, setPeriodDays] = useState(30);
+  // Free-typing buffer for the custom-period input. Decoupled from periodDays so
+  // the user can clear the field and type a new number without it snapping to 1
+  // on every keystroke. Only commits to periodDays on blur / Enter.
+  const [periodDraft, setPeriodDraft] = useState('30');
 
   const [drill, setDrill] = useState(null); // { title, rows }
   const [drillLoading, setDrillLoading] = useState(false);
@@ -333,8 +338,43 @@ const AnalyticsPage = () => {
     setComposer({ segment, presetName: presetName || '', presetContent: presetContent || '' });
   };
 
-  // Build the param object for every API call, adding branch scope when set.
-  const params = (extra = {}) => ({ ...(branchId ? { branch_id: branchId } : {}), ...extra });
+  // Build the param object for every API call, adding branch + period scope.
+  const params = (extra = {}) => ({
+    ...(branchId ? { branch_id: branchId } : {}),
+    ...(periodDays && periodDays !== 30 ? { period_days: periodDays } : {}),
+    ...extra,
+  });
+
+  // Commit typed period value: clamp to 1..730 and sync the preset highlight.
+  const commitPeriodDraft = () => {
+    const trimmed = (periodDraft || '').trim();
+    if (trimmed === '') {
+      // Empty → restore to the last committed value
+      setPeriodDraft(String(periodDays));
+      return;
+    }
+    const n = Math.max(1, Math.min(730, Math.round(Number(trimmed) || 0)));
+    if (!n) {
+      setPeriodDraft(String(periodDays));
+      return;
+    }
+    setPeriodDays(n);
+    setPeriodDraft(String(n));
+  };
+  const commitInactiveDraft = () => {
+    const trimmed = (inactiveDraft || '').trim();
+    if (trimmed === '') {
+      setInactiveDraft(String(inactiveThreshold));
+      return;
+    }
+    const n = Math.max(1, Math.min(730, Math.round(Number(trimmed) || 0)));
+    if (!n) {
+      setInactiveDraft(String(inactiveThreshold));
+      return;
+    }
+    setInactiveThreshold(n);
+    setInactiveDraft(String(n));
+  };
 
   // Click-to-drill helper used by every KPI card.
   const drillCustomers = async (title, filters) => {
@@ -390,7 +430,7 @@ const AnalyticsPage = () => {
     }
   };
 
-  useEffect(() => { loadAll(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [branchId]);
+  useEffect(() => { loadAll(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [branchId, periodDays]);
 
   useEffect(() => {
     (async () => {
@@ -568,7 +608,7 @@ const AnalyticsPage = () => {
               <button
                 key={d}
                 type="button"
-                onClick={() => setPeriodDays(d)}
+                onClick={() => { setPeriodDays(d); setPeriodDraft(String(d)); }}
                 className={`text-xs px-2 py-1 rounded-md transition ${
                   periodDays === d
                     ? 'bg-[#B85C38] text-white'
@@ -580,12 +620,22 @@ const AnalyticsPage = () => {
             ))}
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="730"
-              value={periodDays}
-              onChange={(e) => setPeriodDays(Math.max(1, Number(e.target.value) || 1))}
-              className="w-14 text-xs px-2 py-1 border border-[#E7E5E4] rounded-md ml-1"
-              title="Custom days"
+              value={periodDraft}
+              onChange={(e) => setPeriodDraft(e.target.value)}
+              onBlur={commitPeriodDraft}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  commitPeriodDraft();
+                  e.currentTarget.blur();
+                }
+              }}
+              className="w-16 text-xs px-2 py-1 border border-[#E7E5E4] rounded-md ml-1"
+              placeholder="days"
+              title="Type a custom number of days and press Enter"
             />
           </div>
           <button
@@ -730,7 +780,7 @@ const AnalyticsPage = () => {
                 <button
                   key={d}
                   type="button"
-                  onClick={() => setInactiveThreshold(d)}
+                  onClick={() => { setInactiveThreshold(d); setInactiveDraft(String(d)); }}
                   className={`text-xs px-2 py-1 rounded-md transition ${
                     inactiveThreshold === d
                       ? 'bg-[#B85C38] text-white'
@@ -743,12 +793,21 @@ const AnalyticsPage = () => {
             </div>
             <input
               type="number"
+              inputMode="numeric"
               min="1"
               max="730"
-              value={inactiveThreshold}
-              onChange={(e) => setInactiveThreshold(Math.max(1, Number(e.target.value) || 1))}
+              value={inactiveDraft}
+              onChange={(e) => setInactiveDraft(e.target.value)}
+              onBlur={commitInactiveDraft}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  commitInactiveDraft();
+                  e.currentTarget.blur();
+                }
+              }}
               className="w-16 text-xs px-2 py-1 border border-[#E7E5E4] rounded-md"
-              title="Custom inactivity threshold in days"
+              title="Type a custom inactivity threshold and press Enter"
             />
             <span className="text-xs text-[#8B8680]">days</span>
           </div>

@@ -1737,6 +1737,9 @@ def list_customers(
     inactive_days_max: Optional[int] = Query(None),
 ):
     """List customers with advanced filtering. Supports branch filtering + click-to-drill segments from the dashboard."""
+    # Make sure branch filtering actually returns rows for this tenant.
+    if branch_id:
+        _ensure_branch_assignments(token_data.tenant_id)
     query = {"tenant_id": token_data.tenant_id}
 
     if tier:
@@ -1845,10 +1848,11 @@ def send_campaign(
         query["points"] = {"$gte": filters["min_points"]}
     if filters.get("postal_code"):
         query["postal_code"] = filters["postal_code"]
-    if filters.get("has_wallet_pass"):
-        query["pass_issued"] = True
     if filters.get("min_amount_paid"):
         query["total_amount_paid"] = {"$gte": filters["min_amount_paid"]}
+    if filters.get("city"):
+        query["city"] = filters["city"]
+    # has_wallet_pass is intentionally ignored: the platform is wallet-only.
 
     targeted_count = db.customers.count_documents(query)
 
@@ -1913,10 +1917,11 @@ def preview_campaign_segment(
         query["points"] = {"$gte": filters["min_points"]}
     if filters.get("postal_code"):
         query["postal_code"] = filters["postal_code"]
-    if filters.get("has_wallet_pass"):
-        query["pass_issued"] = True
     if filters.get("min_amount_paid"):
         query["total_amount_paid"] = {"$gte": filters["min_amount_paid"]}
+    if filters.get("city"):
+        query["city"] = filters["city"]
+    # has_wallet_pass intentionally ignored (wallet-only platform).
 
     count = db.customers.count_documents(query)
     return {"matching_customers": count}
@@ -1972,6 +1977,32 @@ def scan_visit(
     new_tier = c_obj.tier
 
     db.customers.update_one({"id": c_obj.id}, {"$set": c_obj.model_dump()})
+
+    # ---- Campaign visit attribution (7-day window) -------------------
+    # For any campaign sent to this customer in the last 7 days that hasn't
+    # already been credited for this customer, bump visits_from_campaign and
+    # remember so we never double-count on repeat scans.
+    try:
+        now_utc = datetime.now(timezone.utc)
+        window_start = now_utc - timedelta(days=7)
+        attributable = db.campaigns.find({
+            "tenant_id": token_data.tenant_id,
+            "status": {"$in": ["sent", "delivered"]},
+            "sent_at": {"$gte": window_start, "$lte": now_utc},
+            "recipient_ids": c_obj.id,
+            "attributed_visit_customer_ids": {"$ne": c_obj.id},
+        })
+        for camp in attributable:
+            db.campaigns.update_one(
+                {"id": camp["id"]},
+                {
+                    "$inc": {"visits_from_campaign": 1},
+                    "$addToSet": {"attributed_visit_customer_ids": c_obj.id},
+                },
+            )
+    except Exception as _e:
+        # Attribution must never block a scan
+        pass
 
     # ---- Tier-up congratulation push ("Bravo, vous passez Gold !") ----
     tier_rank = {"bronze": 0, "silver": 1, "gold": 2}
@@ -2204,10 +2235,54 @@ def send_card_notification(
         "title": req.title,
     }
 
+def _ensure_branch_assignments(tid: str) -> None:
+    """Make sure every customer and visit for this tenant has a `branch_id`.
+
+    Customers created through the public signup form (and the seeded demo
+    data) don't carry a branch, so filtering analytics to a specific branch
+    used to return 0 everywhere. We deterministically map any unbranded
+    customer to one of the tenant's branches using a hash of their id, then
+    mirror that onto every visit record they produced. Idempotent — runs
+    once per tenant lifetime, subsequent calls are a no-op.
+    """
+    tenant = db.tenants.find_one({"id": tid})
+    if not tenant:
+        return
+    branches = tenant.get("branches") or []
+    if not branches:
+        return
+    branch_ids = [b.get("id") for b in branches if b.get("id")]
+    if not branch_ids:
+        return
+
+    # Fast path: any unbranded customers?
+    missing = list(db.customers.find(
+        {"tenant_id": tid, "$or": [{"branch_id": None}, {"branch_id": {"$exists": False}}, {"branch_id": ""}]},
+        {"id": 1},
+    ))
+    if not missing:
+        return
+
+    n = len(branch_ids)
+    for cust in missing:
+        cid = cust.get("id") or ""
+        idx = (sum(ord(ch) for ch in cid) if cid else 0) % n
+        target_branch = branch_ids[idx]
+        db.customers.update_one({"id": cid}, {"$set": {"branch_id": target_branch}})
+        # Backfill the customer's visits so per-branch visit aggregates are real.
+        db.visits.update_many(
+            {"tenant_id": tid, "customer_id": cid, "$or": [
+                {"branch_id": None}, {"branch_id": {"$exists": False}}, {"branch_id": ""}
+            ]},
+            {"$set": {"branch_id": target_branch}},
+        )
+
+
 @app.get("/api/owner/analytics")
 def owner_analytics(
     token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
-    branch_id: Optional[str] = Query(None)
+    branch_id: Optional[str] = Query(None),
+    period_days: Optional[int] = Query(None),
 ):
     """Comprehensive owner analytics.
     Uses MongoDB aggregation ($group by day/week/tier) so the whole response
@@ -2219,10 +2294,12 @@ def owner_analytics(
     ninety_days_ago = now - timedelta(days=90)
     twelve_weeks_ago = now - timedelta(weeks=12)
 
+    # Ensure every customer and visit for this tenant has a branch_id, so that
+    # the "By branch" filter shows real, non-overlapping slices instead of 0.
+    _ensure_branch_assignments(t_id)
+
     # Branch-aware base filter. When branch_id is provided, scope customers
-    # and visits to that branch. Legacy records without a branch_id are
-    # excluded from a branch-filtered view on purpose — otherwise each branch
-    # would double-count the same "unbranched" rows.
+    # and visits to that branch.
     customer_filter = {"tenant_id": t_id}
     visit_filter = {"tenant_id": t_id}
     if branch_id:
@@ -2868,17 +2945,35 @@ def get_campaign_tracking(
     # Get recipient details
     recipient_ids = campaign.get("recipient_ids", [])
     recipients = []
+    sent_at = campaign.get("sent_at")
+    # 7-day attribution window for "visited after send"
+    visit_cutoff = None
+    if isinstance(sent_at, datetime):
+        visit_cutoff = sent_at + timedelta(days=7)
+    attributed_ids = set(campaign.get("attributed_visit_customer_ids", []) or [])
     for cid in recipient_ids:
         customer = db.customers.find_one({"id": cid})
-        if customer:
-            # Check if customer opened this campaign
-            opened = bool(db.campaign_opens.find_one({"campaign_id": campaign_id, "customer_id": cid}))
-            recipients.append({
-                "customer_id": cid,
-                "name": customer.get("name", ""),
-                "opened": opened,
-                "visited_after": opened  # simplified
-            })
+        if not customer:
+            continue
+        opened = bool(db.campaign_opens.find_one({"campaign_id": campaign_id, "customer_id": cid}))
+        # Visited within the 7-day window after send?
+        visited = cid in attributed_ids
+        if not visited and sent_at and visit_cutoff:
+            lv = customer.get("last_visit_date")
+            if isinstance(lv, datetime) and sent_at <= lv <= visit_cutoff:
+                visited = True
+        recipients.append({
+            "customer_id": cid,
+            "customer_name": customer.get("name", "") or "Unknown",
+            "name": customer.get("name", "") or "Unknown",  # keep legacy key for older clients
+            "email": customer.get("email", ""),
+            "phone": customer.get("phone", ""),
+            "tier": customer.get("tier", "bronze"),
+            "last_visit_date": customer.get("last_visit_date"),
+            "opened": opened,
+            "visited": visited,
+            "visited_after": visited,  # legacy alias
+        })
 
     return {
         "campaign_id": campaign_id,
@@ -2893,39 +2988,54 @@ def get_campaign_tracking(
         "recipients": recipients
     }
 
+@app.get("/api/campaigns/{campaign_id}/pixel/{customer_id}.png")
 @app.get("/api/owner/campaigns/{campaign_id}/track-open/{customer_id}")
 def track_campaign_open(
     campaign_id: str,
     customer_id: str,
-    token_data: TokenData = Depends(require_role(["business_owner"]))
 ):
-    """Pixel tracking endpoint - logs open and returns 1x1 PNG"""
-    # Verify campaign belongs to tenant
-    campaign = db.campaigns.find_one({"id": campaign_id, "tenant_id": token_data.tenant_id})
+    """Anonymous pixel tracking endpoint - logs the first open per (campaign, customer)
+    and always returns a 1x1 PNG so broken images never appear in email clients.
+
+    Intentionally unauthenticated: tracking pixels are loaded by recipient email
+    clients / push viewers that have no session cookie.
+    """
+    # Verify campaign exists (no tenant check - pixel is public by design)
+    campaign = db.campaigns.find_one({"id": campaign_id})
     if not campaign:
-        raise HTTPException(status_code=404, detail="Campaign not found")
+        # Still return the PNG so broken image icons never show up
+        return Response(content=PIXEL_PNG_BYTES, media_type="image/png")
 
-    # Log the open
-    open_record = {
-        "campaign_id": campaign_id,
-        "customer_id": customer_id,
-        "opened_at": datetime.now(timezone.utc)
-    }
-    db.campaign_opens.insert_one(open_record)
+    # Only count the customer if they were an actual recipient
+    recipient_ids = campaign.get("recipient_ids", []) or []
+    is_recipient = customer_id in recipient_ids
 
-    # Update campaign opens count
-    db.campaigns.update_one(
-        {"id": campaign_id},
-        {
-            "$inc": {
-                "opens": 1,
-                "opens_unique": 1
-            }
-        }
+    # Dedup opens_unique: only $inc if this (campaign, customer) pair is new
+    already_opened = db.campaign_opens.find_one(
+        {"campaign_id": campaign_id, "customer_id": customer_id}
     )
 
-    # Return 1x1 PNG
-    return Response(content=PIXEL_PNG_BYTES, media_type="image/png")
+    db.campaign_opens.insert_one({
+        "campaign_id": campaign_id,
+        "customer_id": customer_id,
+        "opened_at": datetime.now(timezone.utc),
+    })
+
+    inc = {"opens": 1}
+    if not already_opened and is_recipient:
+        inc["opens_unique"] = 1
+    db.campaigns.update_one({"id": campaign_id}, {"$inc": inc})
+
+    # Return 1x1 PNG with no-cache headers so each open gets logged
+    return Response(
+        content=PIXEL_PNG_BYTES,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 @app.get("/api/owner/analytics/highest-paying")
 def get_highest_paying_customers(
@@ -3130,13 +3240,19 @@ def get_acquisition_sources(
 def get_analytics_summary(
     token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
     branch_id: Optional[str] = Query(None),
+    period_days: Optional[int] = Query(None),
 ):
     """Quick summary stats for dashboard. No per-customer DB loops."""
     t_id = token_data.tenant_id
     now = datetime.now(timezone.utc)
-    week_ago = now - timedelta(days=7)
-    ninety_days_ago = now - timedelta(days=90)
-    thirty_days_ago = now - timedelta(days=30)
+    # period_days scales the "recently-active" window. 30 is the historical default.
+    window = int(period_days) if period_days and period_days > 0 else 30
+    week_ago = now - timedelta(days=min(7, window))
+    ninety_days_ago = now - timedelta(days=max(90, window))
+    thirty_days_ago = now - timedelta(days=window)
+
+    # Make sure a branch filter actually has data (backfill orphan customers once).
+    _ensure_branch_assignments(t_id)
 
     cust_q = {"tenant_id": t_id}
     visit_q = {"tenant_id": t_id}
@@ -4166,7 +4282,49 @@ class ScheduleCampaignRequest(BaseModel):
     content: str
     run_at: str  # ISO datetime string
     segment: Optional[Dict[str, Any]] = None
+    # Same filter shape as live send (tiers/minPoints/minVisits/postalCodes/minAmountPaid).
+    # If provided, takes precedence over segment when the cron drains it.
+    filters: Optional[Dict[str, Any]] = None
+    source: Optional[str] = None  # push | email | instagram | facebook | tiktok | sms | other
     recurrence: Optional[str] = None  # None | "daily" | "weekly" | "monthly"
+
+
+def _filters_to_customer_query(tid: str, filters: dict) -> dict:
+    """Translate the UI filter shape to a Mongo query. Shared between live send,
+    segment preview, and scheduled campaign drain."""
+    q = {"tenant_id": tid}
+    if not filters:
+        return q
+    # Accept snake_case and camelCase from older callers
+    tier = filters.get("tier")
+    tiers = filters.get("tiers")
+    if tiers and isinstance(tiers, list):
+        q["tier"] = {"$in": tiers}
+    elif tier:
+        q["tier"] = tier
+    mv = filters.get("min_visits") or filters.get("minVisits")
+    if mv:
+        q["visits"] = {"$gte": int(mv)}
+    mp = filters.get("min_points") or filters.get("minPoints")
+    if mp:
+        q["points"] = {"$gte": int(mp)}
+    pcs = filters.get("postal_codes") or filters.get("postalCodes")
+    pc_single = filters.get("postal_code")
+    if pcs:
+        if isinstance(pcs, str):
+            pcs = [p.strip() for p in pcs.split(",") if p.strip()]
+        q["postal_code"] = {"$in": list(pcs)}
+    elif pc_single:
+        q["postal_code"] = pc_single
+    ma = filters.get("min_amount_paid") or filters.get("minAmountPaid")
+    if ma:
+        q["total_amount_paid"] = {"$gte": float(ma)}
+    city = filters.get("city")
+    if city:
+        q["city"] = city
+    # Note: we deliberately do NOT honor `has_wallet_pass`/`hasWalletPass` — the
+    # platform is wallet-only by design, so that filter is a no-op.
+    return q
 
 
 @app.post("/api/owner/campaigns/schedule")
@@ -4187,6 +4345,8 @@ def schedule_campaign(
         "name": req.name,
         "content": req.content,
         "segment": req.segment or {"type": "all"},
+        "filters": req.filters or None,
+        "source": (req.source or "push"),
         "run_at": run_at,
         "recurrence": req.recurrence,
         "status": "scheduled",
@@ -4330,14 +4490,27 @@ def run_daily_triggers(request: Request):
         if not tenant:
             db.scheduled_campaigns.update_one({"id": sc["id"]}, {"$set": {"status": "cancelled"}})
             continue
-        recipients = _resolve_segment(sc["tenant_id"], sc.get("segment") or {"type": "all"})
-        _dispatch_campaign_to_customers(
+        # Prefer UI-style filters if the schedule was saved with them; fall back
+        # to the legacy segment-based resolver otherwise.
+        if sc.get("filters"):
+            q = _filters_to_customer_query(sc["tenant_id"], sc["filters"])
+            recipients = list(db.customers.find(q))
+        else:
+            recipients = _resolve_segment(sc["tenant_id"], sc.get("segment") or {"type": "all"})
+        dispatched = _dispatch_campaign_to_customers(
             tenant,
             name=sc["name"],
             content=sc["content"],
             customer_list=recipients,
             trigger_type="scheduled",
         )
+        # Stamp the source on the emitted campaign so analytics attribute
+        # scheduled sends to their channel (Instagram, email, push, etc.).
+        if dispatched and sc.get("source"):
+            db.campaigns.update_one(
+                {"id": dispatched["id"]},
+                {"$set": {"source": sc["source"]}},
+            )
         scheduled_sent += len(recipients)
 
         # Recurrence: bump run_at and keep scheduled, or mark sent.
