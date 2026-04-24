@@ -1045,10 +1045,36 @@ const AnalyticsPage = () => {
             />
             <span className="text-sm text-[#57534E]">days</span>
           </div>
-          <div className="ml-auto text-sm text-[#1C1917] font-medium">
-            <span className="text-[#B85C38] font-bold">{recovered?.count ?? 0}</span> customers match
-            {' '}
-            <span className="text-[#8B8680]">({recovered?.percentage ?? 0}% of base)</span>
+          <div className="ml-auto flex items-center gap-3 text-sm text-[#1C1917] font-medium">
+            <span>
+              <span className="text-[#B85C38] font-bold">{recovered?.count ?? 0}</span> customers match
+              {' '}
+              <span className="text-[#8B8680]">({recovered?.percentage ?? 0}% of base)</span>
+            </span>
+            <button
+              type="button"
+              disabled={!recovered?.count}
+              onClick={() =>
+                setDrill({
+                  title: `Recovered customers — inactive ${recoveryInactiveDays}d, returned within ${recoveryWindowDays}d`,
+                  rows: recovered?.customers || [],
+                  columns: [
+                    { key: 'name', label: 'Customer' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'tier', label: 'Tier', render: (v) => <TierBadge tier={v} /> },
+                    { key: 'total_visits', label: 'Visits' },
+                    { key: 'total_amount_paid', label: 'Spent', render: (v) => `€${(v || 0).toFixed(0)}` },
+                    { key: 'last_inactive_date', label: 'Gap started', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                    { key: 'returned_date', label: 'Returned', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                  ],
+                })
+              }
+              className="px-3 py-1.5 rounded-lg border text-sm font-semibold transition disabled:opacity-40"
+              style={{ borderColor: '#B85C38', color: '#B85C38' }}
+              title="Show the list of customers that match the filter above"
+            >
+              View the {recovered?.count ?? 0} customer{recovered?.count === 1 ? '' : 's'}
+            </button>
           </div>
         </div>
       </section>

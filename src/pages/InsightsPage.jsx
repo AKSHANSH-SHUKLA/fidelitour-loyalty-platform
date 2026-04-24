@@ -80,9 +80,23 @@ export default function InsightsPage() {
     setAiAnswer('');
     try {
       const res = await ownerAPI.aiQuery({ message: q });
-      setAiAnswer(res?.data?.response || res?.data?.answer || res?.data?.message || 'No response.');
+      // The backend returns the answer in `reply`. Also fall back to legacy
+      // field names so the UI still works if the response shape changes later.
+      const answer =
+        res?.data?.reply ||
+        res?.data?.response ||
+        res?.data?.answer ||
+        res?.data?.message ||
+        '';
+      if (!answer) {
+        setAiError('The AI returned an empty answer — try rephrasing your question.');
+      } else {
+        setAiAnswer(answer);
+      }
     } catch (e) {
-      setAiError(e?.response?.data?.detail || e?.message || 'AI request failed');
+      // Surface the backend's own detail (e.g. "Daily AI query limit reached").
+      const msg = e?.response?.data?.detail || e?.message || 'AI request failed';
+      setAiError(msg);
     } finally {
       setAiLoading(false);
     }

@@ -163,25 +163,31 @@ export default function CustomerMapPage() {
     setExpandedPostals(new Set());
   };
 
-  // Hand off the currently filtered customer IDs to the CampaignsPage composer
-  // via sessionStorage. Pre-fills the "by customers" tab with the IDs list and
-  // opens the modal automatically.
-  const sendCampaignToFiltered = () => {
-    if (filteredAll.length === 0) {
-      alert('No customers match these filters.');
+  // Hand off a list of customers to the CampaignsPage composer via sessionStorage.
+  // Works for both the "send to filtered group" button and the per-customer
+  // "Send campaign" button inside the details modal — caller picks the list.
+  const handoffToCampaigns = (list, { skipConfirm = false, suggestedName, suggestedMessage } = {}) => {
+    if (!list || list.length === 0) {
+      alert('No customers to target.');
       return;
     }
-    const hasFilter =
-      tierFilter !== 'all' || sourceFilter !== 'all' || cityFilter || regionFilter !== 'all' ||
-      minVisits || minAmountPaid || search || selectedDept || branchId;
-    const label = hasFilter
-      ? `Send campaign to ${filteredAll.length} filtered customer(s)?`
-      : `No filters are active — this will target ALL ${filteredAll.length} customers. Continue?`;
-    if (!window.confirm(label)) return;
+    if (!skipConfirm) {
+      const hasFilter =
+        tierFilter !== 'all' || sourceFilter !== 'all' || cityFilter || regionFilter !== 'all' ||
+        minVisits || minAmountPaid || search || selectedDept || branchId;
+      const label = list.length === 1
+        ? `Send a personal campaign to ${list[0].name || 'this customer'}?`
+        : (hasFilter
+            ? `Send campaign to ${list.length} filtered customer(s)?`
+            : `No filters are active — this will target ALL ${list.length} customers. Continue?`);
+      if (!window.confirm(label)) return;
+    }
     const handoff = {
-      customer_ids: filteredAll.map((c) => c.id),
-      suggested_name: 'Ciblage carte clients',
-      suggested_message: 'Bonjour {first_name}, une attention particulière vous attend chez {business_name} — à très vite !',
+      customer_ids: list.map((c) => c.id),
+      suggested_name: suggestedName || (list.length === 1
+        ? `Un mot pour vous, ${(list[0].name || '').split(' ')[0] || '{first_name}'}`
+        : 'Ciblage carte clients'),
+      suggested_message: suggestedMessage || 'Bonjour {first_name}, une attention particulière vous attend chez {business_name} — à très vite !',
       source: 'push',
     };
     try {
@@ -189,6 +195,9 @@ export default function CustomerMapPage() {
     } catch (_e) { /* private browsing — still navigate */ }
     navigate('/dashboard/campaigns');
   };
+
+  const sendCampaignToFiltered = () => handoffToCampaigns(filteredAll);
+  const sendCampaignToCustomer = (cust) => handoffToCampaigns([cust], { skipConfirm: false });
 
   // ---------- Group customers by department ----------
   const deptMap = useMemo(() => {
@@ -507,6 +516,11 @@ export default function CustomerMapPage() {
               postalList={postalList}
               expandedPostals={expandedPostals}
               togglePostal={togglePostal}
+              onSelectCustomer={setSelectedCustomer}
+              onSendCampaign={(list) => handoffToCampaigns(list, {
+                suggestedName: `Offre pour ${activeDept.name}`,
+                suggestedMessage: `Bonjour {first_name}, une attention spéciale pour nos clients de ${activeDept.name} chez {business_name}. À très vite !`,
+              })}
             />
           ) : (
             <>
@@ -533,6 +547,7 @@ export default function CustomerMapPage() {
         <CustomerDetailsModal
           customer={selectedCustomer}
           onClose={() => setSelectedCustomer(null)}
+          onSendCampaign={sendCampaignToCustomer}
         />
       )}
     </div>
@@ -578,7 +593,10 @@ function SignalCard({ tone, icon: Icon, title, detail, action }) {
   );
 }
 
-function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
+function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onSelectCustomer, onSendCampaign }) {
+  // Defensive no-ops so callers that don't pass these props still work.
+  const selectCustomer = onSelectCustomer || (() => {});
+  const sendCampaign = onSendCampaign || (() => {});
   const topSpenders = [...dept.customers]
     .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
     .slice(0, 5);
@@ -593,13 +611,25 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
     <div className="space-y-6">
       {/* Summary header */}
       <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
-        <div className="flex items-center gap-3 mb-1">
-          <span className="px-2 py-1 rounded bg-[#B85C38] text-white font-bold text-sm">
-            {dept.code}
-          </span>
-          <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            {dept.name}
-          </h2>
+        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+          <div className="flex items-center gap-3">
+            <span className="px-2 py-1 rounded bg-[#B85C38] text-white font-bold text-sm">
+              {dept.code}
+            </span>
+            <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              {dept.name}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => sendCampaign(dept.customers)}
+            disabled={dept.customers.length === 0}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 disabled:opacity-40"
+            style={{ backgroundColor: '#B85C38' }}
+            title={`Send a campaign to all ${dept.customers.length} customer(s) in ${dept.name}`}
+          >
+            <Megaphone size={14} /> Send to these {dept.customers.length}
+          </button>
         </div>
         <p className="text-sm text-[#8B8680] mb-4">
           {dept.customers.length} customer{dept.customers.length !== 1 ? 's' : ''}
@@ -662,7 +692,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setSelectedCustomer(c)}
+                onClick={() => selectCustomer(c)}
                 className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7] hover:bg-[#E7E5E4] transition text-left"
                 title="Click to view full customer details"
               >
@@ -723,7 +753,21 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
                 </button>
                 {expanded && (
                   <>
-                    <QuadrantBreakdown customers={p.customers} label={p.code} onSelectCustomer={setSelectedCustomer} />
+                    <div className="px-3 py-2 bg-[#FDFBF7] border-t border-[#E7E5E4] flex items-center justify-between">
+                      <p className="text-xs text-[#8B8680]">
+                        Click any customer for full details, or message this postal-code cohort.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); sendCampaign(p.customers); }}
+                        className="px-2.5 py-1 rounded text-xs font-bold text-white flex items-center gap-1.5"
+                        style={{ backgroundColor: '#B85C38' }}
+                        title={`Send a campaign to all customers in ${p.code}`}
+                      >
+                        <Megaphone size={12} /> Send to {p.customers.length}
+                      </button>
+                    </div>
+                    <QuadrantBreakdown customers={p.customers} label={p.code} onSelectCustomer={selectCustomer} />
                     <div className="divide-y divide-[#E7E5E4]">
                       {p.customers
                         .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
@@ -733,7 +777,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal }) {
                             <button
                               key={c.id}
                               type="button"
-                              onClick={() => setSelectedCustomer(c)}
+                              onClick={() => selectCustomer(c)}
                               className="w-full p-3 flex items-center justify-between text-sm hover:bg-[#F3EFE7] transition text-left"
                               title="Click to view full customer details"
                             >
@@ -928,7 +972,9 @@ function TopCustomersCard({ customers, onSelect }) {
 
 // Full-detail customer modal shown when clicking any customer anywhere on this page.
 // Covers all the fields the map API returns plus derived / humanised labels.
-function CustomerDetailsModal({ customer, onClose }) {
+// `onSendCampaign` (optional) is called with the customer so the modal can offer
+// a per-customer "send campaign" shortcut.
+function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
   const c = customer || {};
   const fmt = (v) => {
     if (!v) return '—';
@@ -963,13 +1009,27 @@ function CustomerDetailsModal({ customer, onClose }) {
             </div>
             <p className="text-xs text-[#8B8680] mt-1">{c.email}{c.phone ? ` · ${c.phone}` : ''}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-[#F3EFE7] transition"
-            aria-label="Close"
-          >
-            <X size={20} className="text-[#57534E]" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onSendCampaign && (
+              <button
+                type="button"
+                onClick={() => onSendCampaign(c)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 transition"
+                style={{ backgroundColor: '#B85C38' }}
+                title="Send a personalised campaign to just this customer"
+              >
+                <Megaphone size={14} />
+                Send campaign
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-[#F3EFE7] transition"
+              aria-label="Close"
+            >
+              <X size={20} className="text-[#57534E]" />
+            </button>
+          </div>
         </div>
 
         <div className="p-5 space-y-5">

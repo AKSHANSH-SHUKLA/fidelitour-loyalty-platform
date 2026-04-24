@@ -2236,14 +2236,16 @@ def send_card_notification(
     }
 
 def _ensure_branch_assignments(tid: str) -> None:
-    """Make sure every customer and visit for this tenant has a `branch_id`.
+    """Make sure every customer and visit for this tenant has a valid `branch_id`.
 
-    Customers created through the public signup form (and the seeded demo
-    data) don't carry a branch, so filtering analytics to a specific branch
-    used to return 0 everywhere. We deterministically map any unbranded
-    customer to one of the tenant's branches using a hash of their id, then
-    mirror that onto every visit record they produced. Idempotent — runs
-    once per tenant lifetime, subsequent calls are a no-op.
+    This is the single reason "All branches" shows real numbers but a specific
+    branch shows 0 everywhere: customers are seeded without a branch_id, and
+    public signups don't set one either. We deterministically hash each
+    customer's id onto one of the tenant's branches so every customer belongs
+    to exactly one real branch. Running again is a no-op — idempotent.
+
+    Also re-fixes any customer whose branch_id doesn't match a current branch
+    (stale value from a removed/renamed branch), so the fix survives edits.
     """
     tenant = db.tenants.find_one({"id": tid})
     if not tenant:
@@ -2254,27 +2256,66 @@ def _ensure_branch_assignments(tid: str) -> None:
     branch_ids = [b.get("id") for b in branches if b.get("id")]
     if not branch_ids:
         return
+    valid_branch_ids = set(branch_ids)
+    n = len(branch_ids)
 
-    # Fast path: any unbranded customers?
-    missing = list(db.customers.find(
-        {"tenant_id": tid, "$or": [{"branch_id": None}, {"branch_id": {"$exists": False}}, {"branch_id": ""}]},
+    # Find customers that either (a) have no branch_id at all, or (b) have a
+    # branch_id that doesn't correspond to any current branch. Both need fixing.
+    needs_fix = list(db.customers.find(
+        {"tenant_id": tid, "$or": [
+            {"branch_id": None},
+            {"branch_id": {"$exists": False}},
+            {"branch_id": ""},
+            {"branch_id": {"$nin": list(valid_branch_ids)}},
+        ]},
         {"id": 1},
     ))
-    if not missing:
+    if not needs_fix:
+        # Still backfill visits whose branch_id is invalid, since visit records
+        # are created separately and could drift.
+        _backfill_visits_from_customers(tid, branch_ids)
         return
 
-    n = len(branch_ids)
-    for cust in missing:
+    for cust in needs_fix:
         cid = cust.get("id") or ""
         idx = (sum(ord(ch) for ch in cid) if cid else 0) % n
         target_branch = branch_ids[idx]
         db.customers.update_one({"id": cid}, {"$set": {"branch_id": target_branch}})
-        # Backfill the customer's visits so per-branch visit aggregates are real.
+        # Mirror onto visits unconditionally — the customer's visits all happen
+        # at the same "home" branch in this deterministic mapping.
         db.visits.update_many(
-            {"tenant_id": tid, "customer_id": cid, "$or": [
-                {"branch_id": None}, {"branch_id": {"$exists": False}}, {"branch_id": ""}
-            ]},
+            {"tenant_id": tid, "customer_id": cid},
             {"$set": {"branch_id": target_branch}},
+        )
+
+
+def _backfill_visits_from_customers(tid: str, branch_ids: list) -> None:
+    """Ensure every visit carries the same branch_id as its customer. Cheap
+    post-check for drift; only touches visits with a missing/invalid branch_id."""
+    valid = set(branch_ids)
+    bad_visits = db.visits.find(
+        {"tenant_id": tid, "$or": [
+            {"branch_id": None},
+            {"branch_id": {"$exists": False}},
+            {"branch_id": ""},
+            {"branch_id": {"$nin": list(valid)}},
+        ]},
+        {"customer_id": 1},
+    )
+    # Resolve per unique customer_id to keep it tight (~1 lookup per customer).
+    seen = {}
+    for v in bad_visits:
+        cid = v.get("customer_id")
+        if not cid or cid in seen:
+            continue
+        cust = db.customers.find_one({"id": cid}, {"branch_id": 1})
+        bid = cust.get("branch_id") if cust else None
+        if bid in valid:
+            seen[cid] = bid
+    for cid, bid in seen.items():
+        db.visits.update_many(
+            {"tenant_id": tid, "customer_id": cid},
+            {"$set": {"branch_id": bid}},
         )
 
 
