@@ -598,6 +598,41 @@ def mock_seed_data():
         )
         db.users.insert_one(test_admin.model_dump())
 
+    # === Three role demo accounts (explicitly requested) ======================
+    # Quick-login demo trio so reviewers can see each permission level in action.
+    # All three are tied to tenant-1 (Café Lumière) except super admin, which
+    # spans everything.
+    demo_accounts = [
+        {
+            "email": "demo.admin@fidelitour.com",
+            "password": "Admin!Demo2026",
+            "role": "super_admin",
+            "tenant_id": None,
+        },
+        {
+            "email": "demo.owner@fidelitour.com",
+            "password": "Owner!Demo2026",
+            "role": "business_owner",
+            "tenant_id": "tenant-1",
+        },
+        {
+            "email": "demo.staff@fidelitour.com",
+            "password": "Staff!Demo2026",
+            "role": "staff",
+            "tenant_id": "tenant-1",
+        },
+    ]
+    for acct in demo_accounts:
+        if not db.users.find_one({"email": acct["email"]}):
+            user_kwargs = {
+                "email": acct["email"],
+                "role": acct["role"],
+                "hashed_password": hash_password(acct["password"]),
+            }
+            if acct["tenant_id"]:
+                user_kwargs["tenant_id"] = acct["tenant_id"]
+            db.users.insert_one(UserInDB(**user_kwargs).model_dump())
+
     # === Primary test customer: Akshansh (postal 37000, Tours) ===
     # Ensure a single canonical test customer record for shuklaakshansh38@gmail.com
     db.customers.delete_many({"email": "shuklaakshansh38@gmail.com"})
@@ -1401,14 +1436,24 @@ def update_geo_settings(
     req: Dict[str, Any],
     token_data: TokenData = Depends(require_role(["super_admin"]))
 ):
-    """Update geo settings for a tenant"""
+    """Update geo settings for a tenant. SUPER ADMIN ONLY.
+
+    Accepts:
+      - geo_enabled (bool)         — master switch for proximity pushes
+      - geo_radius_meters (int)    — push range around a branch
+      - geo_cooldown_days (int)    — min days between pushes per customer
+      - vip_geo_only (bool)        — restrict proximity pushes to VIP tier only
+                                     (owners CANNOT change this — admin-only)
+    """
     update_data = {}
     if "geo_enabled" in req:
-        update_data["geo_enabled"] = req["geo_enabled"]
+        update_data["geo_enabled"] = bool(req["geo_enabled"])
     if "geo_radius_meters" in req:
         update_data["geo_radius_meters"] = req["geo_radius_meters"]
     if "geo_cooldown_days" in req:
         update_data["geo_cooldown_days"] = req["geo_cooldown_days"]
+    if "vip_geo_only" in req:
+        update_data["vip_geo_only"] = bool(req["vip_geo_only"])
 
     result = db.tenants.update_one({"id": tenant_id}, {"$set": update_data})
     if result.matched_count == 0:
@@ -2029,7 +2074,9 @@ class ScanRequest(BaseModel):
 @app.post("/api/owner/scan")
 def scan_visit(
     req: ScanRequest,
-    token_data: TokenData = Depends(require_role(["business_owner"]))
+    # Staff accounts exist SPECIFICALLY to run this endpoint. The owner + manager
+    # can of course scan too.
+    token_data: TokenData = Depends(require_role(["business_owner", "manager", "staff"])),
 ):
     """Scan visit - record timestamp and update customer"""
     cust = db.customers.find_one({"tenant_id": token_data.tenant_id, "barcode_id": req.barcode_id})
@@ -3583,8 +3630,9 @@ def create_branch(
     return branch
 
 @app.get("/api/owner/branches")
-def list_branches(token_data: TokenData = Depends(require_role(["business_owner"]))):
-    """List branches for current tenant"""
+def list_branches(token_data: TokenData = Depends(require_role(["business_owner", "manager", "staff"]))):
+    """List branches for current tenant. Staff need this so the scan page can
+    show the branch picker (which branch the scan is happening at)."""
     tenant = db.tenants.find_one({"id": token_data.tenant_id})
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -4435,6 +4483,13 @@ def proximity_ping(req: ProximityPingRequest):
     tenant = db.tenants.find_one({"id": tid})
     if not tenant or not tenant.get("geo_enabled"):
         return {"status": "ignored", "reason": "geo disabled for tenant"}
+
+    # VIP-only gate: when the super-admin has flipped `vip_geo_only` on for this
+    # tenant, proximity pushes fire exclusively for VIP-tier customers. Anyone
+    # else gets silently ignored — same as if geo were off for them.
+    if tenant.get("vip_geo_only"):
+        if (cust.get("tier") or "").lower() != "vip":
+            return {"status": "ignored", "reason": "vip_only: customer not VIP"}
 
     radius_m = float(tenant.get("geo_radius_meters") or 500)
     cooldown_days = int(tenant.get("geo_cooldown_days") or 1)

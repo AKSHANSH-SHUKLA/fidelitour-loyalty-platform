@@ -30,7 +30,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
   if (loading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Staff and managers land on the page they *are* allowed to use instead of
+    // being kicked to the landing page. Staff → /dashboard/scan; everyone else
+    // back to the landing.
+    if (user.role === 'staff') return <Navigate to="/dashboard/scan" replace />;
+    if (user.role === 'manager') return <Navigate to="/dashboard/analytics" replace />;
+    return <Navigate to="/" replace />;
+  }
   return children;
 };
 
@@ -55,21 +62,61 @@ function App() {
           <Route path="/join/:slug" element={<JoinPage />} />
           <Route path="/card/:barcodeId" element={<MyWalletCardPage />} />
 
-          {/* Business Owner Routes */}
+          {/* Business Owner Routes — per-page role enforcement.
+              - business_owner: full access
+              - manager: analytics, insights, customers, map, scan (no campaigns/settings/AI)
+              - staff: scan ONLY — every other route redirects them back to /dashboard/scan */}
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['business_owner', 'manager', 'staff']}>
               <DashboardLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<OwnerDashboard />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="insights" element={<InsightsPage />} />
-            <Route path="customers" element={<CustomersPage />} />
-            <Route path="map" element={<CustomerMapPage />} />
-            <Route path="scan" element={<ScanPage />} />
-            <Route path="campaigns" element={<CampaignsPage />} />
-            <Route path="ai-assistant" element={<AIAssistantPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route index element={
+              <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+                <OwnerDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="analytics" element={
+              <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+                <AnalyticsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="insights" element={
+              <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+                <InsightsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="customers" element={
+              <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+                <CustomersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="map" element={
+              <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+                <CustomerMapPage />
+              </ProtectedRoute>
+            } />
+            {/* Scan is the ONE page staff can reach. */}
+            <Route path="scan" element={
+              <ProtectedRoute allowedRoles={['business_owner', 'manager', 'staff']}>
+                <ScanPage />
+              </ProtectedRoute>
+            } />
+            <Route path="campaigns" element={
+              <ProtectedRoute allowedRoles={['business_owner']}>
+                <CampaignsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="ai-assistant" element={
+              <ProtectedRoute allowedRoles={['business_owner']}>
+                <AIAssistantPage />
+              </ProtectedRoute>
+            } />
+            <Route path="settings" element={
+              <ProtectedRoute allowedRoles={['business_owner']}>
+                <SettingsPage />
+              </ProtectedRoute>
+            } />
           </Route>
 
           {/* Super Admin Routes */}
