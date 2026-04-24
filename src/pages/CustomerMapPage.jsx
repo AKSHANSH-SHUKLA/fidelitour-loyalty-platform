@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ownerAPI } from '../lib/api';
 import {
   X, MapPin, Users, Euro, TrendingUp, TrendingDown, Award,
   Search, ChevronRight, ChevronDown, Building2, Activity,
-  Compass, ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
+  Compass, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Megaphone,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 
@@ -59,22 +60,43 @@ const projectToSVG = (lat, lng) => {
 
 // --------------------- Main page ---------------------
 export default function CustomerMapPage() {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDept, setSelectedDept] = useState(null);     // e.g. "37"
   const [expandedPostals, setExpandedPostals] = useState(new Set()); // postal codes whose customer list is open
+  // Filters
   const [tierFilter, setTierFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('');
+  const [regionFilter, setRegionFilter] = useState('all');   // 'all' | 'N' | 'S' | 'E' | 'W'
+  const [minVisits, setMinVisits] = useState('');
+  const [minAmountPaid, setMinAmountPaid] = useState('');
   const [search, setSearch] = useState('');
+  // Branch selector
+  const [branches, setBranches] = useState([]);
+  const [branchId, setBranchId] = useState('');               // '' = all branches
   // Full details modal — set to a customer object to open
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
+  // Load branches once so the owner can narrow the map to a single location.
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await ownerAPI.getBranches();
+        setBranches(r.data || []);
+      } catch (_e) { /* single-branch tenant — fine */ }
+    })();
+  }, []);
+
+  // Reload customers whenever the branch changes. Passing the branch to the
+  // server keeps the payload honest for per-branch analytics.
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        const res = await ownerAPI.getCustomerMap();
+        const res = await ownerAPI.getCustomerMap(branchId ? { branch_id: branchId } : {});
         setCustomers(res.data || []);
       } catch (err) {
         setError(err?.message || 'Failed to load customer map');
@@ -82,13 +104,40 @@ export default function CustomerMapPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [branchId]);
 
-  // Apply tier / source / search filters *before* grouping
+  // Global centroid of all (visible) customers — used for N/S/E/W classification.
+  const globalCenter = useMemo(() => {
+    let lat = 0, lng = 0, n = 0;
+    for (const c of customers) {
+      if (c.lat != null && c.lng != null) { lat += c.lat; lng += c.lng; n++; }
+    }
+    return n ? { lat: lat / n, lng: lng / n } : { lat: 46.5, lng: 2.5 };
+  }, [customers]);
+
+  // Apply all filters *before* grouping so department/postal aggregates reflect them.
   const filteredAll = useMemo(() => {
+    const cityQ = (cityFilter || '').trim().toLowerCase();
+    const minV = Number(minVisits) || 0;
+    const minP = Number(minAmountPaid) || 0;
     return customers.filter((c) => {
       if (tierFilter !== 'all' && c.tier !== tierFilter) return false;
       if (sourceFilter !== 'all' && c.acquisition_source !== sourceFilter) return false;
+      if (cityQ) {
+        const cityHit = (c.city || '').toLowerCase().includes(cityQ) ||
+                        (c.department_name || '').toLowerCase().includes(cityQ);
+        if (!cityHit) return false;
+      }
+      if (minV > 0 && (c.total_visits || 0) < minV) return false;
+      if (minP > 0 && (c.total_amount_paid || 0) < minP) return false;
+      if (regionFilter !== 'all' && c.lat != null && c.lng != null) {
+        const dLat = c.lat - globalCenter.lat;
+        const dLng = c.lng - globalCenter.lng;
+        let reg;
+        if (Math.abs(dLat) >= Math.abs(dLng)) reg = dLat > 0 ? 'N' : 'S';
+        else reg = dLng > 0 ? 'E' : 'W';
+        if (reg !== regionFilter) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         const hit =
@@ -99,7 +148,47 @@ export default function CustomerMapPage() {
       }
       return true;
     });
-  }, [customers, tierFilter, sourceFilter, search]);
+  }, [customers, tierFilter, sourceFilter, cityFilter, regionFilter, minVisits, minAmountPaid, search, globalCenter]);
+
+  // Clear all filters in one click — handy for the send-campaign flow.
+  const resetFilters = () => {
+    setTierFilter('all');
+    setSourceFilter('all');
+    setCityFilter('');
+    setRegionFilter('all');
+    setMinVisits('');
+    setMinAmountPaid('');
+    setSearch('');
+    setSelectedDept(null);
+    setExpandedPostals(new Set());
+  };
+
+  // Hand off the currently filtered customer IDs to the CampaignsPage composer
+  // via sessionStorage. Pre-fills the "by customers" tab with the IDs list and
+  // opens the modal automatically.
+  const sendCampaignToFiltered = () => {
+    if (filteredAll.length === 0) {
+      alert('No customers match these filters.');
+      return;
+    }
+    const hasFilter =
+      tierFilter !== 'all' || sourceFilter !== 'all' || cityFilter || regionFilter !== 'all' ||
+      minVisits || minAmountPaid || search || selectedDept || branchId;
+    const label = hasFilter
+      ? `Send campaign to ${filteredAll.length} filtered customer(s)?`
+      : `No filters are active — this will target ALL ${filteredAll.length} customers. Continue?`;
+    if (!window.confirm(label)) return;
+    const handoff = {
+      customer_ids: filteredAll.map((c) => c.id),
+      suggested_name: 'Ciblage carte clients',
+      suggested_message: 'Bonjour {first_name}, une attention particulière vous attend chez {business_name} — à très vite !',
+      source: 'push',
+    };
+    try {
+      sessionStorage.setItem('campaignHandoff', JSON.stringify(handoff));
+    } catch (_e) { /* private browsing — still navigate */ }
+    navigate('/dashboard/campaigns');
+  };
 
   // ---------- Group customers by department ----------
   const deptMap = useMemo(() => {
@@ -189,50 +278,143 @@ export default function CustomerMapPage() {
       </div>
 
       {/* Filters row */}
-      <div className="bg-white border border-[#E7E5E4] rounded-xl p-4 flex flex-wrap items-end gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-          <Search size={16} className="text-[#8B8680]" />
-          <input
-            type="text"
-            placeholder="Search customer name, email or postal code…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-3 py-2 border border-[#E7E5E4] rounded text-sm outline-none focus:border-[#B85C38]"
-          />
-        </div>
-        <div>
-          <label className="block text-xs mb-1 text-[#57534E]">Tier</label>
-          <select
-            value={tierFilter}
-            onChange={(e) => setTierFilter(e.target.value)}
-            className="px-3 py-2 rounded border border-[#E7E5E4] text-sm"
-          >
-            <option value="all">All tiers</option>
-            <option value="bronze">Bronze</option>
-            <option value="silver">Silver</option>
-            <option value="gold">Gold</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs mb-1 text-[#57534E]">Source</label>
-          <select
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            className="px-3 py-2 rounded border border-[#E7E5E4] text-sm"
-          >
-            <option value="all">All sources</option>
-            {Object.entries(SOURCE_BADGES).map(([k, v]) => (
-              <option key={k} value={k}>{v.emoji} {v.label}</option>
-            ))}
-          </select>
-        </div>
-        {selectedDept && (
+      <div className="bg-white border border-[#E7E5E4] rounded-xl p-4 space-y-3">
+        {/* Row 1 — branch selector (if multi-branch) + search + send-campaign CTA */}
+        <div className="flex flex-wrap items-center gap-3">
+          {branches.length > 1 && (
+            <div className="flex items-center gap-2 bg-[#F3EFE7] border border-[#E7E5E4] rounded-lg px-3 py-2">
+              <Building2 size={14} className="text-[#B85C38]" />
+              <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Branch</label>
+              <select
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className="text-sm bg-transparent outline-none"
+              >
+                <option value="">All branches</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name || b.id}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+            <Search size={16} className="text-[#8B8680]" />
+            <input
+              type="text"
+              placeholder="Search customer name, email or postal code…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 px-3 py-2 border border-[#E7E5E4] rounded text-sm outline-none focus:border-[#B85C38]"
+            />
+          </div>
           <button
-            onClick={() => { setSelectedDept(null); setExpandedPostals(new Set()); }}
-            className="px-3 py-2 rounded border border-[#B85C38] text-[#B85C38] text-sm flex items-center gap-1 bg-white hover:bg-[#FEF2F0]"
+            onClick={sendCampaignToFiltered}
+            disabled={filteredAll.length === 0}
+            className="px-4 py-2 rounded-lg text-sm font-bold text-white flex items-center gap-2 disabled:opacity-40 transition"
+            style={{ backgroundColor: '#B85C38' }}
+            title="Send a campaign to the customers currently shown"
           >
-            <X size={14} /> Clear {selectedDept}
+            <Megaphone size={16} />
+            Send campaign to {filteredAll.length}
           </button>
+        </div>
+
+        {/* Row 2 — tier / source / city / region / min visits / min paid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div>
+            <label className="block text-xs mb-1 text-[#57534E]">Tier</label>
+            <select
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.target.value)}
+              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+            >
+              <option value="all">All tiers</option>
+              <option value="bronze">Bronze</option>
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs mb-1 text-[#57534E]">Source</label>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+            >
+              <option value="all">All sources</option>
+              {Object.entries(SOURCE_BADGES).map(([k, v]) => (
+                <option key={k} value={k}>{v.emoji} {v.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs mb-1 text-[#57534E]">City / département</label>
+            <input
+              type="text"
+              placeholder="Paris, Lyon, Tours…"
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs mb-1 text-[#57534E]">Region (vs. center)</label>
+            <select
+              value={regionFilter}
+              onChange={(e) => setRegionFilter(e.target.value)}
+              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+            >
+              <option value="all">All France</option>
+              <option value="N">⬆ North</option>
+              <option value="S">⬇ South</option>
+              <option value="E">➡ East</option>
+              <option value="W">⬅ West</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs mb-1 text-[#57534E]">Min visits</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              placeholder="0"
+              value={minVisits}
+              onChange={(e) => setMinVisits(e.target.value)}
+              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs mb-1 text-[#57534E]">Min amount paid (€)</label>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              value={minAmountPaid}
+              onChange={(e) => setMinAmountPaid(e.target.value)}
+              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Row 3 — active filter summary + clear */}
+        {(tierFilter !== 'all' || sourceFilter !== 'all' || cityFilter || regionFilter !== 'all' ||
+          minVisits || minAmountPaid || search || selectedDept) && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-[#57534E]">
+            <span className="font-semibold">Showing {filteredAll.length} customer{filteredAll.length === 1 ? '' : 's'}:</span>
+            {tierFilter !== 'all' && <Chip>Tier: {tierFilter}</Chip>}
+            {sourceFilter !== 'all' && <Chip>Source: {SOURCE_BADGES[sourceFilter]?.label || sourceFilter}</Chip>}
+            {cityFilter && <Chip>City: {cityFilter}</Chip>}
+            {regionFilter !== 'all' && <Chip>Region: {regionFilter}</Chip>}
+            {Number(minVisits) > 0 && <Chip>Min visits: {minVisits}</Chip>}
+            {Number(minAmountPaid) > 0 && <Chip>Min paid: €{minAmountPaid}</Chip>}
+            {search && <Chip>"{search}"</Chip>}
+            {selectedDept && <Chip>Dept {selectedDept}</Chip>}
+            <button onClick={resetFilters} className="ml-2 px-2 py-1 rounded border border-[#E7E5E4] hover:bg-[#FEF2F0]">
+              <X size={12} className="inline -mt-0.5" /> Clear all
+            </button>
+          </div>
         )}
       </div>
 
@@ -796,8 +978,8 @@ function CustomerDetailsModal({ customer, onClose }) {
             <MiniStat label="Visits" value={c.total_visits ?? 0} />
             <MiniStat label="Points" value={c.points ?? 0} />
             <MiniStat
-              label="Wallet pass"
-              value={c.pass_issued ? 'Issued' : 'Not issued'}
+              label="Avg ticket"
+              value={c.total_visits > 0 ? `€${((c.total_amount_paid || 0) / c.total_visits).toFixed(2)}` : '—'}
             />
           </div>
 
@@ -859,6 +1041,15 @@ function Row({ label, value }) {
       <span className="text-xs text-[#8B8680] min-w-[90px]">{label}</span>
       <span className="text-sm text-[#1C1917] text-right break-all">{value}</span>
     </div>
+  );
+}
+
+// Small filter-chip used in the active-filters bar above the map.
+function Chip({ children }) {
+  return (
+    <span className="px-2 py-0.5 rounded-full bg-[#F3EFE7] border border-[#E7E5E4] text-[11px]">
+      {children}
+    </span>
   );
 }
 

@@ -672,6 +672,69 @@ export default function CampaignsPage() {
           );
         })()}
 
+        {/* Scheduled campaigns — upcoming sends with cancel controls */}
+        {scheduledCampaigns.length > 0 && (
+          <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E7E5E4' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CalendarClock size={18} style={{ color: '#B85C38' }} />
+                <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                  Scheduled campaigns ({scheduledCampaigns.length})
+                </h2>
+              </div>
+              <button
+                onClick={fetchScheduled}
+                disabled={scheduledLoading}
+                className="text-xs text-[#B85C38] font-semibold hover:underline disabled:opacity-50"
+              >
+                {scheduledLoading ? 'Refreshing…' : 'Refresh'}
+              </button>
+            </div>
+            <div className="space-y-2">
+              {scheduledCampaigns
+                .filter((s) => s.status === 'scheduled')
+                .sort((a, b) => new Date(a.run_at) - new Date(b.run_at))
+                .map((s) => {
+                  const when = s.run_at ? new Date(s.run_at) : null;
+                  const whenLabel = when && !isNaN(when)
+                    ? when.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                    : '—';
+                  return (
+                    <div key={s.id} className="p-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4] flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-[#1C1917] truncate">{s.name}</span>
+                          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B85C38] text-white">
+                            {s.source || 'push'}
+                          </span>
+                          {s.recurrence && (
+                            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E3A869] text-white">
+                              Repeats {s.recurrence}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#57534E] mt-0.5">
+                          <CalendarClock size={11} className="inline -mt-0.5 mr-1" />
+                          Fires {whenLabel}
+                        </p>
+                        {s.content && (
+                          <p className="text-xs text-[#8B8680] mt-1 line-clamp-1">{s.content}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => cancelScheduled(s.id)}
+                        className="px-3 py-1.5 rounded border border-red-300 text-red-700 text-xs font-semibold flex items-center gap-1 hover:bg-red-50"
+                        title="Cancel this scheduled campaign"
+                      >
+                        <Trash2 size={12} /> Cancel
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         {/* Unread Campaign Warnings */}
         {!loading && campaigns.length > 0 && (() => {
           const lowOpenRateCampaigns = campaigns.filter(
@@ -943,11 +1006,72 @@ export default function CampaignsPage() {
                 </div>
               </div>
 
+              {/* Send timing — Send now vs. Schedule for later */}
+              <div className="border-t pt-6" style={{ borderColor: '#E7E5E4' }}>
+                <label className="block text-sm font-semibold mb-3" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                  When should this go out?
+                </label>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setSendMode('now')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold border flex items-center gap-2 transition ${
+                      sendMode === 'now' ? 'bg-[#B85C38] text-white border-[#B85C38]' : 'bg-white text-[#57534E] border-[#E7E5E4]'
+                    }`}
+                  >
+                    <Send size={14} /> Send now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSendMode('schedule')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold border flex items-center gap-2 transition ${
+                      sendMode === 'schedule' ? 'bg-[#B85C38] text-white border-[#B85C38]' : 'bg-white text-[#57534E] border-[#E7E5E4]'
+                    }`}
+                  >
+                    <CalendarClock size={14} /> Schedule for later
+                  </button>
+                </div>
+                {sendMode === 'schedule' && (
+                  <div className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4] space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Send date & time</label>
+                        <input
+                          type="datetime-local"
+                          value={scheduleAt}
+                          onChange={(e) => setScheduleAt(e.target.value)}
+                          className="w-full px-3 py-2 rounded border border-[#E7E5E4] text-sm bg-white"
+                        />
+                        <p className="text-[11px] text-[#8B8680] mt-1">Local time — stored as UTC on the server.</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Repeat (optional)</label>
+                        <select
+                          value={scheduleRecurrence}
+                          onChange={(e) => setScheduleRecurrence(e.target.value)}
+                          className="w-full px-3 py-2 rounded border border-[#E7E5E4] text-sm bg-white"
+                        >
+                          <option value="">No — one-off send</option>
+                          <option value="daily">Every day</option>
+                          <option value="weekly">Every week</option>
+                          <option value="monthly">Every month</option>
+                        </select>
+                      </div>
+                    </div>
+                    <p className="text-xs text-[#57534E]">
+                      {scheduleRecurrence
+                        ? `The campaign will fire at the chosen time and repeat ${scheduleRecurrence}. Cancel anytime from "Scheduled campaigns".`
+                        : 'The campaign will fire at the chosen time and then finish.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* By Customers Mode */}
               {selectedCampaignTab === 'by-customers' && (
                 <div className="p-4 rounded border-2" style={{ borderColor: '#E3A869', backgroundColor: '#F3EFE7' }}>
                   <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Customer Names or Emails (one per line)
+                    Customer Names, Emails, or IDs (one per line)
                   </label>
                   <textarea
                     value={campaignCustomers}
@@ -958,7 +1082,8 @@ export default function CampaignsPage() {
                     style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
                   />
                   <p className="text-xs text-[#57534E] mt-2" style={{ fontFamily: 'Manrope' }}>
-                    Enter customer names or email addresses, one per line
+                    Enter customer names, email addresses, or IDs (one per line). The map
+                    "Send campaign" button pre-fills this with the filtered IDs.
                   </p>
                 </div>
               )}
@@ -1092,10 +1217,10 @@ export default function CampaignsPage() {
               </button>
               <button
                 onClick={handleCreateCampaign}
-                className="px-6 py-2 rounded-lg font-semibold text-white transition"
+                className="px-6 py-2 rounded-lg font-semibold text-white transition flex items-center gap-2"
                 style={{ backgroundColor: '#B85C38' }}
               >
-                Create Campaign
+                {sendMode === 'schedule' ? (<><CalendarClock size={16} /> Schedule Campaign</>) : 'Create Campaign'}
               </button>
             </div>
           </div>

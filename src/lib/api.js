@@ -70,7 +70,7 @@ export const ownerAPI = {
   getHighestPaying: (params) => api.get('/owner/analytics/highest-paying', { params }),
   getAcquisitionSources: (params) => api.get('/owner/analytics/acquisition-sources', { params }),
   getAnalyticsSummary: (params) => api.get('/owner/analytics/summary', { params }),
-  getCustomerMap: () => api.post('/owner/customers/map'),
+  getCustomerMap: (params) => api.post('/owner/customers/map', null, { params }),
   sendCampaignToGroup: (data) => api.post('/owner/campaigns/send-to-group', data),
   getCampaignTracking: (id) => api.get('/owner/campaigns/' + id + '/tracking'),
   // --- 12 new insight endpoints ---

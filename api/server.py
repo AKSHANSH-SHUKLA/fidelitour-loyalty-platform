@@ -2731,9 +2731,23 @@ def delete_wallet_card(barcode_id: str):
 # ========================
 
 @app.post("/api/owner/customers/map")
-def get_customers_map(token_data: TokenData = Depends(require_role(["business_owner"]))):
-    """Get customers with approximated lat/lng + department for France-wide map display."""
-    customers = list(db.customers.find({"tenant_id": token_data.tenant_id}))
+def get_customers_map(
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+    branch_id: Optional[str] = Query(None),
+):
+    """Get customers with approximated lat/lng + department for France-wide map display.
+
+    Honors optional `branch_id` so the map reflects only that branch's customers.
+    Calls the branch backfill once so filtering to a branch returns real rows
+    even when customers were created without one (seed data, old signups).
+    """
+    # Backfill branch assignments on the first call — idempotent.
+    _ensure_branch_assignments(token_data.tenant_id)
+
+    q = {"tenant_id": token_data.tenant_id}
+    if branch_id:
+        q["branch_id"] = branch_id
+    customers = list(db.customers.find(q))
     result = []
 
     for cust in customers:
