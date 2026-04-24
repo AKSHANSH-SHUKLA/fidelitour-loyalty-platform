@@ -10,6 +10,7 @@ from models import (
     UserInDB, UserCreate, Tenant, Customer, Visit, CardTemplate, Campaign, PaymentTransaction, AIQueryRequest,
     PLAN_FEATURES, PLAN_PRICES, TierDesign,
     CardPromotion, CardDetails, CardTypedNotification,
+    Review,
 )
 from auth import (
     hash_password, verify_password, create_access_token, get_current_user_data,
@@ -3578,6 +3579,33 @@ def get_analytics_summary(
     # VIP count (new top tier)
     vip_count = sum(1 for c in customers if (c.get("tier") or "").lower() == "vip")
 
+    # --- Reviews roll-up — headline numbers for KPI tiles ---
+    review_q = {"tenant_id": t_id}
+    if branch_id:
+        review_q["branch_id"] = branch_id
+    try:
+        review_docs = list(db.reviews.find(review_q, {"rating": 1, "sentiment": 1, "created_at": 1}))
+        total_reviews = len(review_docs)
+        if total_reviews:
+            avg_rating = round(sum(int(r.get("rating", 0) or 0) for r in review_docs) / total_reviews, 2)
+            negative_reviews = sum(1 for r in review_docs if int(r.get("rating", 0) or 0) <= 4)
+            negative_pct = round(negative_reviews / total_reviews * 100, 1)
+            pos_r = sum(1 for r in review_docs if r.get("sentiment") == "positive")
+            neg_r = sum(1 for r in review_docs if r.get("sentiment") == "negative")
+            sentiment_score_pct = round(((pos_r - neg_r) / total_reviews) * 100, 1)
+            reviews_last_30 = sum(1 for r in review_docs if r.get("created_at") and r["created_at"] >= now - timedelta(days=30))
+        else:
+            avg_rating = None
+            negative_pct = 0.0
+            sentiment_score_pct = 0
+            reviews_last_30 = 0
+    except Exception:
+        total_reviews = 0
+        avg_rating = None
+        negative_pct = 0.0
+        sentiment_score_pct = 0
+        reviews_last_30 = 0
+
     return {
         "highest_paying": highest_paying_list,
         "total_cards_filled": total_cards_filled,
@@ -3597,6 +3625,12 @@ def get_analytics_summary(
         "rewards_redeemed_total": rewards_total,
         "birthdays_this_month_count": birthdays_this_month_count,
         "vip_count": vip_count,
+        # Reviews — headline KPIs for the Dashboard/Analytics tiles
+        "total_reviews": total_reviews,
+        "average_rating": avg_rating,                       # /10, null if no reviews yet
+        "negative_review_rate_pct": negative_pct,           # % at 1-4 / 10
+        "sentiment_score_pct": sentiment_score_pct,         # -100 .. +100
+        "reviews_last_30d": reviews_last_30,
     }
 
 @app.post("/api/owner/branches")
@@ -4280,6 +4314,414 @@ def track_push_dismiss(campaign_id: str):
 # per-customer visit history · time-of-day segments · proximity push ·
 # saved segments
 # ========================================================================
+
+# ========================================================================
+# REVIEWS — ratings, sentiment, topic clustering
+# ========================================================================
+#
+# Customers rate a visit on a 1–10 scale and optionally leave free text.
+# On submit we run a lexicon-based sentiment scorer + topic classifier over
+# the text. Both are deterministic and self-contained so the numbers are
+# reproducible and don't depend on an external API.
+#
+# Sentiment lexicon: positive/negative words in FR + EN, with very basic
+# negation handling ("pas bon" = negative). Not perfect but robust and
+# much better than pure rating-only analysis.
+#
+# Topic classifier: keyword sets for 5 recurring themes — service speed,
+# cleanliness, staff friendliness, price, wait time. A review mentioning a
+# keyword in a topic's set is flagged as on-topic with a confidence score
+# proportional to how many of the set appeared.
+#
+
+_REVIEW_POS_WORDS = {
+    # FR
+    "bon", "bonne", "bien", "excellent", "excellente", "super", "génial", "genial",
+    "génialissime", "parfait", "parfaite", "top", "magnifique", "délicieux", "delicieux",
+    "savoureux", "savoureuse", "savoureuses", "recommande", "rapide", "rapidement",
+    "propre", "accueillant", "accueillante", "sympathique", "sympa", "aimable",
+    "poli", "polie", "souriant", "souriante", "chaleureux", "chaleureuse",
+    "attentif", "attentionné", "professionnel", "professionnelle",
+    "qualité", "qualite", "agréable", "agreable", "merci", "adore", "adorable",
+    "fidèle", "fidele", "heureux", "heureuse", "satisfait", "satisfaite",
+    "frais", "fraîche", "fraiche", "copieux", "abordable", "raisonnable",
+    "belle", "beau",
+    # EN
+    "good", "great", "excellent", "amazing", "awesome", "lovely", "wonderful",
+    "fantastic", "perfect", "clean", "fast", "quick", "friendly", "kind",
+    "helpful", "smiling", "polite", "professional", "fresh", "delicious",
+    "tasty", "recommend", "best", "love", "loved", "nice", "happy",
+    "affordable", "cheap", "fair", "quality", "thanks", "thank",
+}
+
+_REVIEW_NEG_WORDS = {
+    # FR
+    "mauvais", "mauvaise", "horrible", "nul", "nulle", "décevant", "decevant",
+    "déçu", "decue", "déçue", "lent", "lente", "lentement", "attendre",
+    "attente", "file", "queue", "long", "longue", "sale", "sales", "saleté",
+    "salete", "dégoûtant", "degoutant", "froid", "froide", "cher", "chère",
+    "chere", "ruineux", "arrogant", "impoli", "malpoli", "désagréable",
+    "desagreable", "bruyant", "bondé", "bonde", "bordélique", "chaotique",
+    "indifférent", "indifferent", "pire", "affreux", "affreuse", "infect",
+    "trop", "beaucoup",
+    # EN
+    "bad", "terrible", "awful", "worst", "horrible", "slow", "late", "cold",
+    "rude", "dirty", "filthy", "expensive", "overpriced", "crowded", "noisy",
+    "wait", "waited", "waiting", "queue", "disappointed", "disappointing",
+    "mediocre", "stale", "wrong", "unfriendly", "unhappy", "hate", "never",
+}
+
+# Topic → keyword set. We strip accents when matching so "délai" / "delai" both hit.
+_REVIEW_TOPICS = {
+    "speed": {
+        "rapide", "rapidement", "vite", "express", "fast", "quick", "prompt", "speedy",
+        "lent", "lente", "long", "longue", "slow", "retard", "tardif", "delayed",
+    },
+    "cleanliness": {
+        "propre", "propreté", "proprete", "clean", "cleanliness", "impeccable",
+        "hygiène", "hygiene", "sale", "dirty", "filthy", "poussière", "poussiere",
+    },
+    "staff": {
+        "accueil", "accueillant", "accueillante", "personnel", "équipe", "equipe",
+        "staff", "serveur", "serveuse", "caissier", "caissière", "caissiere",
+        "friendly", "kind", "polite", "rude", "impoli", "sympathique", "sympa",
+        "arrogant", "souriant", "souriante", "smile", "smiling", "helpful",
+    },
+    "price": {
+        "prix", "cher", "chère", "chere", "coûteux", "couteux", "abordable",
+        "price", "pricing", "expensive", "cheap", "overpriced", "affordable",
+        "value", "cost", "budget", "raisonnable",
+    },
+    "wait_time": {
+        "attente", "attendre", "attendu", "attendue", "queue", "file", "patience",
+        "wait", "waiting", "waited", "line", "délai", "delai",
+    },
+}
+
+def _strip_accents(s: str) -> str:
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+
+def _detect_language(text: str) -> Optional[str]:
+    """Very lightweight FR/EN detector based on stop words."""
+    if not text: return None
+    t = " " + text.lower() + " "
+    fr = sum(1 for w in (" le ", " la ", " les ", " un ", " une ", " et ", " est ", " j'ai ", " très ", " pas ") if w in t)
+    en = sum(1 for w in (" the ", " a ", " and ", " is ", " was ", " very ", " not ", " i ") if w in t)
+    if fr == 0 and en == 0: return None
+    return "fr" if fr >= en else "en"
+
+def analyze_review_text(text: str, rating: int) -> Dict[str, Any]:
+    """Run sentiment + topic extraction on a review. Deterministic and fast.
+
+    Returns {sentiment, sentiment_score, topics, topic_scores, language}.
+    Rating is used as a tie-breaker when the text is empty or evenly split.
+    """
+    clean = (text or "").strip()
+    language = _detect_language(clean)
+    if not clean:
+        # No text → score purely from the numeric rating.
+        if rating >= 8:   return {"sentiment": "positive", "sentiment_score": 0.6, "topics": [], "topic_scores": {}, "language": language}
+        if rating <= 4:   return {"sentiment": "negative", "sentiment_score": -0.6, "topics": [], "topic_scores": {}, "language": language}
+        return {"sentiment": "neutral", "sentiment_score": 0.0, "topics": [], "topic_scores": {}, "language": language}
+
+    import re
+    # Tokenise, lowercase, strip accents + punctuation.
+    flat = _strip_accents(clean.lower())
+    tokens = re.findall(r"[a-zàâäéèêëîïôöùûüç']+", clean.lower())
+    tokens_flat = [_strip_accents(t) for t in tokens]
+
+    pos_set = {_strip_accents(w) for w in _REVIEW_POS_WORDS}
+    neg_set = {_strip_accents(w) for w in _REVIEW_NEG_WORDS}
+    negators = {"pas", "ne", "n", "not", "never", "no", "aucun", "aucune", "jamais"}
+
+    pos = neg = 0
+    for i, tok in enumerate(tokens_flat):
+        flipped = i > 0 and tokens_flat[i - 1] in negators
+        if tok in pos_set:
+            if flipped: neg += 1
+            else: pos += 1
+        elif tok in neg_set:
+            if flipped: pos += 1
+            else: neg += 1
+
+    # Score blends text signal with the numeric rating (rating is a strong prior).
+    total = pos + neg
+    text_score = ((pos - neg) / total) if total else 0.0
+    rating_score = (rating - 5.5) / 4.5        # maps 1..10 onto ~-1..+1
+    # Weighted average: text dominates when there's signal, rating anchors otherwise.
+    if total >= 3:
+        sentiment_score = round(0.7 * text_score + 0.3 * rating_score, 3)
+    elif total >= 1:
+        sentiment_score = round(0.5 * text_score + 0.5 * rating_score, 3)
+    else:
+        sentiment_score = round(rating_score, 3)
+    if sentiment_score >= 0.15:    sentiment = "positive"
+    elif sentiment_score <= -0.15: sentiment = "negative"
+    else:                          sentiment = "neutral"
+
+    # Topic classification.
+    topics = []
+    topic_scores = {}
+    for topic, keywords in _REVIEW_TOPICS.items():
+        kw_flat = {_strip_accents(k.lower()) for k in keywords}
+        hits = sum(1 for tok in tokens_flat if tok in kw_flat)
+        if hits > 0:
+            # Confidence = hits normalised by total words, capped at 1.0
+            conf = min(1.0, hits / max(3, len(tokens_flat) / 4))
+            topics.append(topic)
+            topic_scores[topic] = round(conf, 3)
+
+    return {
+        "sentiment": sentiment,
+        "sentiment_score": sentiment_score,
+        "topics": topics,
+        "topic_scores": topic_scores,
+        "language": language,
+    }
+
+
+class ReviewSubmit(BaseModel):
+    customer_id: Optional[str] = None
+    barcode_id: Optional[str] = None
+    rating: int
+    text: Optional[str] = ""
+    visit_id: Optional[str] = None
+    branch_id: Optional[str] = None
+
+
+@app.post("/api/public/reviews")
+def submit_review(req: ReviewSubmit):
+    """Customer-facing endpoint. Accepts either customer_id or barcode_id so
+    the wallet card page can post a review without the customer being logged
+    in. Rating must be 1..10; text is optional. Dedupes one review per visit.
+    """
+    if req.rating < 1 or req.rating > 10:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 10")
+    if not req.customer_id and not req.barcode_id:
+        raise HTTPException(status_code=400, detail="Provide customer_id or barcode_id")
+
+    q = {}
+    if req.customer_id:
+        q["id"] = req.customer_id
+    else:
+        q["barcode_id"] = req.barcode_id
+    cust = db.customers.find_one(q)
+    if not cust:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    # Dedupe: if a visit_id was supplied, only accept one review per visit.
+    if req.visit_id:
+        existing = db.reviews.find_one({
+            "tenant_id": cust.get("tenant_id"),
+            "customer_id": cust.get("id"),
+            "visit_id": req.visit_id,
+        })
+        if existing:
+            raise HTTPException(status_code=409, detail="You already rated this visit.")
+
+    analysis = analyze_review_text(req.text or "", req.rating)
+    review = Review(
+        id=str(uuid.uuid4()),
+        tenant_id=cust.get("tenant_id"),
+        customer_id=cust.get("id"),
+        branch_id=req.branch_id or cust.get("branch_id"),
+        visit_id=req.visit_id,
+        rating=int(req.rating),
+        text=(req.text or "").strip()[:4000],
+        sentiment=analysis["sentiment"],
+        sentiment_score=analysis["sentiment_score"],
+        topics=analysis["topics"],
+        topic_scores=analysis["topic_scores"],
+        language=analysis["language"],
+    ).model_dump()
+    db.reviews.insert_one(review)
+    review.pop("_id", None)
+    return {"status": "ok", "review": review}
+
+
+def _compute_review_kpis(query: Dict[str, Any]) -> Dict[str, Any]:
+    """Aggregate the 4 headline review KPIs + distribution + topic breakdown
+    over whatever filter the caller passes in. Used by both owner and admin
+    analytics so the numbers line up across dashboards.
+    """
+    now = datetime.now(timezone.utc)
+    thirty_ago = now - timedelta(days=30)
+    sixty_ago = now - timedelta(days=60)
+
+    # One pass over the set — reviews are small & bounded (<< 100k per tenant).
+    reviews = list(db.reviews.find(query))
+    total = len(reviews)
+    if total == 0:
+        return {
+            "total_reviews": 0,
+            "average_rating": None,
+            "rating_distribution": {str(i): 0 for i in range(1, 11)},
+            "negative_review_rate_pct": 0.0,
+            "sentiment_breakdown": {"positive": 0, "neutral": 0, "negative": 0},
+            "sentiment_score": 0,
+            "review_velocity": {"last_30d": 0, "prev_30d": 0, "delta_pct": 0.0},
+            "topic_breakdown": [],
+            "recent": [],
+        }
+
+    ratings = [int(r.get("rating", 0)) for r in reviews if r.get("rating")]
+    avg = sum(ratings) / len(ratings) if ratings else 0
+    dist = {str(i): 0 for i in range(1, 11)}
+    for r in ratings:
+        if 1 <= r <= 10:
+            dist[str(r)] += 1
+
+    # Negative review rate = % with rating ≤ 4/10 (equivalent to 1–2 / 5★).
+    neg_count = sum(1 for r in ratings if r <= 4)
+    negative_rate = (neg_count / total) * 100 if total else 0.0
+
+    # Sentiment breakdown from pre-computed field — cheap.
+    pos = sum(1 for r in reviews if r.get("sentiment") == "positive")
+    neu = sum(1 for r in reviews if r.get("sentiment") == "neutral")
+    neg = sum(1 for r in reviews if r.get("sentiment") == "negative")
+    sent_score = round(((pos - neg) / total) * 100, 1) if total else 0
+
+    # Review velocity — reviews in the last 30d vs the 30d before that.
+    last30 = sum(1 for r in reviews if r.get("created_at") and r["created_at"] >= thirty_ago)
+    prev30 = sum(1 for r in reviews if r.get("created_at") and sixty_ago <= r["created_at"] < thirty_ago)
+    delta_pct = round(((last30 - prev30) / prev30) * 100, 1) if prev30 else (100.0 if last30 else 0.0)
+
+    # Topic breakdown — count, avg rating, sentiment tilt per theme.
+    topic_agg = {t: {"count": 0, "rating_sum": 0, "pos": 0, "neg": 0} for t in _REVIEW_TOPICS.keys()}
+    for r in reviews:
+        rating_val = int(r.get("rating", 0) or 0)
+        sentiment_val = r.get("sentiment", "neutral")
+        for t in (r.get("topics") or []):
+            if t not in topic_agg: continue
+            topic_agg[t]["count"] += 1
+            topic_agg[t]["rating_sum"] += rating_val
+            if sentiment_val == "positive": topic_agg[t]["pos"] += 1
+            elif sentiment_val == "negative": topic_agg[t]["neg"] += 1
+    topic_breakdown = []
+    for t, v in topic_agg.items():
+        if v["count"] == 0: continue
+        topic_breakdown.append({
+            "topic": t,
+            "count": v["count"],
+            "mention_pct": round(v["count"] / total * 100, 1),
+            "avg_rating": round(v["rating_sum"] / v["count"], 2),
+            "positive_pct": round(v["pos"] / v["count"] * 100, 1),
+            "negative_pct": round(v["neg"] / v["count"] * 100, 1),
+        })
+    topic_breakdown.sort(key=lambda x: -x["count"])
+
+    # Recent review feed (last 10, newest first).
+    recent_reviews = sorted(
+        reviews,
+        key=lambda r: r.get("created_at") or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True,
+    )[:10]
+    recent = []
+    for r in recent_reviews:
+        recent.append({
+            "id": r.get("id"),
+            "rating": r.get("rating"),
+            "text": r.get("text", ""),
+            "sentiment": r.get("sentiment"),
+            "topics": r.get("topics", []),
+            "customer_id": r.get("customer_id"),
+            "branch_id": r.get("branch_id"),
+            "created_at": r.get("created_at"),
+        })
+
+    return {
+        "total_reviews": total,
+        "average_rating": round(avg, 2),
+        "rating_distribution": dist,
+        "negative_review_rate_pct": round(negative_rate, 1),
+        "sentiment_breakdown": {"positive": pos, "neutral": neu, "negative": neg},
+        "sentiment_score": sent_score,            # -100 to +100
+        "review_velocity": {"last_30d": last30, "prev_30d": prev30, "delta_pct": delta_pct},
+        "topic_breakdown": topic_breakdown,
+        "recent": recent,
+    }
+
+
+@app.get("/api/owner/analytics/reviews")
+def get_owner_review_analytics(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
+    """Review KPIs for the logged-in owner's tenant."""
+    q = {"tenant_id": token_data.tenant_id}
+    if branch_id:
+        q["branch_id"] = branch_id
+    return _compute_review_kpis(q)
+
+
+@app.get("/api/owner/reviews")
+def list_owner_reviews(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+    sentiment: Optional[str] = Query(None),      # positive | neutral | negative
+    topic: Optional[str] = Query(None),          # speed | cleanliness | ...
+    min_rating: Optional[int] = Query(None),
+    max_rating: Optional[int] = Query(None),
+    limit: int = Query(100),
+):
+    """List raw reviews with filters for a "manage reviews" view."""
+    q = {"tenant_id": token_data.tenant_id}
+    if branch_id: q["branch_id"] = branch_id
+    if sentiment: q["sentiment"] = sentiment
+    if topic:     q["topics"] = topic
+    if min_rating is not None: q.setdefault("rating", {})["$gte"] = int(min_rating)
+    if max_rating is not None: q.setdefault("rating", {})["$lte"] = int(max_rating)
+    rows = list(
+        db.reviews.find(q).sort("created_at", -1).limit(max(1, min(limit, 500)))
+    )
+    for r in rows:
+        r.pop("_id", None)
+        # Attach the customer name for the UI.
+        c = db.customers.find_one({"id": r.get("customer_id")}, {"name": 1, "tier": 1})
+        if c:
+            r["customer_name"] = c.get("name", "")
+            r["customer_tier"] = c.get("tier", "bronze")
+    return {"reviews": rows, "count": len(rows)}
+
+
+@app.get("/api/admin/analytics/reviews")
+def get_admin_review_analytics(
+    token_data: TokenData = Depends(require_role(["super_admin"])),
+    tenant_id: Optional[str] = Query(None),
+):
+    """Global review KPIs across all tenants + per-tenant leaderboard.
+    Filter to a single tenant by passing ?tenant_id=..."""
+    q = {}
+    if tenant_id:
+        q["tenant_id"] = tenant_id
+    kpis = _compute_review_kpis(q)
+
+    # Per-tenant leaderboard (top + bottom by average rating, min 3 reviews).
+    leaderboard = []
+    for row in db.reviews.aggregate([
+        {"$group": {
+            "_id": "$tenant_id",
+            "count": {"$sum": 1},
+            "avg": {"$avg": "$rating"},
+            "negative": {"$sum": {"$cond": [{"$lte": ["$rating", 4]}, 1, 0]}},
+        }},
+        {"$match": {"count": {"$gte": 3}}},
+        {"$sort": {"avg": -1}},
+    ]):
+        t = db.tenants.find_one({"id": row["_id"]}, {"name": 1, "slug": 1}) or {}
+        leaderboard.append({
+            "tenant_id": row["_id"],
+            "tenant_name": t.get("name", "(unknown)"),
+            "slug": t.get("slug", ""),
+            "review_count": row["count"],
+            "average_rating": round(row["avg"], 2),
+            "negative_count": row["negative"],
+            "negative_rate_pct": round((row["negative"] / row["count"]) * 100, 1),
+        })
+    kpis["leaderboard"] = leaderboard
+    return kpis
+
 
 # --- Reward redemption: record the moment a filled card is cashed in ---------
 class RedeemRewardRequest(BaseModel):

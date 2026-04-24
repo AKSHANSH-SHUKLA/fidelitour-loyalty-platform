@@ -123,6 +123,12 @@ const MyWalletCardPage = () => {
   const [tab, setTab] = useState('offers'); // offers | news | program
   const [toast, setToast] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // Rate-your-visit state
+  const [reviewRating, setReviewRating] = useState(8);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewThanks, setReviewThanks] = useState(false);
+  const [reviewError, setReviewError] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -356,6 +362,85 @@ const MyWalletCardPage = () => {
                 </div>
               </button>
             </div>
+
+            {/* Rate your visit — only shown right after a visit (<= 14 days). */}
+            {(() => {
+              const lastVisit = customer.last_visit_date ? new Date(customer.last_visit_date) : null;
+              const recentVisit = lastVisit && (Date.now() - lastVisit.getTime()) / 86400000 <= 14;
+              if (!recentVisit) return null;
+              if (reviewThanks) {
+                return (
+                  <div className="m-3 rounded-xl border border-[#4A5D23]/40 bg-[#e8f3e5] p-4 text-center">
+                    <p className="text-sm font-semibold text-[#2d5016]">Merci pour votre avis ! 🙏</p>
+                    <p className="text-xs text-[#2d5016]/80 mt-1">Votre retour aide {tenant.name} à progresser.</p>
+                  </div>
+                );
+              }
+              return (
+                <div className="m-3 rounded-xl border border-[#E3A869]/40 bg-[#FEF9E7] p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-bold text-[#1C1917]">Comment s'est passée votre visite ?</p>
+                    <span className="text-xs text-[#7B3F00]">Votre note reste anonyme</span>
+                  </div>
+                  <div className="mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[#57534E] w-4">1</span>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        value={reviewRating}
+                        onChange={(e) => setReviewRating(parseInt(e.target.value, 10))}
+                        className="flex-1 accent-[#B85C38]"
+                      />
+                      <span className="text-xs text-[#57534E] w-6">10</span>
+                    </div>
+                    <p className="text-center mt-1">
+                      <span className="text-3xl font-bold text-[#B85C38]">{reviewRating}</span>
+                      <span className="text-sm text-[#57534E]">/10</span>
+                    </p>
+                  </div>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value.slice(0, 500))}
+                    placeholder="Un mot pour l'équipe ? (optionnel — service, propreté, accueil…)"
+                    rows={2}
+                    className="w-full text-sm border border-[#E7E5E4] rounded p-2 bg-white resize-none"
+                  />
+                  {reviewError && (
+                    <p className="text-xs text-red-600 mt-2">{reviewError}</p>
+                  )}
+                  <button
+                    type="button"
+                    disabled={reviewSubmitting}
+                    onClick={async () => {
+                      try {
+                        setReviewSubmitting(true);
+                        setReviewError(null);
+                        await publicAPI.submitReview({
+                          customer_id: customer.id,
+                          barcode_id: customer.barcode_id,
+                          rating: reviewRating,
+                          text: reviewText,
+                          visit_id: customer.last_visit_id || undefined,
+                          branch_id: customer.branch_id || undefined,
+                        });
+                        setReviewThanks(true);
+                        setReviewText('');
+                      } catch (e) {
+                        setReviewError(e?.response?.data?.detail || 'Impossible d\'envoyer votre avis.');
+                      } finally {
+                        setReviewSubmitting(false);
+                      }
+                    }}
+                    className="mt-3 w-full bg-[#B85C38] text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50"
+                  >
+                    {reviewSubmitting ? 'Envoi…' : 'Envoyer mon avis'}
+                  </button>
+                </div>
+              );
+            })()}
 
             {/* Tabs */}
             <div className="flex border-t border-[#E7E5E4] bg-[#FDFBF7]">

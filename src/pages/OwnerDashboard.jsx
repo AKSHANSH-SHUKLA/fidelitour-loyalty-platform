@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Users, TrendingUp, Repeat, Award, DollarSign, Clock,
-  ArrowUpRight, ArrowDownRight, UserPlus, Activity, AlertCircle, CheckCircle2, Gift, AlertTriangle
+  ArrowUpRight, ArrowDownRight, UserPlus, Activity, AlertCircle, CheckCircle2, Gift, AlertTriangle, Star
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 
@@ -14,6 +14,7 @@ const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
 const OwnerDashboard = () => {
   const [metrics, setMetrics] = useState(null);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState(null);
@@ -46,11 +47,12 @@ const OwnerDashboard = () => {
       const analyticsParams = selectedBranch ? { branch_id: selectedBranch } : {};
 
       // Fetch all in parallel. ONE failure must NOT blank the whole dashboard.
-      const [analyticsRes, cardsRes, recoveredRes, topRes] = await Promise.allSettled([
+      const [analyticsRes, cardsRes, recoveredRes, topRes, summaryRes] = await Promise.allSettled([
         ownerAPI.getAnalytics(analyticsParams),
         ownerAPI.getCardsFilled(analyticsParams),
         ownerAPI.getRecovered({ inactive_days: 30, window_days: 30, ...analyticsParams }),
         ownerAPI.getHighestPaying(analyticsParams),
+        ownerAPI.getAnalyticsSummary(analyticsParams),
       ]);
 
       if (analyticsRes.status === 'fulfilled') {
@@ -64,6 +66,7 @@ const OwnerDashboard = () => {
           campaign_performance: [], visit_time_heatmap: {},
         });
       }
+      if (summaryRes.status === 'fulfilled') setSummary(summaryRes.value.data);
       if (cardsRes.status === 'fulfilled') setCardsFilled(cardsRes.value.data);
       if (recoveredRes.status === 'fulfilled') setRecovered(recoveredRes.value.data);
       if (topRes.status === 'fulfilled') {
@@ -315,6 +318,15 @@ const OwnerDashboard = () => {
             value={topSpender.name}
             subtitle={`€${topSpender.total_amount_paid} spent • ${topSpender.total_visits} visits`}
             color="#B85C38"
+          />
+        )}
+        {summary?.total_reviews > 0 && (
+          <KPICard
+            icon={Star}
+            title="Average Rating"
+            value={summary.average_rating != null ? `${summary.average_rating}/10` : '—'}
+            subtitle={`${summary.total_reviews} review${summary.total_reviews === 1 ? '' : 's'} · ${summary.negative_review_rate_pct}% negative`}
+            color="#E3A869"
           />
         )}
       </div>

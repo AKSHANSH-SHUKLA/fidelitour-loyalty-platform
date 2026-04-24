@@ -121,6 +121,29 @@ class Visit(BaseModel):
     visit_time: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+class Review(BaseModel):
+    """Customer review left after a visit. Rating is out of 10.
+
+    Sentiment + topics are computed server-side on submit using a French/
+    English lexicon, so the score stays consistent and doesn't need an
+    external API. Re-running the analyser on the same text is idempotent.
+    """
+    model_config = ConfigDict(extra="allow")
+    id: str
+    tenant_id: str
+    customer_id: str
+    branch_id: Optional[str] = None
+    visit_id: Optional[str] = None        # the scan this review attaches to
+    rating: int                            # 1..10
+    text: str = ""
+    sentiment: str = "neutral"             # "positive" | "neutral" | "negative"
+    sentiment_score: float = 0.0           # -1.0 .. +1.0
+    topics: List[str] = []                 # ["speed", "cleanliness", ...]
+    topic_scores: Dict[str, float] = {}    # per-topic confidence 0..1
+    language: Optional[str] = None         # "fr" | "en" | None if unknown
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class TierDesign(BaseModel):
     primary_color: str = "#B85C38"
     secondary_color: str = "#1C1917"

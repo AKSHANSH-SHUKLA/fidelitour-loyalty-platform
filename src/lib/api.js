@@ -44,6 +44,8 @@ export const adminAPI = {
   // -- Cron trigger (dev/manual) --
   triggerDailyTasks: (secret) =>
     api.post('/cron/daily-triggers' + (secret ? '?secret=' + encodeURIComponent(secret) : '')),
+  // -- Reviews (super admin: global or per-tenant) --
+  getReviewAnalytics: (params) => api.get('/admin/analytics/reviews', { params }),
 };
 
 export const ownerAPI = {
@@ -113,6 +115,9 @@ export const ownerAPI = {
   listSavedSegments: () => api.get('/owner/segments'),
   createSavedSegment: (data) => api.post('/owner/segments', data),
   deleteSavedSegment: (id) => api.delete('/owner/segments/' + id),
+  // -- Reviews & ratings --
+  getReviewAnalytics: (params) => api.get('/owner/analytics/reviews', { params }),
+  listReviews: (params) => api.get('/owner/reviews', { params }),
 };
 
 export const publicAPI = {
@@ -120,6 +125,8 @@ export const publicAPI = {
   joinProgram: (slug, data) => api.post('/join/' + slug, data),
   // -- Real-time proximity push (wallet card calls this with device GPS) --
   proximityPing: (data) => api.post('/public/proximity-ping', data),
+  // -- Customer review submission (wallet card → rate-your-visit panel) --
+  submitReview: (data) => api.post('/public/reviews', data),
 };
 
 export default api;

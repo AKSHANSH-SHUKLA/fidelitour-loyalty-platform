@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, AreaChart, Area, Legend,
 } from 'recharts';
-import { X, TrendingDown, Users, Euro, Store, MapPin, Award, Megaphone } from 'lucide-react';
+import { X, TrendingDown, Users, Euro, Store, MapPin, Award, Megaphone, Star, MessageSquare, ThumbsUp, ThumbsDown, TrendingUp, Activity } from 'lucide-react';
 
 const PLAN_COLORS = { basic: '#4A5D23', gold: '#E3A869', vip: '#B85C38', chain: '#7B3F00' };
 const TIER_COLORS = { Bronze: '#8B6914', Silver: '#C0C0C0', Gold: '#E3A869' };
@@ -28,6 +28,7 @@ const StatCard = ({ icon: Icon, label, value, sublabel, accent = '#B85C38' }) =>
 
 const AdminAnalyticsPage = () => {
   const [data, setData] = useState(null);
+  const [reviewData, setReviewData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [drill, setDrill] = useState(null); // { title, rows, columns }
@@ -37,8 +38,13 @@ const AdminAnalyticsPage = () => {
     try {
       setLoading(true);
       setLoadError(null);
-      const res = await adminAPI.getDetailedAnalytics();
-      setData(res.data);
+      const [res, rv] = await Promise.allSettled([
+        adminAPI.getDetailedAnalytics(),
+        adminAPI.getReviewAnalytics(),
+      ]);
+      if (res.status === 'fulfilled') setData(res.value.data);
+      if (rv.status === 'fulfilled') setReviewData(rv.value.data);
+      if (res.status === 'rejected') throw res.reason;
     } catch (e) {
       console.error('Failed to fetch admin analytics', e);
       setLoadError(
@@ -386,6 +392,171 @@ const AdminAnalyticsPage = () => {
           </table>
         </div>
       </section>
+
+      {/* Customer reviews — global view + per-tenant leaderboard */}
+      {reviewData && (
+        <section className="bg-white p-6 rounded-xl border border-[#E7E5E4] space-y-4">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="text-xl font-semibold text-[#1C1917] flex items-center gap-2" style={{ fontFamily: 'Cormorant Garamond' }}>
+                <Star size={20} className="text-[#E3A869]" /> Customer reviews (all tenants)
+              </h2>
+              <p className="text-xs text-[#8B8680] mt-1 max-w-3xl">
+                Every customer review across every business. Ratings are /10. Sentiment and topics
+                are computed from the text at submission time — these numbers update live as new
+                reviews come in.
+              </p>
+            </div>
+            <span className="text-xs text-[#57534E] flex items-center gap-1">
+              <MessageSquare size={14} /> {reviewData.total_reviews} total review{reviewData.total_reviews === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          {reviewData.total_reviews === 0 ? (
+            <p className="text-sm text-[#8B8680] italic">No reviews in the system yet.</p>
+          ) : (
+            <>
+              {/* 4 headline KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard
+                  icon={Star}
+                  label="Average rating"
+                  value={reviewData.average_rating != null ? `${reviewData.average_rating}/10` : '—'}
+                  sublabel="Mean across every rating submitted"
+                  accent="#E3A869"
+                />
+                <StatCard
+                  icon={ThumbsDown}
+                  label="Negative review rate"
+                  value={`${reviewData.negative_review_rate_pct}%`}
+                  sublabel="% at 1–4/10 · leading indicator of churn"
+                  accent="#B85C38"
+                />
+                <StatCard
+                  icon={ThumbsUp}
+                  label="Sentiment score"
+                  value={`${reviewData.sentiment_score > 0 ? '+' : ''}${reviewData.sentiment_score}`}
+                  sublabel="Positive % − Negative % (range -100 .. +100)"
+                  accent="#4A5D23"
+                />
+                <StatCard
+                  icon={TrendingUp}
+                  label="Review velocity"
+                  value={`${reviewData.review_velocity.last_30d}`}
+                  sublabel={`last 30d vs ${reviewData.review_velocity.prev_30d} prev · ${reviewData.review_velocity.delta_pct >= 0 ? '+' : ''}${reviewData.review_velocity.delta_pct}%`}
+                  accent="#7B3F00"
+                />
+              </div>
+
+              {/* Distribution + topic breakdown */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="border border-[#E7E5E4] rounded-lg p-4">
+                  <p className="text-sm font-bold text-[#1C1917] mb-1 flex items-center gap-2">
+                    <Star size={14} /> Rating distribution
+                  </p>
+                  <p className="text-xs text-[#8B8680] mb-3">
+                    Count of reviews at each score across all businesses.
+                  </p>
+                  <div className="space-y-1">
+                    {(() => {
+                      const dist = reviewData.rating_distribution || {};
+                      const max = Math.max(1, ...Object.values(dist).map(v => +v || 0));
+                      return [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => {
+                        const v = dist[String(n)] || 0;
+                        const pct = Math.round((v / max) * 100);
+                        const color = n >= 8 ? '#4A5D23' : n >= 5 ? '#E3A869' : '#B85C38';
+                        return (
+                          <div key={n} className="flex items-center gap-2 text-xs">
+                            <span className="w-6 text-right font-semibold text-[#1C1917]">{n}</span>
+                            <div className="flex-1 bg-[#F3EFE7] rounded h-4 overflow-hidden">
+                              <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: color }} />
+                            </div>
+                            <span className="w-10 text-right text-[#57534E]">{v}</span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+                <div className="border border-[#E7E5E4] rounded-lg p-4">
+                  <p className="text-sm font-bold text-[#1C1917] mb-1 flex items-center gap-2">
+                    <Activity size={14} /> Topic breakdown (global)
+                  </p>
+                  <p className="text-xs text-[#8B8680] mb-3">
+                    Themes customers mention most often across every business.
+                  </p>
+                  {(reviewData.topic_breakdown || []).length === 0 ? (
+                    <p className="text-xs text-[#8B8680] italic">No text mentions to cluster yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {reviewData.topic_breakdown.map((t) => {
+                        const label = {
+                          speed: '⚡ Service speed',
+                          cleanliness: '🧼 Cleanliness',
+                          staff: '🤝 Staff friendliness',
+                          price: '💶 Price / value',
+                          wait_time: '⏱ Wait time',
+                        }[t.topic] || t.topic;
+                        const avgColor = t.avg_rating >= 8 ? '#4A5D23' : t.avg_rating >= 6 ? '#E3A869' : '#B85C38';
+                        return (
+                          <div key={t.topic} className="p-2 rounded bg-[#FDFBF7] border border-[#E7E5E4]">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-semibold text-[#1C1917]">{label}</span>
+                              <span style={{ color: avgColor }} className="font-bold">
+                                {t.avg_rating}/10 · {t.count} mentions
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-[#8B8680] mt-1">
+                              {t.positive_pct}% positive · {t.negative_pct}% negative · {t.mention_pct}% of reviews
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Per-tenant leaderboard */}
+              {(reviewData.leaderboard || []).length > 0 && (
+                <div className="border border-[#E7E5E4] rounded-lg p-4">
+                  <p className="text-sm font-bold text-[#1C1917] mb-3 flex items-center gap-2">
+                    <Store size={14} /> Business rating leaderboard
+                    <span className="text-xs text-[#8B8680] font-normal">(min. 3 reviews)</span>
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-[#FDFBF7] text-[#57534E]">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-semibold">Business</th>
+                          <th className="text-right px-3 py-2 font-semibold">Avg rating</th>
+                          <th className="text-right px-3 py-2 font-semibold">Reviews</th>
+                          <th className="text-right px-3 py-2 font-semibold">Neg rate</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E7E5E4]">
+                        {reviewData.leaderboard.map((l) => {
+                          const avgColor = l.average_rating >= 8 ? '#4A5D23' : l.average_rating >= 6 ? '#E3A869' : '#B85C38';
+                          return (
+                            <tr key={l.tenant_id}>
+                              <td className="px-3 py-2 text-[#1C1917]">{l.tenant_name}</td>
+                              <td className="px-3 py-2 text-right font-bold" style={{ color: avgColor }}>
+                                {l.average_rating}/10
+                              </td>
+                              <td className="px-3 py-2 text-right text-[#57534E]">{l.review_count}</td>
+                              <td className="px-3 py-2 text-right text-[#B85C38]">{l.negative_rate_pct}%</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
 
       {/* At risk */}
       <section className="bg-white p-6 rounded-xl border border-[#E7E5E4]">

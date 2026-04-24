@@ -7,7 +7,8 @@ import {
 import {
   Users, TrendingUp, Award, Smartphone, Gift, Calendar,
   Activity, X, Trophy, ArrowDown, ArrowUp, CreditCard,
-  AlertCircle, Send, Megaphone, Clock, Building2,
+  AlertCircle, Send, Megaphone, Clock, Building2, Star,
+  MessageSquare, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 
@@ -311,6 +312,7 @@ const AnalyticsPage = () => {
   const [highestPaying, setHighestPaying] = useState([]);
   const [recovered, setRecovered] = useState(null);
   const [acquisition, setAcquisition] = useState([]);
+  const [reviewAnalytics, setReviewAnalytics] = useState(null);
 
   // Branch selector — drives every API call below
   const [branches, setBranches] = useState([]);
@@ -409,13 +411,15 @@ const AnalyticsPage = () => {
         ownerAPI.getCardsFilled(params()),
         ownerAPI.getHighestPaying(params()),
         ownerAPI.getAcquisitionSources(params()),
+        ownerAPI.getReviewAnalytics(params()),
       ]);
-      const [a, s, cf, hp, acq] = results;
+      const [a, s, cf, hp, acq, rv] = results;
       if (a.status === 'fulfilled') setAnalytics(a.value.data);
       if (s.status === 'fulfilled') setSummary(s.value.data);
       if (cf.status === 'fulfilled') setCardsFilled(cf.value.data);
       if (hp.status === 'fulfilled') setHighestPaying(hp.value.data || []);
       if (acq.status === 'fulfilled') setAcquisition(acq.value.data?.sources || []);
+      if (rv.status === 'fulfilled') setReviewAnalytics(rv.value.data);
       const allFailed = results.every((r) => r.status === 'rejected');
       if (allFailed) {
         const first = results[0];
@@ -1175,6 +1179,243 @@ const AnalyticsPage = () => {
             </button>
           </div>
         </div>
+      </section>
+
+      {/* Row 4b — Customer reviews & sentiment */}
+      <section className="bg-white border border-[#E7E5E4] rounded-xl p-6 space-y-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              Customer reviews & sentiment
+            </h3>
+            <p className="text-xs text-[#8B8680] max-w-3xl mt-1">
+              Every rating is /10. Customers leave ratings on their wallet card after a visit.
+              Sentiment and topics are computed from the review text on submit — numbers stay up to date
+              automatically whenever a new review is posted.
+            </p>
+          </div>
+          {reviewAnalytics?.total_reviews != null && (
+            <div className="flex items-center gap-2 text-xs text-[#57534E]">
+              <MessageSquare size={14} /> {reviewAnalytics.total_reviews} review{reviewAnalytics.total_reviews === 1 ? '' : 's'} total
+            </div>
+          )}
+        </div>
+
+        {reviewAnalytics && reviewAnalytics.total_reviews === 0 ? (
+          <p className="text-sm text-[#8B8680] italic">
+            No reviews yet. Once customers start rating visits from their wallet card, the KPIs will appear here.
+          </p>
+        ) : reviewAnalytics ? (
+          <>
+            {/* 4 headline KPIs with meanings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <KPICard
+                icon={Star}
+                title="Average rating"
+                value={reviewAnalytics.average_rating != null ? `${reviewAnalytics.average_rating}/10` : '—'}
+                sublabel="The mean rating across every review."
+                accent="#E3A869"
+                onClick={() => drillCustomers('All reviewers', {})}
+                segment={{ type: 'all' }}
+                openComposer={openComposer}
+                presetName="Merci pour votre avis, {first_name}"
+                presetContent="Merci d'avoir noté votre visite chez {business_name}. Continuez à nous partager votre expérience — on vous réserve une petite surprise !"
+              />
+              <KPICard
+                icon={ThumbsDown}
+                title="Negative review rate"
+                value={`${reviewAnalytics.negative_review_rate_pct}%`}
+                sublabel="% of reviews at 1–4 / 10. Leading indicator of churn."
+                accent="#B85C38"
+                onClick={async () => {
+                  try {
+                    const r = await ownerAPI.listReviews(params({ max_rating: 4, limit: 200 }));
+                    setDrill({
+                      title: 'Negative reviews (1–4 / 10)',
+                      rows: r.data?.reviews || [],
+                      columns: [
+                        { key: 'customer_name', label: 'Customer' },
+                        { key: 'rating', label: 'Rating', render: (v) => `${v}/10` },
+                        { key: 'sentiment', label: 'Sentiment' },
+                        { key: 'topics', label: 'Topics', render: (v) => (v || []).join(', ') || '—' },
+                        { key: 'text', label: 'Text', render: (v) => v || '—' },
+                        { key: 'created_at', label: 'When', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                      ],
+                    });
+                  } catch (e) { alert('Failed: ' + e.message); }
+                }}
+                segment={{ type: 'all' }}
+                openComposer={openComposer}
+                presetName="On peut mieux faire, {first_name}"
+                presetContent="Merci pour votre retour. Nous prenons note et aimerions vous inviter à revenir chez {business_name} — une attention vous attend."
+              />
+              <KPICard
+                icon={ThumbsUp}
+                title="Sentiment score"
+                value={`${reviewAnalytics.sentiment_score > 0 ? '+' : ''}${reviewAnalytics.sentiment_score}`}
+                sublabel="Positive % minus negative %. -100 = all bad, +100 = all good."
+                accent="#4A5D23"
+                onClick={async () => {
+                  try {
+                    const r = await ownerAPI.listReviews(params({ sentiment: 'negative', limit: 200 }));
+                    setDrill({
+                      title: 'Negative-sentiment reviews',
+                      rows: r.data?.reviews || [],
+                      columns: [
+                        { key: 'customer_name', label: 'Customer' },
+                        { key: 'rating', label: 'Rating', render: (v) => `${v}/10` },
+                        { key: 'text', label: 'Text', render: (v) => v || '—' },
+                        { key: 'topics', label: 'Topics', render: (v) => (v || []).join(', ') || '—' },
+                      ],
+                    });
+                  } catch (e) { alert('Failed: ' + e.message); }
+                }}
+                segment={{ type: 'all' }}
+                openComposer={openComposer}
+                presetName="Vos retours comptent, {first_name}"
+                presetContent="Votre expérience chez {business_name} compte. Dites-nous ce qu'on peut améliorer — on vous offre un petit geste à votre prochaine visite."
+              />
+              <KPICard
+                icon={TrendingUp}
+                title="Review velocity"
+                value={`${reviewAnalytics.review_velocity.last_30d}`}
+                sublabel={
+                  reviewAnalytics.review_velocity.delta_pct >= 0
+                    ? `+${reviewAnalytics.review_velocity.delta_pct}% vs. the 30 days before (${reviewAnalytics.review_velocity.prev_30d})`
+                    : `${reviewAnalytics.review_velocity.delta_pct}% vs. the 30 days before (${reviewAnalytics.review_velocity.prev_30d})`
+                }
+                accent="#7B3F00"
+                onClick={async () => {
+                  try {
+                    const r = await ownerAPI.listReviews(params({ limit: 30 }));
+                    setDrill({
+                      title: 'Recent reviews (last 30)',
+                      rows: r.data?.reviews || [],
+                      columns: [
+                        { key: 'customer_name', label: 'Customer' },
+                        { key: 'rating', label: 'Rating', render: (v) => `${v}/10` },
+                        { key: 'sentiment', label: 'Sentiment' },
+                        { key: 'text', label: 'Text', render: (v) => v || '—' },
+                        { key: 'created_at', label: 'When', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                      ],
+                    });
+                  } catch (e) { alert('Failed: ' + e.message); }
+                }}
+                segment={{ type: 'all' }}
+                openComposer={openComposer}
+                presetName="Gardez le cap, {first_name}"
+                presetContent="Nous adorons vos retours chez {business_name}. Un petit mot après votre prochaine visite ?"
+              />
+            </div>
+
+            {/* Rating distribution + topic breakdown side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+              {/* Rating distribution (1-10 histogram) */}
+              <div className="border border-[#E7E5E4] rounded-lg p-4">
+                <p className="text-sm font-bold text-[#1C1917] mb-2 flex items-center gap-2">
+                  <Star size={14} /> Rating distribution
+                </p>
+                <p className="text-xs text-[#8B8680] mb-3">
+                  How many reviews landed at each score. Bars show share of total.
+                </p>
+                <div className="space-y-1">
+                  {(() => {
+                    const dist = reviewAnalytics.rating_distribution || {};
+                    const max = Math.max(1, ...Object.values(dist).map(v => +v || 0));
+                    return [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => {
+                      const v = dist[String(n)] || 0;
+                      const pct = Math.round((v / max) * 100);
+                      const color = n >= 8 ? '#4A5D23' : n >= 5 ? '#E3A869' : '#B85C38';
+                      return (
+                        <div key={n} className="flex items-center gap-2 text-xs">
+                          <span className="w-6 text-right font-semibold text-[#1C1917]">{n}</span>
+                          <div className="flex-1 bg-[#F3EFE7] rounded h-4 overflow-hidden">
+                            <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: color }} />
+                          </div>
+                          <span className="w-8 text-right text-[#57534E]">{v}</span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+
+              {/* Topic breakdown */}
+              <div className="border border-[#E7E5E4] rounded-lg p-4">
+                <p className="text-sm font-bold text-[#1C1917] mb-2 flex items-center gap-2">
+                  <Activity size={14} /> Topic / theme breakdown
+                </p>
+                <p className="text-xs text-[#8B8680] mb-3">
+                  Which themes customers mention and the average rating per theme. Lets you see
+                  <em> why</em> ratings move — not just that they did.
+                </p>
+                {(reviewAnalytics.topic_breakdown || []).length === 0 ? (
+                  <p className="text-xs text-[#8B8680] italic">No text mentions to cluster yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {reviewAnalytics.topic_breakdown.map((t) => {
+                      const label = {
+                        speed: '⚡ Service speed',
+                        cleanliness: '🧼 Cleanliness',
+                        staff: '🤝 Staff friendliness',
+                        price: '💶 Price / value',
+                        wait_time: '⏱ Wait time',
+                      }[t.topic] || t.topic;
+                      const avgColor = t.avg_rating >= 8 ? '#4A5D23' : t.avg_rating >= 6 ? '#E3A869' : '#B85C38';
+                      return (
+                        <div key={t.topic} className="p-2 rounded bg-[#FDFBF7] border border-[#E7E5E4]">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-semibold text-[#1C1917]">{label}</span>
+                            <span style={{ color: avgColor }} className="font-bold">{t.avg_rating}/10 · {t.count} mention{t.count === 1 ? '' : 's'}</span>
+                          </div>
+                          <div className="mt-1 flex h-1.5 rounded overflow-hidden">
+                            <div style={{ width: `${t.positive_pct}%`, backgroundColor: '#4A5D23' }} />
+                            <div style={{ width: `${100 - t.positive_pct - t.negative_pct}%`, backgroundColor: '#E3A869' }} />
+                            <div style={{ width: `${t.negative_pct}%`, backgroundColor: '#B85C38' }} />
+                          </div>
+                          <p className="text-[10px] text-[#8B8680] mt-1">
+                            {t.positive_pct}% positive · {t.negative_pct}% negative · {t.mention_pct}% of reviews mention this
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent reviews feed */}
+            {(reviewAnalytics.recent || []).length > 0 && (
+              <div className="border border-[#E7E5E4] rounded-lg p-4">
+                <p className="text-sm font-bold text-[#1C1917] mb-2">Most recent reviews</p>
+                <div className="space-y-2">
+                  {reviewAnalytics.recent.map((r) => (
+                    <div key={r.id} className="p-3 rounded bg-[#FDFBF7] border border-[#E7E5E4] flex items-start gap-3">
+                      <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-white`}
+                           style={{ backgroundColor: r.rating >= 8 ? '#4A5D23' : r.rating >= 5 ? '#E3A869' : '#B85C38' }}>
+                        {r.rating}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap text-xs">
+                          <span className="font-semibold text-[#1C1917]">{r.sentiment}</span>
+                          {r.topics?.length > 0 && (
+                            <span className="text-[#8B8680]">· {r.topics.join(', ')}</span>
+                          )}
+                          <span className="text-[#8B8680] ml-auto">
+                            {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}
+                          </span>
+                        </div>
+                        {r.text && <p className="text-sm text-[#1C1917] mt-1">"{r.text}"</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-[#8B8680]">Loading review data…</p>
+        )}
       </section>
 
       {/* Row 5 — Ranking Tabs */}
