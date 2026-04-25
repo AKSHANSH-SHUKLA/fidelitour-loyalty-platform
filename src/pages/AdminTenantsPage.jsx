@@ -624,6 +624,103 @@ const AdminTenantsPage = () => {
                 </div>
               </div>
 
+              {/* Geolocalisation — SUPER ADMIN ONLY. Controls the real-time
+                   proximity-push feature. The "VIP only" toggle here restricts
+                   pushes to VIP-tier customers for this business. Owners cannot
+                   change any of this from their side. */}
+              <div>
+                <h3 className="text-lg font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
+                  Geolocalisation (admin only)
+                </h3>
+                <div className="space-y-3 bg-[#FEF9E7] border border-[#E3A869]/40 p-4 rounded-lg">
+                  <p className="text-xs text-[#7B3F00]">
+                    Real-time proximity push — the customer's wallet card page sends their GPS when opened;
+                    if they're within the geofence of a branch, they receive a "You're just nearby!" push.
+                    Toggle "VIP only" to restrict this to VIP-tier customers exclusively.
+                  </p>
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <span className="text-sm font-semibold text-[#1C1917]">Geolocalisation enabled</span>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedTenant.geo_enabled)}
+                      onChange={async (e) => {
+                        try {
+                          const res = await adminAPI.updateTenantGeo(selectedTenant.id, { geo_enabled: e.target.checked });
+                          setSelectedTenant({ ...selectedTenant, ...res.data });
+                          setTenants(tenants.map(t => t.id === selectedTenant.id ? { ...t, ...res.data } : t));
+                        } catch (err) { alert('Failed: ' + (err?.response?.data?.detail || err.message)); }
+                      }}
+                      className="w-5 h-5 accent-[#B85C38]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <span className="text-sm font-semibold text-[#1C1917]">
+                      VIP-only proximity push
+                      <span className="block text-xs font-normal text-[#57534E]">
+                        Only VIP-tier customers will receive proximity pushes. Bronze/Silver/Gold get nothing.
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      disabled={!selectedTenant.geo_enabled}
+                      checked={Boolean(selectedTenant.vip_geo_only)}
+                      onChange={async (e) => {
+                        try {
+                          const res = await adminAPI.updateTenantGeo(selectedTenant.id, { vip_geo_only: e.target.checked });
+                          setSelectedTenant({ ...selectedTenant, ...res.data });
+                          setTenants(tenants.map(t => t.id === selectedTenant.id ? { ...t, ...res.data } : t));
+                        } catch (err) { alert('Failed: ' + (err?.response?.data?.detail || err.message)); }
+                      }}
+                      className="w-5 h-5 accent-[#B85C38] disabled:opacity-40"
+                    />
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#E3A869]/40">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Radius (m)</label>
+                      <input
+                        type="number"
+                        min={50}
+                        max={5000}
+                        value={selectedTenant.geo_radius_meters ?? 500}
+                        onChange={(e) => setSelectedTenant({ ...selectedTenant, geo_radius_meters: parseInt(e.target.value, 10) || 500 })}
+                        onBlur={async (e) => {
+                          try {
+                            const val = parseInt(e.target.value, 10) || 500;
+                            const res = await adminAPI.updateTenantGeo(selectedTenant.id, { geo_radius_meters: val });
+                            setTenants(tenants.map(t => t.id === selectedTenant.id ? { ...t, ...res.data } : t));
+                          } catch (err) { alert('Failed: ' + (err?.response?.data?.detail || err.message)); }
+                        }}
+                        className="w-full px-2 py-1 border border-[#E7E5E4] rounded text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Cooldown (days)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={90}
+                        value={selectedTenant.geo_cooldown_days ?? 1}
+                        onChange={(e) => setSelectedTenant({ ...selectedTenant, geo_cooldown_days: parseInt(e.target.value, 10) || 1 })}
+                        onBlur={async (e) => {
+                          try {
+                            const val = parseInt(e.target.value, 10) || 1;
+                            const res = await adminAPI.updateTenantGeo(selectedTenant.id, { geo_cooldown_days: val });
+                            setTenants(tenants.map(t => t.id === selectedTenant.id ? { ...t, ...res.data } : t));
+                          } catch (err) { alert('Failed: ' + (err?.response?.data?.detail || err.message)); }
+                        }}
+                        className="w-full px-2 py-1 border border-[#E7E5E4] rounded text-sm"
+                      />
+                    </div>
+                  </div>
+                  {selectedTenant.geo_enabled && selectedTenant.vip_geo_only && (
+                    <div className="p-2 rounded bg-[#7B3F00] text-white text-xs">
+                      🎯 Active: only VIPs within {selectedTenant.geo_radius_meters ?? 500}m will be pinged,
+                      at most once every {selectedTenant.geo_cooldown_days ?? 1} day(s).
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Tier Distribution */}
               {selectedTenant.tier_distribution && (
                 <div>

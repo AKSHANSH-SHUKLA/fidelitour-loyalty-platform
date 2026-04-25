@@ -13,6 +13,13 @@ const SettingsPage = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
+    // Read-only view of the geolocalisation config (set by the super admin only).
+    const [geoConfig, setGeoConfig] = useState({
+        geo_enabled: false,
+        vip_geo_only: false,
+        geo_radius_meters: null,
+        geo_cooldown_days: null,
+    });
 
     useEffect(() => {
         ownerAPI.getTenant().then(res => {
@@ -22,6 +29,12 @@ const SettingsPage = () => {
                     address: res.data.address || '',
                     phone: res.data.phone || '',
                     website: res.data.website || '',
+                });
+                setGeoConfig({
+                    geo_enabled: Boolean(res.data.geo_enabled),
+                    vip_geo_only: Boolean(res.data.vip_geo_only),
+                    geo_radius_meters: res.data.geo_radius_meters ?? null,
+                    geo_cooldown_days: res.data.geo_cooldown_days ?? null,
                 });
                 // Generate join URL from slug
                 const slug = res.data.slug || 'your-business';
@@ -232,6 +245,50 @@ const SettingsPage = () => {
                                     </div>
                                 );
                             })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Geolocalisation — read-only view. Only the super-admin can change this. */}
+                <div className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-[#1C1917] flex items-center justify-center text-[#E3A869]">
+                            <MapPin className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">Geolocalisation</h2>
+                    </div>
+                    <p className="text-sm text-[#57534E] max-w-2xl mb-4">
+                        Real-time push notifications when your customers open their wallet card within range of your store.
+                        Managed by the FidéliTour admin team — contact us to adjust.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
+                        <div className={`p-4 rounded-lg border ${geoConfig.geo_enabled ? 'bg-[#e8f3e5] border-[#4A5D23]/30' : 'bg-[#F3EFE7] border-[#E7E5E4]'}`}>
+                            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: geoConfig.geo_enabled ? '#2d5016' : '#57534E' }}>
+                                Status
+                            </p>
+                            <p className="text-lg font-bold" style={{ color: geoConfig.geo_enabled ? '#2d5016' : '#8B8680' }}>
+                                {geoConfig.geo_enabled ? '✓ Enabled' : '— Disabled'}
+                            </p>
+                        </div>
+                        <div className={`p-4 rounded-lg border ${geoConfig.vip_geo_only ? 'bg-[#FEF9E7] border-[#E3A869]/40' : 'bg-[#F3EFE7] border-[#E7E5E4]'}`}>
+                            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#7B3F00]">Audience</p>
+                            <p className="text-lg font-bold text-[#7B3F00]">
+                                {geoConfig.vip_geo_only
+                                    ? '🎯 VIP tier only'
+                                    : (geoConfig.geo_enabled ? 'All customers' : '—')}
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-lg border bg-[#F3EFE7] border-[#E7E5E4]">
+                            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57534E]">Push radius</p>
+                            <p className="text-lg font-bold text-[#1C1917]">
+                                {geoConfig.geo_radius_meters ? `${geoConfig.geo_radius_meters} m` : '—'}
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-lg border bg-[#F3EFE7] border-[#E7E5E4]">
+                            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57534E]">Cooldown</p>
+                            <p className="text-lg font-bold text-[#1C1917]">
+                                {geoConfig.geo_cooldown_days != null ? `${geoConfig.geo_cooldown_days} day(s)` : '—'}
+                            </p>
                         </div>
                     </div>
                 </div>

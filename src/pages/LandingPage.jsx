@@ -1,7 +1,321 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3 } from 'lucide-react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3, Play, Sparkles } from 'lucide-react';
+
+// =====================================================================
+//  Drop-in video URL — paste a Loom / YouTube / Vimeo embed here.
+//  Examples:
+//    YouTube: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+//    Loom:    'https://www.loom.com/embed/<id>'
+//    Vimeo:   'https://player.vimeo.com/video/<id>'
+//  Leave empty (`''`) to render the polished placeholder card.
+// =====================================================================
+const VIDEO_EMBED_URL = '';
+
+/**
+ * 3D mouse-tilt video showcase. Hover the card and it tilts towards
+ * the cursor; behind it, animated gradient orbs give the illusion
+ * of depth + ambient lighting. Pure CSS 3D + Framer Motion springs,
+ * no Three.js dependency.
+ */
+function VideoShowcase3D() {
+  const cardRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  // Mouse-driven tilt — values track the cursor's normalized
+  // position over the card; springs smooth the motion.
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const tiltY = useTransform(mouseX, [-0.5, 0.5], [-12, 12]);
+  const tiltX = useTransform(mouseY, [-0.5, 0.5], [10, -10]);
+  const tiltYSpring = useSpring(tiltY, { stiffness: 200, damping: 25 });
+  const tiltXSpring = useSpring(tiltX, { stiffness: 200, damping: 25 });
+  // Glare highlight position follows the cursor
+  const glareX = useTransform(mouseX, [-0.5, 0.5], ['10%', '90%']);
+  const glareY = useTransform(mouseY, [-0.5, 0.5], ['10%', '90%']);
+
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  return (
+    <section
+      id="video-showcase"
+      className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden"
+      style={{ perspective: '1500px' }}
+    >
+      {/* Animated gradient orbs — depth/ambient lighting */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute -top-24 -left-24 w-[480px] h-[480px] rounded-full blur-3xl opacity-40 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #B85C38 0%, transparent 70%)' }}
+        animate={{ x: [0, 60, -40, 0], y: [0, -40, 30, 0], scale: [1, 1.15, 0.95, 1] }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        aria-hidden="true"
+        className="absolute top-1/3 -right-20 w-[420px] h-[420px] rounded-full blur-3xl opacity-35 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #E3A869 0%, transparent 70%)' }}
+        animate={{ x: [0, -60, 30, 0], y: [0, 50, -30, 0], scale: [1, 0.9, 1.1, 1] }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+      />
+      <motion.div
+        aria-hidden="true"
+        className="absolute bottom-0 left-1/4 w-[380px] h-[380px] rounded-full blur-3xl opacity-25 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #4A5D23 0%, transparent 70%)' }}
+        animate={{ x: [0, 40, -50, 0], y: [0, 30, -40, 0], scale: [1, 1.1, 0.9, 1] }}
+        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+      />
+
+      {/* Subtle grid texture for depth */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage: 'linear-gradient(#1C1917 1px, transparent 1px), linear-gradient(90deg, #1C1917 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 80%)',
+        }}
+      />
+
+      <div className="relative max-w-6xl mx-auto">
+        {/* Section header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-14"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#B85C38]/10 border border-[#B85C38]/20 text-[#B85C38] text-sm font-semibold mb-6">
+            <Sparkles size={14} className="animate-pulse" />
+            See it in action — 3 minutes
+          </div>
+          <h2 className="font-['Cormorant_Garamond'] text-5xl md:text-7xl font-bold leading-[1.05] tracking-tight">
+            Watch a real café <br/>
+            <span className="bg-gradient-to-r from-[#B85C38] via-[#E3A869] to-[#B85C38] bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient_4s_ease_infinite]">
+              transform overnight.
+            </span>
+          </h2>
+          <p className="mt-6 text-lg md:text-xl text-[#57534E] max-w-2xl mx-auto">
+            Customer signs up by Instagram QR. Visits 12 times. Becomes a Gold member.
+            Receives a birthday offer. Comes back. Owner watches it happen — automatically.
+          </p>
+        </motion.div>
+
+        {/* The 3D video card itself */}
+        <motion.div
+          ref={cardRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          initial={{ opacity: 0, y: 80, rotateX: 25 }}
+          whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            rotateY: tiltYSpring,
+            rotateX: tiltXSpring,
+            transformStyle: 'preserve-3d',
+          }}
+          className="relative mx-auto max-w-5xl"
+        >
+          {/* Glow halo behind the card */}
+          <div
+            aria-hidden="true"
+            className="absolute -inset-8 rounded-[40px] opacity-50 blur-3xl pointer-events-none"
+            style={{
+              background: 'conic-gradient(from 90deg, #B85C38, #E3A869, #4A5D23, #B85C38)',
+              transform: 'translateZ(-100px)',
+            }}
+          />
+
+          {/* Card frame with thick "bezel" for the 3D depth feel */}
+          <div
+            className="relative rounded-[32px] p-2 shadow-[0_30px_80px_rgba(28,25,23,0.35),0_10px_30px_rgba(184,92,56,0.2)]"
+            style={{
+              background: 'linear-gradient(135deg, #1C1917 0%, #2C2520 50%, #1C1917 100%)',
+              transform: 'translateZ(40px)',
+            }}
+          >
+            {/* Inner video surface */}
+            <div
+              className="relative aspect-video rounded-[24px] overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #2C2520 0%, #1C1917 100%)' }}
+            >
+              {VIDEO_EMBED_URL ? (
+                /* Real embed when URL is provided */
+                <iframe
+                  src={VIDEO_EMBED_URL}
+                  title="FidéliTour product walkthrough"
+                  className="absolute inset-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                /* Polished placeholder until you drop a real URL in */
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+                  {/* Decorative animated background pattern */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 opacity-30"
+                    style={{
+                      backgroundImage:
+                        'radial-gradient(circle at 30% 20%, rgba(184,92,56,0.6) 0%, transparent 40%), ' +
+                        'radial-gradient(circle at 70% 80%, rgba(227,168,105,0.5) 0%, transparent 40%), ' +
+                        'radial-gradient(circle at 50% 50%, rgba(74,93,35,0.4) 0%, transparent 50%)',
+                    }}
+                  />
+
+                  {/* Floating UI mockup elements — fake the dashboard look */}
+                  <div className="absolute top-6 left-6 right-6 flex items-center gap-3 opacity-80">
+                    <div className="w-3 h-3 rounded-full bg-red-400" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                    <div className="w-3 h-3 rounded-full bg-green-400" />
+                    <div className="ml-4 px-3 py-1 rounded bg-white/10 text-xs font-mono text-white/70">
+                      fidelitour.fr/dashboard
+                    </div>
+                  </div>
+
+                  <motion.div
+                    className="absolute top-20 left-8 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <p className="text-[10px] text-white/60 uppercase tracking-wider">Total Customers</p>
+                    <p className="text-2xl font-bold">2,847</p>
+                  </motion.div>
+                  <motion.div
+                    className="absolute top-32 right-8 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
+                    animate={{ y: [0, -8, 0] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+                  >
+                    <p className="text-[10px] text-white/60 uppercase tracking-wider">Avg Rating</p>
+                    <p className="text-2xl font-bold text-[#E3A869]">8.7/10</p>
+                  </motion.div>
+                  <motion.div
+                    className="absolute bottom-24 left-12 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+                  >
+                    <p className="text-[10px] text-white/60 uppercase tracking-wider">Repeat Rate</p>
+                    <p className="text-2xl font-bold text-[#4A5D23]">+96.3%</p>
+                  </motion.div>
+
+                  {/* The big play button */}
+                  <button
+                    onClick={() => setIsPlaying(true)}
+                    className="relative z-10 group"
+                    aria-label="Play product walkthrough video"
+                  >
+                    <span
+                      className="absolute inset-0 rounded-full bg-[#B85C38] blur-2xl opacity-60 group-hover:opacity-90 transition-opacity"
+                      aria-hidden="true"
+                    />
+                    <span className="relative flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-[#E3A869] to-[#B85C38] shadow-2xl shadow-[#B85C38]/50 group-hover:scale-110 transition-transform duration-300">
+                      {/* Pulsing rings */}
+                      <span className="absolute inset-0 rounded-full bg-[#B85C38] opacity-30 animate-ping" />
+                      <span className="absolute -inset-2 rounded-full border-2 border-[#E3A869]/40" />
+                      <Play size={36} className="text-white ml-1.5 fill-white" />
+                    </span>
+                  </button>
+
+                  <p className="relative z-10 mt-8 text-center text-white/70 text-sm uppercase tracking-[0.2em]">
+                    {isPlaying ? 'Add a Loom URL to publish' : 'Tap to preview · 3 min walkthrough'}
+                  </p>
+                </div>
+              )}
+
+              {/* Cursor-tracking glare for the 3D effect */}
+              <motion.div
+                aria-hidden="true"
+                className="absolute inset-0 rounded-[24px] pointer-events-none mix-blend-overlay opacity-50"
+                style={{
+                  background: useTransform(
+                    [glareX, glareY],
+                    ([x, y]) =>
+                      `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.35) 0%, transparent 50%)`
+                  ),
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Floating "stat" pills around the card — depth illusion */}
+          <motion.div
+            aria-hidden="true"
+            className="absolute -top-6 -left-6 hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-xl border border-[#E7E5E4]"
+            style={{ transform: 'translateZ(60px)' }}
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <span className="w-2 h-2 rounded-full bg-[#4A5D23] animate-pulse" />
+            <span className="text-sm font-semibold text-[#1C1917]">+42 visits today</span>
+          </motion.div>
+          <motion.div
+            aria-hidden="true"
+            className="absolute -bottom-4 -right-4 hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-xl border border-[#E7E5E4]"
+            style={{ transform: 'translateZ(60px)' }}
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          >
+            <span className="text-base">🎂</span>
+            <span className="text-sm font-semibold text-[#1C1917]">3 birthdays this week</span>
+          </motion.div>
+          <motion.div
+            aria-hidden="true"
+            className="absolute top-1/2 -right-12 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-[#1C1917] text-white shadow-xl"
+            style={{ transform: 'translateZ(80px)' }}
+            animate={{ x: [0, 8, 0], y: [0, -6, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          >
+            <Sparkles size={14} className="text-[#E3A869]" />
+            <span className="text-sm font-semibold">VIP just unlocked</span>
+          </motion.div>
+        </motion.div>
+
+        {/* Three quick proof points under the video */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 max-w-4xl mx-auto"
+        >
+          <div className="text-center">
+            <p className="font-['Cormorant_Garamond'] text-5xl font-bold text-[#B85C38]">25+</p>
+            <p className="text-sm text-[#57534E] mt-1">live KPIs · drill-down on every tile</p>
+          </div>
+          <div className="text-center">
+            <p className="font-['Cormorant_Garamond'] text-5xl font-bold text-[#B85C38]">12</p>
+            <p className="text-sm text-[#57534E] mt-1">one-click customer segments</p>
+          </div>
+          <div className="text-center">
+            <p className="font-['Cormorant_Garamond'] text-5xl font-bold text-[#B85C38]">0</p>
+            <p className="text-sm text-[#57534E] mt-1">manual work · automation runs while you serve</p>
+          </div>
+        </motion.div>
+      </div>
+
+      <style>{`
+        @keyframes gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
+    </section>
+  );
+}
 
 const FeatureCard = ({ icon: Icon, title, description }) => (
   <motion.div
@@ -69,12 +383,16 @@ const LandingPage = () => {
             <Link to="/register" className="bg-[#B85C38] text-white px-8 py-4 rounded-full text-lg hover:bg-[#9C4E2F] transition-all shadow-md font-semibold">
               Deploy Your System
             </Link>
-            <a href="#demo" className="bg-white border border-[#E7E5E4] text-[#1C1917] px-8 py-4 rounded-full text-lg hover:bg-[#F3EFE7] transition-all shadow-sm font-semibold">
-              Try the Interactive Demo
+            <a href="#video-showcase" className="bg-white border border-[#E7E5E4] text-[#1C1917] px-8 py-4 rounded-full text-lg hover:bg-[#F3EFE7] transition-all shadow-sm font-semibold flex items-center justify-center gap-2">
+              <Play size={18} className="text-[#B85C38] fill-[#B85C38]" />
+              Watch the 3-min walkthrough
             </a>
           </div>
         </motion.div>
       </section>
+
+      {/* 3D VIDEO SHOWCASE — drop a Loom URL into VIDEO_EMBED_URL above */}
+      <VideoShowcase3D />
 
       {/* COMPREHENSIVE FEATURES GRID */}
       <section id="features" className="py-24 bg-white border-y border-[#E7E5E4]">

@@ -9,11 +9,120 @@
  *   - AuchanEditor
  *   - LockScreenPushPreview
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
-  Eye, EyeOff, RotateCcw, Hexagon,
+  Eye, EyeOff, RotateCcw, Hexagon, Upload, X,
 } from 'lucide-react';
+
+/* ------------------------------------------------------------------ */
+/*  Local image → data URL helper                                     */
+/*                                                                    */
+/*  Lets the user pick a logo/banner from their device. We load it    */
+/*  into a canvas, cap the longest side at maxSide pixels, and emit   */
+/*  a JPEG/PNG data URL — small enough to stash directly on the       */
+/*  card template document without needing a separate file host.      */
+/* ------------------------------------------------------------------ */
+function readImageFileAsDataURL(file, { maxSide = 1200, quality = 0.85 } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(new Error('No file'));
+    if (!file.type?.startsWith('image/')) return reject(new Error('Not an image'));
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('Read failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Image decode failed'));
+      img.onload = () => {
+        // Small images: emit directly. Large images: re-render through canvas.
+        const longest = Math.max(img.width, img.height);
+        if (longest <= maxSide) {
+          resolve(reader.result);
+          return;
+        }
+        const scale = maxSide / longest;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        // Keep transparency if it's a PNG; otherwise JPEG compresses smaller.
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        try {
+          resolve(canvas.toDataURL(mime, quality));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Small "Upload from device" button paired with the existing URL text input.
+ *  - label: ignored (caller keeps their own label)
+ *  - onLoaded(dataUrl): called once the image is read + compressed
+ *  - onClear: optional callback to clear the current value
+ *  - hasValue: whether a current value exists, to show the clear button
+ *  - maxSide: pixel cap on the longest edge (default 1200)
+ */
+function LocalImageUploader({ onLoaded, onClear, hasValue, maxSide = 1200 }) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const pick = () => { setErr(''); inputRef.current?.click(); };
+  const handle = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';  // allow re-selecting the same file
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setErr('File is over 5 MB. Please pick a smaller image.');
+      return;
+    }
+    try {
+      setBusy(true);
+      const dataUrl = await readImageFileAsDataURL(file, { maxSide });
+      onLoaded?.(dataUrl);
+    } catch (ex) {
+      setErr(ex?.message || 'Upload failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <button
+        type="button"
+        onClick={pick}
+        disabled={busy}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#B85C38] text-[#B85C38] rounded text-xs font-semibold hover:bg-[#FEF2F0] disabled:opacity-50"
+      >
+        <Upload size={12} />
+        {busy ? 'Uploading…' : 'Upload from device'}
+      </button>
+      {hasValue && onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-[#8B8680] hover:text-red-600"
+          title="Clear image"
+        >
+          <X size={12} /> Clear
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        onChange={handle}
+        className="hidden"
+      />
+      {err && <span className="text-xs text-red-600">{err}</span>}
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Font catalogue                                                    */
@@ -643,12 +752,54 @@ export function AuchanEditor({ layout, onChange, ctx = {}, businessName }) {
               </div>
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Logo URL</label>
-              <input type="text" value={L.logo_url} onChange={(e) => setField('logo_url', e.target.value)} placeholder="https://…/logo.png" className="w-full border rounded px-2 py-1.5 text-sm" />
+              <label className="text-xs font-bold text-gray-500 uppercase">Logo</label>
+              <div className="flex items-start gap-3">
+                {L.logo_url && (
+                  <div className="shrink-0 w-14 h-14 rounded border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                    <img src={L.logo_url} alt="logo preview" className="max-w-full max-h-full object-contain" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={L.logo_url}
+                    onChange={(e) => setField('logo_url', e.target.value)}
+                    placeholder="Paste a URL (https://…/logo.png) or upload below"
+                    className="w-full border rounded px-2 py-1.5 text-sm"
+                  />
+                  <LocalImageUploader
+                    onLoaded={(dataUrl) => setField('logo_url', dataUrl)}
+                    onClear={() => setField('logo_url', '')}
+                    hasValue={Boolean(L.logo_url)}
+                    maxSide={600}
+                  />
+                </div>
+              </div>
             </div>
             <div className="col-span-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Banner image URL (optional)</label>
-              <input type="text" value={L.banner_image_url} onChange={(e) => setField('banner_image_url', e.target.value)} placeholder="https://…/promo.jpg" className="w-full border rounded px-2 py-1.5 text-sm" />
+              <label className="text-xs font-bold text-gray-500 uppercase">Banner image (optional)</label>
+              <div className="flex items-start gap-3">
+                {L.banner_image_url && (
+                  <div className="shrink-0 w-20 h-14 rounded border border-gray-200 bg-gray-50 overflow-hidden">
+                    <img src={L.banner_image_url} alt="banner preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={L.banner_image_url}
+                    onChange={(e) => setField('banner_image_url', e.target.value)}
+                    placeholder="Paste a URL (https://…/promo.jpg) or upload below"
+                    className="w-full border rounded px-2 py-1.5 text-sm"
+                  />
+                  <LocalImageUploader
+                    onLoaded={(dataUrl) => setField('banner_image_url', dataUrl)}
+                    onClear={() => setField('banner_image_url', '')}
+                    hasValue={Boolean(L.banner_image_url)}
+                    maxSide={1400}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
