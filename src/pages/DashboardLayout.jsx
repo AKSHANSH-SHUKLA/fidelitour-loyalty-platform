@@ -46,7 +46,10 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/insights" icon={Sparkles} label="Insights" currentPath={currentPath} />
               <NavLink to="/dashboard/customers" icon={Users} label="Customers" currentPath={currentPath} />
               <NavLink to="/dashboard/map" icon={MapPin} label="Customer Map" currentPath={currentPath} />
-              <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} />
+              {/* Scan Visit is intentionally NOT in the owner sidebar — that page
+                  is the staff workspace. Owners can still reach it by direct URL
+                  if they want to record a scan themselves, but the sidebar stays
+                  focused on the strategic tools they use day-to-day. */}
               <NavLink to="/dashboard/campaigns" icon={Megaphone} label="Campaigns" currentPath={currentPath} />
               <NavLink to="/dashboard/ai-assistant" icon={BrainCircuit} label="AI Assistant" currentPath={currentPath} />
               <NavLink to="/dashboard/settings" icon={Settings2} label="Settings" currentPath={currentPath} />

@@ -164,7 +164,8 @@ const defaultSlot = (over = {}) => ({
 export const DEFAULT_LAYOUT = {
   card_bg_color: '#FFFFFF',
   banner_bg_color: '#E30613',
-  banner_image_url: '',
+  banner_image_url: '',         // small circular image inside the textual banner
+  banner_full_image_url: '',    // full custom banner image — REPLACES the textual banner when set
   logo_url: '',
   // stamps
   stamp_style: 'hexagon',
@@ -428,25 +429,42 @@ export function AuchanPreview({ layout = DEFAULT_LAYOUT, ctx = {}, width = 380 }
       </div>
 
       {/* PROMO BANNER */}
-      <div className="mx-3 rounded-lg relative overflow-hidden flex items-center" style={{ backgroundColor: L.banner_bg_color, minHeight: 116 }}>
-        <div className="flex-1 px-3 py-2 space-y-1 relative">
-          <SlotText slot={L.slots.banner_eyebrow} ctx={ctx} />
-          <SlotText slot={L.slots.banner_subtitle} ctx={ctx} />
-          <div className="flex items-center justify-center gap-1 mt-1">
-            <div className="flex flex-col items-center">
-              <SlotText slot={L.slots.banner_title} ctx={ctx} />
-              <div className="bg-white rounded-full px-2 py-0.5 -mt-1">
-                <SlotText slot={L.slots.banner_tag} ctx={ctx} />
+      {L.banner_full_image_url ? (
+        /* Full custom banner — uploaded by the owner. Replaces the entire
+           textual banner so businesses can drop in their own pre-designed
+           promotional graphics (seasonal campaigns, agency artwork, etc.). */
+        <div
+          className="mx-3 rounded-lg overflow-hidden"
+          style={{ minHeight: 116, backgroundColor: L.banner_bg_color }}
+        >
+          <img
+            src={L.banner_full_image_url}
+            alt="banner"
+            className="w-full h-full object-cover"
+            style={{ display: 'block', minHeight: 116 }}
+          />
+        </div>
+      ) : (
+        <div className="mx-3 rounded-lg relative overflow-hidden flex items-center" style={{ backgroundColor: L.banner_bg_color, minHeight: 116 }}>
+          <div className="flex-1 px-3 py-2 space-y-1 relative">
+            <SlotText slot={L.slots.banner_eyebrow} ctx={ctx} />
+            <SlotText slot={L.slots.banner_subtitle} ctx={ctx} />
+            <div className="flex items-center justify-center gap-1 mt-1">
+              <div className="flex flex-col items-center">
+                <SlotText slot={L.slots.banner_title} ctx={ctx} />
+                <div className="bg-white rounded-full px-2 py-0.5 -mt-1">
+                  <SlotText slot={L.slots.banner_tag} ctx={ctx} />
+                </div>
               </div>
             </div>
           </div>
+          {L.banner_image_url && (
+            <div className="rounded-full bg-white overflow-hidden flex-shrink-0 mr-2 border-2 border-white shadow" style={{ width: 78, height: 78 }}>
+              <img src={L.banner_image_url} alt="promo" className="w-full h-full object-cover" />
+            </div>
+          )}
         </div>
-        {L.banner_image_url && (
-          <div className="rounded-full bg-white overflow-hidden flex-shrink-0 mr-2 border-2 border-white shadow" style={{ width: 78, height: 78 }}>
-            <img src={L.banner_image_url} alt="promo" className="w-full h-full object-cover" />
-          </div>
-        )}
-      </div>
+      )}
 
       {/* GREETING + POINTS */}
       <div className="flex justify-between items-end px-4 pt-3 pb-1">
@@ -776,8 +794,55 @@ export function AuchanEditor({ layout, onChange, ctx = {}, businessName }) {
                 </div>
               </div>
             </div>
+            {/* Full custom banner — replaces the entire textual banner.
+                The default "5€ offerts" banner is just an example design;
+                most owners will want to upload their own promo artwork. */}
+            <div className="col-span-2 p-4 rounded-lg bg-[#FEF9E7] border border-[#E3A869]/40">
+              <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider">
+                Full custom banner — your own design
+              </label>
+              <p className="text-xs text-[#7B3F00]/80 mt-1 mb-3">
+                Upload a complete banner image to replace the default "5€ offerts" design above
+                with your own artwork — seasonal promos, agency-designed graphics, anything.
+                Recommended size: ~880 × 280 px.
+              </p>
+              <div className="flex items-start gap-3">
+                {L.banner_full_image_url && (
+                  <div className="shrink-0 w-32 h-12 rounded border border-[#E3A869]/40 bg-white overflow-hidden">
+                    <img src={L.banner_full_image_url} alt="full banner preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={L.banner_full_image_url || ''}
+                    onChange={(e) => setField('banner_full_image_url', e.target.value)}
+                    placeholder="Paste a URL or upload an image below"
+                    className="w-full border rounded px-2 py-1.5 text-sm"
+                  />
+                  <LocalImageUploader
+                    onLoaded={(dataUrl) => setField('banner_full_image_url', dataUrl)}
+                    onClear={() => setField('banner_full_image_url', '')}
+                    hasValue={Boolean(L.banner_full_image_url)}
+                    maxSide={1600}
+                  />
+                  {L.banner_full_image_url && (
+                    <p className="text-[11px] text-[#7B3F00] mt-2 font-semibold">
+                      ✓ Custom banner active — the textual banner below is hidden.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="col-span-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Banner image (optional)</label>
+              <label className="text-xs font-bold text-gray-500 uppercase">
+                Small inline banner image (optional)
+              </label>
+              <p className="text-[11px] text-gray-500 mt-0.5 mb-1">
+                Used as a small circular accent inside the default textual banner.
+                Ignored when a full custom banner is uploaded above.
+              </p>
               <div className="flex items-start gap-3">
                 {L.banner_image_url && (
                   <div className="shrink-0 w-20 h-14 rounded border border-gray-200 bg-gray-50 overflow-hidden">
