@@ -1,321 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3, Play, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3 } from 'lucide-react';
+import { AuchanPreview, DEFAULT_LAYOUT } from '../components/AuchanCard';
 
-// =====================================================================
-//  Drop-in video URL — paste a Loom / YouTube / Vimeo embed here.
-//  Examples:
-//    YouTube: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
-//    Loom:    'https://www.loom.com/embed/<id>'
-//    Vimeo:   'https://player.vimeo.com/video/<id>'
-//  Leave empty (`''`) to render the polished placeholder card.
-// =====================================================================
-const VIDEO_EMBED_URL = '';
-
-/**
- * 3D mouse-tilt video showcase. Hover the card and it tilts towards
- * the cursor; behind it, animated gradient orbs give the illusion
- * of depth + ambient lighting. Pure CSS 3D + Framer Motion springs,
- * no Three.js dependency.
- */
-function VideoShowcase3D() {
-  const cardRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  // Mouse-driven tilt — values track the cursor's normalized
-  // position over the card; springs smooth the motion.
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const tiltY = useTransform(mouseX, [-0.5, 0.5], [-12, 12]);
-  const tiltX = useTransform(mouseY, [-0.5, 0.5], [10, -10]);
-  const tiltYSpring = useSpring(tiltY, { stiffness: 200, damping: 25 });
-  const tiltXSpring = useSpring(tiltX, { stiffness: 200, damping: 25 });
-  // Glare highlight position follows the cursor
-  const glareX = useTransform(mouseX, [-0.5, 0.5], ['10%', '90%']);
-  const glareY = useTransform(mouseY, [-0.5, 0.5], ['10%', '90%']);
-
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-  const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  return (
-    <section
-      id="video-showcase"
-      className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden"
-      style={{ perspective: '1500px' }}
-    >
-      {/* Animated gradient orbs — depth/ambient lighting */}
-      <motion.div
-        aria-hidden="true"
-        className="absolute -top-24 -left-24 w-[480px] h-[480px] rounded-full blur-3xl opacity-40 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #B85C38 0%, transparent 70%)' }}
-        animate={{ x: [0, 60, -40, 0], y: [0, -40, 30, 0], scale: [1, 1.15, 0.95, 1] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        aria-hidden="true"
-        className="absolute top-1/3 -right-20 w-[420px] h-[420px] rounded-full blur-3xl opacity-35 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #E3A869 0%, transparent 70%)' }}
-        animate={{ x: [0, -60, 30, 0], y: [0, 50, -30, 0], scale: [1, 0.9, 1.1, 1] }}
-        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-      />
-      <motion.div
-        aria-hidden="true"
-        className="absolute bottom-0 left-1/4 w-[380px] h-[380px] rounded-full blur-3xl opacity-25 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #4A5D23 0%, transparent 70%)' }}
-        animate={{ x: [0, 40, -50, 0], y: [0, 30, -40, 0], scale: [1, 1.1, 0.9, 1] }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-      />
-
-      {/* Subtle grid texture for depth */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{
-          backgroundImage: 'linear-gradient(#1C1917 1px, transparent 1px), linear-gradient(90deg, #1C1917 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 80%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at center, black 30%, transparent 80%)',
-        }}
-      />
-
-      <div className="relative max-w-6xl mx-auto">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.7 }}
-          className="text-center mb-14"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#B85C38]/10 border border-[#B85C38]/20 text-[#B85C38] text-sm font-semibold mb-6">
-            <Sparkles size={14} className="animate-pulse" />
-            See it in action — 3 minutes
-          </div>
-          <h2 className="font-['Cormorant_Garamond'] text-5xl md:text-7xl font-bold leading-[1.05] tracking-tight">
-            Watch a real café <br/>
-            <span className="bg-gradient-to-r from-[#B85C38] via-[#E3A869] to-[#B85C38] bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient_4s_ease_infinite]">
-              transform overnight.
-            </span>
-          </h2>
-          <p className="mt-6 text-lg md:text-xl text-[#57534E] max-w-2xl mx-auto">
-            Customer signs up by Instagram QR. Visits 12 times. Becomes a Gold member.
-            Receives a birthday offer. Comes back. Owner watches it happen — automatically.
-          </p>
-        </motion.div>
-
-        {/* The 3D video card itself */}
-        <motion.div
-          ref={cardRef}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          initial={{ opacity: 0, y: 80, rotateX: 25 }}
-          whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            rotateY: tiltYSpring,
-            rotateX: tiltXSpring,
-            transformStyle: 'preserve-3d',
-          }}
-          className="relative mx-auto max-w-5xl"
-        >
-          {/* Glow halo behind the card */}
-          <div
-            aria-hidden="true"
-            className="absolute -inset-8 rounded-[40px] opacity-50 blur-3xl pointer-events-none"
-            style={{
-              background: 'conic-gradient(from 90deg, #B85C38, #E3A869, #4A5D23, #B85C38)',
-              transform: 'translateZ(-100px)',
-            }}
-          />
-
-          {/* Card frame with thick "bezel" for the 3D depth feel */}
-          <div
-            className="relative rounded-[32px] p-2 shadow-[0_30px_80px_rgba(28,25,23,0.35),0_10px_30px_rgba(184,92,56,0.2)]"
-            style={{
-              background: 'linear-gradient(135deg, #1C1917 0%, #2C2520 50%, #1C1917 100%)',
-              transform: 'translateZ(40px)',
-            }}
-          >
-            {/* Inner video surface */}
-            <div
-              className="relative aspect-video rounded-[24px] overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, #2C2520 0%, #1C1917 100%)' }}
-            >
-              {VIDEO_EMBED_URL ? (
-                /* Real embed when URL is provided */
-                <iframe
-                  src={VIDEO_EMBED_URL}
-                  title="FidéliTour product walkthrough"
-                  className="absolute inset-0 w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                /* Polished placeholder until you drop a real URL in */
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-                  {/* Decorative animated background pattern */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 opacity-30"
-                    style={{
-                      backgroundImage:
-                        'radial-gradient(circle at 30% 20%, rgba(184,92,56,0.6) 0%, transparent 40%), ' +
-                        'radial-gradient(circle at 70% 80%, rgba(227,168,105,0.5) 0%, transparent 40%), ' +
-                        'radial-gradient(circle at 50% 50%, rgba(74,93,35,0.4) 0%, transparent 50%)',
-                    }}
-                  />
-
-                  {/* Floating UI mockup elements — fake the dashboard look */}
-                  <div className="absolute top-6 left-6 right-6 flex items-center gap-3 opacity-80">
-                    <div className="w-3 h-3 rounded-full bg-red-400" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                    <div className="w-3 h-3 rounded-full bg-green-400" />
-                    <div className="ml-4 px-3 py-1 rounded bg-white/10 text-xs font-mono text-white/70">
-                      fidelitour.fr/dashboard
-                    </div>
-                  </div>
-
-                  <motion.div
-                    className="absolute top-20 left-8 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <p className="text-[10px] text-white/60 uppercase tracking-wider">Total Customers</p>
-                    <p className="text-2xl font-bold">2,847</p>
-                  </motion.div>
-                  <motion.div
-                    className="absolute top-32 right-8 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
-                  >
-                    <p className="text-[10px] text-white/60 uppercase tracking-wider">Avg Rating</p>
-                    <p className="text-2xl font-bold text-[#E3A869]">8.7/10</p>
-                  </motion.div>
-                  <motion.div
-                    className="absolute bottom-24 left-12 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-                  >
-                    <p className="text-[10px] text-white/60 uppercase tracking-wider">Repeat Rate</p>
-                    <p className="text-2xl font-bold text-[#4A5D23]">+96.3%</p>
-                  </motion.div>
-
-                  {/* The big play button */}
-                  <button
-                    onClick={() => setIsPlaying(true)}
-                    className="relative z-10 group"
-                    aria-label="Play product walkthrough video"
-                  >
-                    <span
-                      className="absolute inset-0 rounded-full bg-[#B85C38] blur-2xl opacity-60 group-hover:opacity-90 transition-opacity"
-                      aria-hidden="true"
-                    />
-                    <span className="relative flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-[#E3A869] to-[#B85C38] shadow-2xl shadow-[#B85C38]/50 group-hover:scale-110 transition-transform duration-300">
-                      {/* Pulsing rings */}
-                      <span className="absolute inset-0 rounded-full bg-[#B85C38] opacity-30 animate-ping" />
-                      <span className="absolute -inset-2 rounded-full border-2 border-[#E3A869]/40" />
-                      <Play size={36} className="text-white ml-1.5 fill-white" />
-                    </span>
-                  </button>
-
-                  <p className="relative z-10 mt-8 text-center text-white/70 text-sm uppercase tracking-[0.2em]">
-                    {isPlaying ? 'Add a Loom URL to publish' : 'Tap to preview · 3 min walkthrough'}
-                  </p>
-                </div>
-              )}
-
-              {/* Cursor-tracking glare for the 3D effect */}
-              <motion.div
-                aria-hidden="true"
-                className="absolute inset-0 rounded-[24px] pointer-events-none mix-blend-overlay opacity-50"
-                style={{
-                  background: useTransform(
-                    [glareX, glareY],
-                    ([x, y]) =>
-                      `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.35) 0%, transparent 50%)`
-                  ),
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Floating "stat" pills around the card — depth illusion */}
-          <motion.div
-            aria-hidden="true"
-            className="absolute -top-6 -left-6 hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-xl border border-[#E7E5E4]"
-            style={{ transform: 'translateZ(60px)' }}
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <span className="w-2 h-2 rounded-full bg-[#4A5D23] animate-pulse" />
-            <span className="text-sm font-semibold text-[#1C1917]">+42 visits today</span>
-          </motion.div>
-          <motion.div
-            aria-hidden="true"
-            className="absolute -bottom-4 -right-4 hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-xl border border-[#E7E5E4]"
-            style={{ transform: 'translateZ(60px)' }}
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          >
-            <span className="text-base">🎂</span>
-            <span className="text-sm font-semibold text-[#1C1917]">3 birthdays this week</span>
-          </motion.div>
-          <motion.div
-            aria-hidden="true"
-            className="absolute top-1/2 -right-12 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-[#1C1917] text-white shadow-xl"
-            style={{ transform: 'translateZ(80px)' }}
-            animate={{ x: [0, 8, 0], y: [0, -6, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          >
-            <Sparkles size={14} className="text-[#E3A869]" />
-            <span className="text-sm font-semibold">VIP just unlocked</span>
-          </motion.div>
-        </motion.div>
-
-        {/* Three quick proof points under the video */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 max-w-4xl mx-auto"
-        >
-          <div className="text-center">
-            <p className="font-['Cormorant_Garamond'] text-5xl font-bold text-[#B85C38]">25+</p>
-            <p className="text-sm text-[#57534E] mt-1">live KPIs · drill-down on every tile</p>
-          </div>
-          <div className="text-center">
-            <p className="font-['Cormorant_Garamond'] text-5xl font-bold text-[#B85C38]">12</p>
-            <p className="text-sm text-[#57534E] mt-1">one-click customer segments</p>
-          </div>
-          <div className="text-center">
-            <p className="font-['Cormorant_Garamond'] text-5xl font-bold text-[#B85C38]">0</p>
-            <p className="text-sm text-[#57534E] mt-1">manual work · automation runs while you serve</p>
-          </div>
-        </motion.div>
-      </div>
-
-      <style>{`
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}</style>
-    </section>
-  );
-}
 
 const FeatureCard = ({ icon: Icon, title, description }) => (
   <motion.div
@@ -383,16 +71,12 @@ const LandingPage = () => {
             <Link to="/register" className="bg-[#B85C38] text-white px-8 py-4 rounded-full text-lg hover:bg-[#9C4E2F] transition-all shadow-md font-semibold">
               Deploy Your System
             </Link>
-            <a href="#video-showcase" className="bg-white border border-[#E7E5E4] text-[#1C1917] px-8 py-4 rounded-full text-lg hover:bg-[#F3EFE7] transition-all shadow-sm font-semibold flex items-center justify-center gap-2">
-              <Play size={18} className="text-[#B85C38] fill-[#B85C38]" />
-              Watch the 3-min walkthrough
+            <a href="#demo" className="bg-white border border-[#E7E5E4] text-[#1C1917] px-8 py-4 rounded-full text-lg hover:bg-[#F3EFE7] transition-all shadow-sm font-semibold">
+              Try the Interactive Demo
             </a>
           </div>
         </motion.div>
       </section>
-
-      {/* 3D VIDEO SHOWCASE — drop a Loom URL into VIDEO_EMBED_URL above */}
-      <VideoShowcase3D />
 
       {/* COMPREHENSIVE FEATURES GRID */}
       <section id="features" className="py-24 bg-white border-y border-[#E7E5E4]">
@@ -447,82 +131,108 @@ const LandingPage = () => {
             </p>
           </div>
 
-          {/* iPhone Mockup - Card Design Preview */}
-          <div className="max-w-2xl mx-auto mb-20">
+          {/* iPhone Mockup with the REAL production card — large, CaptainWallet-style */}
+          <div className="flex justify-center mb-20">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-black rounded-3xl p-3 shadow-2xl"
+              transition={{ duration: 0.7 }}
+              className="relative"
+              style={{ filter: 'drop-shadow(0 30px 60px rgba(28,25,23,0.35)) drop-shadow(0 10px 30px rgba(184,92,56,0.15))' }}
             >
-              <div className="bg-[#FDFBF7] rounded-2xl p-6 flex flex-col items-center">
-                {/* Stamp Card Version */}
-                <div className="w-full mb-8">
-                  <p className="text-center text-sm text-[#57534E] mb-4 font-medium">Stamp Overlay Style — Hexagon Collection</p>
-                  <div className="bg-white rounded-2xl p-6 border-2 border-[#B85C38] shadow-lg">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-12 h-12 rounded-full bg-[#B85C38] flex items-center justify-center text-white font-bold text-2xl">F</div>
-                      <div>
-                        <h4 className="font-['Cormorant_Garamond'] text-xl font-bold text-[#1C1917]">Your Business</h4>
-                        <p className="text-xs text-[#57534E]">Member Loyalty Card</p>
-                      </div>
-                    </div>
-                    <div className="bg-[#F3EFE7] rounded-xl p-6 mb-4">
-                      <p className="text-center text-xs text-[#57534E] mb-4 font-medium">Coffee Stamps Collected</p>
-                      <svg viewBox="0 0 240 80" className="w-full h-20">
-                        {/* Hexagons */}
-                        {[0,1,2,3,4,5,6,7,8,9].map((i) => {
-                          const x = 20 + (i % 5) * 44;
-                          const y = 20 + Math.floor(i / 5) * 50;
-                          const filled = i < 7;
-                          return (
-                            <g key={i}>
-                              <polygon
-                                points={`${x},${y-14} ${x+12},${y-7} ${x+12},${y+7} ${x},${y+14} ${x-12},${y+7} ${x-12},${y-7}`}
-                                fill={filled ? '#B85C38' : '#E7E5E4'}
-                                stroke="#1C1917"
-                                strokeWidth="0.5"
-                              />
-                              {filled && <text x={x} y={y+4} fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">☕</text>}
-                            </g>
-                          );
-                        })}
-                      </svg>
-                    </div>
-                    <p className="text-center text-xs text-[#57534E]">7 of 10 stamps collected—free reward coming soon!</p>
-                  </div>
-                </div>
+              {/* iPhone shell — generous size to host a real ~440px card */}
+              <div
+                className="relative bg-[#0A0A0A] rounded-[56px] p-3"
+                style={{ width: 480 }}
+              >
+                {/* Notch */}
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#0A0A0A] rounded-b-2xl z-10" />
 
-                {/* Points Card Version */}
-                <div className="w-full">
-                  <p className="text-center text-sm text-[#57534E] mb-4 font-medium">Dynamic Points Style</p>
-                  <div className="bg-gradient-to-br from-[#B85C38] to-[#9C4E2F] rounded-2xl p-6 text-white shadow-lg">
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <h4 className="font-['Cormorant_Garamond'] text-xl font-bold">Your Business</h4>
-                        <p className="text-xs text-white/80">Rewards Program</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-white/80">Total Points</p>
-                        <p className="text-3xl font-bold">2,450</p>
-                      </div>
-                    </div>
-                    <div className="bg-white/10 rounded-xl p-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center">
-                          <p className="text-xs text-white/80 mb-1">Tier Level</p>
-                          <p className="text-lg font-bold">Gold</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-white/80 mb-1">Next Reward</p>
-                          <p className="text-lg font-bold">500 pts</p>
-                        </div>
-                      </div>
+                {/* Screen */}
+                <div className="relative rounded-[44px] overflow-hidden bg-gradient-to-br from-[#1C1917] via-[#2C2520] to-[#1C1917]" style={{ minHeight: 880 }}>
+                  {/* Status bar */}
+                  <div className="flex items-center justify-between px-8 pt-5 pb-3 text-white text-sm font-semibold">
+                    <span>9:41</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-xs">5G</span>
+                      <span>●●●●</span>
+                      <span>🔋</span>
+                    </span>
+                  </div>
+
+                  {/* Subtle ambient glow behind the card */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] rounded-full opacity-40 blur-3xl pointer-events-none"
+                    style={{ background: 'radial-gradient(circle, #B85C38 0%, transparent 70%)' }}
+                  />
+
+                  {/* The actual production loyalty card */}
+                  <div className="relative flex justify-center pt-6 pb-10">
+                    <AuchanPreview
+                      layout={DEFAULT_LAYOUT}
+                      ctx={{
+                        first_name: 'Sophie',
+                        name: 'Sophie Dupont',
+                        points: '12.40',
+                        business_name: 'Café Lumière',
+                        birthday: '12 Mai',
+                        stamps_earned: 7,
+                        stamps_target: 10,
+                      }}
+                      width={440}
+                    />
+                  </div>
+
+                  {/* Footer hint inside the phone */}
+                  <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+                    <div className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
+                      <p className="text-xs text-white/70 tracking-wider uppercase">Apple Wallet · Google Wallet</p>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Floating proof labels around the phone for that CaptainWallet/marketing feel */}
+              <motion.div
+                aria-hidden="true"
+                className="absolute -left-20 top-32 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-xl border border-[#E7E5E4]"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <span className="w-2 h-2 rounded-full bg-[#4A5D23] animate-pulse" />
+                <span className="text-sm font-semibold text-[#1C1917]">Live updates</span>
+              </motion.div>
+              <motion.div
+                aria-hidden="true"
+                className="absolute -right-24 top-64 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-[#1C1917] text-white shadow-xl"
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+              >
+                <span className="text-base">🎂</span>
+                <span className="text-sm font-semibold">Birthday offer queued</span>
+              </motion.div>
+              <motion.div
+                aria-hidden="true"
+                className="absolute -left-16 bottom-40 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-[#B85C38] text-white shadow-xl"
+                animate={{ x: [0, 6, 0], y: [0, -4, 0] }}
+                transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+              >
+                <span className="text-sm font-semibold">+1 stamp</span>
+              </motion.div>
             </motion.div>
+          </div>
+
+          {/* Caption row — explains what the customer sees, no marketing fluff */}
+          <div className="max-w-3xl mx-auto mb-20 text-center">
+            <p className="text-sm uppercase tracking-[0.2em] text-[#B85C38] font-bold mb-3">
+              The exact card your customers see
+            </p>
+            <p className="text-lg text-[#57534E] leading-relaxed">
+              Logo, promo banner, greeting, points balance, stamp progress, and a working barcode —
+              all rendered live from your business data. Every element is fully customisable from the
+              Card Designer in your dashboard.
+            </p>
           </div>
 
           {/* Demo Dashboard Section */}
@@ -675,7 +385,7 @@ const LandingPage = () => {
         <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold text-center mb-4">Transparent Software Pricing</h2>
         <p className="text-center text-[#57534E] mb-16 max-w-2xl mx-auto text-lg">No hidden implementation fees. Predictable SaaS scaling designed for independently owned operators up to regional chains.</p>
 
-        <div className="grid lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {/* Basic */}
           <div className="bg-white p-10 rounded-3xl border border-[#E7E5E4] shadow-sm flex flex-col">
             <h3 className="text-2xl font-bold mb-2">Basic Protocol</h3>
@@ -718,26 +428,6 @@ const LandingPage = () => {
               <li>• Raw Database CSV Extraction</li>
             </ul>
             <Link to="/register" className="block text-center w-full bg-[#F3EFE7] text-[#1C1917] font-semibold px-6 py-4 rounded-xl hover:bg-[#E7E5E4] transition-colors">Upgrade to VIP</Link>
-          </div>
-
-          {/* Chain */}
-          <div className="bg-gradient-to-br from-[#2C2420] to-[#1C1917] text-white p-10 rounded-3xl shadow-2xl flex flex-col border-2 border-[#D4A574]">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#D4A574] text-[#1C1917] text-sm font-bold px-6 py-2 rounded-full shadow-lg">
-              PREMIUM TIER
-            </div>
-            <h3 className="text-2xl font-bold mb-2 pt-2">Chain</h3>
-            <p className="text-xs text-white/70 mb-6">For multi-location businesses</p>
-            <p className="text-4xl font-bold text-white mb-6">€349<span className="text-lg text-white/70 font-medium">/mo</span></p>
-            <ul className="mb-8 space-y-4 flex-1 text-white/80">
-              <li>• Everything in VIP</li>
-              <li>• Up to 50,000 Customers</li>
-              <li>• 300 Campaigns / mo</li>
-              <li>• 50 AI Queries / day</li>
-              <li>• Multi-branch Support</li>
-              <li>• Aggregated Analytics</li>
-              <li>• Dedicated Support</li>
-            </ul>
-            <Link to="/register" className="block text-center w-full bg-[#D4A574] text-[#1C1917] font-semibold px-6 py-4 rounded-xl hover:bg-[#E4B584] transition-colors shadow-lg">Contact Sales</Link>
           </div>
         </div>
       </section>
