@@ -794,6 +794,205 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ───────────── GEOLOCATION DEMO — animated map + push notification ───────────── */}
+      <section id="geo" className="relative py-20 lg:py-28 overflow-hidden"
+               style={{ background: `linear-gradient(135deg, ${C.cream} 0%, ${C.meadow} 100%)` }}>
+        <motion.div aria-hidden="true" className="absolute top-1/3 -left-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-40 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.sage} 0%, transparent 70%)` }}
+                    animate={{ x: [0, 50, 0], y: [0, -30, 0] }} transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }} />
+        <motion.div aria-hidden="true" className="absolute bottom-0 right-0 w-[450px] h-[450px] rounded-full blur-3xl opacity-30 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.teal} 0%, transparent 70%)` }}
+                    animate={{ x: [0, -40, 0], y: [0, 30, 0] }} transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 3 }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+          {/* LEFT — copy */}
+          <div>
+            <Eyebrow color={C.sage} bg={C.meadow}>Real-time geolocation</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight mb-6">
+              When your VIP walks past,<br/>
+              <span style={{ color: C.sage }}>they get a friendly nudge.</span>
+            </h2>
+            <p className="text-lg leading-relaxed mb-8" style={{ color: C.inkMute }}>
+              Configure a geofence around your store. The moment a customer with their wallet card
+              opens their phone within range, an automatic personalised offer appears — no app to install,
+              no friction. You stay top-of-mind exactly when it matters.
+            </p>
+
+            <div className="space-y-4">
+              {[
+                { color: C.sage,     icon: '📍', title: 'Configurable radius', body: 'From 50m to 2km — your choice. Default 500m, perfect for café-bound walkers.' },
+                { color: C.lavender, icon: '👑', title: 'VIP-only opt-in', body: 'Restrict pushes to your most valuable tier — exclusivity that customers love.' },
+                { color: C.sky,      icon: '⏱', title: 'Cooldown protection', body: 'Customer gets max 1 nudge per X days. No spam, ever. You set the cadence.' },
+                { color: C.coral,    icon: '🤫', title: 'Silent on the back-end', body: 'No customer prompts, no permission popups beyond the initial signup. It just works.' },
+              ].map((item) => (
+                <div key={item.title} className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                       style={{ background: 'white', boxShadow: `0 4px 12px ${item.color}40`, border: `1px solid ${item.color}30` }}>
+                    {item.icon}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: C.inkDeep }}>{item.title}</p>
+                    <p className="text-sm" style={{ color: C.inkMute }}>{item.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT — animated map demo */}
+          <div className="flex justify-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="relative w-full max-w-[460px]"
+            >
+              {/* Multi-color halo */}
+              <div aria-hidden="true" className="absolute -inset-8 rounded-[40px] opacity-40 blur-3xl pointer-events-none"
+                   style={{ background: `conic-gradient(from 90deg, ${C.sage}, ${C.teal}, ${C.sky}, ${C.lavender}, ${C.sage})` }} />
+
+              {/* Map "card" */}
+              <div className="relative bg-white rounded-3xl shadow-2xl border overflow-hidden"
+                   style={{ borderColor: C.hairline, boxShadow: `0 30px 60px -15px rgba(28,25,23,0.30)` }}>
+                {/* Map header bar */}
+                <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: C.hairline, background: C.sand }}>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.inkMute }}>📍 Café Lumière · 14h32</span>
+                  <span className="flex items-center gap-1.5 text-xs" style={{ color: C.sage }}>
+                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.sage }} />
+                    Live geofence
+                  </span>
+                </div>
+
+                {/* Map canvas with stylized streets */}
+                <div className="relative" style={{ height: 380, background: '#E8F0E5' }}>
+                  {/* Street grid */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 460 380" preserveAspectRatio="none">
+                    {/* Rivers / parks */}
+                    <path d="M 0 280 Q 150 250 300 290 T 460 270 L 460 380 L 0 380 Z" fill="#D5E5CC" opacity="0.6" />
+                    <circle cx="380" cy="120" r="50" fill="#C8DEC0" opacity="0.7" />
+                    {/* Streets */}
+                    <line x1="0" y1="100" x2="460" y2="100" stroke="white" strokeWidth="14" />
+                    <line x1="0" y1="200" x2="460" y2="200" stroke="white" strokeWidth="10" />
+                    <line x1="0" y1="320" x2="460" y2="320" stroke="white" strokeWidth="8" />
+                    <line x1="120" y1="0" x2="120" y2="380" stroke="white" strokeWidth="10" />
+                    <line x1="280" y1="0" x2="280" y2="380" stroke="white" strokeWidth="12" />
+                    <line x1="380" y1="0" x2="380" y2="380" stroke="white" strokeWidth="8" />
+                    {/* Buildings */}
+                    <rect x="40" y="120" width="60" height="60" fill="white" stroke="#D5D0C9" strokeWidth="1.5" rx="3" />
+                    <rect x="160" y="220" width="80" height="60" fill="white" stroke="#D5D0C9" strokeWidth="1.5" rx="3" />
+                    <rect x="320" y="40" width="40" height="40" fill="white" stroke="#D5D0C9" strokeWidth="1.5" rx="3" />
+                    <rect x="160" y="40" width="50" height="40" fill="white" stroke="#D5D0C9" strokeWidth="1.5" rx="3" />
+                  </svg>
+
+                  {/* The geofence — animated pulsing circle */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute"
+                    style={{ left: '52%', top: '52%', transform: 'translate(-50%, -50%)' }}
+                  >
+                    {/* Outer pulse ring */}
+                    <motion.div
+                      className="absolute rounded-full"
+                      style={{
+                        width: 220, height: 220, left: -110, top: -110,
+                        background: `radial-gradient(circle, ${C.sage}30 0%, ${C.sage}00 70%)`,
+                        border: `2px dashed ${C.sage}`,
+                      }}
+                      animate={{ scale: [1, 1.08, 1] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    {/* Shop pin */}
+                    <div className="absolute" style={{ left: -18, top: -32 }}>
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white shadow-xl border-2 border-white"
+                           style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.rose})` }}>
+                        <span className="text-base">☕</span>
+                      </div>
+                    </div>
+                    <span className="absolute text-[10px] font-bold whitespace-nowrap"
+                          style={{ left: 24, top: -22, color: C.inkDeep, background: 'white', padding: '2px 6px', borderRadius: 4, border: `1px solid ${C.hairline}` }}>
+                      Café Lumière
+                    </span>
+                  </motion.div>
+
+                  {/* Customer dot — moves into the geofence */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute"
+                    initial={{ left: '5%', top: '85%' }}
+                    animate={{ left: ['5%', '25%', '40%', '52%'], top: ['85%', '70%', '60%', '52%'] }}
+                    transition={{ duration: 5, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut', repeatDelay: 1 }}
+                  >
+                    <div className="relative -translate-x-1/2 -translate-y-1/2">
+                      {/* Pulse ring under customer */}
+                      <span className="absolute -inset-2 rounded-full opacity-40 animate-ping" style={{ background: C.sky }} />
+                      <div className="relative w-5 h-5 rounded-full border-[3px] border-white shadow-lg" style={{ background: C.sky }} />
+                    </div>
+                  </motion.div>
+
+                  {/* "Sophie" label that follows the dot — appears mid-journey */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute pointer-events-none"
+                    initial={{ left: '5%', top: '79%', opacity: 0 }}
+                    animate={{
+                      left: ['5%', '25%', '40%', '52%'],
+                      top: ['79%', '64%', '54%', '46%'],
+                      opacity: [0, 1, 1, 0],
+                    }}
+                    transition={{ duration: 5, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut', repeatDelay: 1 }}
+                  >
+                    <span className="text-[10px] font-bold whitespace-nowrap"
+                          style={{ color: C.inkDeep, background: 'white', padding: '2px 6px', borderRadius: 4, border: `1px solid ${C.hairline}` }}>
+                      Sophie · Gold
+                    </span>
+                  </motion.div>
+                </div>
+
+                {/* Distance / status footer */}
+                <div className="px-4 py-3 border-t flex items-center justify-between" style={{ borderColor: C.hairline, background: 'white' }}>
+                  <div className="flex items-center gap-2 text-xs" style={{ color: C.inkMute }}>
+                    <span className="font-bold" style={{ color: C.sage }}>500m radius</span> · cooldown 24h
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: C.sage }}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.sage }} />
+                    Active
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating push notification — appears when customer hits the fence */}
+              <motion.div
+                aria-hidden="true"
+                className="absolute -right-4 lg:-right-12 top-32 px-4 py-3 rounded-2xl shadow-2xl border max-w-[260px]"
+                style={{ background: 'white', borderColor: C.hairline }}
+                initial={{ opacity: 0, scale: 0.85, x: 20 }}
+                animate={{ opacity: [0, 0, 0, 1, 1, 0], scale: [0.85, 0.85, 0.85, 1, 1, 0.85], x: [20, 20, 20, 0, 0, 20] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeOut', repeatDelay: 0 }}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
+                       style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.rose})` }}>
+                    <span className="text-base">☕</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.inkFaint }}>
+                      Café Lumière · maintenant
+                    </p>
+                    <p className="text-sm font-bold leading-tight" style={{ color: C.inkDeep }}>
+                      Bonjour Sophie, vous êtes tout près 👋
+                    </p>
+                    <p className="text-xs mt-1 leading-snug" style={{ color: C.inkMute }}>
+                      Un café offert pour notre membre Gold préférée — venez nous voir !
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ───────────── HOW IT WORKS ───────────── */}
       <section id="how" className="py-20 lg:py-28" style={{ background: 'white' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

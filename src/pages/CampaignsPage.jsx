@@ -44,6 +44,7 @@ export default function CampaignsPage() {
     campaignName: '',
     message: '',
     source: 'push',
+    image_url: '',         // Optional hero image for the campaign
     filters: {
       tiers: [],
       minPoints: 0,
@@ -52,6 +53,60 @@ export default function CampaignsPage() {
       minAmountPaid: 0,
     },
   });
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState('');
+
+  // Compresses + reads the picked image into a base64 data URL we can stash on
+  // the campaign doc directly. Keeps payload under ~1.5 MB so Vercel's body
+  // limit isn't hit. Mirrors the helper used in the Card Designer.
+  const readImageFile = (file) => new Promise((resolve, reject) => {
+    if (!file) return reject(new Error('No file'));
+    if (!file.type?.startsWith('image/')) return reject(new Error('Not an image'));
+    if (file.size > 5 * 1024 * 1024) return reject(new Error('Image is over 5 MB. Pick a smaller one.'));
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('Read failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Image decode failed'));
+      img.onload = () => {
+        const longest = Math.max(img.width, img.height);
+        const maxSide = 1200;
+        const scale = longest > maxSide ? maxSide / longest : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        let q = 0.85;
+        let dataUrl = canvas.toDataURL(mime, q);
+        while (dataUrl.length > 1_500_000 && q > 0.5 && mime === 'image/jpeg') {
+          q -= 0.1;
+          dataUrl = canvas.toDataURL(mime, q);
+        }
+        resolve(dataUrl);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImageError('');
+    try {
+      setImageUploading(true);
+      const dataUrl = await readImageFile(file);
+      setFormData((prev) => ({ ...prev, image_url: dataUrl }));
+    } catch (ex) {
+      setImageError(ex?.message || 'Upload failed');
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   // Load campaigns + scheduled list on mount. Also pick up any handoff from
   // Customer Map (a list of customer IDs the user wants to campaign to).
@@ -208,6 +263,7 @@ export default function CampaignsPage() {
           message: formData.message,
           source: formData.source || 'push',
           filters: buildFilterPayload(),
+          image_url: formData.image_url || undefined,
         };
         await api.post('/owner/campaigns', payload);
       } else {
@@ -233,6 +289,7 @@ export default function CampaignsPage() {
           name: formData.campaignName,
           content: formData.message,
           source: formData.source || 'push',
+          image_url: formData.image_url || undefined,
         };
         if (looksLikeIds) body.customer_ids = customerList;
         else body.customer_names = customerList;
@@ -284,6 +341,7 @@ export default function CampaignsPage() {
       campaignName: '',
       message: '',
       source: 'push',
+      image_url: '',
       filters: {
         tiers: [],
         minPoints: 0,
@@ -292,6 +350,7 @@ export default function CampaignsPage() {
         minAmountPaid: 0,
       },
     });
+    setImageError('');
     setPreviewCount(null);
     setSendMode('now');
     setScheduleAt('');
@@ -773,9 +832,25 @@ export default function CampaignsPage() {
               return (
                 <div
                   key={campaign.id}
-                  className="border rounded-lg p-6 transition hover:shadow-md"
+                  className="border rounded-lg overflow-hidden transition hover:shadow-md"
                   style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}
                 >
+                  {/* Hero image strip — appears at top of the card if the campaign has one */}
+                  {campaign.image_url && (
+                    <div className="relative h-40 overflow-hidden border-b" style={{ borderColor: '#E7E5E4' }}>
+                      <img
+                        src={campaign.image_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider"
+                           style={{ color: '#7B3F00' }}>
+                        📸 With image
+                      </div>
+                    </div>
+                  )}
+                <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
@@ -899,6 +974,7 @@ export default function CampaignsPage() {
                     </button>
                   )}
                 </div>
+                </div>
               );
             })}
           </div>
@@ -1004,6 +1080,74 @@ export default function CampaignsPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Hero image — optional photo that appears in email + on the wallet card news feed */}
+              <div className="border-t pt-6" style={{ borderColor: '#E7E5E4' }}>
+                <label className="block text-sm font-semibold mb-1" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                  📸 Hero image <span className="font-normal text-[#8B8680]">— optional, but doubles open rates</span>
+                </label>
+                <p className="text-xs text-[#57534E] mb-3" style={{ fontFamily: 'Manrope' }}>
+                  Upload a photo (max 5 MB) — it appears at the top of the email and on the customer's wallet card news feed.
+                </p>
+
+                {formData.image_url ? (
+                  // Image preview state
+                  <div className="rounded-xl overflow-hidden border-2 relative group"
+                       style={{ borderColor: '#E3A869' }}>
+                    <img
+                      src={formData.image_url}
+                      alt="Campaign hero"
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                      <label className="px-3 py-2 rounded-lg bg-white text-[#1C1917] font-semibold text-xs cursor-pointer hover:bg-[#F3EFE7]">
+                        Replace
+                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((p) => ({ ...p, image_url: '' }))}
+                        className="px-3 py-2 rounded-lg bg-red-500 text-white font-semibold text-xs hover:bg-red-600"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider"
+                         style={{ color: '#7B3F00' }}>
+                      ✓ Image attached
+                    </div>
+                  </div>
+                ) : (
+                  // Upload prompt state
+                  <label
+                    className="block rounded-xl border-2 border-dashed cursor-pointer transition-all hover:border-[#B85C38] hover:bg-[#FEF9E7]"
+                    style={{ borderColor: '#E3A869', background: '#FEFBF2' }}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={imageUploading}
+                    />
+                    <div className="px-6 py-10 text-center">
+                      <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center"
+                           style={{ background: 'linear-gradient(135deg, #FDF1DC, #E3A869)' }}>
+                        <span className="text-2xl">📸</span>
+                      </div>
+                      <p className="text-sm font-semibold mb-1" style={{ color: '#7B3F00' }}>
+                        {imageUploading ? 'Uploading…' : 'Click to upload a photo'}
+                      </p>
+                      <p className="text-xs" style={{ color: '#8B6914' }}>
+                        JPG, PNG, GIF — max 5 MB. Auto-compressed to fit the email.
+                      </p>
+                    </div>
+                  </label>
+                )}
+                {imageError && (
+                  <p className="text-xs text-red-600 mt-2 font-semibold">⚠ {imageError}</p>
+                )}
               </div>
 
               {/* Send timing — Send now vs. Schedule for later */}

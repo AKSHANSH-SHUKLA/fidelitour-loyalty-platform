@@ -302,6 +302,9 @@ class Campaign(BaseModel):
     # Distribution channel this campaign was published on — used for per-channel performance analysis
     # Allowed values: 'push' (wallet push), 'email', 'instagram', 'facebook', 'tiktok', 'sms', 'other'
     source: Optional[str] = None
+    # Optional hero image — appears at the top of the email and as a visual on
+    # the campaign card. Stored as a URL or base64 data URL (uploaded from device).
+    image_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AIQueryRequest(BaseModel):
