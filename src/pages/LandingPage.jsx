@@ -309,6 +309,337 @@ function BentoCard({ children, className = '', tint = 'white', border = C.hairli
 }
 
 /* =====================================================================
+   SHOWCASE CARD — premium, elegant, marketing-grade loyalty card.
+   Used only in the landing page hero/demo. Different from the production
+   AuchanPreview which is utilitarian. This one is meant to wow.
+   ===================================================================== */
+function ShowcaseCard() {
+  const cardRef = useRef(null);
+  // Mouse-tilt for a 3D feel
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const rY = useSpring(useTransform(mx, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 25 });
+  const rX = useSpring(useTransform(my, [-0.5, 0.5], [6, -6]), { stiffness: 200, damping: 25 });
+  // Glare follows cursor
+  const gx = useTransform(mx, [-0.5, 0.5], ['10%', '90%']);
+  const gy = useTransform(my, [-0.5, 0.5], ['10%', '90%']);
+  const handleMove = (e) => {
+    const r = cardRef.current?.getBoundingClientRect();
+    if (!r) return;
+    mx.set((e.clientX - r.left) / r.width - 0.5);
+    my.set((e.clientY - r.top) / r.height - 0.5);
+  };
+  const handleLeave = () => { mx.set(0); my.set(0); };
+
+  return (
+    <motion.div
+      ref={cardRef}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      style={{ rotateY: rY, rotateX: rX, transformStyle: 'preserve-3d', perspective: '1200px' }}
+      className="relative w-full max-w-[400px]"
+    >
+      {/* Multi-color halo behind the card */}
+      <div
+        aria-hidden="true"
+        className="absolute -inset-12 rounded-[48px] opacity-60 blur-3xl pointer-events-none"
+        style={{
+          background: `conic-gradient(from 90deg, ${C.terracotta}, ${C.ochre}, ${C.rose}, ${C.lavender}, ${C.sky}, ${C.teal}, ${C.terracotta})`,
+        }}
+      />
+
+      {/* The card itself */}
+      <div
+        className="relative rounded-[32px] overflow-hidden"
+        style={{
+          background: `
+            radial-gradient(at 0% 0%, ${C.shellPink} 0%, transparent 50%),
+            radial-gradient(at 100% 0%, ${C.butter} 0%, transparent 50%),
+            radial-gradient(at 100% 100%, ${C.lilac} 0%, transparent 50%),
+            radial-gradient(at 0% 100%, ${C.mint} 0%, transparent 50%),
+            linear-gradient(135deg, #FFFEFB 0%, ${C.cream} 100%)
+          `,
+          boxShadow: `
+            0 40px 80px -20px rgba(28,25,23,0.45),
+            0 16px 40px -10px ${C.terracotta}30,
+            0 0 0 1px rgba(255,255,255,0.6) inset,
+            0 1px 2px rgba(255,255,255,0.9) inset
+          `,
+        }}
+      >
+        {/* Subtle iridescent shimmer overlay */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-40"
+          style={{
+            background: `linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.8) 50%, transparent 70%)`,
+            backgroundSize: '300% 100%',
+          }}
+          animate={{ backgroundPosition: ['200% center', '-100% center'] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+        />
+
+        {/* Cursor-tracking glare */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-60"
+          style={{
+            background: useTransform(
+              [gx, gy],
+              ([x, y]) => `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.7) 0%, transparent 50%)`
+            ),
+          }}
+        />
+
+        {/* ============= CARD CONTENT ============= */}
+        <div className="relative p-6 space-y-5">
+          {/* HEADER ROW: business identity + tier pill */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2.5">
+              {/* Logo medallion with gold-foil ring */}
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-base shadow-md relative"
+                style={{
+                  background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)`,
+                }}
+              >
+                {/* Gold-foil ring */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -inset-0.5 rounded-full pointer-events-none"
+                  style={{
+                    background: `conic-gradient(from 0deg, ${C.ochre}, #FFE9C2, ${C.ochre}, #FFE9C2, ${C.ochre})`,
+                    padding: '1.5px',
+                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                    WebkitMaskComposite: 'xor',
+                    maskComposite: 'exclude',
+                  }}
+                />
+                <span className="relative">CL</span>
+              </div>
+              <div>
+                <p className="font-['Cormorant_Garamond'] text-base font-bold leading-tight" style={{ color: C.inkDeep }}>
+                  Café Lumière
+                </p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.18em]" style={{ color: C.inkFaint }}>
+                  Programme Fidélité
+                </p>
+              </div>
+            </div>
+
+            {/* VIP / Tier pill */}
+            <div
+              className="relative px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-sm"
+              style={{
+                background: `linear-gradient(135deg, #FFE9C2 0%, ${C.ochre} 50%, #B98947 100%)`,
+                color: '#5A3A0F',
+                boxShadow: `0 2px 8px ${C.ochre}40, inset 0 1px 0 rgba(255,255,255,0.6)`,
+              }}
+            >
+              <span className="relative flex items-center gap-1">
+                <Sparkles size={10} />
+                Gold Member
+              </span>
+            </div>
+          </div>
+
+          {/* HERO ZONE: greeting + cagnotte */}
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1" style={{ color: C.inkFaint }}>
+                Bonjour
+              </p>
+              <p className="font-['Cormorant_Garamond'] text-3xl font-bold leading-none" style={{ color: C.inkDeep }}>
+                Sophie
+              </p>
+              <p className="text-xs mt-1" style={{ color: C.inkMute }}>
+                <span style={{ color: C.rose }}>🎂</span> 12 Mai
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1" style={{ color: C.inkFaint }}>
+                Ma cagnotte
+              </p>
+              <p className="font-['Cormorant_Garamond'] text-4xl font-bold leading-none">
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.ochre} 100%)`,
+                  }}
+                >
+                  12,40
+                </span>
+                <span className="text-2xl ml-1" style={{ color: C.terracotta }}>€</span>
+              </p>
+            </div>
+          </div>
+
+          {/* PROGRESS BAR with gradient + pearl marker */}
+          <div>
+            <div className="flex justify-between text-[10px] mb-1.5" style={{ color: C.inkMute }}>
+              <span className="font-semibold">Progression</span>
+              <span className="font-semibold">7 / 10 visites</span>
+            </div>
+            <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(28,25,23,0.08)' }}>
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full"
+                style={{
+                  background: `linear-gradient(90deg, ${C.terracotta} 0%, ${C.ochre} 50%, ${C.rose} 100%)`,
+                }}
+                initial={{ width: '0%' }}
+                whileInView={{ width: '70%' }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
+            <p className="text-[10px] mt-1.5" style={{ color: C.inkMute }}>
+              <span className="font-bold" style={{ color: C.terracotta }}>3 visites</span> avant votre récompense ✨
+            </p>
+          </div>
+
+          {/* STAMPS — gold-foil hexagons */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: C.inkFaint }}>
+              Vos tampons
+            </p>
+            <div className="flex justify-between gap-1">
+              {Array.from({ length: 10 }).map((_, i) => {
+                const filled = i < 7;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.05 * i, ease: 'easeOut' }}
+                    className="relative"
+                    style={{ width: 26, height: 30 }}
+                  >
+                    <svg viewBox="0 0 100 110" className="w-full h-full">
+                      <defs>
+                        <linearGradient id={`stamp-${i}`} x1="0" y1="0" x2="1" y2="1">
+                          {filled ? (
+                            <>
+                              <stop offset="0%" stopColor="#FFE9C2" />
+                              <stop offset="50%" stopColor={C.ochre} />
+                              <stop offset="100%" stopColor="#B98947" />
+                            </>
+                          ) : (
+                            <>
+                              <stop offset="0%" stopColor="rgba(28,25,23,0.06)" />
+                              <stop offset="100%" stopColor="rgba(28,25,23,0.10)" />
+                            </>
+                          )}
+                        </linearGradient>
+                      </defs>
+                      <polygon
+                        points="50,5 93.3,27.5 93.3,72.5 50,95 6.7,72.5 6.7,27.5"
+                        fill={`url(#stamp-${i})`}
+                        stroke={filled ? '#8C5C15' : 'rgba(28,25,23,0.10)'}
+                        strokeWidth={filled ? 1.5 : 1}
+                      />
+                      {filled && (
+                        <text x="50" y="60" fontSize="32" fontWeight="bold" fill="#5A3A0F" textAnchor="middle">
+                          ★
+                        </text>
+                      )}
+                    </svg>
+                    {filled && (
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 rounded-full opacity-30 blur-md pointer-events-none"
+                        style={{ background: C.ochre }}
+                      />
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* OFFER STRIP */}
+          <div
+            className="rounded-2xl p-3 flex items-center gap-3 relative overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, ${C.shellPink} 0%, ${C.lilac} 100%)`,
+              border: `1px solid ${C.rose}30`,
+            }}
+          >
+            <div
+              aria-hidden="true"
+              className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-50 blur-2xl"
+              style={{ background: C.rose }}
+            />
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 relative"
+              style={{ background: `linear-gradient(135deg, ${C.rose} 0%, ${C.terracotta} 100%)` }}
+            >
+              <Gift size={18} />
+            </div>
+            <div className="flex-1 relative">
+              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.inkFaint }}>
+                Offre exclusive
+              </p>
+              <p className="text-sm font-bold leading-tight" style={{ color: C.inkDeep }}>
+                Pâtisserie offerte au 10ᵉ café
+              </p>
+            </div>
+          </div>
+
+          {/* BARCODE */}
+          <div className="flex flex-col items-center pt-1">
+            <svg viewBox="0 0 200 36" className="w-full" preserveAspectRatio="none" style={{ height: 36 }}>
+              {Array.from({ length: 60 }).map((_, i) => {
+                const w = 1 + ((i * 9301 + 49297) % 233280) % 4 / 1.5;
+                let x = 0;
+                for (let j = 0; j < i; j++) {
+                  x += 1 + ((j * 9301 + 49297) % 233280) % 4 / 1.5 + 1;
+                }
+                return <rect key={i} x={x} y={0} width={w} height={36} fill={C.inkDeep} />;
+              })}
+            </svg>
+            <p className="text-[9px] font-mono tracking-[0.3em] mt-1.5" style={{ color: C.inkFaint }}>
+              FT-AKSH0001
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom gold-foil accent line */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 left-0 right-0 h-[3px]"
+          style={{
+            background: `linear-gradient(90deg, ${C.terracotta} 0%, ${C.ochre} 25%, #FFE9C2 50%, ${C.ochre} 75%, ${C.terracotta} 100%)`,
+          }}
+        />
+      </div>
+
+      {/* Floating decorative pills around the card for that elegant marketing-shot feel */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute -left-12 top-16 hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white shadow-xl border"
+        style={{ borderColor: C.hairline, transform: 'translateZ(60px)' }}
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.sage }} />
+        <span className="text-[10px] font-bold" style={{ color: C.inkDeep }}>Apple Wallet</span>
+      </motion.div>
+      <motion.div
+        aria-hidden="true"
+        className="absolute -right-10 bottom-24 hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-xl border"
+        style={{ background: 'white', borderColor: C.hairline, transform: 'translateZ(60px)' }}
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+      >
+        <Sparkles size={11} style={{ color: C.lavender }} />
+        <span className="text-[10px] font-bold" style={{ color: C.inkDeep }}>Live updates</span>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* =====================================================================
    MAIN LANDING PAGE
    ===================================================================== */
 const LandingPage = () => {
@@ -680,32 +1011,9 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* iPhone mockup with the real card */}
-          <div className="flex justify-center">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
-              className="relative"
-              style={{ filter: `drop-shadow(0 30px 60px rgba(28,25,23,0.30)) drop-shadow(0 10px 30px ${C.terracotta}20)` }}
-            >
-              <div className="relative bg-[#0A0A0A] rounded-[48px] p-3" style={{ width: 380 }}>
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#0A0A0A] rounded-b-2xl z-10" />
-                <div className="relative rounded-[40px] overflow-hidden" style={{ minHeight: 720, background: `linear-gradient(155deg, #2C2520, #4A2D3D, #3A2D5A, #1C2A3D)` }}>
-                  <div className="flex items-center justify-between px-7 pt-5 pb-3 text-white text-sm font-semibold">
-                    <span>9:41</span>
-                    <span className="flex items-center gap-1.5"><span className="text-xs">5G</span><span>●●●●</span></span>
-                  </div>
-                  <div aria-hidden="true" className="absolute left-1/4 top-1/4 w-[260px] h-[260px] rounded-full opacity-50 blur-3xl pointer-events-none"
-                       style={{ background: `radial-gradient(circle, ${C.rose} 0%, transparent 70%)` }} />
-                  <div className="relative flex justify-center pt-4 pb-10">
-                    <AuchanPreview
-                      layout={DEFAULT_LAYOUT}
-                      ctx={{ first_name: 'Sophie', name: 'Sophie Dupont', points: '12.40', business_name: 'Café Lumière', birthday: '12 Mai', stamps_earned: 7, stamps_target: 10 }}
-                      width={340}
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+          {/* The premium showcase card — pure visual showcase, mouse-tilted */}
+          <div className="flex justify-center items-center">
+            <ShowcaseCard />
           </div>
         </div>
       </section>
