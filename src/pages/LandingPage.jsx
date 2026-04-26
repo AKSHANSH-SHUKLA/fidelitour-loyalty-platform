@@ -5,18 +5,48 @@ import { MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3 } from
 import { AuchanPreview, DEFAULT_LAYOUT } from '../components/AuchanCard';
 
 
-const FeatureCard = ({ icon: Icon, title, description }) => (
-  <motion.div
-    whileHover={{ y: -5 }}
-    className="bg-white p-8 rounded-2xl shadow-sm border border-[#E7E5E4] hover:shadow-lg transition-all"
-  >
-    <div className="bg-[#F3EFE7] w-14 h-14 rounded-full flex items-center justify-center mb-6">
-      <Icon className="w-7 h-7 text-[#B85C38]" />
-    </div>
-    <h3 className="text-2xl font-['Cormorant_Garamond'] font-bold mb-3">{title}</h3>
-    <p className="text-[#57534E] leading-relaxed">{description}</p>
-  </motion.div>
-);
+// =====================================================================
+//  Color palette — vibrant but warm + elegant.
+//  Each "theme" pairs a soft pastel background with a saturated accent
+//  for the icon. Used by FeatureCard and elsewhere for variety.
+// =====================================================================
+const THEME = {
+  terracotta: { bg: '#FBE5DD', icon: '#B85C38', glow: 'rgba(184,92,56,0.20)' },
+  ochre:      { bg: '#FDF1DC', icon: '#D4A574', glow: 'rgba(212,165,116,0.25)' },
+  sage:       { bg: '#E5F0DC', icon: '#7FA37C', glow: 'rgba(127,163,124,0.25)' },
+  teal:       { bg: '#DDF1ED', icon: '#6FA89C', glow: 'rgba(111,168,156,0.25)' },
+  sky:        { bg: '#DDEBF6', icon: '#6BA4D9', glow: 'rgba(107,164,217,0.25)' },
+  lavender:   { bg: '#F0EBF8', icon: '#8B7DC9', glow: 'rgba(139,125,201,0.25)' },
+  coral:      { bg: '#FCE3DC', icon: '#F08C7A', glow: 'rgba(240,140,122,0.25)' },
+  rose:       { bg: '#FBE0E8', icon: '#D77FA0', glow: 'rgba(215,127,160,0.25)' },
+};
+
+const FeatureCard = ({ icon: Icon, title, description, theme = 'terracotta' }) => {
+  const t = THEME[theme] || THEME.terracotta;
+  return (
+    <motion.div
+      whileHover={{ y: -6, scale: 1.015 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+      className="bg-white p-8 rounded-2xl border border-[#EFE9E0] transition-all relative overflow-hidden group"
+      style={{ boxShadow: `0 4px 14px rgba(28,25,23,0.04)` }}
+    >
+      {/* Soft color wash behind the card on hover */}
+      <div
+        aria-hidden="true"
+        className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"
+        style={{ background: t.glow }}
+      />
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3"
+        style={{ backgroundColor: t.bg }}
+      >
+        <Icon className="w-7 h-7" style={{ color: t.icon }} />
+      </div>
+      <h3 className="text-2xl font-['Cormorant_Garamond'] font-bold mb-3 relative">{title}</h3>
+      <p className="text-[#57534E] leading-relaxed relative">{description}</p>
+    </motion.div>
+  );
+};
 
 const DemoCard = ({ title, description, children }) => (
   <motion.div
@@ -34,12 +64,30 @@ const DemoCard = ({ title, description, children }) => (
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-['Manrope'] text-[#1C1917]">
-      <nav className="fixed w-full bg-white/80 backdrop-blur-md border-b border-[#E7E5E4] z-50">
+      <nav className="fixed w-full bg-white/80 backdrop-blur-md border-b border-[#EFE9E0] z-50">
+        {/* Tiny multi-color accent line at the very top of the nav */}
+        <div
+          aria-hidden="true"
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{
+            background: 'linear-gradient(90deg, #B85C38 0%, #D77FA0 25%, #8B7DC9 50%, #6BA4D9 75%, #6FA89C 100%)',
+          }}
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <div className="w-8 h-8 rounded-md bg-[#B85C38] flex items-center justify-center text-white font-bold text-xl">F</div>
-            <span className="font-['Cormorant_Garamond'] text-2xl font-bold text-[#B85C38]">FidéliTour</span>
-          </div>
+          <Link to="/" className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md"
+              style={{ background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}
+            >
+              F
+            </div>
+            <span
+              className="font-['Cormorant_Garamond'] text-2xl font-bold bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}
+            >
+              FidéliTour
+            </span>
+          </Link>
           <div className="hidden md:flex items-center gap-8 font-medium">
             <a href="#intro" className="hover:text-[#B85C38] transition-colors">Philosophy</a>
             <a href="#features" className="hover:text-[#B85C38] transition-colors">Capabilities</a>
@@ -48,71 +96,192 @@ const LandingPage = () => {
           </div>
           <div className="flex items-center gap-4">
             <Link to="/login" className="font-medium hover:text-[#B85C38] transition-colors">Sign in</Link>
-            <Link to="/register" className="bg-[#1C1917] text-white px-6 py-2 rounded-full hover:bg-black transition-colors">Get Started</Link>
+            <Link
+              to="/register"
+              className="text-white px-6 py-2 rounded-full transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg, #1C1917 0%, #3D2820 100%)' }}
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* HERO SECTION */}
-      <section id="intro" className="pt-40 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
+      {/* HERO SECTION — colorful ambient orbs in the background, gradient text accent */}
+      <section id="intro" className="relative pt-40 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Animated multi-color ambient orbs */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-4xl space-y-8"
-        >
-          <h1 className="font-['Cormorant_Garamond'] text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight">
-            Stop giving away paper punch cards. <br/><span className="text-[#B85C38]">Start building loyalty.</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-[#57534E] max-w-2xl mx-auto leading-relaxed">
-            A meticulously crafted B2B2C retention platform for local businesses. Digital wallet passes, AI insights, and real-time geolocalisation marketing.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
-            <Link to="/register" className="bg-[#B85C38] text-white px-8 py-4 rounded-full text-lg hover:bg-[#9C4E2F] transition-all shadow-md font-semibold">
-              Deploy Your System
-            </Link>
-            <a href="#demo" className="bg-white border border-[#E7E5E4] text-[#1C1917] px-8 py-4 rounded-full text-lg hover:bg-[#F3EFE7] transition-all shadow-sm font-semibold">
-              Try the Interactive Demo
-            </a>
-          </div>
-        </motion.div>
+          aria-hidden="true"
+          className="absolute -top-20 -left-32 w-[520px] h-[520px] rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #FCE3DC 0%, transparent 70%)' }}
+          animate={{ x: [0, 60, -30, 0], y: [0, -40, 30, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute top-20 -right-24 w-[460px] h-[460px] rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #DDEBF6 0%, transparent 70%)' }}
+          animate={{ x: [0, -50, 20, 0], y: [0, 40, -20, 0] }}
+          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute top-1/2 left-1/3 w-[420px] h-[420px] rounded-full blur-3xl opacity-40 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #F0EBF8 0%, transparent 70%)' }}
+          animate={{ x: [0, 30, -50, 0], y: [0, 20, -30, 0] }}
+          transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute bottom-0 right-1/3 w-[380px] h-[380px] rounded-full blur-3xl opacity-35 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #E5F0DC 0%, transparent 70%)' }}
+          animate={{ x: [0, -30, 40, 0], y: [0, 30, -10, 0] }}
+          transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
+        />
+
+        <div className="relative max-w-7xl mx-auto flex flex-col items-center text-center">
+          {/* Eyebrow badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-[#E7E5E4] shadow-sm mb-8"
+          >
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7FA37C] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#7FA37C]" />
+            </span>
+            <span className="text-xs font-semibold tracking-wider uppercase text-[#57534E]">
+              <span className="text-[#B85C38]">New</span> · Customer reviews + AI insights live
+            </span>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="max-w-4xl space-y-8"
+          >
+            <h1 className="font-['Cormorant_Garamond'] text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight">
+              Stop giving away paper punch cards. <br/>
+              <span
+                className="bg-clip-text text-transparent inline-block"
+                style={{
+                  backgroundImage: 'linear-gradient(110deg, #B85C38 0%, #E3A869 30%, #D77FA0 55%, #8B7DC9 80%, #6BA4D9 100%)',
+                  backgroundSize: '200% auto',
+                  animation: 'heroGradient 8s linear infinite',
+                }}
+              >
+                Start building loyalty.
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl text-[#57534E] max-w-2xl mx-auto leading-relaxed">
+              A meticulously crafted B2B2C retention platform for local businesses. Digital wallet
+              passes, AI insights, and real-time geolocalisation marketing.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+              <Link
+                to="/register"
+                className="text-white px-8 py-4 rounded-full text-lg font-semibold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                style={{
+                  background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)',
+                  boxShadow: '0 10px 30px rgba(184,92,56,0.35)',
+                }}
+              >
+                Deploy Your System
+              </Link>
+              <a href="#demo" className="bg-white/90 backdrop-blur-sm border border-[#E7E5E4] text-[#1C1917] px-8 py-4 rounded-full text-lg hover:bg-white transition-all shadow-sm font-semibold">
+                Try the Interactive Demo
+              </a>
+            </div>
+
+            {/* Trust strip — 4 colorful proof chips */}
+            <div className="flex flex-wrap justify-center items-center gap-3 pt-12 text-xs">
+              {[
+                { color: '#7FA37C', bg: '#E5F0DC', label: '25+ live KPIs' },
+                { color: '#6BA4D9', bg: '#DDEBF6', label: '12 customer segments' },
+                { color: '#8B7DC9', bg: '#F0EBF8', label: 'Sentiment analysis' },
+                { color: '#F08C7A', bg: '#FCE3DC', label: 'Real-time geofencing' },
+                { color: '#D4A574', bg: '#FDF1DC', label: 'Multi-branch support' },
+              ].map((chip) => (
+                <span
+                  key={chip.label}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold border"
+                  style={{ backgroundColor: chip.bg, color: chip.color, borderColor: chip.color + '40' }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: chip.color }} />
+                  {chip.label}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        <style>{`
+          @keyframes heroGradient {
+            to { background-position: 200% center; }
+          }
+        `}</style>
       </section>
 
-      {/* COMPREHENSIVE FEATURES GRID */}
-      <section id="features" className="py-24 bg-white border-y border-[#E7E5E4]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* COMPREHENSIVE FEATURES GRID — each card in its own color theme */}
+      <section id="features" className="relative py-24 bg-white border-y border-[#EFE9E0] overflow-hidden">
+        {/* Subtle multi-color wash at the top edge */}
+        <div
+          aria-hidden="true"
+          className="absolute top-0 left-0 right-0 h-1"
+          style={{
+            background: 'linear-gradient(90deg, #B85C38 0%, #D77FA0 20%, #8B7DC9 40%, #6BA4D9 60%, #6FA89C 80%, #88B27E 100%)',
+          }}
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold mb-6">Unrivaled Retention Architecture</h2>
-            <p className="text-lg text-[#57534E]">We engineered FidéliTour not just to track points, but to actively pull customers back into your storefront using advanced data telemetry.</p>
+            <span className="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
+                  style={{ backgroundColor: '#FDF1DC', color: '#9C7223' }}>
+              Capabilities
+            </span>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold mb-6">
+              Unrivaled Retention Architecture
+            </h2>
+            <p className="text-lg text-[#57534E]">
+              We engineered FidéliTour not just to track points, but to actively pull customers
+              back into your storefront using advanced data telemetry.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <FeatureCard
+              theme="sky"
               icon={Smartphone}
               title="Native Wallet Integration"
               description="Customers save their pass directly to Apple Wallet or Google Pay. Nobody wants another app. We live where their credit cards live."
             />
             <FeatureCard
+              theme="lavender"
               icon={Settings2}
               title="Tier-Specific Card Designs"
               description="Bronze, Silver, and Gold each with their own distinct visual look. Upload your logo, select typography, and switch between card styles in seconds."
             />
             <FeatureCard
+              theme="sage"
               icon={MapPin}
               title="Know Your Neighborhoods"
               description="Track where customers come from: Instagram, TikTok, QR in store, and more. Know which neighborhoods need focus with the Tours map."
             />
             <FeatureCard
+              theme="coral"
               icon={ScanLine}
               title="Automatic Points & Stamps"
               description="Automatic points when they pay—just type the amount. Customers collect stamps and earn free rewards. You configure how many visits fill one stamp."
             />
             <FeatureCard
+              theme="ochre"
               icon={BrainCircuit}
               title="Neural Marketing Assistant"
               description="Ask our built-in AI complex questions like 'Who are my inactive Bronze tier members?' and let it automatically generate marketing campaigns to win them back."
             />
             <FeatureCard
+              theme="terracotta"
               icon={BarChart3}
               title="Enterprise Grade Analytics"
               description="Beautiful, interaction-heavy Recharts displaying cohort retention, active vs inactive member flows, and lifetime value segmented by custom time windows."
@@ -122,7 +291,29 @@ const LandingPage = () => {
       </section>
 
       {/* INTERACTIVE DEMO - Card Design Mockups */}
-      <section id="demo" className="py-24 bg-[#F3EFE7]">
+      <section
+        id="demo"
+        className="relative py-24 overflow-hidden"
+        style={{
+          background:
+            'linear-gradient(135deg, #FDFBF7 0%, #FCE3DC 25%, #F0EBF8 50%, #DDEBF6 75%, #E5F0DC 100%)',
+        }}
+      >
+        {/* Decorative blur orbs to give the section depth */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #D77FA0 0%, transparent 70%)' }}
+          animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
+          transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute bottom-1/4 -right-32 w-[480px] h-[480px] rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #8B7DC9 0%, transparent 70%)' }}
+          animate={{ x: [0, -50, 0], y: [0, 30, 0] }}
+          transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold mb-6">How Your Customers Will See Their Loyalty Card</h2>
@@ -148,8 +339,14 @@ const LandingPage = () => {
                 {/* Notch */}
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#0A0A0A] rounded-b-2xl z-10" />
 
-                {/* Screen */}
-                <div className="relative rounded-[44px] overflow-hidden bg-gradient-to-br from-[#1C1917] via-[#2C2520] to-[#1C1917]" style={{ minHeight: 880 }}>
+                {/* Screen — warmer, multi-color gradient instead of solid black */}
+                <div
+                  className="relative rounded-[44px] overflow-hidden"
+                  style={{
+                    minHeight: 880,
+                    background: 'linear-gradient(155deg, #2C2520 0%, #4A2D3D 35%, #3A2D5A 65%, #1C2A3D 100%)',
+                  }}
+                >
                   {/* Status bar */}
                   <div className="flex items-center justify-between px-8 pt-5 pb-3 text-white text-sm font-semibold">
                     <span>9:41</span>
@@ -160,11 +357,16 @@ const LandingPage = () => {
                     </span>
                   </div>
 
-                  {/* Subtle ambient glow behind the card */}
+                  {/* Multiple colored ambient glows behind the card */}
                   <div
                     aria-hidden="true"
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] rounded-full opacity-40 blur-3xl pointer-events-none"
-                    style={{ background: 'radial-gradient(circle, #B85C38 0%, transparent 70%)' }}
+                    className="absolute left-1/4 top-1/4 w-[280px] h-[280px] rounded-full opacity-50 blur-3xl pointer-events-none"
+                    style={{ background: 'radial-gradient(circle, #D77FA0 0%, transparent 70%)' }}
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="absolute right-1/4 bottom-1/3 w-[280px] h-[280px] rounded-full opacity-40 blur-3xl pointer-events-none"
+                    style={{ background: 'radial-gradient(circle, #6BA4D9 0%, transparent 70%)' }}
                   />
 
                   {/* The actual production loyalty card */}
@@ -193,19 +395,21 @@ const LandingPage = () => {
                 </div>
               </div>
 
-              {/* Floating proof labels around the phone for that CaptainWallet/marketing feel */}
+              {/* Floating proof labels — each in its own color for visual richness */}
               <motion.div
                 aria-hidden="true"
-                className="absolute -left-20 top-32 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-xl border border-[#E7E5E4]"
+                className="absolute -left-20 top-32 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
+                style={{ backgroundColor: '#E5F0DC', borderColor: '#7FA37C', color: '#3D5A36' }}
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <span className="w-2 h-2 rounded-full bg-[#4A5D23] animate-pulse" />
-                <span className="text-sm font-semibold text-[#1C1917]">Live updates</span>
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#7FA37C' }} />
+                <span className="text-sm font-semibold">Live updates</span>
               </motion.div>
               <motion.div
                 aria-hidden="true"
-                className="absolute -right-24 top-64 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-[#1C1917] text-white shadow-xl"
+                className="absolute -right-24 top-64 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
+                style={{ backgroundColor: '#FBE0E8', borderColor: '#D77FA0', color: '#8A4566' }}
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
               >
@@ -214,11 +418,22 @@ const LandingPage = () => {
               </motion.div>
               <motion.div
                 aria-hidden="true"
-                className="absolute -left-16 bottom-40 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-[#B85C38] text-white shadow-xl"
+                className="absolute -left-16 bottom-40 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
+                style={{ backgroundColor: '#F0EBF8', borderColor: '#8B7DC9', color: '#56488C' }}
                 animate={{ x: [0, 6, 0], y: [0, -4, 0] }}
                 transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
               >
-                <span className="text-sm font-semibold">+1 stamp</span>
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8B7DC9' }} />
+                <span className="text-sm font-semibold">VIP unlocked</span>
+              </motion.div>
+              <motion.div
+                aria-hidden="true"
+                className="absolute -right-12 bottom-56 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
+                style={{ backgroundColor: '#DDEBF6', borderColor: '#6BA4D9', color: '#3A6892' }}
+                animate={{ y: [0, -6, 0], x: [0, -4, 0] }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1.8 }}
+              >
+                <span className="text-sm font-semibold">+1 stamp added</span>
               </motion.div>
             </motion.div>
           </div>
@@ -380,63 +595,143 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" className="py-24 max-w-7xl mx-auto px-4">
-        <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold text-center mb-4">Transparent Software Pricing</h2>
-        <p className="text-center text-[#57534E] mb-16 max-w-2xl mx-auto text-lg">No hidden implementation fees. Predictable SaaS scaling designed for independently owned operators up to regional chains.</p>
+      {/* PRICING — each tier in its own color identity */}
+      <section id="pricing" className="relative py-24 overflow-hidden">
+        <motion.div
+          aria-hidden="true"
+          className="absolute top-0 left-1/4 w-[400px] h-[400px] rounded-full blur-3xl opacity-30 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #DDEBF6 0%, transparent 70%)' }}
+          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-3xl opacity-30 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, #F0EBF8 0%, transparent 70%)' }}
+          animate={{ x: [0, -30, 0], y: [0, 20, 0] }}
+          transition={{ duration: 27, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+        />
 
-        <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* Basic */}
-          <div className="bg-white p-10 rounded-3xl border border-[#E7E5E4] shadow-sm flex flex-col">
-            <h3 className="text-2xl font-bold mb-2">Basic Protocol</h3>
-            <p className="text-4xl font-bold text-[#B85C38] mb-6">€29<span className="text-lg text-[#57534E] font-medium">/mo</span></p>
-            <ul className="mb-8 space-y-4 flex-1 text-[#57534E]">
-              <li>• Up to 500 Managed Customers</li>
-              <li>• 2 Marketing Campaigns / mo</li>
-              <li>• Native Digital Wallet Passes</li>
-              <li>• Core Dashboard Analytics</li>
-            </ul>
-            <Link to="/register" className="block text-center w-full bg-[#F3EFE7] text-[#1C1917] font-semibold px-6 py-4 rounded-xl hover:bg-[#E7E5E4] transition-colors">Get Started</Link>
+        <div className="relative max-w-7xl mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
+                  style={{ backgroundColor: '#E5F0DC', color: '#4A6B41' }}>
+              Plans
+            </span>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold mb-4">
+              Transparent Software Pricing
+            </h2>
+            <p className="text-center text-[#57534E] max-w-2xl mx-auto text-lg">
+              No hidden implementation fees. Predictable SaaS scaling designed for independently
+              owned operators up to regional chains.
+            </p>
           </div>
 
-          {/* Gold */}
-          <div className="bg-[#1C1917] text-white p-10 rounded-3xl shadow-2xl relative transform lg:-translate-y-4 flex flex-col border border-[#333]">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#B85C38] text-white text-sm font-bold px-6 py-2 rounded-full shadow-lg">
-              OPTIMAL FOR MOST
+          <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Basic — Sky theme */}
+            <div className="bg-white p-10 rounded-3xl border-2 shadow-sm flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform"
+                 style={{ borderColor: '#DDEBF6' }}>
+              <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-60"
+                   style={{ background: 'radial-gradient(circle, #DDEBF6 0%, transparent 70%)' }} />
+              <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 relative"
+                    style={{ backgroundColor: '#DDEBF6', color: '#3A6892' }}>
+                Basic
+              </span>
+              <h3 className="text-2xl font-bold mb-2 relative">Basic Protocol</h3>
+              <p className="text-4xl font-bold mb-6 relative" style={{ color: '#3A6892' }}>
+                €29<span className="text-lg text-[#57534E] font-medium">/mo</span>
+              </p>
+              <ul className="mb-8 space-y-3 flex-1 text-[#57534E] relative">
+                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> Up to 500 Managed Customers</li>
+                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> 2 Marketing Campaigns / mo</li>
+                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> Native Digital Wallet Passes</li>
+                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> Core Dashboard Analytics</li>
+              </ul>
+              <Link to="/register" className="relative block text-center w-full font-semibold px-6 py-4 rounded-xl transition-all hover:shadow-md"
+                    style={{ backgroundColor: '#DDEBF6', color: '#3A6892' }}>
+                Get Started
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold mb-2 pt-2">Gold Standard</h3>
-            <p className="text-4xl font-bold text-white mb-6">€79<span className="text-lg text-white/70 font-medium">/mo</span></p>
-            <ul className="mb-8 space-y-4 flex-1 text-white/80">
-              <li>• Up to 2,000 Managed Customers</li>
-              <li>• 10 Marketing Campaigns / mo</li>
-              <li>• Complete Visual Card Designer</li>
-              <li>• AI Assistant (20 queries/day)</li>
-              <li>• Advanced Revenue & Lifetime DB</li>
-            </ul>
-            <Link to="/register" className="block text-center w-full bg-[#B85C38] text-white font-semibold px-6 py-4 rounded-xl hover:bg-[#9C4E2F] transition-colors shadow-lg">Deploy Gold Standard</Link>
-          </div>
 
-          {/* VIP */}
-          <div className="bg-white p-10 rounded-3xl border border-[#E7E5E4] shadow-sm flex flex-col">
-            <h3 className="text-2xl font-bold mb-2">VIP Matrix</h3>
-            <p className="text-4xl font-bold text-[#B85C38] mb-6">€199<span className="text-lg text-[#57534E] font-medium">/mo</span></p>
-            <ul className="mb-8 space-y-4 flex-1 text-[#57534E]">
-              <li>• Up to 10,000 Managed Customers</li>
-              <li>• 100 Marketing Campaigns / mo</li>
-              <li>• Geofence Radius Push Notifications</li>
-              <li>• AI Assistant (35 queries/day)</li>
-              <li>• Raw Database CSV Extraction</li>
-            </ul>
-            <Link to="/register" className="block text-center w-full bg-[#F3EFE7] text-[#1C1917] font-semibold px-6 py-4 rounded-xl hover:bg-[#E7E5E4] transition-colors">Upgrade to VIP</Link>
+            {/* Gold — featured tier with rich gradient */}
+            <div className="text-white p-10 rounded-3xl shadow-2xl relative transform lg:-translate-y-4 flex flex-col overflow-hidden"
+                 style={{
+                   background: 'linear-gradient(155deg, #2C2520 0%, #4A2D1A 50%, #1C1917 100%)',
+                 }}>
+              <div aria-hidden="true" className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-40"
+                   style={{ background: 'radial-gradient(circle, #E3A869 0%, transparent 70%)' }} />
+              <div aria-hidden="true" className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full blur-3xl opacity-30"
+                   style={{ background: 'radial-gradient(circle, #B85C38 0%, transparent 70%)' }} />
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-sm font-bold px-6 py-2 rounded-full shadow-lg"
+                   style={{ background: 'linear-gradient(135deg, #B85C38 0%, #E3A869 100%)' }}>
+                ⭐ OPTIMAL FOR MOST
+              </div>
+              <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mt-2 mb-4 relative"
+                    style={{ backgroundColor: 'rgba(227,168,105,0.20)', color: '#E3A869', border: '1px solid rgba(227,168,105,0.4)' }}>
+                Gold
+              </span>
+              <h3 className="text-2xl font-bold mb-2 relative">Gold Standard</h3>
+              <p className="text-4xl font-bold mb-6 relative">
+                <span className="bg-clip-text text-transparent"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #FFD7A8 0%, #E3A869 100%)' }}>
+                  €79
+                </span>
+                <span className="text-lg text-white/70 font-medium">/mo</span>
+              </p>
+              <ul className="mb-8 space-y-3 flex-1 text-white/80 relative">
+                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> Up to 2,000 Managed Customers</li>
+                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> 10 Marketing Campaigns / mo</li>
+                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> Complete Visual Card Designer</li>
+                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> AI Assistant (20 queries/day)</li>
+                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> Advanced Revenue & Lifetime DB</li>
+              </ul>
+              <Link to="/register" className="relative block text-center w-full text-white font-semibold px-6 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                    style={{ background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}>
+                Deploy Gold Standard
+              </Link>
+            </div>
+
+            {/* VIP — Lavender theme */}
+            <div className="bg-white p-10 rounded-3xl border-2 shadow-sm flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform"
+                 style={{ borderColor: '#F0EBF8' }}>
+              <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-60"
+                   style={{ background: 'radial-gradient(circle, #F0EBF8 0%, transparent 70%)' }} />
+              <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 relative"
+                    style={{ backgroundColor: '#F0EBF8', color: '#56488C' }}>
+                VIP
+              </span>
+              <h3 className="text-2xl font-bold mb-2 relative">VIP Matrix</h3>
+              <p className="text-4xl font-bold mb-6 relative" style={{ color: '#56488C' }}>
+                €199<span className="text-lg text-[#57534E] font-medium">/mo</span>
+              </p>
+              <ul className="mb-8 space-y-3 flex-1 text-[#57534E] relative">
+                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> Up to 10,000 Managed Customers</li>
+                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> 100 Marketing Campaigns / mo</li>
+                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> Geofence Radius Push Notifications</li>
+                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> AI Assistant (35 queries/day)</li>
+                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> Raw Database CSV Extraction</li>
+              </ul>
+              <Link to="/register" className="relative block text-center w-full font-semibold px-6 py-4 rounded-xl transition-all hover:shadow-md"
+                    style={{ backgroundColor: '#F0EBF8', color: '#56488C' }}>
+                Upgrade to VIP
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* MULTI-STORE CTA */}
+      {/* MULTI-STORE CTA — kept dramatic but with multi-color accents */}
       <section id="multi-store" className="max-w-5xl mx-auto px-4 pb-20">
+        {/* Animated gradient border via padding trick */}
         <div
-          className="rounded-3xl overflow-hidden shadow-xl border border-[#E7E5E4]"
-          style={{ background: 'linear-gradient(135deg, #1C1917 0%, #3B2418 100%)' }}
+          className="rounded-3xl p-[2px] shadow-xl"
+          style={{
+            background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 25%, #8B7DC9 50%, #6BA4D9 75%, #6FA89C 100%)',
+          }}
+        >
+        <div
+          className="rounded-[22px] overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #1C1917 0%, #3B2418 50%, #2A1C2E 100%)' }}
         >
           <div className="p-10 md:p-14 text-center">
             <div className="inline-block mb-4 px-4 py-1 rounded-full bg-[#D4A574]/20 text-[#D4A574] text-xs uppercase tracking-widest font-semibold">
@@ -451,23 +746,33 @@ const LandingPage = () => {
               everything up for you, migrate your existing data, and train your staff.
             </p>
             <div className="grid md:grid-cols-3 gap-4 mb-8 max-w-3xl mx-auto text-left">
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold text-sm mb-1">Unified customer base</p>
+              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(107,164,217,0.08)', borderColor: 'rgba(107,164,217,0.30)' }}>
+                <p className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#6BA4D9' }} />
+                  Unified customer base
+                </p>
                 <p className="text-[#C4B5A0] text-xs">One customer card works at every store.</p>
               </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold text-sm mb-1">Per-branch analytics</p>
+              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(127,163,124,0.08)', borderColor: 'rgba(127,163,124,0.30)' }}>
+                <p className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#7FA37C' }} />
+                  Per-branch analytics
+                </p>
                 <p className="text-[#C4B5A0] text-xs">Compare performance across locations.</p>
               </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <p className="text-white font-semibold text-sm mb-1">Dedicated onboarding</p>
+              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(139,125,201,0.08)', borderColor: 'rgba(139,125,201,0.30)' }}>
+                <p className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8B7DC9' }} />
+                  Dedicated onboarding
+                </p>
                 <p className="text-[#C4B5A0] text-xs">We handle setup & staff training.</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <a
                 href="mailto:contact@fidelitour.fr?subject=Multi-store%20enquiry"
-                className="inline-block bg-[#D4A574] text-[#1C1917] font-semibold px-8 py-3.5 rounded-xl hover:bg-[#E4B584] transition-colors shadow-lg"
+                className="inline-block text-[#1C1917] font-semibold px-8 py-3.5 rounded-xl transition-all shadow-lg hover:-translate-y-0.5 hover:shadow-xl"
+                style={{ background: 'linear-gradient(135deg, #FFD7A8 0%, #D4A574 100%)' }}
               >
                 Contact Us
               </a>
@@ -475,13 +780,39 @@ const LandingPage = () => {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-white border-t border-[#E7E5E4] py-12">
+      {/* FOOTER — colorful gradient accent strip on top */}
+      <footer className="relative bg-white border-t border-[#EFE9E0] py-14">
+        <div
+          aria-hidden="true"
+          className="absolute top-0 left-0 right-0 h-1"
+          style={{
+            background: 'linear-gradient(90deg, #B85C38 0%, #D77FA0 16%, #8B7DC9 33%, #6BA4D9 50%, #6FA89C 66%, #88B27E 83%, #E3A869 100%)',
+          }}
+        />
         <div className="max-w-7xl mx-auto px-4 text-center text-[#57534E]">
-          <p className="font-['Cormorant_Garamond'] text-2xl font-bold mb-4 text-[#B85C38]">FidéliTour</p>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}
+            >
+              F
+            </div>
+            <p className="font-['Cormorant_Garamond'] text-2xl font-bold text-[#B85C38]">FidéliTour</p>
+          </div>
           <p className="text-sm">© {new Date().getFullYear()} FidéliTour Platforms Inc. Architected for local excellence.</p>
+          {/* Tiny colorful divider dots */}
+          <div className="flex justify-center gap-2 mt-6">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#B85C38' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#D77FA0' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#8B7DC9' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#6BA4D9' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#6FA89C' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#88B27E' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#E3A869' }} />
+          </div>
         </div>
       </footer>
     </div>
