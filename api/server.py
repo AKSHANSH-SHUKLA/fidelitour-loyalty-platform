@@ -254,20 +254,32 @@ def send_email_to_customer(to_email: str, from_name: str, subject: str, body_htm
         return False
 
 
-def _campaign_html(tenant_name: str, subject: str, rendered_body: str, customer: dict) -> str:
-    """Consistent branded email wrapper used by every campaign dispatch path."""
+def _campaign_html(tenant_name: str, subject: str, rendered_body: str, customer: dict, image_url: Optional[str] = None) -> str:
+    """Consistent branded email wrapper used by every campaign dispatch path.
+
+    Optional `image_url` renders a hero image at the top of the email — either
+    a full URL (https://...) or a data URL from a local upload.
+    """
     tier_title = (customer.get("tier") or "bronze").title()
     points = int(customer.get("points", customer.get("visits", 0) * 10) or 0)
     visits = int(customer.get("visits", 0) or 0)
     # Preserve newlines as <br>
     body_html = (rendered_body or "").replace("\n", "<br>")
+
+    image_block = ""
+    if image_url:
+        image_block = f"""
+    <div style="margin:-30px -30px 25px -30px;border-top-left-radius:12px;border-top-right-radius:12px;overflow:hidden;">
+      <img src="{image_url}" alt="" style="display:block;width:100%;max-height:320px;object-fit:cover;" />
+    </div>"""
+
     return f"""
 <div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px;background:#FDFBF7;">
   <div style="text-align:center;margin-bottom:30px;">
     <h1 style="font-family:'Georgia',serif;color:#1C1917;font-size:28px;margin-bottom:5px;">{tenant_name}</h1>
     <div style="width:50px;height:3px;background:#B85C38;margin:0 auto;"></div>
   </div>
-  <div style="background:white;border-radius:12px;padding:30px;border:1px solid #E7E5E4;">
+  <div style="background:white;border-radius:12px;padding:30px;border:1px solid #E7E5E4;overflow:hidden;">{image_block}
     <h2 style="color:#B85C38;font-size:22px;margin-bottom:15px;">{subject}</h2>
     <p style="color:#57534E;line-height:1.6;font-size:16px;">{body_html}</p>
     <div style="margin-top:25px;padding:15px;background:#F3EFE7;border-radius:8px;text-align:center;">
@@ -449,14 +461,25 @@ def mock_seed_data():
         db.campaigns.delete_many({"tenant_id": "tenant-1"})
 
         now = datetime.now(timezone.utc)
+        # Hero image — Unsplash CDN (free for commercial use). Coffee + pastries
+        # is a believable demo for the Café Lumière tenant. Persists across deploys.
+        SAMPLE_CAMPAIGN_IMAGE = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80&auto=format&fit=crop"
+
         campaign1 = Campaign(
             id="camp-1",
             tenant_id="tenant-1",
-            name="Spring Promotion",
+            name="Promo Printemps — 20% sur la pâtisserie 🌸",
             status="sent",
-            content="Get 20% off on all pastries this spring!",
+            content=(
+                "Bonjour {first_name},\n\n"
+                "Le printemps arrive chez Café Lumière ! Profitez de -20% sur toutes nos "
+                "pâtisseries jusqu'à dimanche soir.\n\n"
+                "À très vite,\nL'équipe Café Lumière ☕"
+            ),
+            source="email",
+            image_url=SAMPLE_CAMPAIGN_IMAGE,
             filters={"tier": "gold", "min_visits": 5},
-            sent_at=now - timedelta(days=7),
+            sent_at=now - timedelta(days=2),
             delivered_count=8,
             targeted_count=10,
             opens=5,
@@ -1426,10 +1449,34 @@ def save_card_template_admin(
     req: CardTemplate,
     token_data: TokenData = Depends(require_role(["super_admin"]))
 ):
-    """Save card template for a tenant (admin only)"""
+    """Save card template for a tenant (admin only). Mirrors the owner-side
+    save: snapshots old rules, writes new ones, and runs a retroactive
+    notification sweep when the rules got more permissive."""
     req.tenant_id = tenant_id
-    db.card_templates.update_one({"tenant_id": tenant_id}, {"$set": req.model_dump()}, upsert=True)
-    return req.model_dump()
+    payload = req.model_dump()
+
+    old_tpl = db.card_templates.find_one({"tenant_id": tenant_id}) or {}
+    old_threshold = int(old_tpl.get("reward_threshold_stamps", 10) or 10)
+    old_notify = int(old_tpl.get("notify_before_reward", 1) or 1)
+
+    db.card_templates.update_one({"tenant_id": tenant_id}, {"$set": payload}, upsert=True)
+
+    new_threshold = max(int(payload.get("reward_threshold_stamps", 10) or 10), 1)
+    new_notify    = max(int(payload.get("notify_before_reward", 1) or 1), 0)
+    new_approach  = max(0, new_threshold - new_notify)
+
+    if new_threshold < old_threshold or new_notify > old_notify:
+        visits_per_stamp = max(int(payload.get("visits_per_stamp", 1) or 1), 1)
+        candidates = list(db.customers.find(
+            {"tenant_id": tenant_id, "visits": {"$gte": new_approach * visits_per_stamp}}
+        ))
+        for cust in candidates:
+            try:
+                _evaluate_reward_state_and_notify(cust, tenant_id)
+            except Exception as e:
+                print(f"Reward eval failed for {cust.get('id')}: {e}")
+
+    return payload
 
 @app.put("/api/admin/tenants/{tenant_id}/geo")
 def update_geo_settings(
@@ -1952,14 +1999,17 @@ def create_campaign(
     raw_source = (req.get("source") or "").strip().lower() or None
     ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
     source = raw_source if raw_source in ALLOWED_CAMPAIGN_SOURCES else None
+    # Accept either `message` (frontend convention) or `content` (canonical)
+    body_content = req.get("content") or req.get("message") or ""
     campaign = Campaign(
         id=str(uuid.uuid4()),
         tenant_id=token_data.tenant_id,
         name=req.get("name", "New Campaign"),
-        content=req.get("content", ""),
+        content=body_content,
         filters=req.get("filters", {}),
         status=req.get("status", "draft"),
         source=source,
+        image_url=req.get("image_url") or None,
     )
     db.campaigns.insert_one(campaign.model_dump())
     return campaign.model_dump()
@@ -2015,7 +2065,7 @@ def send_campaign(
         try:
             rendered_body = render_template(campaign_content_raw, cust, tenant)
             rendered_subject = render_template(campaign.name, cust, tenant)
-            html = _campaign_html(tenant_name, rendered_subject, rendered_body, cust)
+            html = _campaign_html(tenant_name, rendered_subject, rendered_body, cust, image_url=campaign.image_url)
             sent_ok = send_email_to_customer(
                 to_email=cust["email"],
                 from_name=tenant_name,
@@ -2186,47 +2236,140 @@ def scan_visit(
     )
     db.visits.insert_one(v.model_dump())
 
-    # Check for reward notifications
-    card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id})
-    if card_template:
-        visits_per_stamp = card_template.get("visits_per_stamp", 1)
-        reward_threshold_stamps = card_template.get("reward_threshold_stamps", 10)
-        notify_before_reward = card_template.get("notify_before_reward", 1)
-
-        stamps_earned = c_obj.visits // visits_per_stamp
-        stamps_for_reward = reward_threshold_stamps
-
-        # Check if just hit reward threshold
-        if stamps_earned == stamps_for_reward:
-            notification = {
-                "customer_id": c_obj.id,
-                "tenant_id": token_data.tenant_id,
-                "title": "Reward Unlocked!",
-                "body": f"You've earned your reward: {card_template.get('reward_description', 'Reward')}",
-                "type": "reward_unlocked",
-                "sent_at": datetime.now(timezone.utc)
-            }
-            db.push_notifications.insert_one(notification)
-        # Check if near reward threshold — emit BOTH English and "Il te reste N points" FR wording
-        elif stamps_earned >= (stamps_for_reward - notify_before_reward) and stamps_earned < stamps_for_reward:
-            stamps_remaining = stamps_for_reward - stamps_earned
-            tenant_doc = db.tenants.find_one({"id": token_data.tenant_id}) or {}
-            biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "votre boutique préférée"
-            notification = {
-                "customer_id": c_obj.id,
-                "tenant_id": token_data.tenant_id,
-                "title": "Almost there!",
-                "body": f"Il te reste {stamps_remaining} {'point' if stamps_remaining == 1 else 'points'} pour une récompense chez {biz} !",
-                "type": "near_reward",
-                "points_remaining": stamps_remaining,
-                "sent_at": datetime.now(timezone.utc)
-            }
-            db.push_notifications.insert_one(notification)
-            if c_obj.email:
-                html = _campaign_html(biz, notification["title"], notification["body"], c_obj.model_dump())
-                send_email_to_customer(c_obj.email, biz, f"{biz} - {notification['title']}", html)
+    # ---- Reward notifications — delegated to a reusable evaluator ----
+    # The evaluator is also called when the owner saves the card template, so
+    # that customers who become eligible due to a rule change (e.g., threshold
+    # dropped from 10 → 8 while a customer sits at 9 stamps) get their unlock
+    # push retroactively. It uses push_notifications history to dedup so each
+    # customer can only get one near_reward and one unlock per card cycle.
+    _evaluate_reward_state_and_notify(c_obj, token_data.tenant_id)
 
     return c_obj.model_dump()
+
+
+def _cycle_start_for_customer(customer_id: str, tenant_id: str) -> Optional[datetime]:
+    """The boundary that defines a customer's current 'card cycle' — the
+    moment of their most recent reward redemption (or None if they've never
+    redeemed). Notifications fired before this don't count for dedup."""
+    last = db.rewards_redeemed.find_one(
+        {"customer_id": customer_id, "tenant_id": tenant_id},
+        sort=[("redeemed_at", -1)],
+    )
+    return last.get("redeemed_at") if last else None
+
+
+def _has_recent_notification(customer_id: str, tenant_id: str, notif_type: str,
+                              cycle_start: Optional[datetime]) -> bool:
+    """Did this customer already get a notification of this type this cycle?"""
+    q = {"customer_id": customer_id, "tenant_id": tenant_id, "type": notif_type}
+    if cycle_start is not None:
+        q["sent_at"] = {"$gt": cycle_start}
+    return db.push_notifications.find_one(q) is not None
+
+
+def _evaluate_reward_state_and_notify(customer_doc, tenant_id: str) -> Dict[str, Any]:
+    """Compute the customer's current reward state, fire any missing
+    near_reward / reward_unlocked notifications, and return what changed.
+
+    Idempotent: calling twice in quick succession is safe — the second call
+    sees the just-inserted notification and skips. This is what makes it safe
+    to call from BOTH scan_visit (per scan) AND save_card_template (per save).
+
+    Used by:
+      • scan_visit — fires when a customer crosses thresholds via a real visit.
+      • save_card_template — fires when the owner reduces threshold/notify_before,
+        catching customers who were already past the new bar.
+    """
+    fired = {"near_reward": False, "reward_unlocked": False}
+
+    # Re-fetch a fresh copy of the customer in case the caller passed a stale obj
+    cid = customer_doc.id if hasattr(customer_doc, "id") else customer_doc.get("id")
+    cust = db.customers.find_one({"id": cid, "tenant_id": tenant_id})
+    if not cust:
+        return fired
+
+    card_template = db.card_templates.find_one({"tenant_id": tenant_id})
+    if not card_template:
+        return fired
+
+    visits_per_stamp = max(int(card_template.get("visits_per_stamp", 1) or 1), 1)
+    threshold_stamps = max(int(card_template.get("reward_threshold_stamps", 10) or 10), 1)
+    notify_before    = max(int(card_template.get("notify_before_reward", 1) or 1), 0)
+    reward_description = card_template.get("reward_description") or "Une récompense"
+
+    visits = int(cust.get("visits", 0) or 0)
+    stamps_earned = visits // visits_per_stamp
+    approach_threshold = threshold_stamps - notify_before
+
+    tenant_doc = db.tenants.find_one({"id": tenant_id}) or {}
+    biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "votre boutique"
+    first_name = (cust.get("name", "").split(" ")[0] or "").strip()
+
+    cycle_start = _cycle_start_for_customer(cid, tenant_id)
+    now = datetime.now(timezone.utc)
+
+    # ---- "Almost there" push ----
+    # Fires when the customer is currently in the approach window AND hasn't
+    # received a near_reward push for this card cycle yet.
+    if (notify_before > 0
+        and approach_threshold <= stamps_earned < threshold_stamps
+        and not _has_recent_notification(cid, tenant_id, "near_reward", cycle_start)):
+        stamps_remaining = threshold_stamps - stamps_earned
+        visits_remaining = stamps_remaining * visits_per_stamp
+        if stamps_remaining == 1:
+            title = f"Plus qu'une visite, {first_name} ! 🎁" if first_name else "Plus qu'une visite ! 🎁"
+            body = (
+                f"Encore {visits_remaining} visite{'s' if visits_remaining > 1 else ''} chez {biz} "
+                f"et vous débloquez : {reward_description}. À très vite !"
+            )
+        else:
+            title = f"Vous y êtes presque, {first_name} ! ✨" if first_name else "Vous y êtes presque ! ✨"
+            body = (
+                f"Plus que {stamps_remaining} tampons "
+                f"({visits_remaining} visite{'s' if visits_remaining > 1 else ''}) "
+                f"pour débloquer : {reward_description} chez {biz}."
+            )
+        db.push_notifications.insert_one({
+            "customer_id": cid, "tenant_id": tenant_id,
+            "title": title, "body": body, "type": "near_reward",
+            "stamps_earned": stamps_earned, "stamps_for_reward": threshold_stamps,
+            "stamps_remaining": stamps_remaining, "visits_remaining": visits_remaining,
+            "sent_at": now,
+        })
+        fired["near_reward"] = True
+        if cust.get("email"):
+            try:
+                html = _campaign_html(biz, title, body, cust)
+                send_email_to_customer(cust["email"], biz, f"{biz} — {title}", html)
+            except Exception:
+                pass
+
+    # ---- "Reward unlocked" push ----
+    # Fires when the customer's current state is at-or-over the threshold AND
+    # hasn't received an unlock push for this card cycle yet.
+    if (stamps_earned >= threshold_stamps
+        and not _has_recent_notification(cid, tenant_id, "reward_unlocked", cycle_start)):
+        title = f"🎉 Récompense débloquée, {first_name} !" if first_name else "🎉 Récompense débloquée !"
+        body = (
+            f"Bravo, votre carte est complète ! Présentez ce message lors de votre prochaine "
+            f"visite chez {biz} pour profiter de : {reward_description}."
+        )
+        db.push_notifications.insert_one({
+            "customer_id": cid, "tenant_id": tenant_id,
+            "title": title, "body": body, "type": "reward_unlocked",
+            "stamps_earned": stamps_earned, "stamps_for_reward": threshold_stamps,
+            "reward_description": reward_description,
+            "sent_at": now,
+        })
+        fired["reward_unlocked"] = True
+        if cust.get("email"):
+            try:
+                html = _campaign_html(biz, title, body, cust)
+                send_email_to_customer(cust["email"], biz, f"{biz} — {title}", html)
+            except Exception:
+                pass
+
+    return fired
 
 @app.get("/api/owner/card-template")
 def get_card_template(token_data: TokenData = Depends(require_role(["business_owner"]))):
@@ -2238,12 +2381,45 @@ def get_card_template(token_data: TokenData = Depends(require_role(["business_ow
 
 @app.post("/api/owner/card-template")
 def save_card_template(req: CardTemplate, token_data: TokenData = Depends(require_role(["business_owner"]))):
-    req.tenant_id = token_data.tenant_id
+    tid = token_data.tenant_id
+    req.tenant_id = tid
     # Keep show_meter and show_progress_meter in sync — older renderers read the latter.
     payload = req.model_dump()
     if "show_meter" in payload and "show_progress_meter" not in payload:
         payload["show_progress_meter"] = payload["show_meter"]
-    db.card_templates.update_one({"tenant_id": token_data.tenant_id}, {"$set": payload}, upsert=True)
+
+    # Snapshot the OLD rule values BEFORE writing — used to detect whether the
+    # change made any customer newly eligible (threshold/notify dropped).
+    old_tpl = db.card_templates.find_one({"tenant_id": tid}) or {}
+    old_threshold = int(old_tpl.get("reward_threshold_stamps", 10) or 10)
+    old_notify = int(old_tpl.get("notify_before_reward", 1) or 1)
+
+    db.card_templates.update_one({"tenant_id": tid}, {"$set": payload}, upsert=True)
+
+    # Retroactive notification sweep — only worth running when the rules
+    # got *more permissive* (lower threshold, or earlier notify trigger).
+    new_threshold = max(int(payload.get("reward_threshold_stamps", 10) or 10), 1)
+    new_notify    = max(int(payload.get("notify_before_reward", 1) or 1), 0)
+    new_approach  = max(0, new_threshold - new_notify)
+
+    threshold_dropped = new_threshold < old_threshold
+    notify_widened    = new_notify > old_notify
+    if threshold_dropped or notify_widened:
+        # Sweep candidates: customers who, given new rules, may now be in or
+        # past the approach window. Anyone below new_approach can't be eligible
+        # for either notification yet, so we skip them — keeps the sweep cheap.
+        visits_per_stamp = max(int(payload.get("visits_per_stamp", 1) or 1), 1)
+        candidates = list(db.customers.find(
+            {"tenant_id": tid, "visits": {"$gte": new_approach * visits_per_stamp}}
+        ))
+        for cust in candidates:
+            try:
+                _evaluate_reward_state_and_notify(cust, tid)
+            except Exception as e:
+                # Sweep must never block the save, even if one customer's
+                # email send fails or their record is malformed.
+                print(f"Reward eval failed for {cust.get('id')}: {e}")
+
     return payload
 
 
@@ -3081,6 +3257,7 @@ def send_campaign_to_group(
 
     name = req.get("name") or "Campagne ciblée"
     content = req.get("content") or ""
+    image_url = req.get("image_url") or None
     sender_name = (tenant.get("campaign_sender_name") or tenant.get("name") or "FidéliTour")
 
     # Dispatch per-customer with template rendering.
@@ -3091,10 +3268,14 @@ def send_campaign_to_group(
             continue
         rendered_body = render_template(content, cust, tenant)
         rendered_subject = render_template(name, cust, tenant)
-        html = _campaign_html(sender_name, rendered_subject, rendered_body, cust)
+        html = _campaign_html(sender_name, rendered_subject, rendered_body, cust, image_url=image_url)
         ok = send_email_to_customer(cust["email"], sender_name, f"{sender_name} - {rendered_subject}", html)
         if ok:
             delivered += 1
+
+    raw_source = (req.get("source") or "").strip().lower() or None
+    ALLOWED = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
+    src = raw_source if raw_source in ALLOWED else None
 
     campaign = Campaign(
         id=str(uuid.uuid4()),
@@ -3107,6 +3288,8 @@ def send_campaign_to_group(
         targeted_count=len(targeted_customers),
         delivered_count=delivered,
         recipient_ids=[c["id"] for c in targeted_customers],
+        image_url=image_url,
+        source=src,
     )
     db.campaigns.insert_one(campaign.model_dump())
 
@@ -3116,6 +3299,7 @@ def send_campaign_to_group(
             "customer_id": c["id"],
             "tenant_id": tid,
             "campaign_id": campaign.id,
+            "image_url": image_url,
             "title": render_template(name, c, tenant),
             "body": render_template(content, c, tenant),
             "type": "campaign",
