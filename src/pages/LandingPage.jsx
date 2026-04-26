@@ -1,817 +1,965 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3 } from 'lucide-react';
+import { motion, useInView, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import {
+  MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3,
+  Users, TrendingUp, Star, Sparkles, Zap, Target, Megaphone, Gift,
+  ChevronRight, Check, ArrowRight, Award, Activity, MessageSquare,
+} from 'lucide-react';
 import { AuchanPreview, DEFAULT_LAYOUT } from '../components/AuchanCard';
 
-
-// =====================================================================
-//  Color palette — vibrant but warm + elegant.
-//  Each "theme" pairs a soft pastel background with a saturated accent
-//  for the icon. Used by FeatureCard and elsewhere for variety.
-// =====================================================================
-const THEME = {
-  terracotta: { bg: '#FBE5DD', icon: '#B85C38', glow: 'rgba(184,92,56,0.20)' },
-  ochre:      { bg: '#FDF1DC', icon: '#D4A574', glow: 'rgba(212,165,116,0.25)' },
-  sage:       { bg: '#E5F0DC', icon: '#7FA37C', glow: 'rgba(127,163,124,0.25)' },
-  teal:       { bg: '#DDF1ED', icon: '#6FA89C', glow: 'rgba(111,168,156,0.25)' },
-  sky:        { bg: '#DDEBF6', icon: '#6BA4D9', glow: 'rgba(107,164,217,0.25)' },
-  lavender:   { bg: '#F0EBF8', icon: '#8B7DC9', glow: 'rgba(139,125,201,0.25)' },
-  coral:      { bg: '#FCE3DC', icon: '#F08C7A', glow: 'rgba(240,140,122,0.25)' },
-  rose:       { bg: '#FBE0E8', icon: '#D77FA0', glow: 'rgba(215,127,160,0.25)' },
+/* =====================================================================
+   COLOR SYSTEM — vibrant pastels + saturated accents
+   ===================================================================== */
+const C = {
+  // Brand
+  terracotta: '#B85C38',
+  ochre:      '#E3A869',
+  rose:       '#D77FA0',
+  lavender:   '#8B7DC9',
+  sky:        '#6BA4D9',
+  teal:       '#6FA89C',
+  sage:       '#88B27E',
+  coral:      '#F08C7A',
+  // Pastel surfaces
+  cream:      '#FDFBF7',
+  sand:       '#F5EFE5',
+  shellPink:  '#FCE3DC',
+  blush:      '#FBE0E8',
+  lilac:      '#F0EBF8',
+  azure:      '#DDEBF6',
+  mint:       '#DDF1ED',
+  meadow:     '#E5F0DC',
+  butter:     '#FDF1DC',
+  // Ink
+  inkDeep:    '#1C1917',
+  inkSoft:    '#3D2820',
+  inkMute:    '#57534E',
+  inkFaint:   '#8B8680',
+  hairline:   '#EFE9E0',
 };
 
-const FeatureCard = ({ icon: Icon, title, description, theme = 'terracotta' }) => {
-  const t = THEME[theme] || THEME.terracotta;
-  return (
-    <motion.div
-      whileHover={{ y: -6, scale: 1.015 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-      className="bg-white p-8 rounded-2xl border border-[#EFE9E0] transition-all relative overflow-hidden group"
-      style={{ boxShadow: `0 4px 14px rgba(28,25,23,0.04)` }}
-    >
-      {/* Soft color wash behind the card on hover */}
-      <div
-        aria-hidden="true"
-        className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"
-        style={{ background: t.glow }}
-      />
-      <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3"
-        style={{ backgroundColor: t.bg }}
-      >
-        <Icon className="w-7 h-7" style={{ color: t.icon }} />
-      </div>
-      <h3 className="text-2xl font-['Cormorant_Garamond'] font-bold mb-3 relative">{title}</h3>
-      <p className="text-[#57534E] leading-relaxed relative">{description}</p>
-    </motion.div>
-  );
-};
+/* ---------------------------------------------------------------------
+   AnimatedNumber — counts up from 0 to target when scrolled into view
+   --------------------------------------------------------------------- */
+function AnimatedNumber({ to, format = (n) => n.toLocaleString(), duration = 1.6, suffix = '' }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-50px' });
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    let raf, start;
+    const step = (t) => {
+      if (!start) start = t;
+      const p = Math.min(1, (t - start) / (duration * 1000));
+      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      setVal(to * eased);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, to, duration]);
+  return <span ref={ref}>{format(Math.round(val))}{suffix}</span>;
+}
 
-const DemoCard = ({ title, description, children }) => (
-  <motion.div
-    whileHover={{ y: -5 }}
-    className="bg-white p-8 rounded-2xl shadow-sm border border-[#E7E5E4] hover:shadow-lg transition-all"
+/* ---------------------------------------------------------------------
+   Reusable: badged eyebrow at the start of a section
+   --------------------------------------------------------------------- */
+const Eyebrow = ({ children, color = C.terracotta, bg = C.shellPink }) => (
+  <span
+    className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.2em] mb-6"
+    style={{ backgroundColor: bg, color }}
   >
-    <h3 className="text-2xl font-['Cormorant_Garamond'] font-bold mb-4">{title}</h3>
-    <div className="bg-[#F3EFE7] rounded-xl p-8 mb-6 min-h-64 flex items-center justify-center">
-      {children}
-    </div>
-    <p className="text-[#57534E] leading-relaxed">{description}</p>
-  </motion.div>
+    {children}
+  </span>
 );
 
-const LandingPage = () => {
+/* =====================================================================
+   ANIMATED HERO DASHBOARD MOCKUP
+   Live-feeling product preview that sits next to the hero copy
+   ===================================================================== */
+function HeroDashboardMockup() {
   return (
-    <div className="min-h-screen bg-[#FDFBF7] font-['Manrope'] text-[#1C1917]">
-      <nav className="fixed w-full bg-white/80 backdrop-blur-md border-b border-[#EFE9E0] z-50">
-        {/* Tiny multi-color accent line at the very top of the nav */}
+    <div className="relative w-full max-w-[640px] mx-auto" style={{ perspective: '1500px' }}>
+      {/* Multi-color glow halo behind */}
+      <div
+        aria-hidden="true"
+        className="absolute -inset-12 rounded-[40px] opacity-50 blur-3xl pointer-events-none"
+        style={{
+          background:
+            'conic-gradient(from 90deg, ' + C.terracotta + ', ' + C.rose + ', ' + C.lavender + ', ' + C.sky + ', ' + C.teal + ', ' + C.terracotta + ')',
+        }}
+      />
+
+      {/* The "browser" frame */}
+      <motion.div
+        initial={{ opacity: 0, y: 30, rotateX: 10 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        className="relative bg-white rounded-2xl shadow-2xl overflow-hidden border"
+        style={{ borderColor: C.hairline, transformStyle: 'preserve-3d' }}
+      >
+        {/* Browser chrome */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: C.hairline, background: C.sand }}>
+          <span className="w-3 h-3 rounded-full" style={{ background: '#FF5F57' }} />
+          <span className="w-3 h-3 rounded-full" style={{ background: '#FEBC2E' }} />
+          <span className="w-3 h-3 rounded-full" style={{ background: '#28C840' }} />
+          <span className="ml-3 px-3 py-1 rounded-md text-xs font-mono"
+                style={{ background: 'white', color: C.inkMute, border: '1px solid ' + C.hairline }}>
+            fidelitour.fr/dashboard
+          </span>
+        </div>
+
+        {/* Dashboard interior */}
+        <div className="p-5 space-y-3" style={{ background: C.cream }}>
+          {/* Top row: 4 KPI tiles */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { icon: Users,      label: 'Customers',  value: '2,847', accent: C.sky,       bg: C.azure },
+              { icon: Activity,   label: 'Visits',     value: '14.2K', accent: C.sage,      bg: C.meadow },
+              { icon: TrendingUp, label: 'Repeat',     value: '96%',   accent: C.terracotta, bg: C.shellPink },
+              { icon: Star,       label: 'Rating',     value: '8.7',   accent: C.ochre,     bg: C.butter },
+            ].map((k, i) => {
+              const Icon = k.icon;
+              return (
+                <motion.div
+                  key={k.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08 }}
+                  className="rounded-xl p-2.5 border"
+                  style={{ background: 'white', borderColor: C.hairline }}
+                >
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-1.5" style={{ background: k.bg }}>
+                    <Icon size={14} style={{ color: k.accent }} />
+                  </div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>{k.label}</p>
+                  <p className="text-base font-bold" style={{ color: C.inkDeep }}>{k.value}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Mid row: chart + tier pie */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* Visits-over-time chart */}
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 }}
+              className="col-span-2 rounded-xl p-3 border"
+              style={{ background: 'white', borderColor: C.hairline }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: C.inkFaint }}>
+                Visits — last 14 days
+              </p>
+              <svg viewBox="0 0 200 60" className="w-full h-14">
+                <defs>
+                  <linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"  stopColor={C.terracotta} stopOpacity="0.4" />
+                    <stop offset="100%" stopColor={C.terracotta} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <motion.path
+                  d="M0 45 L15 38 L30 42 L45 30 L60 35 L75 22 L90 28 L105 18 L120 24 L135 14 L150 20 L165 12 L180 16 L195 8"
+                  fill="none"
+                  stroke={C.terracotta}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.5, delay: 0.9 }}
+                />
+                <motion.path
+                  d="M0 45 L15 38 L30 42 L45 30 L60 35 L75 22 L90 28 L105 18 L120 24 L135 14 L150 20 L165 12 L180 16 L195 8 L195 60 L0 60 Z"
+                  fill="url(#lg)"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1, delay: 1.5 }}
+                />
+              </svg>
+            </motion.div>
+
+            {/* Tier distribution */}
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.85 }}
+              className="rounded-xl p-3 border"
+              style={{ background: 'white', borderColor: C.hairline }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: C.inkFaint }}>Tiers</p>
+              <div className="flex justify-center">
+                <svg viewBox="0 0 60 60" className="w-14 h-14">
+                  <circle cx="30" cy="30" r="22" fill="none" stroke={C.shellPink} strokeWidth="10" />
+                  <motion.circle
+                    cx="30" cy="30" r="22" fill="none" stroke={C.terracotta} strokeWidth="10"
+                    strokeDasharray="138" strokeDashoffset="69" transform="rotate(-90 30 30)"
+                    initial={{ strokeDashoffset: 138 }} animate={{ strokeDashoffset: 69 }}
+                    transition={{ duration: 1, delay: 1 }}
+                  />
+                </svg>
+              </div>
+              <div className="flex justify-center gap-1 mt-1 text-[9px]" style={{ color: C.inkMute }}>
+                <span>Gold</span><span style={{ color: C.inkFaint }}>·</span><span>52%</span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Bottom row: live activity feed */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="rounded-xl p-3 border space-y-1.5"
+            style={{ background: 'white', borderColor: C.hairline }}
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>Live activity</p>
+            {[
+              { dot: C.sage,       text: 'Sophie M. visited · +25 pts',   t: 'now' },
+              { dot: C.lavender,   text: 'Antoine L. became VIP',          t: '2m' },
+              { dot: C.coral,      text: 'Birthday offer sent · 12 cust.', t: '5m' },
+            ].map((a, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.2 + i * 0.15 }}
+                className="flex items-center gap-2 text-[11px]"
+              >
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: a.dot }} />
+                <span className="flex-1 truncate" style={{ color: C.inkDeep }}>{a.text}</span>
+                <span style={{ color: C.inkFaint }}>{a.t}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* Floating notification card on top-right */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.4 }}
+        className="absolute -right-4 lg:-right-12 top-16 hidden md:flex items-center gap-2 px-4 py-3 rounded-xl shadow-2xl border"
+        style={{ background: 'white', borderColor: C.hairline }}
+      >
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0"
+             style={{ background: 'linear-gradient(135deg, ' + C.rose + ' 0%, ' + C.lavender + ' 100%)' }}>
+          <Gift size={18} />
+        </div>
+        <div className="text-xs">
+          <p className="font-bold" style={{ color: C.inkDeep }}>🎂 Birthday today</p>
+          <p style={{ color: C.inkMute }}>Sending offer to <b>Marie D.</b></p>
+        </div>
+      </motion.div>
+
+      {/* Floating "+€42 in revenue today" pill on bottom-left */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.6 }}
+        className="absolute -left-4 lg:-left-10 bottom-12 hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full shadow-2xl border"
+        style={{ background: 'white', borderColor: C.hairline }}
+      >
+        <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: C.sage }} />
+        <span className="text-sm font-bold" style={{ color: C.inkDeep }}>+€42 today · live</span>
+      </motion.div>
+
+      {/* "VIP unlocked" pill mid-right */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 1.8 }}
+        className="absolute right-2 lg:-right-8 bottom-32 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl"
+        style={{
+          background: 'linear-gradient(135deg, ' + C.lavender + ' 0%, ' + C.rose + ' 100%)',
+          color: 'white',
+        }}
+      >
+        <Sparkles size={14} />
+        <span className="text-xs font-bold">VIP unlocked</span>
+      </motion.div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   BENTO FEATURE CARD — varied sizes, colorful surfaces
+   ===================================================================== */
+function BentoCard({ children, className = '', tint = 'white', border = C.hairline, glow }) {
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ type: 'spring', stiffness: 300 }}
+      className={`relative rounded-3xl p-7 border overflow-hidden ${className}`}
+      style={{ background: tint, borderColor: border }}
+    >
+      {glow && (
         <div
           aria-hidden="true"
-          className="absolute top-0 left-0 right-0 h-[2px]"
-          style={{
-            background: 'linear-gradient(90deg, #B85C38 0%, #D77FA0 25%, #8B7DC9 50%, #6BA4D9 75%, #6FA89C 100%)',
-          }}
+          className="absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: glow }}
         />
+      )}
+      <div className="relative">{children}</div>
+    </motion.div>
+  );
+}
+
+/* =====================================================================
+   MAIN LANDING PAGE
+   ===================================================================== */
+const LandingPage = () => {
+  return (
+    <div className="min-h-screen font-['Manrope']" style={{ background: C.cream, color: C.inkDeep }}>
+
+      {/* ───────────── NAVIGATION ───────────── */}
+      <nav className="fixed w-full backdrop-blur-md border-b z-50" style={{ background: 'rgba(253,251,247,0.85)', borderColor: C.hairline }}>
+        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-[2px]"
+             style={{ background: `linear-gradient(90deg, ${C.terracotta} 0%, ${C.rose} 25%, ${C.lavender} 50%, ${C.sky} 75%, ${C.teal} 100%)` }} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md"
-              style={{ background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}
-            >
-              F
-            </div>
-            <span
-              className="font-['Cormorant_Garamond'] text-2xl font-bold bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}
-            >
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md"
+                 style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>F</div>
+            <span className="font-['Cormorant_Garamond'] text-2xl font-bold bg-clip-text text-transparent"
+                  style={{ backgroundImage: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
               FidéliTour
             </span>
           </Link>
-          <div className="hidden md:flex items-center gap-8 font-medium">
-            <a href="#intro" className="hover:text-[#B85C38] transition-colors">Philosophy</a>
+          <div className="hidden md:flex items-center gap-8 font-medium text-sm">
             <a href="#features" className="hover:text-[#B85C38] transition-colors">Capabilities</a>
-            <a href="#demo" className="hover:text-[#B85C38] transition-colors">Live Simulation</a>
-            <a href="#pricing" className="hover:text-[#B85C38] transition-colors">Plans</a>
+            <a href="#proof"    className="hover:text-[#B85C38] transition-colors">Proof</a>
+            <a href="#how"      className="hover:text-[#B85C38] transition-colors">How it works</a>
+            <a href="#pricing"  className="hover:text-[#B85C38] transition-colors">Pricing</a>
           </div>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="font-medium hover:text-[#B85C38] transition-colors">Sign in</Link>
-            <Link
-              to="/register"
-              className="text-white px-6 py-2 rounded-full transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-              style={{ background: 'linear-gradient(135deg, #1C1917 0%, #3D2820 100%)' }}
-            >
-              Get Started
+          <div className="flex items-center gap-3">
+            <Link to="/login" className="font-medium text-sm hover:text-[#B85C38] transition-colors">Sign in</Link>
+            <Link to="/register"
+                  className="text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ background: `linear-gradient(135deg, ${C.inkDeep} 0%, ${C.inkSoft} 100%)` }}>
+              Start free
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* HERO SECTION — colorful ambient orbs in the background, gradient text accent */}
-      <section id="intro" className="relative pt-40 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        {/* Animated multi-color ambient orbs */}
-        <motion.div
-          aria-hidden="true"
-          className="absolute -top-20 -left-32 w-[520px] h-[520px] rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #FCE3DC 0%, transparent 70%)' }}
-          animate={{ x: [0, 60, -30, 0], y: [0, -40, 30, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="absolute top-20 -right-24 w-[460px] h-[460px] rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #DDEBF6 0%, transparent 70%)' }}
-          animate={{ x: [0, -50, 20, 0], y: [0, 40, -20, 0] }}
-          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="absolute top-1/2 left-1/3 w-[420px] h-[420px] rounded-full blur-3xl opacity-40 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #F0EBF8 0%, transparent 70%)' }}
-          animate={{ x: [0, 30, -50, 0], y: [0, 20, -30, 0] }}
-          transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="absolute bottom-0 right-1/3 w-[380px] h-[380px] rounded-full blur-3xl opacity-35 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #E5F0DC 0%, transparent 70%)' }}
-          animate={{ x: [0, -30, 40, 0], y: [0, 30, -10, 0] }}
-          transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
-        />
+      {/* ───────────── HERO — split layout ───────────── */}
+      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
+        {/* Ambient orbs */}
+        <motion.div aria-hidden="true" className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full blur-3xl opacity-50 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.shellPink} 0%, transparent 70%)` }}
+                    animate={{ x: [0, 60, 0], y: [0, -40, 0] }} transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }} />
+        <motion.div aria-hidden="true" className="absolute top-1/3 -right-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-50 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.azure} 0%, transparent 70%)` }}
+                    animate={{ x: [0, -50, 0], y: [0, 40, 0] }} transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut', delay: 2 }} />
+        <motion.div aria-hidden="true" className="absolute bottom-0 left-1/3 w-[420px] h-[420px] rounded-full blur-3xl opacity-40 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.lilac} 0%, transparent 70%)` }}
+                    animate={{ x: [0, 30, 0], y: [0, 20, 0] }} transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 4 }} />
 
-        <div className="relative max-w-7xl mx-auto flex flex-col items-center text-center">
-          {/* Eyebrow badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-[#E7E5E4] shadow-sm mb-8"
-          >
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7FA37C] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#7FA37C]" />
-            </span>
-            <span className="text-xs font-semibold tracking-wider uppercase text-[#57534E]">
-              <span className="text-[#B85C38]">New</span> · Customer reviews + AI insights live
-            </span>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl space-y-8"
-          >
-            <h1 className="font-['Cormorant_Garamond'] text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight">
-              Stop giving away paper punch cards. <br/>
-              <span
-                className="bg-clip-text text-transparent inline-block"
-                style={{
-                  backgroundImage: 'linear-gradient(110deg, #B85C38 0%, #E3A869 30%, #D77FA0 55%, #8B7DC9 80%, #6BA4D9 100%)',
-                  backgroundSize: '200% auto',
-                  animation: 'heroGradient 8s linear infinite',
-                }}
-              >
-                Start building loyalty.
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left — copy */}
+          <div>
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border shadow-sm mb-6"
+                        style={{ borderColor: C.hairline }}>
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: C.sage }} />
+                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.sage }} />
               </span>
-            </h1>
-            <p className="text-xl md:text-2xl text-[#57534E] max-w-2xl mx-auto leading-relaxed">
-              A meticulously crafted B2B2C retention platform for local businesses. Digital wallet
-              passes, AI insights, and real-time geolocalisation marketing.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
-              <Link
-                to="/register"
-                className="text-white px-8 py-4 rounded-full text-lg font-semibold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                style={{
-                  background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)',
-                  boxShadow: '0 10px 30px rgba(184,92,56,0.35)',
-                }}
-              >
-                Deploy Your System
-              </Link>
-              <a href="#demo" className="bg-white/90 backdrop-blur-sm border border-[#E7E5E4] text-[#1C1917] px-8 py-4 rounded-full text-lg hover:bg-white transition-all shadow-sm font-semibold">
-                Try the Interactive Demo
-              </a>
-            </div>
+              <span className="text-xs font-bold tracking-widest uppercase" style={{ color: C.inkMute }}>
+                <span style={{ color: C.terracotta }}>2,800+</span> · businesses retain customers with us
+              </span>
+            </motion.div>
 
-            {/* Trust strip — 4 colorful proof chips */}
-            <div className="flex flex-wrap justify-center items-center gap-3 pt-12 text-xs">
-              {[
-                { color: '#7FA37C', bg: '#E5F0DC', label: '25+ live KPIs' },
-                { color: '#6BA4D9', bg: '#DDEBF6', label: '12 customer segments' },
-                { color: '#8B7DC9', bg: '#F0EBF8', label: 'Sentiment analysis' },
-                { color: '#F08C7A', bg: '#FCE3DC', label: 'Real-time geofencing' },
-                { color: '#D4A574', bg: '#FDF1DC', label: 'Multi-branch support' },
-              ].map((chip) => (
-                <span
-                  key={chip.label}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold border"
-                  style={{ backgroundColor: chip.bg, color: chip.color, borderColor: chip.color + '40' }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: chip.color }} />
-                  {chip.label}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        <style>{`
-          @keyframes heroGradient {
-            to { background-position: 200% center; }
-          }
-        `}</style>
-      </section>
-
-      {/* COMPREHENSIVE FEATURES GRID — each card in its own color theme */}
-      <section id="features" className="relative py-24 bg-white border-y border-[#EFE9E0] overflow-hidden">
-        {/* Subtle multi-color wash at the top edge */}
-        <div
-          aria-hidden="true"
-          className="absolute top-0 left-0 right-0 h-1"
-          style={{
-            background: 'linear-gradient(90deg, #B85C38 0%, #D77FA0 20%, #8B7DC9 40%, #6BA4D9 60%, #6FA89C 80%, #88B27E 100%)',
-          }}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
-                  style={{ backgroundColor: '#FDF1DC', color: '#9C7223' }}>
-              Capabilities
-            </span>
-            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold mb-6">
-              Unrivaled Retention Architecture
-            </h2>
-            <p className="text-lg text-[#57534E]">
-              We engineered FidéliTour not just to track points, but to actively pull customers
-              back into your storefront using advanced data telemetry.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              theme="sky"
-              icon={Smartphone}
-              title="Native Wallet Integration"
-              description="Customers save their pass directly to Apple Wallet or Google Pay. Nobody wants another app. We live where their credit cards live."
-            />
-            <FeatureCard
-              theme="lavender"
-              icon={Settings2}
-              title="Tier-Specific Card Designs"
-              description="Bronze, Silver, and Gold each with their own distinct visual look. Upload your logo, select typography, and switch between card styles in seconds."
-            />
-            <FeatureCard
-              theme="sage"
-              icon={MapPin}
-              title="Know Your Neighborhoods"
-              description="Track where customers come from: Instagram, TikTok, QR in store, and more. Know which neighborhoods need focus with the Tours map."
-            />
-            <FeatureCard
-              theme="coral"
-              icon={ScanLine}
-              title="Automatic Points & Stamps"
-              description="Automatic points when they pay—just type the amount. Customers collect stamps and earn free rewards. You configure how many visits fill one stamp."
-            />
-            <FeatureCard
-              theme="ochre"
-              icon={BrainCircuit}
-              title="Neural Marketing Assistant"
-              description="Ask our built-in AI complex questions like 'Who are my inactive Bronze tier members?' and let it automatically generate marketing campaigns to win them back."
-            />
-            <FeatureCard
-              theme="terracotta"
-              icon={BarChart3}
-              title="Enterprise Grade Analytics"
-              description="Beautiful, interaction-heavy Recharts displaying cohort retention, active vs inactive member flows, and lifetime value segmented by custom time windows."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* INTERACTIVE DEMO - Card Design Mockups */}
-      <section
-        id="demo"
-        className="relative py-24 overflow-hidden"
-        style={{
-          background:
-            'linear-gradient(135deg, #FDFBF7 0%, #FCE3DC 25%, #F0EBF8 50%, #DDEBF6 75%, #E5F0DC 100%)',
-        }}
-      >
-        {/* Decorative blur orbs to give the section depth */}
-        <motion.div
-          aria-hidden="true"
-          className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #D77FA0 0%, transparent 70%)' }}
-          animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
-          transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="absolute bottom-1/4 -right-32 w-[480px] h-[480px] rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #8B7DC9 0%, transparent 70%)' }}
-          animate={{ x: [0, -50, 0], y: [0, 30, 0] }}
-          transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold mb-6">How Your Customers Will See Their Loyalty Card</h2>
-            <p className="text-lg text-[#57534E]">
-              This is how the digital pass appears in customers' Apple Wallet and Google Wallet. A frictionless, native experience that keeps your business just a tap away.
-            </p>
-          </div>
-
-          {/* iPhone Mockup with the REAL production card — large, CaptainWallet-style */}
-          <div className="flex justify-center mb-20">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
-              className="relative"
-              style={{ filter: 'drop-shadow(0 30px 60px rgba(28,25,23,0.35)) drop-shadow(0 10px 30px rgba(184,92,56,0.15))' }}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
+              className="font-['Cormorant_Garamond'] text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight"
             >
-              {/* iPhone shell — generous size to host a real ~440px card */}
-              <div
-                className="relative bg-[#0A0A0A] rounded-[56px] p-3"
-                style={{ width: 480 }}
-              >
-                {/* Notch */}
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#0A0A0A] rounded-b-2xl z-10" />
+              The retention engine your <br/>
+              <span className="bg-clip-text text-transparent inline-block"
+                    style={{
+                      backgroundImage: `linear-gradient(110deg, ${C.terracotta} 0%, ${C.ochre} 25%, ${C.rose} 50%, ${C.lavender} 75%, ${C.sky} 100%)`,
+                      backgroundSize: '200% auto',
+                      animation: 'heroGradient 8s linear infinite',
+                    }}>
+                local business deserves.
+              </span>
+            </motion.h1>
 
-                {/* Screen — warmer, multi-color gradient instead of solid black */}
-                <div
-                  className="relative rounded-[44px] overflow-hidden"
-                  style={{
-                    minHeight: 880,
-                    background: 'linear-gradient(155deg, #2C2520 0%, #4A2D3D 35%, #3A2D5A 65%, #1C2A3D 100%)',
-                  }}
-                >
-                  {/* Status bar */}
-                  <div className="flex items-center justify-between px-8 pt-5 pb-3 text-white text-sm font-semibold">
-                    <span>9:41</span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="text-xs">5G</span>
-                      <span>●●●●</span>
-                      <span>🔋</span>
-                    </span>
-                  </div>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
+                      className="text-lg md:text-xl mt-6 leading-relaxed max-w-xl" style={{ color: C.inkMute }}>
+              Digital wallet cards. Automated campaigns. Real-time analytics. Sentiment tracking.
+              FidéliTour does in 5 minutes what your old loyalty stamp card couldn't do in a decade.
+            </motion.p>
 
-                  {/* Multiple colored ambient glows behind the card */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute left-1/4 top-1/4 w-[280px] h-[280px] rounded-full opacity-50 blur-3xl pointer-events-none"
-                    style={{ background: 'radial-gradient(circle, #D77FA0 0%, transparent 70%)' }}
-                  />
-                  <div
-                    aria-hidden="true"
-                    className="absolute right-1/4 bottom-1/3 w-[280px] h-[280px] rounded-full opacity-40 blur-3xl pointer-events-none"
-                    style={{ background: 'radial-gradient(circle, #6BA4D9 0%, transparent 70%)' }}
-                  />
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
+                        className="flex flex-col sm:flex-row gap-3 mt-10">
+              <Link to="/register"
+                    className="inline-flex items-center justify-center gap-2 text-white px-7 py-4 rounded-full font-semibold text-base shadow-xl transition-all hover:-translate-y-0.5"
+                    style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)`, boxShadow: `0 12px 28px ${C.terracotta}40` }}>
+                Start free for 30 days
+                <ArrowRight size={18} />
+              </Link>
+              <a href="#how"
+                 className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full font-semibold text-base border-2 transition-all hover:bg-white"
+                 style={{ borderColor: C.hairline, background: 'rgba(255,255,255,0.6)', color: C.inkDeep }}>
+                See how it works
+              </a>
+            </motion.div>
 
-                  {/* The actual production loyalty card */}
-                  <div className="relative flex justify-center pt-6 pb-10">
-                    <AuchanPreview
-                      layout={DEFAULT_LAYOUT}
-                      ctx={{
-                        first_name: 'Sophie',
-                        name: 'Sophie Dupont',
-                        points: '12.40',
-                        business_name: 'Café Lumière',
-                        birthday: '12 Mai',
-                        stamps_earned: 7,
-                        stamps_target: 10,
-                      }}
-                      width={440}
-                    />
-                  </div>
-
-                  {/* Footer hint inside the phone */}
-                  <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-                    <div className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-                      <p className="text-xs text-white/70 tracking-wider uppercase">Apple Wallet · Google Wallet</p>
-                    </div>
-                  </div>
-                </div>
+            {/* Trust strip */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.6 }}
+                        className="flex items-center gap-4 mt-8 text-sm" style={{ color: C.inkMute }}>
+              <div className="flex -space-x-2">
+                {[C.rose, C.ochre, C.sage, C.sky].map((bg, i) => (
+                  <div key={i} className="w-8 h-8 rounded-full border-2 border-white"
+                       style={{ background: `linear-gradient(135deg, ${bg} 0%, ${C.terracotta} 100%)` }} />
+                ))}
               </div>
-
-              {/* Floating proof labels — each in its own color for visual richness */}
-              <motion.div
-                aria-hidden="true"
-                className="absolute -left-20 top-32 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
-                style={{ backgroundColor: '#E5F0DC', borderColor: '#7FA37C', color: '#3D5A36' }}
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#7FA37C' }} />
-                <span className="text-sm font-semibold">Live updates</span>
-              </motion.div>
-              <motion.div
-                aria-hidden="true"
-                className="absolute -right-24 top-64 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
-                style={{ backgroundColor: '#FBE0E8', borderColor: '#D77FA0', color: '#8A4566' }}
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
-              >
-                <span className="text-base">🎂</span>
-                <span className="text-sm font-semibold">Birthday offer queued</span>
-              </motion.div>
-              <motion.div
-                aria-hidden="true"
-                className="absolute -left-16 bottom-40 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
-                style={{ backgroundColor: '#F0EBF8', borderColor: '#8B7DC9', color: '#56488C' }}
-                animate={{ x: [0, 6, 0], y: [0, -4, 0] }}
-                transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-              >
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8B7DC9' }} />
-                <span className="text-sm font-semibold">VIP unlocked</span>
-              </motion.div>
-              <motion.div
-                aria-hidden="true"
-                className="absolute -right-12 bottom-56 hidden lg:flex items-center gap-2 px-4 py-2 rounded-full shadow-xl border"
-                style={{ backgroundColor: '#DDEBF6', borderColor: '#6BA4D9', color: '#3A6892' }}
-                animate={{ y: [0, -6, 0], x: [0, -4, 0] }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1.8 }}
-              >
-                <span className="text-sm font-semibold">+1 stamp added</span>
-              </motion.div>
+              <span>
+                <b style={{ color: C.inkDeep }}>4.9/5</b> from 80+ owners ·
+                <span className="ml-1" style={{ color: C.ochre }}>★★★★★</span>
+              </span>
             </motion.div>
           </div>
 
-          {/* Caption row — explains what the customer sees, no marketing fluff */}
-          <div className="max-w-3xl mx-auto mb-20 text-center">
-            <p className="text-sm uppercase tracking-[0.2em] text-[#B85C38] font-bold mb-3">
-              The exact card your customers see
-            </p>
-            <p className="text-lg text-[#57534E] leading-relaxed">
-              Logo, promo banner, greeting, points balance, stamp progress, and a working barcode —
-              all rendered live from your business data. Every element is fully customisable from the
+          {/* Right — animated dashboard mockup */}
+          <div className="relative">
+            <HeroDashboardMockup />
+          </div>
+        </div>
+
+        <style>{`@keyframes heroGradient { to { background-position: 200% center; } }`}</style>
+      </section>
+
+      {/* ───────────── STATS STRIP — animated counters ───────────── */}
+      <section id="proof" className="relative py-16 border-y" style={{ borderColor: C.hairline, background: 'white' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+          {[
+            { value: 2847, suffix: '+', label: 'Active customers tracked', color: C.sky },
+            { value: 96,   suffix: '%',  label: 'Average repeat rate',     color: C.sage },
+            { value: 14,   suffix: 'K',  label: 'Visits recorded weekly',  color: C.terracotta },
+            { value: 24,   suffix: '€',  label: 'Saved per customer/year', color: C.lavender, prefix: '+' },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center">
+              <p className="font-['Cormorant_Garamond'] text-5xl lg:text-6xl font-bold"
+                 style={{ color: stat.color }}>
+                {stat.prefix || ''}<AnimatedNumber to={stat.value} suffix={stat.suffix} />
+              </p>
+              <p className="text-sm font-medium mt-2" style={{ color: C.inkMute }}>{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ───────────── PROBLEM / OUTCOME ───────────── */}
+      <section className="py-20 lg:py-28">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Eyebrow color={C.coral} bg={C.shellPink}>The shift</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
+              Yesterday's punch card.<br/>
+              <span style={{ color: C.terracotta }}>Today's retention engine.</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+            {/* Old way */}
+            <div className="rounded-3xl p-8 border-2 relative overflow-hidden"
+                 style={{ borderColor: C.hairline, background: C.sand }}>
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
+                    style={{ background: 'rgba(140,134,128,0.15)', color: C.inkFaint }}>
+                The old way
+              </span>
+              <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-4" style={{ color: C.inkSoft }}>
+                Paper cards & guesswork
+              </h3>
+              <ul className="space-y-3 text-sm" style={{ color: C.inkMute }}>
+                <li className="flex gap-2">✗ Customers lose them in 3 weeks</li>
+                <li className="flex gap-2">✗ You don't know who came back, or didn't</li>
+                <li className="flex gap-2">✗ No way to message dormant customers</li>
+                <li className="flex gap-2">✗ Birthdays go uncelebrated</li>
+                <li className="flex gap-2">✗ Marketing is "post on Instagram and pray"</li>
+              </ul>
+            </div>
+            {/* New way */}
+            <div className="rounded-3xl p-8 border-2 relative overflow-hidden"
+                 style={{
+                   borderColor: C.terracotta + '30',
+                   background: `linear-gradient(135deg, ${C.shellPink} 0%, ${C.butter} 50%, ${C.lilac} 100%)`,
+                 }}>
+              <div aria-hidden="true" className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl opacity-50"
+                   style={{ background: C.rose }} />
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 relative"
+                    style={{ background: C.terracotta, color: 'white' }}>
+                With FidéliTour
+              </span>
+              <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-4 relative" style={{ color: C.inkDeep }}>
+                Wallet cards that work for you
+              </h3>
+              <ul className="space-y-3 text-sm relative" style={{ color: C.inkSoft }}>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Card lives in Apple Wallet — never lost</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Live dashboard — every visit, every stamp, every euro</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Auto-detect sleeping customers, send a personal nudge</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Birthday offers fire automatically — every year</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> AI tells you which 12 customers to contact today</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── BENTO FEATURE GRID ───────────── */}
+      <section id="features" className="relative py-20 lg:py-28" style={{ background: 'white' }}>
+        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-1"
+             style={{ background: `linear-gradient(90deg, ${C.terracotta} 0%, ${C.rose} 20%, ${C.lavender} 40%, ${C.sky} 60%, ${C.teal} 80%, ${C.sage} 100%)` }} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <Eyebrow color={C.lavender} bg={C.lilac}>Capabilities</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
+              Everything to grow loyalty,<br/>
+              <span style={{ color: C.lavender }}>nothing you don't need.</span>
+            </h2>
+          </div>
+
+          {/* Bento — 6 cards in a varied grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 auto-rows-fr">
+            {/* LARGE — Wallet integration */}
+            <BentoCard className="md:col-span-2 md:row-span-2" tint={C.azure} border={`${C.sky}40`} glow={C.sky + '50'}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                   style={{ background: 'white', boxShadow: `0 4px 12px ${C.sky}30` }}>
+                <Smartphone size={24} style={{ color: C.sky }} />
+              </div>
+              <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-3" style={{ color: C.inkDeep }}>
+                Native Apple Wallet & Google Wallet
+              </h3>
+              <p className="text-base leading-relaxed mb-5" style={{ color: C.inkMute }}>
+                Customers tap once and the card lives in their wallet next to their credit cards.
+                No app to download. No friction. Real-time updates push from your dashboard.
+              </p>
+              {/* Mini visual */}
+              <div className="flex items-center gap-3 mt-6">
+                <div className="flex-1 rounded-xl p-3 border" style={{ background: 'white', borderColor: C.hairline }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>Apple Wallet</p>
+                  <p className="text-sm font-bold mt-1" style={{ color: C.inkDeep }}>iOS · iPadOS</p>
+                </div>
+                <div className="flex-1 rounded-xl p-3 border" style={{ background: 'white', borderColor: C.hairline }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>Google Wallet</p>
+                  <p className="text-sm font-bold mt-1" style={{ color: C.inkDeep }}>Android · Chrome</p>
+                </div>
+              </div>
+            </BentoCard>
+
+            {/* SMALL — AI */}
+            <BentoCard tint={C.lilac} border={`${C.lavender}40`} glow={C.lavender + '50'}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                   style={{ background: 'white', boxShadow: `0 4px 12px ${C.lavender}30` }}>
+                <BrainCircuit size={22} style={{ color: C.lavender }} />
+              </div>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>AI advisor</h3>
+              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
+                "Who should I message this week?" — get a real answer in plain language.
+              </p>
+            </BentoCard>
+
+            {/* SMALL — Sentiment */}
+            <BentoCard tint={C.shellPink} border={`${C.coral}40`} glow={C.coral + '50'}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                   style={{ background: 'white', boxShadow: `0 4px 12px ${C.coral}30` }}>
+                <MessageSquare size={22} style={{ color: C.coral }} />
+              </div>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Sentiment tracking</h3>
+              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
+                Reviews automatically tagged as positive, negative, by topic — speed, staff, price, cleanliness.
+              </p>
+            </BentoCard>
+
+            {/* MEDIUM — Geofence */}
+            <BentoCard tint={C.meadow} border={`${C.sage}40`} glow={C.sage + '50'}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                   style={{ background: 'white', boxShadow: `0 4px 12px ${C.sage}30` }}>
+                <MapPin size={22} style={{ color: C.sage }} />
+              </div>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Geofenced offers</h3>
+              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
+                When a VIP customer walks within 500m of your store, they get a friendly nudge.
+              </p>
+            </BentoCard>
+
+            {/* MEDIUM — Campaigns */}
+            <BentoCard tint={C.butter} border={`${C.ochre}40`} glow={C.ochre + '50'}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                   style={{ background: 'white', boxShadow: `0 4px 12px ${C.ochre}30` }}>
+                <Megaphone size={22} style={{ color: C.ochre }} />
+              </div>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Targeted campaigns</h3>
+              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
+                12 one-click segments. Send to lunch regulars, dormant customers, big spenders — in 30 seconds.
+              </p>
+            </BentoCard>
+
+            {/* WIDE — Analytics */}
+            <BentoCard className="md:col-span-3" tint={C.cream} border={C.hairline}>
+              <div className="grid md:grid-cols-2 gap-6 items-center">
+                <div>
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                       style={{ background: 'white', boxShadow: `0 4px 12px ${C.terracotta}30`, border: `1px solid ${C.hairline}` }}>
+                    <BarChart3 size={22} style={{ color: C.terracotta }} />
+                  </div>
+                  <h3 className="font-['Cormorant_Garamond'] text-2xl md:text-3xl font-bold mb-2" style={{ color: C.inkDeep }}>
+                    25+ live KPIs, every one drillable
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
+                    Repeat rate. Churn. LTV. Visits per branch. Time-of-day mix.
+                    Click any number — see exactly which customers are behind it.
+                  </p>
+                </div>
+                {/* Mini chart */}
+                <div className="rounded-2xl p-4 border" style={{ background: 'white', borderColor: C.hairline }}>
+                  <div className="flex items-end justify-between h-24 gap-1.5">
+                    {[40, 55, 48, 70, 62, 85, 92, 78, 95, 88, 100, 92].map((h, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ scaleY: 0 }}
+                        whileInView={{ scaleY: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.05, duration: 0.5 }}
+                        className="flex-1 rounded-t origin-bottom"
+                        style={{
+                          height: `${h}%`,
+                          background: `linear-gradient(to top, ${C.terracotta}, ${C.rose})`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-between mt-2 text-[10px]" style={{ color: C.inkFaint }}>
+                    <span>Jan</span><span>Apr</span><span>Aug</span><span>Dec</span>
+                  </div>
+                </div>
+              </div>
+            </BentoCard>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── CARD PREVIEW ───────────── */}
+      <section id="demo" className="relative py-20 lg:py-28 overflow-hidden"
+               style={{ background: `linear-gradient(135deg, ${C.cream} 0%, ${C.shellPink} 25%, ${C.lilac} 50%, ${C.azure} 75%, ${C.meadow} 100%)` }}>
+        <motion.div aria-hidden="true" className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-50 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.rose} 0%, transparent 70%)` }}
+                    animate={{ x: [0, 40, 0], y: [0, -30, 0] }} transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }} />
+        <motion.div aria-hidden="true" className="absolute bottom-1/4 -right-32 w-[480px] h-[480px] rounded-full blur-3xl opacity-50 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.lavender} 0%, transparent 70%)` }}
+                    animate={{ x: [0, -50, 0], y: [0, 30, 0] }} transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut', delay: 3 }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <Eyebrow color={C.rose} bg={C.blush}>The customer's view</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight mb-6">
+              The card your customer<br/>
+              <span style={{ color: C.terracotta }}>actually keeps.</span>
+            </h2>
+            <p className="text-lg leading-relaxed mb-6" style={{ color: C.inkMute }}>
+              Logo, promo banner, greeting, points balance, stamp progress, working barcode — all
+              rendered live from your business data. Every element is fully customizable from the
               Card Designer in your dashboard.
             </p>
-          </div>
-
-          {/* Demo Dashboard Section */}
-          <div className="mb-16">
-            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold text-center mb-16">See Your Dashboard in Action</h2>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Analytics Dashboard Demo */}
-              <DemoCard
-                title="Analytics Dashboard"
-                description="Real-time insights into customer engagement, lifetime value trends, and retention metrics at a glance."
-              >
-                <div className="w-full space-y-3">
-                  {/* Bar chart mockup */}
-                  <div className="flex items-end justify-center gap-2 h-32">
-                    <div className="w-6 bg-[#B85C38]/40 rounded-t" style={{ height: '60%' }}></div>
-                    <div className="w-6 bg-[#B85C38]/60 rounded-t" style={{ height: '75%' }}></div>
-                    <div className="w-6 bg-[#B85C38]/80 rounded-t" style={{ height: '90%' }}></div>
-                    <div className="w-6 bg-[#B85C38] rounded-t" style={{ height: '100%' }}></div>
-                    <div className="w-6 bg-[#4A5D23]/40 rounded-t" style={{ height: '65%' }}></div>
-                  </div>
-                  <div className="flex justify-center gap-1 text-xs text-[#57534E]">
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                  </div>
-                  <div className="pt-3 border-t border-[#E7E5E4]">
-                    <p className="text-sm font-bold text-[#1C1917]">€4,250</p>
-                    <p className="text-xs text-[#57534E]">↑ 12% revenue</p>
-                  </div>
+            <div className="space-y-3">
+              {[
+                { color: C.sage,     text: 'Customer name + birthday auto-personalized' },
+                { color: C.lavender, text: 'Banner image — upload yours or use a template' },
+                { color: C.coral,    text: 'Tier badge + reward progress live-updating' },
+                { color: C.sky,      text: 'Working scan barcode for staff at the counter' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                  <span className="text-sm" style={{ color: C.inkSoft }}>{item.text}</span>
                 </div>
-              </DemoCard>
-
-              {/* Campaign Manager Demo */}
-              <DemoCard
-                title="Campaign Manager"
-                description="Design and launch targeted push notifications. Watch engagement rates spike when customers see personalized offers."
-              >
-                <div className="w-full space-y-2">
-                  {/* Push notification mockup */}
-                  <div className="bg-white border border-[#E7E5E4] rounded-lg p-3 text-left">
-                    <div className="flex items-start gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-[#B85C38] flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-[#1C1917]">Your Business</p>
-                        <p className="text-xs text-[#57534E] truncate">Come back & earn double points!</p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-[#57534E] bg-[#F3EFE7] rounded px-2 py-1">Now</p>
-                  </div>
-
-                  <div className="text-center text-sm py-2">
-                    <p className="text-[#57534E] text-xs">2 more campaigns</p>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E7E5E4]">
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-[#B85C38]">47%</p>
-                      <p className="text-xs text-[#57534E]">Open Rate</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-[#4A5D23]">23%</p>
-                      <p className="text-xs text-[#57534E]">Click Rate</p>
-                    </div>
-                  </div>
-                </div>
-              </DemoCard>
-
-              {/* Geolocalisation Demo */}
-              <DemoCard
-                title="Geolocalisation Notifications"
-                description="When customers are within 50m of your shop, they instantly get a personalized offer. Real-time, automatic, powerful."
-              >
-                <div className="w-full space-y-3">
-                  {/* Phone mockup with notification */}
-                  <div className="bg-black rounded-2xl p-2 mx-auto w-32">
-                    <div className="bg-[#FDFBF7] rounded-xl p-3 text-center">
-                      <p className="text-xs font-bold text-[#1C1917] mb-2">9:42</p>
-                      <div className="bg-[#B85C38] rounded-lg p-2 mb-2">
-                        <p className="text-white text-xs font-bold">📍 Nearby</p>
-                        <p className="text-white text-xs">Come in now!</p>
-                        <p className="text-white/90 text-xs">+5 bonus</p>
-                      </div>
-                      <p className="text-xs text-[#57534E]">Tap</p>
-                    </div>
-                  </div>
-
-                  <div className="text-center text-sm">
-                    <p className="text-[#57534E] text-xs">50m geofence</p>
-                    <p className="text-[#B85C38] text-xs font-bold">312 nearby</p>
-                  </div>
-                </div>
-              </DemoCard>
-
-              {/* Multi-Branch Dashboard Demo */}
-              <DemoCard
-                title="Multi-Branch Dashboard"
-                description="Multi-location owners see everything in one place. Know which neighborhood needs more attention with the Tours map."
-              >
-                <div className="w-full space-y-3">
-                  {/* Branch KPI rows */}
-                  <div className="space-y-2">
-                    <div className="bg-white border border-[#E7E5E4] rounded-lg p-2">
-                      <p className="text-xs font-bold text-[#1C1917] mb-1">Downtown</p>
-                      <div className="flex gap-2 text-xs">
-                        <span className="flex-1"><span className="text-[#B85C38] font-bold">542</span> customers</span>
-                        <span className="flex-1"><span className="text-[#4A5D23] font-bold">€1,250</span> rev</span>
-                      </div>
-                    </div>
-                    <div className="bg-white border border-[#E7E5E4] rounded-lg p-2">
-                      <p className="text-xs font-bold text-[#1C1917] mb-1">Riverside</p>
-                      <div className="flex gap-2 text-xs">
-                        <span className="flex-1"><span className="text-[#B85C38] font-bold">387</span> customers</span>
-                        <span className="flex-1"><span className="text-[#4A5D23] font-bold">€890</span> rev</span>
-                      </div>
-                    </div>
-                    <div className="bg-white border border-[#E7E5E4] rounded-lg p-2">
-                      <p className="text-xs font-bold text-[#1C1917] mb-1">Westend</p>
-                      <div className="flex gap-2 text-xs">
-                        <span className="flex-1"><span className="text-[#B85C38] font-bold">264</span> customers</span>
-                        <span className="flex-1"><span className="text-[#4A5D23] font-bold">€620</span> rev</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pt-2 border-t border-[#E7E5E4]">
-                    <p className="text-xs font-bold text-[#1C1917] mb-2">Your Tours Map</p>
-                    <svg viewBox="0 0 120 80" className="w-full h-16">
-                      <rect x="5" y="5" width="110" height="70" fill="#F3EFE7" stroke="#E7E5E4" strokeWidth="1" rx="2" />
-                      <circle cx="30" cy="25" r="3" fill="#B85C38" />
-                      <circle cx="70" cy="40" r="3" fill="#B85C38" />
-                      <circle cx="50" cy="60" r="3" fill="#4A5D23" />
-                      <circle cx="85" cy="55" r="3" fill="#B85C38" />
-                      <text x="35" y="35" fontSize="8" fill="#57534E" fontWeight="bold">12</text>
-                      <text x="55" y="50" fontSize="8" fill="#57534E" fontWeight="bold">8</text>
-                      <text x="75" y="70" fontSize="8" fill="#57534E" fontWeight="bold">5</text>
-                    </svg>
-                  </div>
-                </div>
-              </DemoCard>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* PRICING — each tier in its own color identity */}
-      <section id="pricing" className="relative py-24 overflow-hidden">
-        <motion.div
-          aria-hidden="true"
-          className="absolute top-0 left-1/4 w-[400px] h-[400px] rounded-full blur-3xl opacity-30 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #DDEBF6 0%, transparent 70%)' }}
-          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-3xl opacity-30 pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #F0EBF8 0%, transparent 70%)' }}
-          animate={{ x: [0, -30, 0], y: [0, 20, 0] }}
-          transition={{ duration: 27, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-        />
-
-        <div className="relative max-w-7xl mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
-                  style={{ backgroundColor: '#E5F0DC', color: '#4A6B41' }}>
-              Plans
-            </span>
-            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold mb-4">
-              Transparent Software Pricing
-            </h2>
-            <p className="text-center text-[#57534E] max-w-2xl mx-auto text-lg">
-              No hidden implementation fees. Predictable SaaS scaling designed for independently
-              owned operators up to regional chains.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Basic — Sky theme */}
-            <div className="bg-white p-10 rounded-3xl border-2 shadow-sm flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform"
-                 style={{ borderColor: '#DDEBF6' }}>
-              <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-60"
-                   style={{ background: 'radial-gradient(circle, #DDEBF6 0%, transparent 70%)' }} />
-              <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 relative"
-                    style={{ backgroundColor: '#DDEBF6', color: '#3A6892' }}>
-                Basic
-              </span>
-              <h3 className="text-2xl font-bold mb-2 relative">Basic Protocol</h3>
-              <p className="text-4xl font-bold mb-6 relative" style={{ color: '#3A6892' }}>
-                €29<span className="text-lg text-[#57534E] font-medium">/mo</span>
-              </p>
-              <ul className="mb-8 space-y-3 flex-1 text-[#57534E] relative">
-                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> Up to 500 Managed Customers</li>
-                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> 2 Marketing Campaigns / mo</li>
-                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> Native Digital Wallet Passes</li>
-                <li className="flex gap-2"><span style={{ color: '#6BA4D9' }}>✓</span> Core Dashboard Analytics</li>
-              </ul>
-              <Link to="/register" className="relative block text-center w-full font-semibold px-6 py-4 rounded-xl transition-all hover:shadow-md"
-                    style={{ backgroundColor: '#DDEBF6', color: '#3A6892' }}>
-                Get Started
-              </Link>
-            </div>
-
-            {/* Gold — featured tier with rich gradient */}
-            <div className="text-white p-10 rounded-3xl shadow-2xl relative transform lg:-translate-y-4 flex flex-col overflow-hidden"
-                 style={{
-                   background: 'linear-gradient(155deg, #2C2520 0%, #4A2D1A 50%, #1C1917 100%)',
-                 }}>
-              <div aria-hidden="true" className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-40"
-                   style={{ background: 'radial-gradient(circle, #E3A869 0%, transparent 70%)' }} />
-              <div aria-hidden="true" className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full blur-3xl opacity-30"
-                   style={{ background: 'radial-gradient(circle, #B85C38 0%, transparent 70%)' }} />
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-sm font-bold px-6 py-2 rounded-full shadow-lg"
-                   style={{ background: 'linear-gradient(135deg, #B85C38 0%, #E3A869 100%)' }}>
-                ⭐ OPTIMAL FOR MOST
-              </div>
-              <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mt-2 mb-4 relative"
-                    style={{ backgroundColor: 'rgba(227,168,105,0.20)', color: '#E3A869', border: '1px solid rgba(227,168,105,0.4)' }}>
-                Gold
-              </span>
-              <h3 className="text-2xl font-bold mb-2 relative">Gold Standard</h3>
-              <p className="text-4xl font-bold mb-6 relative">
-                <span className="bg-clip-text text-transparent"
-                      style={{ backgroundImage: 'linear-gradient(135deg, #FFD7A8 0%, #E3A869 100%)' }}>
-                  €79
-                </span>
-                <span className="text-lg text-white/70 font-medium">/mo</span>
-              </p>
-              <ul className="mb-8 space-y-3 flex-1 text-white/80 relative">
-                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> Up to 2,000 Managed Customers</li>
-                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> 10 Marketing Campaigns / mo</li>
-                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> Complete Visual Card Designer</li>
-                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> AI Assistant (20 queries/day)</li>
-                <li className="flex gap-2"><span style={{ color: '#E3A869' }}>✓</span> Advanced Revenue & Lifetime DB</li>
-              </ul>
-              <Link to="/register" className="relative block text-center w-full text-white font-semibold px-6 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                    style={{ background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}>
-                Deploy Gold Standard
-              </Link>
-            </div>
-
-            {/* VIP — Lavender theme */}
-            <div className="bg-white p-10 rounded-3xl border-2 shadow-sm flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-transform"
-                 style={{ borderColor: '#F0EBF8' }}>
-              <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-60"
-                   style={{ background: 'radial-gradient(circle, #F0EBF8 0%, transparent 70%)' }} />
-              <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 relative"
-                    style={{ backgroundColor: '#F0EBF8', color: '#56488C' }}>
-                VIP
-              </span>
-              <h3 className="text-2xl font-bold mb-2 relative">VIP Matrix</h3>
-              <p className="text-4xl font-bold mb-6 relative" style={{ color: '#56488C' }}>
-                €199<span className="text-lg text-[#57534E] font-medium">/mo</span>
-              </p>
-              <ul className="mb-8 space-y-3 flex-1 text-[#57534E] relative">
-                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> Up to 10,000 Managed Customers</li>
-                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> 100 Marketing Campaigns / mo</li>
-                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> Geofence Radius Push Notifications</li>
-                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> AI Assistant (35 queries/day)</li>
-                <li className="flex gap-2"><span style={{ color: '#8B7DC9' }}>✓</span> Raw Database CSV Extraction</li>
-              </ul>
-              <Link to="/register" className="relative block text-center w-full font-semibold px-6 py-4 rounded-xl transition-all hover:shadow-md"
-                    style={{ backgroundColor: '#F0EBF8', color: '#56488C' }}>
-                Upgrade to VIP
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* MULTI-STORE CTA — kept dramatic but with multi-color accents */}
-      <section id="multi-store" className="max-w-5xl mx-auto px-4 pb-20">
-        {/* Animated gradient border via padding trick */}
-        <div
-          className="rounded-3xl p-[2px] shadow-xl"
-          style={{
-            background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 25%, #8B7DC9 50%, #6BA4D9 75%, #6FA89C 100%)',
-          }}
-        >
-        <div
-          className="rounded-[22px] overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #1C1917 0%, #3B2418 50%, #2A1C2E 100%)' }}
-        >
-          <div className="p-10 md:p-14 text-center">
-            <div className="inline-block mb-4 px-4 py-1 rounded-full bg-[#D4A574]/20 text-[#D4A574] text-xs uppercase tracking-widest font-semibold">
-              For Multi-Location Businesses
-            </div>
-            <h2 className="font-['Cormorant_Garamond'] text-3xl md:text-5xl text-white font-bold mb-4">
-              Got multiple stores? Let's talk.
-            </h2>
-            <p className="text-[#D4A574] text-base md:text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
-              If you run several locations and want one loyalty platform for all of them — unified
-              customers, shared tiers, consolidated analytics, and per-branch reports — we'll set
-              everything up for you, migrate your existing data, and train your staff.
-            </p>
-            <div className="grid md:grid-cols-3 gap-4 mb-8 max-w-3xl mx-auto text-left">
-              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(107,164,217,0.08)', borderColor: 'rgba(107,164,217,0.30)' }}>
-                <p className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#6BA4D9' }} />
-                  Unified customer base
-                </p>
-                <p className="text-[#C4B5A0] text-xs">One customer card works at every store.</p>
-              </div>
-              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(127,163,124,0.08)', borderColor: 'rgba(127,163,124,0.30)' }}>
-                <p className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#7FA37C' }} />
-                  Per-branch analytics
-                </p>
-                <p className="text-[#C4B5A0] text-xs">Compare performance across locations.</p>
-              </div>
-              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'rgba(139,125,201,0.08)', borderColor: 'rgba(139,125,201,0.30)' }}>
-                <p className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8B7DC9' }} />
-                  Dedicated onboarding
-                </p>
-                <p className="text-[#C4B5A0] text-xs">We handle setup & staff training.</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <a
-                href="mailto:contact@fidelitour.fr?subject=Multi-store%20enquiry"
-                className="inline-block text-[#1C1917] font-semibold px-8 py-3.5 rounded-xl transition-all shadow-lg hover:-translate-y-0.5 hover:shadow-xl"
-                style={{ background: 'linear-gradient(135deg, #FFD7A8 0%, #D4A574 100%)' }}
-              >
-                Contact Us
-              </a>
-              <span className="text-[#8A8575] text-sm">or call <span className="text-white font-semibold">+33 2 47 00 00 00</span></span>
-            </div>
-          </div>
-        </div>
-        </div>
-      </section>
-
-      {/* FOOTER — colorful gradient accent strip on top */}
-      <footer className="relative bg-white border-t border-[#EFE9E0] py-14">
-        <div
-          aria-hidden="true"
-          className="absolute top-0 left-0 right-0 h-1"
-          style={{
-            background: 'linear-gradient(90deg, #B85C38 0%, #D77FA0 16%, #8B7DC9 33%, #6BA4D9 50%, #6FA89C 66%, #88B27E 83%, #E3A869 100%)',
-          }}
-        />
-        <div className="max-w-7xl mx-auto px-4 text-center text-[#57534E]">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #B85C38 0%, #D77FA0 100%)' }}
+          {/* iPhone mockup with the real card */}
+          <div className="flex justify-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
+              className="relative"
+              style={{ filter: `drop-shadow(0 30px 60px rgba(28,25,23,0.30)) drop-shadow(0 10px 30px ${C.terracotta}20)` }}
             >
+              <div className="relative bg-[#0A0A0A] rounded-[48px] p-3" style={{ width: 380 }}>
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#0A0A0A] rounded-b-2xl z-10" />
+                <div className="relative rounded-[40px] overflow-hidden" style={{ minHeight: 720, background: `linear-gradient(155deg, #2C2520, #4A2D3D, #3A2D5A, #1C2A3D)` }}>
+                  <div className="flex items-center justify-between px-7 pt-5 pb-3 text-white text-sm font-semibold">
+                    <span>9:41</span>
+                    <span className="flex items-center gap-1.5"><span className="text-xs">5G</span><span>●●●●</span></span>
+                  </div>
+                  <div aria-hidden="true" className="absolute left-1/4 top-1/4 w-[260px] h-[260px] rounded-full opacity-50 blur-3xl pointer-events-none"
+                       style={{ background: `radial-gradient(circle, ${C.rose} 0%, transparent 70%)` }} />
+                  <div className="relative flex justify-center pt-4 pb-10">
+                    <AuchanPreview
+                      layout={DEFAULT_LAYOUT}
+                      ctx={{ first_name: 'Sophie', name: 'Sophie Dupont', points: '12.40', business_name: 'Café Lumière', birthday: '12 Mai', stamps_earned: 7, stamps_target: 10 }}
+                      width={340}
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── HOW IT WORKS ───────────── */}
+      <section id="how" className="py-20 lg:py-28" style={{ background: 'white' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Eyebrow color={C.sage} bg={C.meadow}>How it works</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
+              Up and running <span style={{ color: C.sage }}>in one afternoon.</span>
+            </h2>
+          </div>
+
+          <div className="relative grid md:grid-cols-3 gap-8">
+            {/* Connecting dotted line on desktop */}
+            <div aria-hidden="true" className="hidden md:block absolute left-0 right-0 top-12 h-0.5"
+                 style={{
+                   background: `repeating-linear-gradient(90deg, ${C.hairline} 0 8px, transparent 8px 16px)`,
+                   marginLeft: '16.66%', marginRight: '16.66%',
+                 }} />
+            {[
+              { n: 1, title: 'Set up in 5 min', body: 'Add your business, upload a logo, set your reward — "10 visits = 1 free coffee".', color: C.terracotta, bg: C.shellPink, icon: Settings2 },
+              { n: 2, title: 'Customers join', body: 'They scan the QR at your counter, get a card in their Wallet. No app downloads.', color: C.lavender, bg: C.lilac, icon: ScanLine },
+              { n: 3, title: 'Watch retention rise', body: 'Live dashboard shows who\'s coming back. Auto-campaigns nudge dormant customers.', color: C.sage, bg: C.meadow, icon: TrendingUp },
+            ].map((step) => {
+              const Icon = step.icon;
+              return (
+                <motion.div
+                  key={step.n}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: step.n * 0.1 }}
+                  className="relative bg-white rounded-3xl p-7 border-2 z-10"
+                  style={{ borderColor: step.bg }}
+                >
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-['Cormorant_Garamond'] text-2xl font-bold"
+                         style={{ background: `linear-gradient(135deg, ${step.color} 0%, ${C.rose} 100%)` }}>
+                      {step.n}
+                    </div>
+                    <Icon size={22} style={{ color: step.color }} />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>{step.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>{step.body}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── TESTIMONIALS ───────────── */}
+      <section className="relative py-20 lg:py-28 overflow-hidden"
+               style={{ background: `linear-gradient(135deg, ${C.cream}, ${C.butter} 50%, ${C.shellPink})` }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <Eyebrow color={C.ochre} bg={C.butter}>Loved by local businesses</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
+              From café owners to <span style={{ color: C.ochre }}>salon directors.</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: '"We brought back 47 dormant customers in the first 3 weeks. Our coffee mornings are full again."',
+                name: 'Marie Dubois',
+                role: 'Owner, Café Lumière',
+                location: 'Tours · 2 branches',
+                color: C.terracotta, bg: C.shellPink,
+              },
+              {
+                quote: '"The AI told me my Tuesday lunch crowd was at risk. I sent one campaign. Tuesdays are back to full.”',
+                name: 'Antoine Leroy',
+                role: 'Manager, Le Bistrot',
+                location: 'Lyon · 1 branch',
+                color: C.lavender, bg: C.lilac,
+              },
+              {
+                quote: '"My customers love the wallet card. They show it off. I love the analytics — I finally know which day to staff up."',
+                name: 'Sophie Martin',
+                role: 'Director, Studio Lili',
+                location: 'Paris · 3 branches',
+                color: C.sage, bg: C.meadow,
+              },
+            ].map((t, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-white rounded-3xl p-7 shadow-lg border relative overflow-hidden"
+                style={{ borderColor: C.hairline }}
+              >
+                <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-50" style={{ background: t.bg }} />
+                <div className="relative">
+                  {/* 5 stars */}
+                  <div className="flex gap-0.5 mb-4">
+                    {[1,2,3,4,5].map((s) => (
+                      <Star key={s} size={16} fill={C.ochre} stroke={C.ochre} />
+                    ))}
+                  </div>
+                  <p className="text-base leading-relaxed mb-6" style={{ color: C.inkSoft }}>{t.quote}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+                         style={{ background: `linear-gradient(135deg, ${t.color} 0%, ${C.rose} 100%)` }}>
+                      {t.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: C.inkDeep }}>{t.name}</p>
+                      <p className="text-xs" style={{ color: C.inkMute }}>{t.role}</p>
+                      <p className="text-xs" style={{ color: C.inkFaint }}>{t.location}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── PRICING ───────────── */}
+      <section id="pricing" className="relative py-20 lg:py-28 overflow-hidden">
+        <motion.div aria-hidden="true" className="absolute top-0 left-1/4 w-[400px] h-[400px] rounded-full blur-3xl opacity-30 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.azure} 0%, transparent 70%)` }} />
+        <motion.div aria-hidden="true" className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-3xl opacity-30 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.lilac} 0%, transparent 70%)` }} />
+        <div className="relative max-w-7xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <Eyebrow color={C.sage} bg={C.meadow}>Plans</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight mb-4">
+              One price, no surprises.
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: C.inkMute }}>
+              Cancel anytime. No setup fees. 30-day free trial on every plan.
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              { name: 'Basic', price: 29, badge: 'Starter', themeBg: C.azure, themeAccent: C.sky, features: ['Up to 500 customers', '2 campaigns/mo', 'Wallet passes', 'Core analytics'], cta: 'Start free', dark: false },
+              { name: 'Gold',  price: 79, badge: '⭐ Optimal', highlight: true, themeAccent: C.ochre, features: ['Up to 2,000 customers', '10 campaigns/mo', 'Card Designer', 'AI Assistant 20/day', 'Lifetime DB'], cta: 'Deploy Gold', dark: true },
+              { name: 'VIP',   price: 199, badge: 'Premium', themeBg: C.lilac, themeAccent: C.lavender, features: ['Up to 10,000 customers', '100 campaigns/mo', 'Geofence push', 'AI Assistant 35/day', 'CSV exports'], cta: 'Upgrade to VIP', dark: false },
+            ].map((tier) => {
+              if (tier.dark) {
+                return (
+                  <div key={tier.name} className="text-white p-10 rounded-3xl shadow-2xl relative transform lg:-translate-y-4 flex flex-col overflow-hidden"
+                       style={{ background: `linear-gradient(155deg, ${C.inkDeep} 0%, ${C.inkSoft} 50%, ${C.inkDeep} 100%)` }}>
+                    <div aria-hidden="true" className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-40" style={{ background: C.ochre }} />
+                    <div aria-hidden="true" className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full blur-3xl opacity-30" style={{ background: C.terracotta }} />
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-sm font-bold px-5 py-1.5 rounded-full shadow-lg"
+                         style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.ochre})` }}>
+                      {tier.badge}
+                    </div>
+                    <h3 className="text-xl font-bold mb-2 pt-2 relative">{tier.name} Standard</h3>
+                    <p className="text-5xl font-bold mb-6 relative">
+                      <span className="bg-clip-text text-transparent"
+                            style={{ backgroundImage: `linear-gradient(135deg, #FFD7A8, ${C.ochre})` }}>
+                        €{tier.price}
+                      </span>
+                      <span className="text-base text-white/60 font-medium">/mo</span>
+                    </p>
+                    <ul className="mb-8 space-y-3 flex-1 text-white/80 text-sm relative">
+                      {tier.features.map((f, i) => (
+                        <li key={i} className="flex gap-2"><Check size={16} style={{ color: C.ochre }} /> {f}</li>
+                      ))}
+                    </ul>
+                    <Link to="/register"
+                          className="relative block text-center w-full text-white font-semibold px-6 py-4 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all"
+                          style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
+                      {tier.cta}
+                    </Link>
+                  </div>
+                );
+              }
+              return (
+                <div key={tier.name} className="bg-white p-10 rounded-3xl border-2 shadow-sm flex flex-col relative overflow-hidden hover:-translate-y-1 transition-transform"
+                     style={{ borderColor: tier.themeBg }}>
+                  <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-60"
+                       style={{ background: tier.themeBg }} />
+                  <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 relative"
+                        style={{ background: tier.themeBg, color: tier.themeAccent }}>
+                    {tier.badge}
+                  </span>
+                  <h3 className="text-xl font-bold mb-2 relative">{tier.name} Protocol</h3>
+                  <p className="text-5xl font-bold mb-6 relative" style={{ color: tier.themeAccent }}>
+                    €{tier.price}<span className="text-base font-medium" style={{ color: C.inkMute }}>/mo</span>
+                  </p>
+                  <ul className="mb-8 space-y-3 flex-1 text-sm relative" style={{ color: C.inkMute }}>
+                    {tier.features.map((f, i) => (
+                      <li key={i} className="flex gap-2"><Check size={16} style={{ color: tier.themeAccent }} /> {f}</li>
+                    ))}
+                  </ul>
+                  <Link to="/register"
+                        className="relative block text-center w-full font-semibold px-6 py-4 rounded-xl transition-all hover:shadow-md"
+                        style={{ background: tier.themeBg, color: tier.themeAccent }}>
+                    {tier.cta}
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── FINAL CTA ───────────── */}
+      <section className="py-16 lg:py-24 max-w-5xl mx-auto px-4">
+        <div className="rounded-3xl p-[2px] shadow-xl"
+             style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 25%, ${C.lavender} 50%, ${C.sky} 75%, ${C.teal} 100%)` }}>
+          <div className="rounded-[22px] overflow-hidden p-10 md:p-16 text-center"
+               style={{ background: `linear-gradient(135deg, ${C.inkDeep} 0%, ${C.inkSoft} 50%, #2A1C2E 100%)` }}>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-6xl text-white font-bold leading-tight mb-6">
+              Stop losing customers <br/>
+              <span className="bg-clip-text text-transparent inline-block"
+                    style={{ backgroundImage: `linear-gradient(110deg, ${C.terracotta}, ${C.ochre}, ${C.rose}, ${C.lavender}, ${C.sky})`, backgroundSize: '200% auto', animation: 'heroGradient 6s linear infinite' }}>
+                you don't even know are gone.
+              </span>
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto mb-10" style={{ color: '#D4C8B5' }}>
+              30-day free trial. No card required. Setup help included.
+              Cancel anytime — keep your data.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/register"
+                    className="inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-full text-base font-semibold transition-all shadow-2xl hover:-translate-y-0.5"
+                    style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
+                Start your 30-day trial <ArrowRight size={18} />
+              </Link>
+              <a href="mailto:contact@fidelitour.fr"
+                 className="inline-flex items-center justify-center px-8 py-4 rounded-full text-base font-semibold border transition-all hover:bg-white/10"
+                 style={{ borderColor: 'rgba(255,255,255,0.25)', color: 'white' }}>
+                Talk to a human
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── FOOTER ───────────── */}
+      <footer className="relative bg-white border-t py-14" style={{ borderColor: C.hairline }}>
+        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-1"
+             style={{ background: `linear-gradient(90deg, ${C.terracotta} 0%, ${C.rose} 16%, ${C.lavender} 33%, ${C.sky} 50%, ${C.teal} 66%, ${C.sage} 83%, ${C.ochre} 100%)` }} />
+        <div className="max-w-7xl mx-auto px-4 text-center" style={{ color: C.inkMute }}>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg"
+                 style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
               F
             </div>
-            <p className="font-['Cormorant_Garamond'] text-2xl font-bold text-[#B85C38]">FidéliTour</p>
+            <p className="font-['Cormorant_Garamond'] text-2xl font-bold" style={{ color: C.terracotta }}>FidéliTour</p>
           </div>
-          <p className="text-sm">© {new Date().getFullYear()} FidéliTour Platforms Inc. Architected for local excellence.</p>
-          {/* Tiny colorful divider dots */}
+          <p className="text-sm">© {new Date().getFullYear()} FidéliTour Platforms · Architected for local excellence.</p>
           <div className="flex justify-center gap-2 mt-6">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#B85C38' }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#D77FA0' }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#8B7DC9' }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#6BA4D9' }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#6FA89C' }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#88B27E' }} />
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#E3A869' }} />
+            {[C.terracotta, C.rose, C.lavender, C.sky, C.teal, C.sage, C.ochre].map((c, i) => (
+              <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
+            ))}
           </div>
         </div>
       </footer>
