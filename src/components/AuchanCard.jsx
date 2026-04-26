@@ -33,23 +33,31 @@ function readImageFileAsDataURL(file, { maxSide = 1200, quality = 0.85 } = {}) {
       const img = new Image();
       img.onerror = () => reject(new Error('Image decode failed'));
       img.onload = () => {
-        // Small images: emit directly. Large images: re-render through canvas.
+        // Always re-encode through canvas to control output size — even small
+        // images get a quality pass. The previous "small images: emit directly"
+        // shortcut meant a 3 MB JPEG could pass through unchanged.
         const longest = Math.max(img.width, img.height);
-        if (longest <= maxSide) {
-          resolve(reader.result);
-          return;
-        }
-        const scale = maxSide / longest;
+        const scale = longest > maxSide ? maxSide / longest : 1;
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        // Keep transparency if it's a PNG; otherwise JPEG compresses smaller.
+        // PNG only when the source was PNG AND likely contains transparency.
+        // For photos (jpeg / heic / webp) we always emit JPEG — much smaller.
         const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
         try {
-          resolve(canvas.toDataURL(mime, quality));
+          let dataUrl = canvas.toDataURL(mime, quality);
+          // Adaptive size cap: if we're still over 1.5 MB, re-encode at lower
+          // quality. Keep going down to 0.5 if needed. This guarantees the
+          // serverless function never receives a payload that 413's.
+          let q = quality;
+          while (dataUrl.length > 1_500_000 && q > 0.5 && mime === 'image/jpeg') {
+            q -= 0.1;
+            dataUrl = canvas.toDataURL(mime, q);
+          }
+          resolve(dataUrl);
         } catch (e) {
           reject(e);
         }
@@ -166,6 +174,8 @@ export const DEFAULT_LAYOUT = {
   banner_bg_color: '#E30613',
   banner_image_url: '',         // small circular image inside the textual banner
   banner_full_image_url: '',    // full custom banner image — REPLACES the textual banner when set
+  banner_height_px: 116,        // height of the banner area (only when full image is set)
+  banner_object_position: 'center center',  // CSS object-position for the full banner crop
   logo_url: '',
   // stamps
   stamp_style: 'hexagon',
@@ -430,18 +440,26 @@ export function AuchanPreview({ layout = DEFAULT_LAYOUT, ctx = {}, width = 380 }
 
       {/* PROMO BANNER */}
       {L.banner_full_image_url ? (
-        /* Full custom banner — uploaded by the owner. Replaces the entire
-           textual banner so businesses can drop in their own pre-designed
-           promotional graphics (seasonal campaigns, agency artwork, etc.). */
+        /* Full custom banner — uploaded by the owner. The image is cropped
+           to fill a strict height, controlled by `banner_height_px`. The
+           visible portion of the image is set via `banner_object_position`,
+           letting the owner pick which part of their image shows. */
         <div
           className="mx-3 rounded-lg overflow-hidden"
-          style={{ minHeight: 116, backgroundColor: L.banner_bg_color }}
+          style={{
+            height: `${L.banner_height_px || 116}px`,
+            backgroundColor: L.banner_bg_color,
+          }}
         >
           <img
             src={L.banner_full_image_url}
             alt="banner"
-            className="w-full h-full object-cover"
-            style={{ display: 'block', minHeight: 116 }}
+            className="w-full h-full"
+            style={{
+              display: 'block',
+              objectFit: 'cover',
+              objectPosition: L.banner_object_position || 'center center',
+            }}
           />
         </div>
       ) : (
@@ -824,7 +842,7 @@ export function AuchanEditor({ layout, onChange, ctx = {}, businessName }) {
                     onLoaded={(dataUrl) => setField('banner_full_image_url', dataUrl)}
                     onClear={() => setField('banner_full_image_url', '')}
                     hasValue={Boolean(L.banner_full_image_url)}
-                    maxSide={1600}
+                    maxSide={1100}
                   />
                   {L.banner_full_image_url && (
                     <p className="text-[11px] text-[#7B3F00] mt-2 font-semibold">
@@ -833,6 +851,87 @@ export function AuchanEditor({ layout, onChange, ctx = {}, businessName }) {
                   )}
                 </div>
               </div>
+
+              {/* Size + crop controls — only meaningful when a full banner is set */}
+              {L.banner_full_image_url && (
+                <div className="mt-4 pt-4 border-t border-[#E3A869]/40 space-y-3">
+                  {/* Banner height presets + custom slider */}
+                  <div>
+                    <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider">
+                      Banner size · {L.banner_height_px || 116}px tall
+                    </label>
+                    <div className="flex items-center gap-2 mt-2">
+                      {[
+                        { label: 'S', val: 80, hint: 'Compact strip' },
+                        { label: 'M', val: 116, hint: 'Default' },
+                        { label: 'L', val: 160, hint: 'Tall' },
+                        { label: 'XL', val: 220, hint: 'Hero' },
+                      ].map((opt) => {
+                        const active = (L.banner_height_px || 116) === opt.val;
+                        return (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() => setField('banner_height_px', opt.val)}
+                            title={opt.hint}
+                            className={`px-3 py-1.5 text-xs font-bold rounded border transition ${
+                              active
+                                ? 'bg-[#B85C38] text-white border-[#B85C38]'
+                                : 'bg-white text-[#7B3F00] border-[#E3A869]/40 hover:bg-[#FEF9E7]'
+                            }`}
+                          >
+                            {opt.label} <span className="font-normal opacity-70">{opt.val}px</span>
+                          </button>
+                        );
+                      })}
+                      <input
+                        type="range"
+                        min={60}
+                        max={280}
+                        step={4}
+                        value={L.banner_height_px || 116}
+                        onChange={(e) => setField('banner_height_px', parseInt(e.target.value, 10))}
+                        className="flex-1 ml-2 accent-[#B85C38]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Crop / object-position 3x3 grid — pick which part of the
+                      image shows when the banner is shorter than the source. */}
+                  <div>
+                    <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider">
+                      Crop position · {L.banner_object_position || 'center center'}
+                    </label>
+                    <p className="text-[11px] text-[#7B3F00]/80 mt-0.5 mb-2">
+                      Pick which part of your image stays visible when it's cropped to fit.
+                    </p>
+                    <div className="grid grid-cols-3 gap-1 w-32">
+                      {[
+                        ['left top', 'center top', 'right top'],
+                        ['left center', 'center center', 'right center'],
+                        ['left bottom', 'center bottom', 'right bottom'],
+                      ].flat().map((pos) => {
+                        const active = (L.banner_object_position || 'center center') === pos;
+                        return (
+                          <button
+                            key={pos}
+                            type="button"
+                            onClick={() => setField('banner_object_position', pos)}
+                            title={pos}
+                            className={`aspect-square rounded border-2 transition ${
+                              active
+                                ? 'bg-[#B85C38] border-[#B85C38]'
+                                : 'bg-white border-[#E3A869]/40 hover:border-[#B85C38]'
+                            }`}
+                          >
+                            <span className={`block w-full h-full ${active ? 'bg-white/30' : ''}`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="col-span-2">

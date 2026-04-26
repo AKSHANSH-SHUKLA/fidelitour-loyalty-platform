@@ -22,6 +22,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import AdminTenantsPage from './pages/AdminTenantsPage';
 import AdminCardDesignerPage from './pages/AdminCardDesignerPage';
+import CardDesignerPage from './pages/CardDesignerPage';
 import AdminAIAssistantPage from './pages/AdminAIAssistantPage';
 import AdminCampaignsPage from './pages/AdminCampaignsPage';
 import AdminInsightsPage from './pages/AdminInsightsPage';
@@ -100,6 +101,11 @@ function App() {
             <Route path="scan" element={
               <ProtectedRoute allowedRoles={['business_owner', 'manager', 'staff']}>
                 <ScanPage />
+              </ProtectedRoute>
+            } />
+            <Route path="card-designer" element={
+              <ProtectedRoute allowedRoles={['business_owner']}>
+                <CardDesignerPage />
               </ProtectedRoute>
             } />
             <Route path="campaigns" element={

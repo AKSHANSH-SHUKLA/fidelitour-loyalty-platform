@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
-  Database, BrainCircuit, Megaphone, MessageSquare, MapPin, Sparkles
+  Database, BrainCircuit, Megaphone, MessageSquare, MapPin, Sparkles, CreditCard
 } from 'lucide-react';
 
 const NavLink = ({ to, icon: Icon, label, currentPath }) => {
@@ -50,6 +50,7 @@ const DashboardLayout = () => {
                   is the staff workspace. Owners can still reach it by direct URL
                   if they want to record a scan themselves, but the sidebar stays
                   focused on the strategic tools they use day-to-day. */}
+              <NavLink to="/dashboard/card-designer" icon={CreditCard} label="Card Designer" currentPath={currentPath} />
               <NavLink to="/dashboard/campaigns" icon={Megaphone} label="Campaigns" currentPath={currentPath} />
               <NavLink to="/dashboard/ai-assistant" icon={BrainCircuit} label="AI Assistant" currentPath={currentPath} />
               <NavLink to="/dashboard/settings" icon={Settings2} label="Settings" currentPath={currentPath} />
