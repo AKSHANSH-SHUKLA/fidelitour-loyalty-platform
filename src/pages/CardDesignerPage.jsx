@@ -9,6 +9,7 @@ const DEFAULT_RULES = {
   visits_per_stamp: 1,
   reward_threshold_stamps: 10,
   reward_description: 'Un café gratuit',
+  notify_before_reward: 1,   // Push fires when this-many visits remain
 };
 
 export default function CardDesignerPage() {
@@ -46,6 +47,7 @@ export default function CardDesignerPage() {
           visits_per_stamp: tplData.visits_per_stamp ?? DEFAULT_RULES.visits_per_stamp,
           reward_threshold_stamps: tplData.reward_threshold_stamps ?? DEFAULT_RULES.reward_threshold_stamps,
           reward_description: tplData.reward_description ?? DEFAULT_RULES.reward_description,
+          notify_before_reward: tplData.notify_before_reward ?? DEFAULT_RULES.notify_before_reward,
         });
       } catch (e) {
         /* defaults are fine */
@@ -97,6 +99,7 @@ export default function CardDesignerPage() {
         visits_per_stamp: Math.max(1, parseInt(rules.visits_per_stamp, 10) || 1),
         reward_threshold_stamps: Math.max(1, parseInt(rules.reward_threshold_stamps, 10) || 1),
         reward_description: (rules.reward_description || '').trim() || 'Reward',
+        notify_before_reward: Math.max(0, parseInt(rules.notify_before_reward, 10) || 0),
       };
       delete payload._id; // mongo internal field — never round-trip
       const payloadSize = JSON.stringify(payload).length;
@@ -269,6 +272,46 @@ export default function CardDesignerPage() {
               className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-semibold text-[#1C1917]"
             />
           </div>
+
+          <div className="md:col-span-2">
+            <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
+              🔔 Send "almost there" push when N visits remain
+            </label>
+            <p className="text-[11px] text-[#7B3F00]/80 mb-2">
+              When a customer is this many visits away from unlocking the reward, an automatic push
+              fires once. Set to <b>1</b> for the classic "one more visit and you get a free coffee!"
+              nudge. Set to <b>0</b> to disable.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="0"
+                max="10"
+                value={rules.notify_before_reward}
+                onChange={(e) => updateRule('notify_before_reward', e.target.value)}
+                className="w-24 px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
+              />
+              <div className="flex items-center gap-2 text-xs text-[#7B3F00]">
+                {[0, 1, 2, 3].map((preset) => {
+                  const active = parseInt(rules.notify_before_reward, 10) === preset;
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => updateRule('notify_before_reward', preset)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-bold transition ${
+                        active
+                          ? 'bg-[#B85C38] text-white'
+                          : 'bg-white border border-[#E3A869]/60 hover:bg-[#FEF9E7]'
+                      }`}
+                    >
+                      {preset === 0 ? 'Off' : `${preset} visit${preset > 1 ? 's' : ''} away`}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Live, plain-English summary */}
@@ -282,6 +325,12 @@ export default function CardDesignerPage() {
               {' '}({rules.reward_threshold_stamps} stamp{rules.reward_threshold_stamps === 1 ? '' : 's'} ·
               {' '}{rules.visits_per_stamp} visit{rules.visits_per_stamp === 1 ? '' : 's'} per stamp)
               {' '}they unlock <b>"{rules.reward_description}"</b> — having earned <b>{pointsPerReward} points</b> along the way.
+              {parseInt(rules.notify_before_reward, 10) > 0 && (
+                <>
+                  {' '}🔔 When they're <b>{rules.notify_before_reward} visit{parseInt(rules.notify_before_reward, 10) === 1 ? '' : 's'}</b> away,
+                  {' '}an automatic "almost there!" push lands on their phone.
+                </>
+              )}
             </p>
           </div>
         </div>
