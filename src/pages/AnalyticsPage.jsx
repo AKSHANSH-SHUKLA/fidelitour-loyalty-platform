@@ -495,12 +495,28 @@ const AnalyticsPage = () => {
 
   const acquisitionChart = useMemo(
     () => (acquisition || []).map((a) => ({
-      name: (a.source || 'unknown').replace(/_/g, ' '),
-      value: a.count,
+      name: a.label || (a.source || 'unknown').replace(/_/g, ' '),
+      value: a.count || 0,
       raw: a.source,
+      pct: a.percentage || 0,
     })),
     [acquisition]
   );
+
+  // Lifetime acquisition total — sum of all per-channel counts. Used for
+  // the "X customers acquired all-time" headline above the per-channel KPIs.
+  const acquisitionTotal = useMemo(
+    () => (acquisition || []).reduce((sum, a) => sum + (a.count || 0), 0),
+    [acquisition]
+  );
+
+  // Per-source styling — consistent colors across the chart and the KPI tiles.
+  const SOURCE_STYLE = {
+    instagram: { color: '#E1306C', bg: 'rgba(225,48,108,0.08)', icon: '📸' },
+    facebook:  { color: '#1877F2', bg: 'rgba(24,119,242,0.08)', icon: '👥' },
+    tiktok:    { color: '#000000', bg: 'rgba(0,0,0,0.06)',       icon: '🎵' },
+    qr_store:  { color: '#B85C38', bg: 'rgba(184,92,56,0.10)',   icon: '📍' },
+  };
 
   const rankedCustomers = useMemo(() => {
     const list = [...(highestPaying || [])];
@@ -1076,29 +1092,59 @@ const AnalyticsPage = () => {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Acquisition Sources" hint="How customers found you in the last 90 days.">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {acquisitionChart.map((a, i) => (
-              <SendCampaignButton
-                key={a.raw || i}
-                label={`Send to ${a.name} (${a.value})`}
-                onClick={() => openComposer(
-                  { type: 'acquisition', value: a.raw },
-                  `Un petit mot pour nos clients ${a.name}`,
-                  `Merci de nous avoir découverts via ${a.name}, {first_name} ! Une surprise vous attend chez {business_name}.`
-                )}
-              />
-            ))}
+        <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
+          {/* Lifetime headline */}
+          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E7E5E4]">
+            <p className="text-3xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              {acquisitionTotal}
+            </p>
+            <p className="text-sm text-[#57534E]">customers acquired across all channels (all-time)</p>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
+
+          {/* Per-channel KPI tiles — count + percentage. Click to drill into customer list. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            {acquisitionChart.map((a) => {
+              const style = SOURCE_STYLE[a.raw] || { color: '#8B8680', bg: '#F3EFE7', icon: '•' };
+              return (
+                <button
+                  key={a.raw}
+                  type="button"
+                  onClick={() => drillCustomers(
+                    `Customers acquired via ${a.name}`,
+                    { source: a.raw }
+                  )}
+                  className="text-left p-3 rounded-lg border border-[#E7E5E4] hover:border-[#B85C38] hover:shadow-sm transition"
+                  style={{ backgroundColor: style.bg }}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-base">{style.icon}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: style.color }}>
+                      {a.name}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-[#1C1917] leading-tight">
+                    {a.value}
+                    <span className="text-sm text-[#8B8680] font-normal"> customers</span>
+                  </p>
+                  <p className="text-[11px] mt-0.5 font-semibold" style={{ color: style.color }}>
+                    {a.pct}% of total
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={acquisitionChart} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
               <XAxis type="number" stroke="#57534E" />
               <YAxis type="category" dataKey="name" stroke="#57534E" width={110} />
-              <Tooltip />
+              <Tooltip
+                formatter={(value, _name, p) => [`${value} customers (${p?.payload?.pct || 0}%)`, 'Acquired']}
+              />
               <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                {acquisitionChart.map((_, i) => (
-                  <Cell key={i} fill={ACQ_COLORS[i % ACQ_COLORS.length]} />
+                {acquisitionChart.map((row, i) => (
+                  <Cell key={i} fill={(SOURCE_STYLE[row.raw] || {}).color || ACQ_COLORS[i % ACQ_COLORS.length]} />
                 ))}
               </Bar>
             </BarChart>

@@ -1488,7 +1488,7 @@ export default function CampaignsPage() {
                       <p className="text-[10px] text-[#4A5D23] mt-0.5 font-semibold">{openPct}% open rate</p>
                     </div>
                     <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Visits after (7d)</p>
+                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Visits after (15d)</p>
                       <p className="text-2xl font-bold text-[#1C1917]">
                         {visits}<span className="text-base text-[#8B8680] font-normal"> / {denom}</span>
                       </p>

@@ -2207,13 +2207,13 @@ def scan_visit(
 
     db.customers.update_one({"id": c_obj.id}, {"$set": c_obj.model_dump()})
 
-    # ---- Campaign visit attribution (7-day window) -------------------
-    # For any campaign sent to this customer in the last 7 days that hasn't
+    # ---- Campaign visit attribution (15-day window) ------------------
+    # For any campaign sent to this customer in the last 15 days that hasn't
     # already been credited for this customer, bump visits_from_campaign and
     # remember so we never double-count on repeat scans.
     try:
         now_utc = datetime.now(timezone.utc)
-        window_start = now_utc - timedelta(days=7)
+        window_start = now_utc - timedelta(days=15)
         attributable = db.campaigns.find({
             "tenant_id": token_data.tenant_id,
             "status": {"$in": ["sent", "delivered"]},
@@ -3365,7 +3365,7 @@ def get_campaign_tracking(
 
     recipient_ids = campaign.get("recipient_ids", []) or []
     sent_at = campaign.get("sent_at")
-    visit_cutoff = sent_at + timedelta(days=7) if isinstance(sent_at, datetime) else None
+    visit_cutoff = sent_at + timedelta(days=15) if isinstance(sent_at, datetime) else None
     attributed_ids = set(campaign.get("attributed_visit_customer_ids", []) or [])
 
     # One query for all opens — much cheaper than find_one per recipient.
@@ -3458,21 +3458,25 @@ def track_campaign_open(
     recipient_ids = campaign.get("recipient_ids", []) or []
     is_recipient = customer_id in recipient_ids
 
-    # Dedup opens_unique: only $inc if this (campaign, customer) pair is new
+    # Unique-only opens: ignore re-opens entirely. The first time a (campaign,
+    # customer) pair shows up we record it and bump the counters; every
+    # subsequent fetch of the pixel is silently dropped so the campaign success
+    # metric stays a reliable "how many distinct people opened this".
     already_opened = db.campaign_opens.find_one(
         {"campaign_id": campaign_id, "customer_id": customer_id}
     )
 
-    db.campaign_opens.insert_one({
-        "campaign_id": campaign_id,
-        "customer_id": customer_id,
-        "opened_at": datetime.now(timezone.utc),
-    })
-
-    inc = {"opens": 1}
     if not already_opened and is_recipient:
-        inc["opens_unique"] = 1
-    db.campaigns.update_one({"id": campaign_id}, {"$inc": inc})
+        db.campaign_opens.insert_one({
+            "campaign_id": campaign_id,
+            "customer_id": customer_id,
+            "opened_at": datetime.now(timezone.utc),
+        })
+        # opens and opens_unique now move together — they're the same metric.
+        db.campaigns.update_one(
+            {"id": campaign_id},
+            {"$inc": {"opens": 1, "opens_unique": 1}}
+        )
 
     # Return 1x1 PNG with no-cache headers so each open gets logged
     return Response(
@@ -3645,43 +3649,60 @@ def get_recovered_customers(
 @app.get("/api/owner/analytics/acquisition-sources")
 def get_acquisition_sources(
     token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
-    days: int = Query(90),
+    days: int = Query(0),                         # 0 == lifetime / all-time
     branch_id: Optional[str] = Query(None),
 ):
-    """Get breakdown of customer acquisition sources"""
-    now = datetime.now(timezone.utc)
-    period_start = now - timedelta(days=days)
+    """Customer acquisition breakdown per channel.
 
-    # Get customers in period with acquisition_source
-    q = {
-        "tenant_id": token_data.tenant_id,
-        "created_at": {"$gte": period_start}
-    }
+    By default this is a lifetime KPI — "exactly how many customers did we
+    get till date from Instagram / Facebook / TikTok / QR-in-store" — because
+    that's what the owner uses to decide where to invest their next campaign
+    budget. Pass `days` > 0 to scope to a window (the dashboard uses 30 for
+    its trend snapshot).
+    """
+    q = {"tenant_id": token_data.tenant_id}
+    if days and days > 0:
+        period_start = datetime.now(timezone.utc) - timedelta(days=days)
+        q["created_at"] = {"$gte": period_start}
     if branch_id:
         q["branch_id"] = branch_id
     customers = list(db.customers.find(q))
 
     # Only the 4 permitted sources — no 'friend' or 'other'.
-    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok"}
-    sources_count = {}
+    ALLOWED_SOURCES = ("qr_store", "instagram", "facebook", "tiktok")
+    LABELS = {
+        "qr_store": "QR in-store",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+    }
+    sources_count = {s: 0 for s in ALLOWED_SOURCES}
     for cust in customers:
         source = cust.get("acquisition_source")
-        if source in ALLOWED_SOURCES:
-            sources_count[source] = sources_count.get(source, 0) + 1
+        if source in sources_count:
+            sources_count[source] += 1
 
     total = sum(sources_count.values())
-    sources = []
-    for source, count in sorted(sources_count.items(), key=lambda x: x[1], reverse=True):
-        sources.append({
-            "source": source,
-            "count": count,
-            "percentage": round((count / total * 100), 1) if total > 0 else 0
-        })
+    # Stable order: by count desc, then by name asc for ties — so the top
+    # channel is always first regardless of how the dict was built.
+    sources = sorted(
+        (
+            {
+                "source": s,
+                "label": LABELS[s],
+                "count": sources_count[s],
+                "percentage": round((sources_count[s] / total * 100), 1) if total > 0 else 0,
+            }
+            for s in ALLOWED_SOURCES
+        ),
+        key=lambda x: (-x["count"], x["source"]),
+    )
 
     return {
         "sources": sources,
         "total": total,
-        "period_days": days
+        "period_days": days if days and days > 0 else 0,   # 0 ⇒ lifetime
+        "is_lifetime": not (days and days > 0),
     }
 
 @app.get("/api/owner/analytics/summary")
