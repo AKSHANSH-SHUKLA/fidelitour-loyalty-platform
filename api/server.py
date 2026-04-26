@@ -457,7 +457,18 @@ def mock_seed_data():
             db.visits.insert_many(visits_data)
 
     # Check and seed campaigns (at least 3 with proper dates)
-    if db.campaigns.count_documents({"tenant_id": "tenant-1"}) < 3:
+    # Reseed when:
+    #  • there aren't enough demo campaigns (fresh tenant), OR
+    #  • the existing camp-1 was seeded before the image_url field landed —
+    #    detected by camp-1 missing image_url. This one-time refresh is what
+    #    makes the "Promo Printemps" example actually visible to existing
+    #    deploys instead of being permanently shadowed by old seed data.
+    existing_camp1 = db.campaigns.find_one({"id": "camp-1", "tenant_id": "tenant-1"})
+    needs_reseed = (
+        db.campaigns.count_documents({"tenant_id": "tenant-1"}) < 3
+        or (existing_camp1 is not None and not existing_camp1.get("image_url"))
+    )
+    if needs_reseed:
         db.campaigns.delete_many({"tenant_id": "tenant-1"})
         # Wipe stale per-recipient tracking rows for the demo campaigns so
         # opens/visits aggregates rebuild from a clean slate when reseeding.
@@ -2028,6 +2039,9 @@ def create_campaign(
     """Create campaign for tenant"""
     # Normalize and validate the channel/source label if provided
     raw_source = (req.get("source") or "").strip().lower() or None
+    # FidéliTour delivers via wallet push and email today. We keep the schema
+    # tolerant of legacy / external channel labels, but the composer only
+    # surfaces push + email + other to avoid promising channels we don't ship.
     ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
     source = raw_source if raw_source in ALLOWED_CAMPAIGN_SOURCES else None
     # Accept either `message` (frontend convention) or `content` (canonical)
@@ -2044,6 +2058,53 @@ def create_campaign(
     )
     db.campaigns.insert_one(campaign.model_dump())
     return campaign.model_dump()
+
+@app.put("/api/owner/campaigns/{campaign_id}")
+def update_campaign(
+    campaign_id: str,
+    req: Dict[str, Any],
+    token_data: TokenData = Depends(require_role(["business_owner"]))
+):
+    """Edit an existing campaign — only drafts are editable.
+
+    Once a campaign is sent we lock the document so historical metrics
+    (delivered_count, opens_unique, recipient_ids, etc.) can't be rewritten
+    after the fact. Mutable fields on a draft: name, content, filters,
+    source, image_url. Status is intentionally not editable here — sending
+    happens through the dedicated /send endpoint which also recomputes
+    targeted_count and delivered_count.
+    """
+    campaign_dict = db.campaigns.find_one({"id": campaign_id, "tenant_id": token_data.tenant_id})
+    if not campaign_dict:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    if campaign_dict.get("status") != "draft":
+        raise HTTPException(status_code=400, detail="Only draft campaigns can be edited")
+
+    update_doc = {}
+    if "name" in req:
+        update_doc["name"] = (req.get("name") or "").strip() or "Untitled Campaign"
+    # Accept either `message` (frontend convention) or `content` (canonical)
+    if "content" in req or "message" in req:
+        update_doc["content"] = req.get("content") or req.get("message") or ""
+    if "filters" in req:
+        update_doc["filters"] = req.get("filters") or {}
+    if "source" in req:
+        raw_source = (req.get("source") or "").strip().lower() or None
+        ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
+        update_doc["source"] = raw_source if raw_source in ALLOWED_CAMPAIGN_SOURCES else None
+    if "image_url" in req:
+        # Empty string ⇒ user removed the image. Pass through as None.
+        update_doc["image_url"] = req.get("image_url") or None
+
+    if not update_doc:
+        # Nothing to change — return the current state without touching storage.
+        campaign_dict.pop("_id", None)
+        return campaign_dict
+
+    db.campaigns.update_one({"id": campaign_id}, {"$set": update_doc})
+    refreshed = db.campaigns.find_one({"id": campaign_id})
+    refreshed.pop("_id", None)
+    return refreshed
 
 @app.post("/api/owner/campaigns/{campaign_id}/send")
 def send_campaign(

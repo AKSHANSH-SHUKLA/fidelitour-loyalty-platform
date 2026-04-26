@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api, { adminAPI } from '../lib/api';
 import { Search, Filter, MoreVertical, ChevronDown, X, Download, Mail, TrendingUp, Users, BarChart3 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
+import NumberInput from '../components/NumberInput';
 
 const AdminTenantsPage = () => {
   const [tenants, setTenants] = useState([]);
@@ -677,15 +678,14 @@ const AdminTenantsPage = () => {
                   <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#E3A869]/40">
                     <div>
                       <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Radius (m)</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min={50}
                         max={5000}
+                        emptyValue={500}
                         value={selectedTenant.geo_radius_meters ?? 500}
-                        onChange={(e) => setSelectedTenant({ ...selectedTenant, geo_radius_meters: parseInt(e.target.value, 10) || 500 })}
-                        onBlur={async (e) => {
+                        onChange={(n) => setSelectedTenant({ ...selectedTenant, geo_radius_meters: n })}
+                        onCommit={async (val) => {
                           try {
-                            const val = parseInt(e.target.value, 10) || 500;
                             const res = await adminAPI.updateTenantGeo(selectedTenant.id, { geo_radius_meters: val });
                             setTenants(tenants.map(t => t.id === selectedTenant.id ? { ...t, ...res.data } : t));
                           } catch (err) { alert('Failed: ' + (err?.response?.data?.detail || err.message)); }
@@ -695,15 +695,14 @@ const AdminTenantsPage = () => {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Cooldown (days)</label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min={0}
                         max={90}
+                        emptyValue={1}
                         value={selectedTenant.geo_cooldown_days ?? 1}
-                        onChange={(e) => setSelectedTenant({ ...selectedTenant, geo_cooldown_days: parseInt(e.target.value, 10) || 1 })}
-                        onBlur={async (e) => {
+                        onChange={(n) => setSelectedTenant({ ...selectedTenant, geo_cooldown_days: n })}
+                        onCommit={async (val) => {
                           try {
-                            const val = parseInt(e.target.value, 10) || 1;
                             const res = await adminAPI.updateTenantGeo(selectedTenant.id, { geo_cooldown_days: val });
                             setTenants(tenants.map(t => t.id === selectedTenant.id ? { ...t, ...res.data } : t));
                           } catch (err) { alert('Failed: ' + (err?.response?.data?.detail || err.message)); }

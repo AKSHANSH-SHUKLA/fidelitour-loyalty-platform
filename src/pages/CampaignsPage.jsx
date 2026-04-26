@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2 } from 'lucide-react';
+import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
+import NumberInput from '../components/NumberInput';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // When set, the composer is editing an existing draft instead of creating
+  // a new campaign. The id is sent to PUT /owner/campaigns/{id} on save.
+  const [editingCampaignId, setEditingCampaignId] = useState(null);
   const [sendConfirmation, setSendConfirmation] = useState(null);
   const [previewCount, setPreviewCount] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -220,6 +224,34 @@ export default function CampaignsPage() {
     }
   };
 
+  // Open the composer pre-filled with an existing draft so the user can edit it.
+  const openEditDraft = (campaign) => {
+    setEditingCampaignId(campaign.id);
+    setSelectedCampaignTab('by-filter');     // editing = filter-based audience
+    setCampaignCustomers('');
+    const f = campaign.filters || {};
+    setFormData({
+      campaignName: campaign.name || '',
+      message: campaign.content || campaign.message || '',
+      source: campaign.source || 'push',
+      image_url: campaign.image_url || '',
+      filters: {
+        tiers: Array.isArray(f.tiers) ? f.tiers : (f.tier ? [f.tier] : []),
+        minPoints: Number(f.min_points || f.minPoints || 0) || 0,
+        minVisits: Number(f.min_visits || f.minVisits || 0) || 0,
+        postalCodes: Array.isArray(f.postal_codes)
+          ? f.postal_codes.join(',')
+          : (f.postal_code || f.postalCodes || ''),
+        minAmountPaid: Number(f.min_amount_paid || f.minAmountPaid || 0) || 0,
+      },
+    });
+    setImageError('');
+    setSendMode('now');
+    setScheduleAt('');
+    setScheduleRecurrence('');
+    setShowCreateModal(true);
+  };
+
   const handleCreateCampaign = async () => {
     if (!formData.campaignName.trim() || !formData.message.trim()) {
       alert('Please fill in campaign name and message');
@@ -239,6 +271,22 @@ export default function CampaignsPage() {
     }
 
     try {
+      // Edit-an-existing-draft path. Skips the "send to group" / "schedule"
+      // branches entirely — those are creation-only flows.
+      if (editingCampaignId) {
+        await ownerAPI.updateCampaign(editingCampaignId, {
+          name: formData.campaignName,
+          content: formData.message,
+          source: formData.source || 'push',
+          filters: buildFilterPayload(),
+          image_url: formData.image_url || '',
+        });
+        resetForm();
+        setEditingCampaignId(null);
+        setShowCreateModal(false);
+        await fetchCampaigns();
+        return;
+      }
       if (sendMode === 'schedule') {
         // Scheduled campaign — queue it. The daily cron (or on-demand runner)
         // will dispatch it when run_at is reached.
@@ -355,6 +403,7 @@ export default function CampaignsPage() {
     setSendMode('now');
     setScheduleAt('');
     setScheduleRecurrence('');
+    setEditingCampaignId(null);
   };
 
   // ---- Quick Send helpers ----
@@ -550,12 +599,12 @@ export default function CampaignsPage() {
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {[
+                    // Only the channels FidéliTour actually delivers on today.
+                    // Social channels (FB/IG/TikTok) and SMS are not yet wired
+                    // to a publishing pipeline, so we don't pretend to support
+                    // them in the composer.
                     { key: 'push', label: 'Wallet Push' },
                     { key: 'email', label: 'Email' },
-                    { key: 'instagram', label: 'Instagram' },
-                    { key: 'facebook', label: 'Facebook' },
-                    { key: 'tiktok', label: 'TikTok' },
-                    { key: 'sms', label: 'SMS' },
                     { key: 'other', label: 'Other' },
                   ].map((s) => (
                     <button
@@ -599,11 +648,10 @@ export default function CampaignsPage() {
                 {/* Min Points */}
                 <div>
                   <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Points</label>
-                  <input
-                    type="number"
+                  <NumberInput
                     min={0}
                     value={quickFilters.minPoints}
-                    onChange={(e) => setQuickFilters({ ...quickFilters, minPoints: parseInt(e.target.value) || 0 })}
+                    onChange={(n) => setQuickFilters({ ...quickFilters, minPoints: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
                     style={{ borderColor: '#E7E5E4' }}
                   />
@@ -612,11 +660,10 @@ export default function CampaignsPage() {
                 {/* Min Visits */}
                 <div>
                   <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Visits</label>
-                  <input
-                    type="number"
+                  <NumberInput
                     min={0}
                     value={quickFilters.minVisits}
-                    onChange={(e) => setQuickFilters({ ...quickFilters, minVisits: parseInt(e.target.value) || 0 })}
+                    onChange={(n) => setQuickFilters({ ...quickFilters, minVisits: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
                     style={{ borderColor: '#E7E5E4' }}
                   />
@@ -638,12 +685,11 @@ export default function CampaignsPage() {
                 {/* Min Amount Paid */}
                 <div>
                   <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Paid (€)</label>
-                  <input
-                    type="number"
+                  <NumberInput
                     min={0}
                     step={0.01}
                     value={quickFilters.minAmountPaid}
-                    onChange={(e) => setQuickFilters({ ...quickFilters, minAmountPaid: parseFloat(e.target.value) || 0 })}
+                    onChange={(n) => setQuickFilters({ ...quickFilters, minAmountPaid: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
                     style={{ borderColor: '#E7E5E4' }}
                   />
@@ -897,14 +943,25 @@ export default function CampaignsPage() {
                       </div>
                     </div>
                     {campaign.status === 'draft' && (
-                      <button
-                        onClick={() => handleSendCampaign(campaign)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white transition ml-4"
-                        style={{ backgroundColor: '#B85C38' }}
-                      >
-                        <Send size={18} />
-                        Send
-                      </button>
+                      <div className="flex items-center gap-2 ml-4">
+                        <button
+                          onClick={() => openEditDraft(campaign)}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition border"
+                          style={{ borderColor: '#B85C38', color: '#B85C38', backgroundColor: '#FDFBF7' }}
+                          title="Edit this draft before sending"
+                        >
+                          <Pencil size={16} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleSendCampaign(campaign)}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white transition"
+                          style={{ backgroundColor: '#B85C38' }}
+                        >
+                          <Send size={18} />
+                          Send
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -938,10 +995,11 @@ export default function CampaignsPage() {
                     </div>
                   )}
 
-                  {/* Message preview */}
-                  <div className="mb-4 p-4 rounded" style={{ backgroundColor: '#F3EFE7' }}>
+                  {/* Message preview — content is the canonical field on the
+                      backend; legacy clients used `message`, so fall through. */}
+                  <div className="mb-4 p-4 rounded whitespace-pre-wrap" style={{ backgroundColor: '#F3EFE7' }}>
                     <p style={{ color: '#57534E', fontFamily: 'Manrope' }} className="text-sm">
-                      {campaign.message}
+                      {campaign.content || campaign.message || <span className="italic text-[#8B8680]">(no message yet)</span>}
                     </p>
                   </div>
 
@@ -987,8 +1045,13 @@ export default function CampaignsPage() {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FDFBF7' }}>
             <div className="border-b p-6" style={{ borderColor: '#E7E5E4' }}>
               <h2 className="text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
-                Create New Campaign
+                {editingCampaignId ? 'Edit Draft' : 'Create New Campaign'}
               </h2>
+              {editingCampaignId && (
+                <p className="text-sm text-[#57534E] mt-1" style={{ fontFamily: 'Manrope' }}>
+                  Updating an unsent draft. Changes don't fire until you hit Send on the campaign card.
+                </p>
+              )}
             </div>
 
             <div className="p-6 space-y-6">
@@ -1058,12 +1121,12 @@ export default function CampaignsPage() {
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {[
+                    // Only the channels FidéliTour actually delivers on today.
+                    // Social channels (FB/IG/TikTok) and SMS are not yet wired
+                    // to a publishing pipeline, so we don't pretend to support
+                    // them in the composer.
                     { key: 'push', label: 'Wallet Push' },
                     { key: 'email', label: 'Email' },
-                    { key: 'instagram', label: 'Instagram' },
-                    { key: 'facebook', label: 'Facebook' },
-                    { key: 'tiktok', label: 'TikTok' },
-                    { key: 'sms', label: 'SMS' },
                     { key: 'other', label: 'Other' },
                   ].map((s) => (
                     <button
@@ -1266,10 +1329,9 @@ export default function CampaignsPage() {
                   <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
                     Minimum Points
                   </label>
-                  <input
-                    type="number"
+                  <NumberInput
                     value={formData.filters.minPoints}
-                    onChange={(e) => handleFilterChange('minPoints', parseInt(e.target.value) || 0)}
+                    onChange={(n) => handleFilterChange('minPoints', n || 0)}
                     min={0}
                     className="w-full px-4 py-2 border rounded-lg"
                     style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
@@ -1281,10 +1343,9 @@ export default function CampaignsPage() {
                   <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
                     Minimum Visits
                   </label>
-                  <input
-                    type="number"
+                  <NumberInput
                     value={formData.filters.minVisits}
-                    onChange={(e) => handleFilterChange('minVisits', parseInt(e.target.value) || 0)}
+                    onChange={(n) => handleFilterChange('minVisits', n || 0)}
                     min={0}
                     className="w-full px-4 py-2 border rounded-lg"
                     style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
@@ -1314,10 +1375,9 @@ export default function CampaignsPage() {
                   <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
                     Minimum Amount Paid (€)
                   </label>
-                  <input
-                    type="number"
+                  <NumberInput
                     value={formData.filters.minAmountPaid}
-                    onChange={(e) => handleFilterChange('minAmountPaid', parseFloat(e.target.value) || 0)}
+                    onChange={(n) => handleFilterChange('minAmountPaid', n || 0)}
                     min={0}
                     step={0.01}
                     className="w-full px-4 py-2 border rounded-lg"
@@ -1364,7 +1424,11 @@ export default function CampaignsPage() {
                 className="px-6 py-2 rounded-lg font-semibold text-white transition flex items-center gap-2"
                 style={{ backgroundColor: '#B85C38' }}
               >
-                {sendMode === 'schedule' ? (<><CalendarClock size={16} /> Schedule Campaign</>) : 'Create Campaign'}
+                {editingCampaignId
+                  ? (<><Pencil size={16} /> Save Draft</>)
+                  : sendMode === 'schedule'
+                    ? (<><CalendarClock size={16} /> Schedule Campaign</>)
+                    : 'Create Campaign'}
               </button>
             </div>
           </div>

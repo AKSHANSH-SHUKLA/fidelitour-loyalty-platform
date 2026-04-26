@@ -60,6 +60,7 @@ export const ownerAPI = {
   saveCardTemplate: (data) => api.post('/owner/card-template', data),
   getCampaigns: () => api.get('/owner/campaigns'),
   createCampaign: (data) => api.post('/owner/campaigns', data),
+  updateCampaign: (id, data) => api.put('/owner/campaigns/' + id, data),
   sendCampaign: (id) => api.post('/owner/campaigns/' + id + '/send'),
   previewSegment: (data) => api.post('/owner/campaigns/preview-segment', data),
   aiQuery: (data) => api.post('/owner/ai-query', data),

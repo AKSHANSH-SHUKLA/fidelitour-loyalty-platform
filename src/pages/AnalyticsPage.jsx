@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ownerAPI } from '../lib/api';
+import NumberInput from '../components/NumberInput';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -493,6 +494,8 @@ const AnalyticsPage = () => {
     return Object.entries(w).map(([week, count]) => ({ week, count }));
   }, [analytics]);
 
+  // imported components
+  // (NumberInput is imported at top)
   const acquisitionChart = useMemo(
     () => (acquisition || []).map((a) => ({
       name: a.label || (a.source || 'unknown').replace(/_/g, ' '),
@@ -1173,22 +1176,24 @@ const AnalyticsPage = () => {
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
             <label className="text-sm text-[#57534E]">Inactive for</label>
-            <input
-              type="number"
-              min="1"
+            <NumberInput
+              min={1}
+              max={730}
+              emptyValue={30}
               value={recoveryInactiveDays}
-              onChange={(e) => setRecoveryInactiveDays(parseInt(e.target.value) || 30)}
+              onChange={(n) => setRecoveryInactiveDays(n || 30)}
               className="w-20 px-2 py-1 border border-[#E7E5E4] rounded text-center"
             />
             <span className="text-sm text-[#57534E]">days,</span>
           </div>
           <div className="flex items-center gap-2">
             <label className="text-sm text-[#57534E]">came back in last</label>
-            <input
-              type="number"
-              min="1"
+            <NumberInput
+              min={1}
+              max={730}
+              emptyValue={30}
               value={recoveryWindowDays}
-              onChange={(e) => setRecoveryWindowDays(parseInt(e.target.value) || 30)}
+              onChange={(n) => setRecoveryWindowDays(n || 30)}
               className="w-20 px-2 py-1 border border-[#E7E5E4] rounded text-center"
             />
             <span className="text-sm text-[#57534E]">days</span>

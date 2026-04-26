@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, CheckCircle, AlertCircle, Palette, Coins, Award } from 'lucide-react';
 import { adminAPI } from '../lib/api';
 import { AuchanEditor, DEFAULT_LAYOUT } from '../components/AuchanCard';
+import NumberInput from '../components/NumberInput';
 
 const DEFAULT_RULES = {
   points_per_visit: 10,
@@ -208,12 +209,12 @@ export default function AdminCardDesignerPage() {
               <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
                 Points awarded per visit
               </label>
-              <input
-                type="number"
-                min="0"
-                max="1000"
+              <NumberInput
+                min={0}
+                max={1000}
+                emptyValue={10}
                 value={rules.points_per_visit}
-                onChange={(e) => updateRule('points_per_visit', e.target.value)}
+                onChange={(n) => updateRule('points_per_visit', n)}
                 className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
               />
             </div>
@@ -221,12 +222,12 @@ export default function AdminCardDesignerPage() {
               <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
                 Visits required per stamp
               </label>
-              <input
-                type="number"
-                min="1"
-                max="20"
+              <NumberInput
+                min={1}
+                max={20}
+                emptyValue={1}
                 value={rules.visits_per_stamp}
-                onChange={(e) => updateRule('visits_per_stamp', e.target.value)}
+                onChange={(n) => updateRule('visits_per_stamp', n)}
                 className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
               />
             </div>
@@ -234,12 +235,12 @@ export default function AdminCardDesignerPage() {
               <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
                 Stamps to unlock the reward
               </label>
-              <input
-                type="number"
-                min="1"
-                max="20"
+              <NumberInput
+                min={1}
+                max={20}
+                emptyValue={10}
                 value={rules.reward_threshold_stamps}
-                onChange={(e) => updateRule('reward_threshold_stamps', e.target.value)}
+                onChange={(n) => updateRule('reward_threshold_stamps', n)}
                 className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
               />
             </div>
@@ -265,12 +266,12 @@ export default function AdminCardDesignerPage() {
                 Auto push fires once when a customer is this many visits away from the reward. Set to <b>0</b> to disable.
               </p>
               <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
+                <NumberInput
+                  min={0}
+                  max={10}
+                  emptyValue={0}
                   value={rules.notify_before_reward}
-                  onChange={(e) => updateRule('notify_before_reward', e.target.value)}
+                  onChange={(n) => updateRule('notify_before_reward', n)}
                   className="w-24 px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
                 />
                 <div className="flex items-center gap-2 text-xs text-[#7B3F00]">
