@@ -79,8 +79,10 @@ const AdminTenantsPage = () => {
     const matchMinVisits = minTotalVisits === '' || totalVisits >= parseInt(minTotalVisits);
     const matchMaxVisits = maxTotalVisits === '' || totalVisits <= parseInt(maxTotalVisits);
 
-    // Status filter (active/declining/growing)
-    const isActive = totalVisits > 0;
+    // Status filter — use server-computed is_active_30d when present
+    // (active = at least one visit in the last 30 days). Falls back to
+    // "ever had a visit" if the API didn't supply the new field.
+    const isActive = typeof t.is_active_30d === 'boolean' ? t.is_active_30d : totalVisits > 0;
     const matchStatus = statusFilter === 'all' ||
                        (statusFilter === 'active' && isActive) ||
                        (statusFilter === 'inactive' && !isActive);
@@ -483,12 +485,17 @@ const AdminTenantsPage = () => {
                   </td>
                   <td className="py-4 px-4 text-[#57534E]">{t.customer_count || 0}</td>
                   <td className="py-4 px-4 text-[#57534E]">{t.total_visits || 0}</td>
-                  <td className="py-4 px-4 text-[#57534E]">{(t.avg_points || 0).toFixed(1)}</td>
+                  <td className="py-4 px-4 text-[#57534E]">{((t.avg_points_per_customer ?? t.avg_points ?? 0)).toFixed(1)}</td>
                   <td className="py-4 px-4">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold
-                      ${(t.total_visits || 0) > 0 ? 'bg-[#4A5D23]/10 text-[#4A5D23]' : 'bg-[#A8A29E]/10 text-[#57534E]'}`}>
-                      {(t.total_visits || 0) > 0 ? 'Active' : 'Inactive'}
-                    </span>
+                    {(() => {
+                      const isActive = typeof t.is_active_30d === 'boolean' ? t.is_active_30d : (t.total_visits || 0) > 0;
+                      return (
+                        <span className={`px-2 py-1 rounded text-xs font-semibold
+                          ${isActive ? 'bg-[#4A5D23]/10 text-[#4A5D23]' : 'bg-[#A8A29E]/10 text-[#57534E]'}`}>
+                          {isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="py-4 px-4 text-right relative">
                     <button
@@ -614,13 +621,20 @@ const AdminTenantsPage = () => {
                   </div>
                   <div>
                     <p className="text-xs text-[#57534E] font-semibold uppercase">Avg Points/Customer</p>
-                    <p className="text-2xl font-bold text-[#1C1917]">{(selectedTenant.avg_points || 0).toFixed(1)}</p>
+                    <p className="text-2xl font-bold text-[#1C1917]">{((selectedTenant.avg_points_per_customer ?? selectedTenant.avg_points ?? 0)).toFixed(1)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#57534E] font-semibold uppercase">Status</p>
-                    <p className={`text-lg font-bold ${(selectedTenant.total_visits || 0) > 0 ? 'text-[#4A5D23]' : 'text-[#A8A29E]'}`}>
-                      {(selectedTenant.total_visits || 0) > 0 ? 'Active' : 'Inactive'}
-                    </p>
+                    <p className="text-xs text-[#57534E] font-semibold uppercase">Status (last 30d)</p>
+                    {(() => {
+                      const isActive = typeof selectedTenant.is_active_30d === 'boolean'
+                        ? selectedTenant.is_active_30d
+                        : (selectedTenant.total_visits || 0) > 0;
+                      return (
+                        <p className={`text-lg font-bold ${isActive ? 'text-[#4A5D23]' : 'text-[#A8A29E]'}`}>
+                          {isActive ? 'Active' : 'Inactive'}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

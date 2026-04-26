@@ -1260,12 +1260,51 @@ def logout(response: Response):
 def get_all_tenants(token_data: TokenData = Depends(require_role(["super_admin"]))):
     tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
 
+    # Bulk per-tenant rollups via aggregation — keeps this endpoint at ~3 round
+    # trips total instead of one count() per tenant. Without these the
+    # frontend table reads `t.total_visits` undefined for every row, which is
+    # why every business was being flagged "Inactive" with 0.0 avg points.
+    visits_by_tenant = {
+        doc["_id"]: doc["count"]
+        for doc in db.visits.aggregate([
+            {"$group": {"_id": "$tenant_id", "count": {"$sum": 1}}}
+        ])
+        if doc.get("_id")
+    }
+    cust_stats_by_tenant = {
+        doc["_id"]: doc
+        for doc in db.customers.aggregate([
+            {"$group": {
+                "_id": "$tenant_id",
+                "count": {"$sum": 1},
+                "total_points": {"$sum": "$points"},
+                "total_amount_paid": {"$sum": "$total_amount_paid"},
+            }}
+        ])
+        if doc.get("_id")
+    }
+
+    # "Active" = had ≥1 visit in the last 30 days. Computed once here rather
+    # than re-derived on the client from total_visits > 0, which mis-flagged
+    # tenants whose visits all predated the rolling window.
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    active_tenant_ids = set(db.visits.distinct(
+        "tenant_id",
+        {"created_at": {"$gte": thirty_days_ago}}
+    ))
+
     result = []
     for t in tenants:
         t.pop("_id", None)
-        # Count customers for this tenant
-        customer_count = db.customers.count_documents({"tenant_id": t["id"]})
-        t["customer_count"] = customer_count
+        tid = t["id"]
+        cust = cust_stats_by_tenant.get(tid) or {}
+        cust_count = int(cust.get("count", 0) or 0)
+        total_points = float(cust.get("total_points", 0) or 0)
+        t["customer_count"] = cust_count
+        t["total_visits"] = int(visits_by_tenant.get(tid, 0) or 0)
+        t["avg_points_per_customer"] = round(total_points / cust_count, 1) if cust_count else 0.0
+        t["total_revenue"] = round(float(cust.get("total_amount_paid", 0) or 0), 2)
+        t["is_active_30d"] = tid in active_tenant_ids
         result.append(t)
 
     return result
@@ -1564,13 +1603,17 @@ def get_admin_analytics(token_data: TokenData = Depends(require_role(["super_adm
     tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
     monthly_revenue = sum(PLAN_PRICES.get(t.get("plan"), 0) for t in tenants)
 
-    # Active tenants in last 30 days
+    # Active tenants in last 30 days. Intersect with the active-tenants set
+    # so we never count a visit whose tenant_id refers to a deactivated or
+    # deleted tenant — that's how we previously got "22 active out of 21
+    # total" (an orphan tenant_id in db.visits).
     thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
-    active_tenants_30d = db.visits.distinct(
+    active_ids = {t["id"] for t in tenants}
+    visited_recently = set(db.visits.distinct(
         "tenant_id",
         {"created_at": {"$gte": thirty_days_ago}}
-    )
-    active_count = len(active_tenants_30d) if active_tenants_30d else 0
+    ))
+    active_count = len(visited_recently & active_ids)
 
     return {
         "total_tenants": tenant_count,
