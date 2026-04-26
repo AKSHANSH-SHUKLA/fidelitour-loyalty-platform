@@ -1453,33 +1453,50 @@ export default function CampaignsPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Tracking Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                  <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Sent to</p>
-                  <p className="text-2xl font-bold text-[#1C1917]">{trackingData.targeted_count || 0}</p>
-                </div>
-                <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                  <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Delivered</p>
-                  <p className="text-2xl font-bold text-[#1C1917]">{trackingData.delivered_count || 0}</p>
-                </div>
-                <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                  <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Opened</p>
-                  <p className="text-2xl font-bold text-[#1C1917]">
-                    {trackingData.delivered_count > 0
-                      ? Math.round(((trackingData.opens_unique || 0) / trackingData.delivered_count) * 100)
-                      : 0}%
-                  </p>
-                </div>
-                <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                  <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Visited within 7d</p>
-                  <p className="text-2xl font-bold text-[#1C1917]">
-                    {trackingData.delivered_count > 0
-                      ? Math.round(((trackingData.visits_from_campaign || 0) / trackingData.delivered_count) * 100)
-                      : 0}%
-                  </p>
-                </div>
-              </div>
+              {/* Tracking Summary — both raw count AND percentage so the
+                  numbers always tell the full story. The opens/visits totals
+                  are derived server-side from the per-recipient state, so
+                  whatever the recipients list shows is exactly what these
+                  tiles aggregate to (no more drift). */}
+              {(() => {
+                const targeted = trackingData.targeted_count || 0;
+                const delivered = trackingData.delivered_count || 0;
+                const opens = trackingData.opens_unique ?? trackingData.opens_after_count ?? 0;
+                const visits = trackingData.visits_from_campaign ?? trackingData.visits_after_count ?? 0;
+                const denom = delivered || (trackingData.recipients?.length || 0);
+                const openPct = denom > 0 ? Math.round((opens / denom) * 100) : 0;
+                const visitPct = denom > 0 ? Math.round((visits / denom) * 100) : 0;
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
+                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Sent to</p>
+                      <p className="text-2xl font-bold text-[#1C1917]">{targeted}</p>
+                      <p className="text-[10px] text-[#8B8680] mt-0.5">recipients targeted</p>
+                    </div>
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
+                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Delivered</p>
+                      <p className="text-2xl font-bold text-[#1C1917]">{delivered}</p>
+                      <p className="text-[10px] text-[#8B8680] mt-0.5">
+                        {targeted > 0 ? `${Math.round((delivered / targeted) * 100)}% of targeted` : '—'}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
+                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Opened</p>
+                      <p className="text-2xl font-bold text-[#1C1917]">
+                        {opens}<span className="text-base text-[#8B8680] font-normal"> / {denom}</span>
+                      </p>
+                      <p className="text-[10px] text-[#4A5D23] mt-0.5 font-semibold">{openPct}% open rate</p>
+                    </div>
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
+                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Visits after (7d)</p>
+                      <p className="text-2xl font-bold text-[#1C1917]">
+                        {visits}<span className="text-base text-[#8B8680] font-normal"> / {denom}</span>
+                      </p>
+                      <p className="text-[10px] text-[#B85C38] mt-0.5 font-semibold">{visitPct}% conversion</p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Recipients List */}
               <div>

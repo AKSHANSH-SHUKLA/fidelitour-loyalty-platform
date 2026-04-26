@@ -459,12 +459,28 @@ def mock_seed_data():
     # Check and seed campaigns (at least 3 with proper dates)
     if db.campaigns.count_documents({"tenant_id": "tenant-1"}) < 3:
         db.campaigns.delete_many({"tenant_id": "tenant-1"})
+        # Wipe stale per-recipient tracking rows for the demo campaigns so
+        # opens/visits aggregates rebuild from a clean slate when reseeding.
+        db.campaign_opens.delete_many({"campaign_id": {"$in": ["camp-1", "camp-2", "camp-3"]}})
 
         now = datetime.now(timezone.utc)
         # Hero image — Unsplash CDN (free for commercial use). Coffee + pastries
         # is a believable demo for the Café Lumière tenant. Persists across deploys.
         SAMPLE_CAMPAIGN_IMAGE = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80&auto=format&fit=crop"
 
+        # Helper: persist matching per-recipient tracking rows so the
+        # tracking modal's recipient list AGREES with the aggregate counters.
+        def _seed_campaign_tracking(campaign_id, sent_at, opened_ids, visited_ids):
+            for cid in opened_ids:
+                db.campaign_opens.insert_one({
+                    "campaign_id": campaign_id,
+                    "customer_id": cid,
+                    "opened_at": sent_at + timedelta(hours=2),
+                })
+
+        camp1_recipients = ["c-0", "c-1", "c-2", "c-3", "c-4", "c-5", "c-6", "c-7"]
+        camp1_opened = ["c-0", "c-1", "c-2", "c-4", "c-7"]      # 5 opened
+        camp1_visited = ["c-0", "c-2", "c-4"]                    # 3 visited
         campaign1 = Campaign(
             id="camp-1",
             tenant_id="tenant-1",
@@ -485,10 +501,16 @@ def mock_seed_data():
             opens=5,
             opens_unique=5,
             visits_from_campaign=3,
-            recipient_ids=["c-0", "c-1", "c-2", "c-3", "c-4", "c-5", "c-6", "c-7"]
+            recipient_ids=camp1_recipients,
         )
-        db.campaigns.insert_one(campaign1.model_dump())
+        c1_dict = campaign1.model_dump()
+        c1_dict["attributed_visit_customer_ids"] = list(camp1_visited)
+        db.campaigns.insert_one(c1_dict)
+        _seed_campaign_tracking("camp-1", now - timedelta(days=2), camp1_opened, camp1_visited)
 
+        camp2_recipients = ["c-3", "c-6", "c-9", "c-12", "c-14"]
+        camp2_opened = ["c-3", "c-6", "c-12", "c-14"]            # 4 opened
+        camp2_visited = ["c-6", "c-14"]                          # 2 visited
         campaign2 = Campaign(
             id="camp-2",
             tenant_id="tenant-1",
@@ -502,10 +524,16 @@ def mock_seed_data():
             opens=4,
             opens_unique=4,
             visits_from_campaign=2,
-            recipient_ids=["c-3", "c-6", "c-9", "c-12", "c-14"]
+            recipient_ids=camp2_recipients,
         )
-        db.campaigns.insert_one(campaign2.model_dump())
+        c2_dict = campaign2.model_dump()
+        c2_dict["attributed_visit_customer_ids"] = list(camp2_visited)
+        db.campaigns.insert_one(c2_dict)
+        _seed_campaign_tracking("camp-2", now - timedelta(days=14), camp2_opened, camp2_visited)
 
+        camp3_recipients = ["c-0", "c-2", "c-4", "c-6", "c-8", "c-10", "c-11", "c-12", "c-13", "c-14"]
+        camp3_opened = ["c-0", "c-2", "c-4", "c-6", "c-10", "c-12", "c-14"]   # 7 unique opened
+        camp3_visited = ["c-0", "c-4", "c-6", "c-12", "c-14"]                  # 5 visited
         campaign3 = Campaign(
             id="camp-3",
             tenant_id="tenant-1",
@@ -519,9 +547,12 @@ def mock_seed_data():
             opens=8,
             opens_unique=7,
             visits_from_campaign=5,
-            recipient_ids=["c-0", "c-2", "c-4", "c-6", "c-8", "c-10", "c-11", "c-12", "c-13", "c-14"]
+            recipient_ids=camp3_recipients,
         )
-        db.campaigns.insert_one(campaign3.model_dump())
+        c3_dict = campaign3.model_dump()
+        c3_dict["attributed_visit_customer_ids"] = list(camp3_visited)
+        db.campaigns.insert_one(c3_dict)
+        _seed_campaign_tracking("camp-3", now - timedelta(days=21), camp3_opened, camp3_visited)
 
         campaign4 = Campaign(
             id="camp-4",
@@ -3320,35 +3351,50 @@ def get_campaign_tracking(
 
     campaign.pop("_id", None)
 
-    # Calculate metrics
-    delivered = campaign.get("delivered_count", 0)
-    opens = campaign.get("opens", 0)
-    opens_unique = campaign.get("opens_unique", 0)
-    visits_from_campaign = campaign.get("visits_from_campaign", 0)
+    # ---------- Single source of truth: the per-recipient walk ----------
+    # Aggregates (opens_unique, visits_from_campaign) are derived FROM the
+    # per-recipient state every time we read this endpoint, so the stat tiles
+    # and the recipients list can never drift apart.
+    #
+    # • opened  → True iff (campaign_id, customer_id) row exists in
+    #             db.campaign_opens (written by the tracking-pixel endpoint)
+    # • visited → True iff customer_id is in attributed_visit_customer_ids
+    #             (the scan_visit endpoint $addToSet's into this list when a
+    #             recipient scans within 7 days of sent_at), with a fallback
+    #             check on customer.last_visit_date for legacy/seeded data.
 
-    open_rate_pct = (opens_unique / delivered * 100) if delivered > 0 else 0
-    visits_rate_pct = (visits_from_campaign / delivered * 100) if delivered > 0 else 0
-
-    # Get recipient details
-    recipient_ids = campaign.get("recipient_ids", [])
-    recipients = []
+    recipient_ids = campaign.get("recipient_ids", []) or []
     sent_at = campaign.get("sent_at")
-    # 7-day attribution window for "visited after send"
-    visit_cutoff = None
-    if isinstance(sent_at, datetime):
-        visit_cutoff = sent_at + timedelta(days=7)
+    visit_cutoff = sent_at + timedelta(days=7) if isinstance(sent_at, datetime) else None
     attributed_ids = set(campaign.get("attributed_visit_customer_ids", []) or [])
+
+    # One query for all opens — much cheaper than find_one per recipient.
+    opened_ids = {
+        doc["customer_id"]
+        for doc in db.campaign_opens.find(
+            {"campaign_id": campaign_id},
+            {"customer_id": 1, "_id": 0}
+        )
+        if doc.get("customer_id")
+    }
+
+    recipients = []
+    opens_count = 0
+    visits_count = 0
     for cid in recipient_ids:
         customer = db.customers.find_one({"id": cid})
         if not customer:
             continue
-        opened = bool(db.campaign_opens.find_one({"campaign_id": campaign_id, "customer_id": cid}))
-        # Visited within the 7-day window after send?
+        opened = cid in opened_ids
         visited = cid in attributed_ids
         if not visited and sent_at and visit_cutoff:
             lv = customer.get("last_visit_date")
             if isinstance(lv, datetime) and sent_at <= lv <= visit_cutoff:
                 visited = True
+        if opened:
+            opens_count += 1
+        if visited:
+            visits_count += 1
         recipients.append({
             "customer_id": cid,
             "customer_name": customer.get("name", "") or "Unknown",
@@ -3362,16 +3408,31 @@ def get_campaign_tracking(
             "visited_after": visited,  # legacy alias
         })
 
+    # Use delivered_count when available; otherwise fall back to recipients we
+    # actually resolved (handles seed data where delivered may be unset).
+    delivered = campaign.get("delivered_count", 0) or len(recipients)
+    targeted = campaign.get("targeted_count", 0) or len(recipient_ids)
+    denom = delivered if delivered > 0 else (len(recipients) or 1)
+
+    open_rate_pct = round((opens_count / denom * 100), 1) if denom > 0 else 0.0
+    visits_rate_pct = round((visits_count / denom * 100), 1) if denom > 0 else 0.0
+
     return {
         "campaign_id": campaign_id,
         "name": campaign.get("name", ""),
         "sent_at": campaign.get("sent_at"),
-        "targeted_count": campaign.get("targeted_count", 0),
+        "targeted_count": targeted,
         "delivered_count": delivered,
-        "opens_unique": opens_unique,
-        "open_rate_pct": round(open_rate_pct, 1),
-        "visits_from_campaign": visits_from_campaign,
-        "visits_rate_pct": round(visits_rate_pct, 1),
+        # Derived from the recipients walk — guaranteed to match the list below.
+        "opens_unique": opens_count,
+        "open_rate_pct": open_rate_pct,
+        "visits_from_campaign": visits_count,
+        "visits_rate_pct": visits_rate_pct,
+        # Explicit "after-send" totals for the UI (number + percentage).
+        "visits_after_count": visits_count,
+        "visits_after_pct": visits_rate_pct,
+        "opens_after_count": opens_count,
+        "opens_after_pct": open_rate_pct,
         "recipients": recipients
     }
 
