@@ -909,16 +909,10 @@ export default function CampaignsPage() {
                             className="px-2 py-0.5 text-xs rounded-full font-semibold capitalize"
                             style={{
                               backgroundColor:
-                                campaign.source === 'instagram' ? '#FCE4EC'
-                                : campaign.source === 'facebook' ? '#E3F2FD'
-                                : campaign.source === 'tiktok' ? '#111'
-                                : campaign.source === 'push' ? '#F3EFE7'
+                                campaign.source === 'push' ? '#F3EFE7'
                                 : campaign.source === 'email' ? '#E8F5E9'
-                                : campaign.source === 'sms' ? '#FFF3E0'
                                 : '#F5F4F0',
-                              color:
-                                campaign.source === 'tiktok' ? '#fff'
-                                : '#1C1917',
+                              color: '#1C1917',
                             }}
                           >
                             {campaign.source === 'push' ? 'Wallet Push' : campaign.source}

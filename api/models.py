@@ -299,8 +299,10 @@ class Campaign(BaseModel):
     offer_clicks_unique: int = 0
     push_dismissals: int = 0  # number of recipients who dismissed the push without opening
     sender_name: Optional[str] = None  # snapshot of tenant.campaign_sender_name when sent
-    # Distribution channel this campaign was published on — used for per-channel performance analysis
-    # Allowed values: 'push' (wallet push), 'email', 'instagram', 'facebook', 'tiktok', 'sms', 'other'
+    # Distribution channel this campaign was published on — used for per-channel performance analysis.
+    # Allowed values: 'push' (wallet push), 'email', 'other' — the channels FidéliTour delivers on
+    # today. Social-channel publishing (Instagram/Facebook/TikTok) and SMS are not yet wired to a
+    # publishing pipeline, so they are intentionally not part of the picker.
     source: Optional[str] = None
     # Optional hero image — appears at the top of the email and as a visual on
     # the campaign card. Stored as a URL or base64 data URL (uploaded from device).

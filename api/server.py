@@ -2042,7 +2042,7 @@ def create_campaign(
     # FidéliTour delivers via wallet push and email today. We keep the schema
     # tolerant of legacy / external channel labels, but the composer only
     # surfaces push + email + other to avoid promising channels we don't ship.
-    ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
+    ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "other"}
     source = raw_source if raw_source in ALLOWED_CAMPAIGN_SOURCES else None
     # Accept either `message` (frontend convention) or `content` (canonical)
     body_content = req.get("content") or req.get("message") or ""
@@ -2090,7 +2090,7 @@ def update_campaign(
         update_doc["filters"] = req.get("filters") or {}
     if "source" in req:
         raw_source = (req.get("source") or "").strip().lower() or None
-        ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
+        ALLOWED_CAMPAIGN_SOURCES = {"push", "email", "other"}
         update_doc["source"] = raw_source if raw_source in ALLOWED_CAMPAIGN_SOURCES else None
     if "image_url" in req:
         # Empty string ⇒ user removed the image. Pass through as None.
@@ -3366,7 +3366,7 @@ def send_campaign_to_group(
             delivered += 1
 
     raw_source = (req.get("source") or "").strip().lower() or None
-    ALLOWED = {"push", "email", "instagram", "facebook", "tiktok", "sms", "other"}
+    ALLOWED = {"push", "email", "other"}
     src = raw_source if raw_source in ALLOWED else None
 
     campaign = Campaign(
@@ -5610,7 +5610,7 @@ class ScheduleCampaignRequest(BaseModel):
     # Same filter shape as live send (tiers/minPoints/minVisits/postalCodes/minAmountPaid).
     # If provided, takes precedence over segment when the cron drains it.
     filters: Optional[Dict[str, Any]] = None
-    source: Optional[str] = None  # push | email | instagram | facebook | tiktok | sms | other
+    source: Optional[str] = None  # push | email | other  — only the channels FidéliTour delivers on today
     recurrence: Optional[str] = None  # None | "daily" | "weekly" | "monthly"
 
 
