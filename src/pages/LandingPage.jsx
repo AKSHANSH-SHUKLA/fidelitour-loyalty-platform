@@ -1190,6 +1190,104 @@ const LandingPage = () => {
               );
             })}
           </div>
+
+          {/* ───── MULTI-STORE CONTACT CTA ───── */}
+          <div className="mt-16 max-w-5xl mx-auto">
+            <div className="rounded-3xl p-[2px] shadow-2xl"
+                 style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.ochre} 20%, ${C.rose} 40%, ${C.lavender} 60%, ${C.sky} 80%, ${C.teal} 100%)` }}>
+              <div className="rounded-[22px] overflow-hidden relative"
+                   style={{ background: `linear-gradient(135deg, ${C.inkDeep} 0%, ${C.inkSoft} 60%, #2A1C2E 100%)` }}>
+                <div aria-hidden="true" className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl opacity-30 pointer-events-none"
+                     style={{ background: C.ochre }} />
+                <div aria-hidden="true" className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full blur-3xl opacity-25 pointer-events-none"
+                     style={{ background: C.lavender }} />
+
+                <div className="relative grid lg:grid-cols-5 gap-10 p-10 md:p-14 items-center">
+                  {/* Left: copy */}
+                  <div className="lg:col-span-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
+                         style={{ background: 'rgba(255,255,255,0.08)', color: C.ochre, border: '1px solid rgba(255,255,255,0.15)' }}>
+                      <Sparkles size={14} /> Chain · Multi-Store · Franchise
+                    </div>
+                    <h3 className="font-['Cormorant_Garamond'] text-3xl md:text-4xl text-white font-bold leading-tight mb-4">
+                      Multiple stores?<br/>
+                      <span className="bg-clip-text text-transparent inline-block"
+                            style={{ backgroundImage: `linear-gradient(110deg, ${C.terracotta}, ${C.ochre}, ${C.rose}, ${C.lavender}, ${C.sky})`, backgroundSize: '200% auto', animation: 'heroGradient 8s linear infinite' }}>
+                        One platform for every branch.
+                      </span>
+                    </h3>
+                    <p className="text-base md:text-lg leading-relaxed mb-7" style={{ color: '#D4C8B5' }}>
+                      If you operate 2 or more locations and want to deploy FidéliTour across all of them — with shared customers, per-branch analytics, and centralized campaigns — let's talk. We tailor pricing &amp; onboarding to your network.
+                    </p>
+
+                    {/* Feature pills */}
+                    <div className="grid sm:grid-cols-3 gap-3 mb-8">
+                      {[
+                        { icon: Users, label: 'Unified customer base', color: C.sky, bg: 'rgba(74,144,226,0.12)' },
+                        { icon: BarChart3, label: 'Per-branch analytics', color: C.lavender, bg: 'rgba(155,127,184,0.15)' },
+                        { icon: Award, label: 'Dedicated onboarding', color: C.ochre, bg: 'rgba(212,165,116,0.15)' },
+                      ].map(({ icon: Icon, label, color, bg }) => (
+                        <div key={label} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border"
+                             style={{ background: bg, borderColor: 'rgba(255,255,255,0.08)' }}>
+                          <Icon size={16} style={{ color }} />
+                          <span className="text-xs font-semibold text-white/90">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <a href="mailto:contact@fidelitour.fr?subject=Multi-store%20deployment%20enquiry"
+                         className="inline-flex items-center justify-center gap-2 text-white px-7 py-4 rounded-full text-base font-semibold transition-all shadow-xl hover:-translate-y-0.5"
+                         style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
+                        Contact us <ArrowRight size={18} />
+                      </a>
+                      <a href="tel:+33000000000"
+                         className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-base font-semibold border transition-all hover:bg-white/10"
+                         style={{ borderColor: 'rgba(255,255,255,0.25)', color: 'white' }}>
+                        <Smartphone size={16} /> Book a call
+                      </a>
+                    </div>
+                    <p className="text-xs mt-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      Typical response within 24h · French &amp; English
+                    </p>
+                  </div>
+
+                  {/* Right: stylized stat card */}
+                  <div className="lg:col-span-2 relative">
+                    <div className="relative rounded-2xl p-6 md:p-7 border overflow-hidden"
+                         style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
+                      <div aria-hidden="true" className="absolute inset-0 opacity-30 pointer-events-none"
+                           style={{ background: `radial-gradient(circle at 30% 0%, ${C.terracotta}33 0%, transparent 60%), radial-gradient(circle at 80% 100%, ${C.lavender}33 0%, transparent 60%)` }} />
+                      <p className="text-xs font-bold uppercase tracking-widest mb-4 relative" style={{ color: C.ochre }}>Chain Pricing — from</p>
+                      <p className="text-5xl font-bold relative">
+                        <span className="bg-clip-text text-transparent"
+                              style={{ backgroundImage: `linear-gradient(135deg, #FFD7A8, ${C.ochre})` }}>
+                          €349
+                        </span>
+                        <span className="text-base text-white/60 font-medium">/mo</span>
+                      </p>
+                      <p className="text-xs mb-5 relative" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                        Volume discounts above 5 branches
+                      </p>
+                      <div className="space-y-2.5 relative">
+                        {[
+                          'Up to 50,000 customers',
+                          '300 campaigns per month',
+                          'Multi-branch dashboard',
+                          'AI Assistant 50/day',
+                          'Priority support · SLA',
+                        ].map((line) => (
+                          <div key={line} className="flex items-center gap-2 text-sm text-white/85">
+                            <Check size={15} style={{ color: C.ochre }} /> {line}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
