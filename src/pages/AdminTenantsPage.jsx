@@ -274,21 +274,32 @@ const AdminTenantsPage = () => {
         role="super_admin"
       />
 
-      <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
+      <div
+        className="bg-white p-6 rounded-2xl"
+        style={{ border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+      >
         {/* Search and Basic Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-3 mb-5">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C_PS.inkMute }} />
             <input
               type="text"
-              placeholder="Search by business name or ID..."
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-[#E7E5E4] focus:ring-2 focus:ring-[#B85C38]/20 focus:border-[#B85C38] outline-none"
+              placeholder="Search by business name or ID…"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all"
+              style={{
+                background: C_PS.bone,
+                border: `1px solid ${C_PS.hairline}`,
+                color: C_PS.inkDeep,
+              }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={(e) => { e.target.style.borderColor = C_PS.terracotta; e.target.style.background = 'white'; }}
+              onBlur={(e) => { e.target.style.borderColor = C_PS.hairline; e.target.style.background = C_PS.bone; }}
             />
           </div>
           <select
-            className="px-4 py-3 rounded-lg border border-[#E7E5E4] focus:ring-2 focus:ring-[#B85C38]/20 focus:border-[#B85C38] outline-none bg-white"
+            className="px-4 py-2.5 rounded-xl text-sm outline-none cursor-pointer"
+            style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkDeep }}
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
           >
@@ -296,9 +307,11 @@ const AdminTenantsPage = () => {
             <option value="basic">Basic</option>
             <option value="gold">Gold</option>
             <option value="vip">VIP</option>
+            <option value="chain">Chain</option>
           </select>
           <select
-            className="px-4 py-3 rounded-lg border border-[#E7E5E4] focus:ring-2 focus:ring-[#B85C38]/20 focus:border-[#B85C38] outline-none bg-white"
+            className="px-4 py-2.5 rounded-xl text-sm outline-none cursor-pointer"
+            style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkDeep }}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >

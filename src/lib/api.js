@@ -68,6 +68,7 @@ export const ownerAPI = {
   getBranches: () => api.get('/owner/branches'),
   createBranch: (data) => api.post('/owner/branches', data),
   deleteBranch: (id) => api.delete('/owner/branches/' + id),
+  getBranchPerformance: (params) => api.get('/owner/branches/performance', { params }),
   getCardsFilled: (params) => api.get('/owner/analytics/cards-filled', { params }),
   getRecovered: (params) => api.get('/owner/analytics/recovered', { params }),
   getHighestPaying: (params) => api.get('/owner/analytics/highest-paying', { params }),

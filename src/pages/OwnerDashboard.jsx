@@ -27,6 +27,8 @@ const OwnerDashboard = () => {
   const [showSendOfferModal, setShowSendOfferModal] = useState(null);
   const [sendOfferMessage, setSendOfferMessage] = useState('');
   const [sendOfferLoading, setSendOfferLoading] = useState(false);
+  // Multi-store franchise analytics — populated only for tenants with ≥2 branches.
+  const [branchPerformance, setBranchPerformance] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -48,12 +50,16 @@ const OwnerDashboard = () => {
       const analyticsParams = selectedBranch ? { branch_id: selectedBranch } : {};
 
       // Fetch all in parallel. ONE failure must NOT blank the whole dashboard.
-      const [analyticsRes, cardsRes, recoveredRes, topRes, summaryRes] = await Promise.allSettled([
+      // Branch performance is the multi-store rollup — only meaningful when
+      // the tenant actually has 2+ branches, but it's cheap (single query),
+      // so we always request it and conditionally render below.
+      const [analyticsRes, cardsRes, recoveredRes, topRes, summaryRes, branchPerfRes] = await Promise.allSettled([
         ownerAPI.getAnalytics(analyticsParams),
         ownerAPI.getCardsFilled(analyticsParams),
         ownerAPI.getRecovered({ inactive_days: 30, window_days: 30, ...analyticsParams }),
         ownerAPI.getHighestPaying(analyticsParams),
         ownerAPI.getAnalyticsSummary(analyticsParams),
+        ownerAPI.getBranchPerformance({ period_days: 30 }),
       ]);
 
       if (analyticsRes.status === 'fulfilled') {
@@ -74,6 +80,9 @@ const OwnerDashboard = () => {
         const topList = topRes.value.data || [];
         setHighestPaying(topList);
         if (topList.length > 0) setTopSpender(topList[0]);
+      }
+      if (branchPerfRes.status === 'fulfilled') {
+        setBranchPerformance(branchPerfRes.value.data);
       }
     } finally {
       setLoading(false);
@@ -312,6 +321,142 @@ const OwnerDashboard = () => {
                     icon={Star} color={C.amber} />
         )}
       </div>
+
+      {/* Multi-store franchise panel — visible only when the tenant has 2+
+          branches. Lifted to its own section so a chain owner sees their
+          location-by-location breakdown right after the topline KPIs, before
+          the trend charts. */}
+      {branchPerformance && Array.isArray(branchPerformance.branches) && branchPerformance.branches.length >= 2 && (
+        <div className="rounded-2xl p-6 relative overflow-hidden"
+             style={{ background: 'white', border: `1px solid ${C.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}>
+          <div aria-hidden="true" className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
+               style={{ background: C.lavender }} />
+          <div aria-hidden="true" className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full blur-3xl opacity-10 pointer-events-none"
+               style={{ background: C.ochre }} />
+
+          <header className="relative flex flex-wrap items-end justify-between gap-3 mb-5">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: C.terracotta }}>
+                Multi-Store · Last {branchPerformance.period_days || 30} days
+              </p>
+              <h2 className="font-['Cormorant_Garamond'] text-3xl font-bold mt-1" style={{ color: C.inkDeep }}>
+                Branch Performance
+              </h2>
+              <p className="text-sm mt-1" style={{ color: C.inkMute }}>
+                Side-by-side view of every location with period-over-period growth.
+              </p>
+            </div>
+            {branchPerformance.tenant_total && (
+              <div className="text-right">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: C.inkMute }}>
+                  Network Total
+                </p>
+                <p className="font-['Cormorant_Garamond'] text-3xl font-bold leading-none mt-1" style={{ color: C.inkDeep }}>
+                  €{(branchPerformance.tenant_total.revenue_period || 0).toLocaleString('fr-FR')}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: C.inkMute }}>
+                  {branchPerformance.tenant_total.visits_period} visits · €{branchPerformance.tenant_total.avg_ticket || 0} avg
+                </p>
+              </div>
+            )}
+          </header>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {branchPerformance.branches.map((b, idx) => {
+              // Rank-aware accent: leader = ochre, second = sky, others = sage/teal/lavender.
+              const accents = [C.ochre, C.sky, C.sage, C.lavender, C.teal, C.rose];
+              const accent = accents[idx % accents.length];
+              const positive = (b.visits_delta_pct || 0) >= 0;
+              const networkVisits = branchPerformance.tenant_total?.visits_period || 0;
+              const sharePct = networkVisits > 0
+                ? Math.round((b.visits_period / networkVisits) * 100)
+                : 0;
+              return (
+                <div
+                  key={b.id}
+                  className="relative p-5 rounded-2xl overflow-hidden"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent}0D 0%, white 60%)`,
+                    border: `1px solid ${accent}33`,
+                  }}
+                >
+                  {idx === 0 && (
+                    <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest"
+                         style={{ background: accent, color: 'white' }}>
+                      Top branch
+                    </div>
+                  )}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: `${accent}1A`, color: accent, border: `1px solid ${accent}33` }}
+                    >
+                      <Activity size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-['Cormorant_Garamond'] text-xl font-bold leading-tight" style={{ color: C.inkDeep }}>
+                        {b.name}
+                      </h3>
+                      {b.address && (
+                        <p className="text-[11px] truncate" style={{ color: C.inkMute }}>{b.address}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.14em]" style={{ color: C.inkMute }}>Visits</p>
+                      <p className="font-['Cormorant_Garamond'] text-2xl font-bold leading-none mt-1" style={{ color: C.inkDeep }}>
+                        {b.visits_period}
+                      </p>
+                      <p className="text-[10px] mt-1 font-semibold inline-flex items-center gap-0.5"
+                         style={{ color: positive ? C.sage : C.terracotta }}>
+                        <span>{positive ? '↑' : '↓'}</span>
+                        <span>{Math.abs(b.visits_delta_pct || 0)}%</span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.14em]" style={{ color: C.inkMute }}>Revenue</p>
+                      <p className="font-['Cormorant_Garamond'] text-2xl font-bold leading-none mt-1" style={{ color: C.inkDeep }}>
+                        €{Math.round(b.revenue_period || 0).toLocaleString('fr-FR')}
+                      </p>
+                      <p className="text-[10px] mt-1" style={{ color: C.inkMute }}>
+                        €{b.avg_ticket_period || 0} avg
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.14em]" style={{ color: C.inkMute }}>Customers</p>
+                      <p className="font-['Cormorant_Garamond'] text-2xl font-bold leading-none mt-1" style={{ color: C.inkDeep }}>
+                        {b.customers}
+                      </p>
+                      <p className="text-[10px] mt-1" style={{ color: C.inkMute }}>
+                        {b.active_customers} active
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Share of network visits — visual rail */}
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] mb-1" style={{ color: C.inkMute }}>
+                      <span className="font-semibold">Share of network visits</span>
+                      <span style={{ color: accent }}>{sharePct}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${accent}1A` }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${sharePct}%`,
+                          background: `linear-gradient(90deg, ${accent}, ${accent}AA)`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
