@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ownerAPI } from '../lib/api';
 import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2, Gift } from 'lucide-react';
+import { C as C_SCAN } from '../components/PageShell';
 
 const BRANCH_STORAGE_KEY = 'fidelitour_scan_branch_id';
 
@@ -196,23 +197,57 @@ const ScanPage = () => {
   };
 
   return (
-    <div className="p-8 space-y-8 bg-[#FDFBF7] min-h-screen flex flex-col items-center">
-      <div className="w-full max-w-2xl text-center mb-8">
-        <h1 className="text-4xl font-['Cormorant_Garamond'] font-bold text-[#1C1917] mb-2">Record Visit</h1>
-        <p className="text-[#57534E]">Enter the customer's wallet barcode and the transaction value to log loyalty tracking.</p>
+    <div className="space-y-6 max-w-2xl mx-auto">
+      {/* Hero — single focused action surface for staff */}
+      <div className="relative text-center pt-4 pb-2">
+        <div
+          aria-hidden="true"
+          className="absolute -top-4 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full blur-3xl opacity-30 pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${C_SCAN.sky} 0%, transparent 70%)` }}
+        />
+        <div
+          className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-4"
+          style={{
+            background: `linear-gradient(135deg, ${C_SCAN.sky}1A, ${C_SCAN.lavender}1A)`,
+            color: C_SCAN.sky,
+            border: `1px solid ${C_SCAN.sky}33`,
+          }}
+        >
+          <ScanLine size={12} /> Staff Workspace
+        </div>
+        <h1
+          className="relative font-['Cormorant_Garamond'] font-bold leading-[1.1]"
+          style={{ color: C_SCAN.inkDeep, fontSize: 44 }}
+        >
+          Record a Visit
+        </h1>
+        <p className="relative mt-3 text-base max-w-md mx-auto" style={{ color: C_SCAN.inkMute }}>
+          Scan the customer's wallet barcode (or type it in) and enter the transaction amount to log loyalty points.
+        </p>
       </div>
 
       {branches.length > 0 && (
-        <div className="w-full max-w-2xl bg-white border border-[#E7E5E4] rounded-xl p-4 flex items-center gap-3">
-          <Building2 size={18} className="text-[#B85C38]" />
-          <div className="flex-1">
-            <label className="block text-xs font-bold text-[#57534E] uppercase tracking-wider">Scanning at branch</label>
+        <div
+          className="w-full rounded-2xl p-4 flex items-center gap-3"
+          style={{ background: 'white', border: `1px solid ${C_SCAN.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: `${C_SCAN.sky}1A`, color: C_SCAN.sky, border: `1px solid ${C_SCAN.sky}33` }}
+          >
+            <Building2 size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: C_SCAN.inkMute }}>
+              Scanning at branch
+            </label>
             <select
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
-              className="w-full mt-1 px-2 py-1 text-sm border border-[#E7E5E4] rounded"
+              className="w-full mt-1 px-2 py-1 text-sm rounded-lg outline-none"
+              style={{ border: `1px solid ${C_SCAN.hairline}`, background: 'white' }}
             >
-              <option value="">— Not tagged (counts toward "all branches" only) —</option>
+              <option value="">— Not tagged —</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name || b.id}</option>
               ))}
@@ -221,41 +256,53 @@ const ScanPage = () => {
         </div>
       )}
 
-      {/* Mode Tabs */}
-      <div className="w-full max-w-2xl flex gap-4 border-b border-[#E7E5E4]">
-        <button
-          onClick={() => {
-            setMode('manual');
-            stopCamera();
-          }}
-          className={`flex-1 py-3 px-4 font-bold text-sm uppercase tracking-wide border-b-2 transition-colors ${
-            mode === 'manual'
-              ? 'border-[#B85C38] text-[#B85C38]'
-              : 'border-transparent text-[#57534E] hover:text-[#1C1917]'
-          }`}
-        >
-          Manual Entry
-        </button>
-        <button
-          onClick={() => {
-            setMode('camera');
-            if (!cameraActive) startCamera();
-          }}
-          className={`flex-1 py-3 px-4 font-bold text-sm uppercase tracking-wide border-b-2 transition-colors flex items-center justify-center gap-2 ${
-            mode === 'camera'
-              ? 'border-[#B85C38] text-[#B85C38]'
-              : 'border-transparent text-[#57534E] hover:text-[#1C1917]'
-          }`}
-        >
-          <Camera className="w-4 h-4" />
-          Scan with Camera
-        </button>
+      {/* Mode tabs — pill switcher */}
+      <div
+        className="w-full p-1.5 rounded-full flex"
+        style={{ background: 'white', border: `1px solid ${C_SCAN.hairline}` }}
+      >
+        {[
+          { key: 'manual', label: 'Manual Entry', icon: ScanLine },
+          { key: 'camera', label: 'Scan with Camera', icon: Camera },
+        ].map((tab) => {
+          const isActive = mode === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setMode(tab.key);
+                if (tab.key === 'manual') stopCamera();
+                else if (!cameraActive) startCamera();
+              }}
+              className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
+              style={{
+                background: isActive ? `linear-gradient(135deg, ${C_SCAN.sky}, ${C_SCAN.lavender})` : 'transparent',
+                color: isActive ? 'white' : C_SCAN.inkMute,
+                boxShadow: isActive ? '0 4px 14px rgba(74,144,226,0.25)' : 'none',
+              }}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="bg-white w-full max-w-2xl p-10 rounded-3xl shadow-lg border border-[#E7E5E4] relative overflow-hidden">
-
-        {/* Decorative background circle */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#F3EFE7] rounded-full opacity-50 pointer-events-none"></div>
+      <div
+        className="bg-white w-full p-8 md:p-10 rounded-3xl shadow-md border relative overflow-hidden"
+        style={{ borderColor: C_SCAN.hairline }}
+      >
+        {/* Decorative gradient orbs */}
+        <div
+          aria-hidden="true"
+          className="absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl opacity-25 pointer-events-none"
+          style={{ background: C_SCAN.sky }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-24 -left-24 w-56 h-56 rounded-full blur-3xl opacity-15 pointer-events-none"
+          style={{ background: C_SCAN.lavender }}
+        />
 
         {/* Camera Mode */}
         {mode === 'camera' && (

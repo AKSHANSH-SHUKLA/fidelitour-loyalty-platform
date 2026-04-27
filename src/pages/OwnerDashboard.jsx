@@ -9,6 +9,7 @@ import {
   ArrowUpRight, ArrowDownRight, UserPlus, Activity, AlertCircle, CheckCircle2, Gift, AlertTriangle, Star
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
+import { PageHeader, StatCard, Section, C } from '../components/PageShell';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
@@ -99,16 +100,21 @@ const OwnerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="p-8 min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <p className="text-[#57534E]">Loading dashboard...</p>
+      <div className="flex items-center justify-center py-32">
+        <div className="flex items-center gap-3" style={{ color: C.inkMute }}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.ochre }} />
+          <span className="text-sm font-medium">Loading your dashboard…</span>
+        </div>
       </div>
     );
   }
 
   if (!metrics) {
     return (
-      <div className="p-8 min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <p className="text-[#B85C38]">Failed to load analytics. Please try again.</p>
+      <div className="flex items-center justify-center py-32">
+        <p className="text-sm" style={{ color: C.terracotta }}>
+          Failed to load analytics. Please refresh the page.
+        </p>
       </div>
     );
   }
@@ -176,16 +182,33 @@ const OwnerDashboard = () => {
     </div>
   );
 
+  const newThisMonth = Object.values(newByWeek).reduce((a, b) => a + b, 0);
+
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 bg-[#FDFBF7] min-h-screen">
+    <div className="space-y-6">
       {/* Smart Alerts Banner */}
       {recovered && recovered.percentage > 10 && (
-        <div className="p-4 rounded-xl border-l-4 bg-green-50" style={{ borderColor: '#4A5D23' }}>
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={24} style={{ color: '#4A5D23' }} />
+        <div
+          className="relative p-4 rounded-2xl overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg, ${C.meadow} 0%, white 100%)`,
+            border: `1px solid ${C.sage}55`,
+          }}
+        >
+          <div className="flex items-center gap-3 relative">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: `${C.sage}33`, color: C.sage }}
+            >
+              <CheckCircle2 size={20} />
+            </div>
             <div>
-              <p className="font-semibold text-[#1C1917]">Great news — {recovered.count} customers came back recently!</p>
-              <p className="text-sm text-[#57534E]">They were inactive for 30+ days but visited in the last 30 days.</p>
+              <p className="font-semibold text-sm" style={{ color: C.inkDeep }}>
+                Great news — {recovered.count} customers came back recently!
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: C.inkMute }}>
+                They were inactive for 30+ days but visited in the last 30 days.
+              </p>
             </div>
           </div>
         </div>
@@ -196,138 +219,97 @@ const OwnerDashboard = () => {
         const now = new Date();
         const daysSince = Math.floor((now - lastVisit) / (1000 * 60 * 60 * 24));
         return daysSince > 14 ? (
-          <div className="p-4 rounded-xl border-l-4 bg-amber-50" style={{ borderColor: '#E3A869' }}>
-            <div className="flex items-center gap-3">
-              <AlertTriangle size={24} style={{ color: '#E3A869' }} />
+          <div
+            className="relative p-4 rounded-2xl overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, #FFF5E5 0%, white 100%)`,
+              border: `1px solid ${C.ochre}55`,
+            }}
+          >
+            <div className="flex items-center gap-3 relative">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: `${C.ochre}33`, color: C.ochre }}
+              >
+                <AlertTriangle size={20} />
+              </div>
               <div>
-                <p className="font-semibold text-[#1C1917]">Your top customer hasn't visited in {daysSince} days — send them a thank-you offer?</p>
-                <p className="text-sm text-[#57534E]">{topSpender.name} is your biggest supporter with €{topSpender.total_amount_paid} spent.</p>
+                <p className="font-semibold text-sm" style={{ color: C.inkDeep }}>
+                  Your top customer hasn't visited in {daysSince} days — send them a thank-you offer?
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: C.inkMute }}>
+                  {topSpender.name} is your biggest supporter with €{topSpender.total_amount_paid} spent.
+                </p>
               </div>
             </div>
           </div>
         ) : null;
       })()}
 
-      {/* Branch Selector (if multiple branches) */}
-      {branches.length > 1 && (
-        <div className="flex gap-2">
-          <button
-            onClick={() => setSelectedBranch(null)}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              selectedBranch === null
-                ? 'bg-[#B85C38] text-white'
-                : 'bg-white border border-[#E7E5E4] text-[#57534E] hover:border-[#B85C38]'
-            }`}
-          >
-            All branches
-          </button>
-          {branches.map(branch => (
-            <button
-              key={branch.id}
-              onClick={() => setSelectedBranch(branch.id)}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
-                selectedBranch === branch.id
-                  ? 'bg-[#B85C38] text-white'
-                  : 'bg-white border border-[#E7E5E4] text-[#57534E] hover:border-[#B85C38]'
-              }`}
-            >
-              {branch.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <PageHeader
+        eyebrow="Operational Overview"
+        title="Welcome back"
+        description="A live view of your loyalty programme — customers, visits, tiers, and what's working this week."
+        role="business_owner"
+        actions={
+          branches.length > 1 ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedBranch(null)}
+                className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all"
+                style={{
+                  background: selectedBranch === null
+                    ? `linear-gradient(135deg, ${C.ochre}, ${C.terracotta})`
+                    : 'white',
+                  color: selectedBranch === null ? 'white' : C.inkSoft,
+                  border: `1px solid ${selectedBranch === null ? 'transparent' : C.hairline}`,
+                }}
+              >
+                All branches
+              </button>
+              {branches.map(branch => (
+                <button
+                  key={branch.id}
+                  onClick={() => setSelectedBranch(branch.id)}
+                  className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all"
+                  style={{
+                    background: selectedBranch === branch.id
+                      ? `linear-gradient(135deg, ${C.ochre}, ${C.terracotta})`
+                      : 'white',
+                    color: selectedBranch === branch.id ? 'white' : C.inkSoft,
+                    border: `1px solid ${selectedBranch === branch.id ? 'transparent' : C.hairline}`,
+                  }}
+                >
+                  {branch.name}
+                </button>
+              ))}
+            </div>
+          ) : null
+        }
+      />
 
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Operational Dashboard
-        </h1>
-        <p className="text-[#57534E]" style={{ fontFamily: 'Manrope' }}>
-          A high-level view of your loyalty programme performance
-        </p>
-      </div>
-
-      {/* KPI Cards — 6 cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <KPICard
-          icon={Users}
-          title="Total Customers"
-          value={totalCustomers.toLocaleString()}
-          subtitle="All enrolled loyalty members"
-          color="#2D7D9A"
-        />
-        <KPICard
-          icon={Activity}
-          title="Total Visits"
-          value={totalVisits.toLocaleString()}
-          subtitle="All-time recorded visits"
-          color="#4A5D23"
-        />
-        <KPICard
-          icon={Repeat}
-          title="Repeat Rate"
-          value={repeatRate}
-          subtitle="Customers who came back more than once"
-          color="#B85C38"
-          bgColor="#B85C38"
-          isAccent={true}
-        />
-        <KPICard
-          icon={Award}
-          title="Gold Members"
-          value={goldCustomers}
-          subtitle={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of your customers`}
-          color="#E3A869"
-        />
-        <KPICard
-          icon={TrendingUp}
-          title="Avg Visits / Customer"
-          value={avgVisitsPerCustomer}
-          subtitle="Higher means stronger loyalty"
-          color="#6B4C8A"
-        />
-        <KPICard
-          icon={UserPlus}
-          title="New This Month"
-          value={Object.values(newByWeek).reduce((a, b) => a + b, 0)}
-          subtitle="Customers who joined in the last 4 weeks"
-          color="#2D7D9A"
-        />
+      {/* KPI grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <StatCard label="Total Customers"      value={totalCustomers.toLocaleString()} sublabel="Enrolled loyalty members"    icon={Users}      color={C.sky} />
+        <StatCard label="Total Visits"         value={totalVisits.toLocaleString()}    sublabel="All-time recorded visits"    icon={Activity}   color={C.sage} />
+        <StatCard label="Repeat Rate"          value={repeatRate}                       sublabel="Customers who returned"      icon={Repeat}     color={C.ochre} variant="dark" />
+        <StatCard label="Gold Members"         value={goldCustomers}                    sublabel={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of customers`} icon={Award} color={C.amber} />
+        <StatCard label="Avg Visits / Cust."   value={avgVisitsPerCustomer}             sublabel="Higher = stronger loyalty"   icon={TrendingUp} color={C.lavender} />
+        <StatCard label="New This Month"       value={newThisMonth}                     sublabel="Joined in the last 4 weeks"  icon={UserPlus}   color={C.teal} />
         {cardsFilled && (
-          <KPICard
-            icon={Gift}
-            title="Total Cards Filled"
-            value={cardsFilled.total_cards_filled || 0}
-            subtitle="Complete rewards cycles earned across all customers"
-            color="#4A5D23"
-          />
+          <StatCard label="Cards Filled"       value={cardsFilled.total_cards_filled || 0} sublabel="Complete rewards cycles earned" icon={Gift} color={C.sage} />
         )}
         {recovered && (
-          <KPICard
-            icon={TrendingUp}
-            title="Recovered Customers"
-            value={`${recovered.count} (${recovered.percentage}%)`}
-            subtitle="Customers who came back after being quiet"
-            color="#2D7D9A"
-          />
+          <StatCard label="Recovered"          value={`${recovered.count}`}             sublabel={`${recovered.percentage}% came back after a quiet period`} icon={TrendingUp} color={C.teal} />
         )}
         {topSpender && (
-          <KPICard
-            icon={Users}
-            title="Top Spender"
-            value={topSpender.name}
-            subtitle={`€${topSpender.total_amount_paid} spent • ${topSpender.total_visits} visits`}
-            color="#B85C38"
-          />
+          <StatCard label="Top Spender"        value={topSpender.name}                  sublabel={`€${topSpender.total_amount_paid} · ${topSpender.total_visits} visits`} icon={Users} color={C.terracotta} />
         )}
         {summary?.total_reviews > 0 && (
-          <KPICard
-            icon={Star}
-            title="Average Rating"
-            value={summary.average_rating != null ? `${summary.average_rating}/10` : '—'}
-            subtitle={`${summary.total_reviews} review${summary.total_reviews === 1 ? '' : 's'} · ${summary.negative_review_rate_pct}% negative`}
-            color="#E3A869"
-          />
+          <StatCard label="Avg Rating"
+                    value={summary.average_rating != null ? `${summary.average_rating}/10` : '—'}
+                    sublabel={`${summary.total_reviews} review${summary.total_reviews === 1 ? '' : 's'} · ${summary.negative_review_rate_pct}% negative`}
+                    icon={Star} color={C.amber} />
         )}
       </div>
 

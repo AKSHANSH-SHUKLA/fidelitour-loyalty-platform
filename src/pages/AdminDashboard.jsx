@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
-import { AlertCircle, TrendingUp, TrendingDown, Users, DollarSign, Eye, Activity, ChevronRight, X } from 'lucide-react';
+import { AlertCircle, TrendingUp, TrendingDown, Users, DollarSign, Eye, Activity, ChevronRight, X, CheckCircle2 } from 'lucide-react';
 import api, { adminAPI } from '../lib/api';
+import { PageHeader, StatCard, Section, C } from '../components/PageShell';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -143,184 +144,147 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] p-8 flex items-center justify-center">
-        <div className="text-[#57534E]">Loading dashboard...</div>
+      <div className="flex items-center justify-center py-32">
+        <div className="flex items-center gap-3" style={{ color: C.inkMute }}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.terracotta }} />
+          <span className="text-sm font-medium">Loading dashboard…</span>
+        </div>
       </div>
     );
   }
 
+  const operational = systemStatus === 'operational';
+
   return (
-    <div className="min-h-screen bg-[#FDFBF7] p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Admin Dashboard
-        </h1>
-        <p className="text-[#57534E]">Overview of FidéliTour platform performance</p>
-      </div>
+    <>
+      <PageHeader
+        eyebrow="Platform Overview"
+        title="Admin Dashboard"
+        description="Cross-tenant performance, growth, and business health at a glance."
+        role="super_admin"
+        actions={
+          <div
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold"
+            style={{
+              background: operational ? `${C.sage}1A` : `${C.terracotta}1A`,
+              color: operational ? C.sage : C.terracotta,
+              border: `1px solid ${operational ? C.sage : C.terracotta}33`,
+            }}
+          >
+            {operational ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+            <span>System {operational ? 'Operational' : 'Degraded'}</span>
+          </div>
+        }
+      />
 
-      {/* System Status */}
-      <div className="mb-8 p-4 bg-[#F3EFE7] border border-[#E7E5E4] rounded-lg flex items-center gap-2">
-        <AlertCircle size={20} className={systemStatus === 'operational' ? 'text-[#4A5D23]' : 'text-[#B85C38]'} />
-        <span className="text-[#57534E]">
-          System Status: <span className="font-semibold capitalize">{systemStatus}</span>
-        </span>
-      </div>
-
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {/* Total Businesses */}
-        <div
+      {/* Top KPI row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <StatCard
+          label="Total Businesses"
+          value={stats?.totalBusinesses || 0}
+          sublabel="All active & inactive registrations"
+          icon={Users}
+          color={C.terracotta}
           onClick={() => handleKPIClick('businesses')}
-          className="bg-white border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-[#B85C38] transition-all"
-        >
-          <p className="text-[#57534E] text-sm mb-2 flex items-center gap-2">
-            <Users size={16} className="text-[#B85C38]" />
-            Total Businesses
-          </p>
-          <h3 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond' }}>
-            {stats?.totalBusinesses || 0}
-          </h3>
-          <p className="text-xs text-[#57534E]">All active and inactive businesses registered</p>
-        </div>
-
-        {/* Total Customers */}
-        <div
+        />
+        <StatCard
+          label="Total Customers"
+          value={(stats?.totalCustomers || 0).toLocaleString()}
+          sublabel="Unique end-users across all tenants"
+          icon={Users}
+          color={C.ochre}
           onClick={() => handleKPIClick('customers')}
-          className="bg-white border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-[#B85C38] transition-all"
-        >
-          <p className="text-[#57534E] text-sm mb-2 flex items-center gap-2">
-            <Users size={16} className="text-[#E3A869]" />
-            Total Customers
-          </p>
-          <h3 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond' }}>
-            {stats?.totalCustomers || 0}
-          </h3>
-          <p className="text-xs text-[#57534E]">All unique end-users across all businesses</p>
-        </div>
-
-        {/* Monthly Revenue */}
-        <div className="bg-white border border-[#E7E5E4] rounded-lg p-6">
-          <p className="text-[#57534E] text-sm mb-2 flex items-center gap-2">
-            <DollarSign size={16} className="text-[#4A5D23]" />
-            Monthly Platform Revenue
-          </p>
-          <h3 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond' }}>
-            €{(stats?.monthlyRevenue || 0).toLocaleString()}
-          </h3>
-          <p className="text-xs text-[#57534E]">Total subscription revenue this month</p>
-        </div>
-
-        {/* Active Businesses (30 days) */}
-        <div className="bg-white border border-[#E7E5E4] rounded-lg p-6">
-          <p className="text-[#57534E] text-sm mb-2 flex items-center gap-2">
-            <TrendingUp size={16} className="text-[#2D7D9A]" />
-            Active Businesses (30d)
-          </p>
-          <h3 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond' }}>
-            {stats?.activeBusinesses30Days || 0}
-          </h3>
-          <p className="text-xs text-[#57534E]">Businesses with activity in past 30 days</p>
-        </div>
-
-        {/* Avg Customers Per Business */}
-        <div className="bg-white border border-[#E7E5E4] rounded-lg p-6">
-          <p className="text-[#57534E] text-sm mb-2 flex items-center gap-2">
-            <Activity size={16} className="text-[#6B4C8A]" />
-            Avg Customers/Business
-          </p>
-          <h3 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond' }}>
-            {stats?.avgCustomersPerBusiness || 0}
-          </h3>
-          <p className="text-xs text-[#57534E]">Average customers per business</p>
-        </div>
-
-        {/* Platform Visit Count */}
-        <div
+        />
+        <StatCard
+          label="Monthly Revenue"
+          value={`€${(stats?.monthlyRevenue || 0).toLocaleString()}`}
+          sublabel="Subscription revenue this month"
+          icon={DollarSign}
+          color={C.sage}
+          variant="dark"
+        />
+        <StatCard
+          label="Active (30d)"
+          value={stats?.activeBusinesses30Days || 0}
+          sublabel="Tenants with activity in the last 30 days"
+          icon={TrendingUp}
+          color={C.teal}
+        />
+        <StatCard
+          label="Avg Customers / Business"
+          value={stats?.avgCustomersPerBusiness || 0}
+          sublabel="Average customer base per tenant"
+          icon={Activity}
+          color={C.lavender}
+        />
+        <StatCard
+          label="Platform Visits"
+          value={(stats?.platformVisitCount || 0).toLocaleString()}
+          sublabel="Total visits across all tenants"
+          icon={Eye}
+          color={C.amber}
           onClick={() => handleKPIClick('visits')}
-          className="bg-white border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-[#B85C38] transition-all"
-        >
-          <p className="text-[#57534E] text-sm mb-2 flex items-center gap-2">
-            <Eye size={16} className="text-[#8B6914]" />
-            Platform Visit Count
-          </p>
-          <h3 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: 'Cormorant Garamond' }}>
-            {(stats?.platformVisitCount || 0).toLocaleString()}
-          </h3>
-          <p className="text-xs text-[#57534E]">Total visits across all businesses</p>
-        </div>
+        />
       </div>
 
-      {/* Business Health Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Regular */}
-        <div
-          onClick={() => handleKPIClick('regular')}
-          className="bg-white border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-[#2D7D9A] transition-all"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-              Regular
-            </h3>
-            <div className="w-10 h-10 rounded-full bg-[#2D7D9A]/10 flex items-center justify-center">
-              <span className="text-[#2D7D9A] font-bold">{businessHealth.regular.count}</span>
+      {/* Business Health row — three-state breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {[
+          { key: 'regular',  title: 'Regular',  count: businessHealth.regular.count,  hint: 'Active in last 14 days', color: C.teal,       icon: Activity },
+          { key: 'growing',  title: 'Growing',  count: businessHealth.growing.count,  hint: 'New customers increasing', color: C.sage,    icon: TrendingUp },
+          { key: 'declining',title: 'Declining',count: businessHealth.declining.count,hint: 'Fewer visits this period', color: C.terracotta, icon: TrendingDown },
+        ].map((row) => (
+          <button
+            key={row.key}
+            onClick={() => handleKPIClick(row.key)}
+            className="relative w-full text-left p-6 rounded-2xl overflow-hidden transition-all bg-white hover:-translate-y-0.5 hover:shadow-lg"
+            style={{ border: `1px solid ${C.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+          >
+            <div
+              aria-hidden="true"
+              className="absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl opacity-25"
+              style={{ background: row.color }}
+            />
+            <div className="relative flex items-start justify-between mb-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: C.inkMute }}>
+                  Health
+                </p>
+                <h3
+                  className="font-['Cormorant_Garamond'] text-2xl font-bold mt-1"
+                  style={{ color: C.inkDeep }}
+                >
+                  {row.title}
+                </h3>
+              </div>
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ background: `${row.color}1A`, color: row.color, border: `1px solid ${row.color}33` }}
+              >
+                <row.icon size={20} />
+              </div>
             </div>
-          </div>
-          <p className="text-sm text-[#57534E]">Active in last 14 days</p>
-          <div className="mt-4 pt-4 border-t border-[#E7E5E4]">
-            <p className="text-xs text-[#57534E]">Click to see all {businessHealth.regular.count} businesses</p>
-          </div>
-        </div>
-
-        {/* Growing */}
-        <div
-          onClick={() => handleKPIClick('growing')}
-          className="bg-white border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-[#4A5D23] transition-all"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-              Growing
-            </h3>
-            <div className="w-10 h-10 rounded-full bg-[#4A5D23]/10 flex items-center justify-center">
-              <TrendingUp size={18} className="text-[#4A5D23]" />
+            <p
+              className="font-['Cormorant_Garamond'] text-5xl font-bold leading-none mb-2"
+              style={{ color: row.color }}
+            >
+              {row.count}
+            </p>
+            <p className="text-sm" style={{ color: C.inkMute }}>{row.hint}</p>
+            <div className="mt-4 pt-4 flex items-center justify-between" style={{ borderTop: `1px solid ${C.hairline}` }}>
+              <span className="text-xs font-medium" style={{ color: C.inkMute }}>
+                See all {row.count} businesses
+              </span>
+              <ChevronRight size={14} style={{ color: row.color }} />
             </div>
-          </div>
-          <p className="text-2xl font-bold text-[#4A5D23] mb-2">{businessHealth.growing.count}</p>
-          <p className="text-sm text-[#57534E]">New customers increasing</p>
-          <div className="mt-4 pt-4 border-t border-[#E7E5E4]">
-            <p className="text-xs text-[#57534E]">Click to see all {businessHealth.growing.count} businesses</p>
-          </div>
-        </div>
-
-        {/* Declining */}
-        <div
-          onClick={() => handleKPIClick('declining')}
-          className="bg-white border border-[#E7E5E4] rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-[#B85C38] transition-all"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-              Declining
-            </h3>
-            <div className="w-10 h-10 rounded-full bg-[#B85C38]/10 flex items-center justify-center">
-              <TrendingDown size={18} className="text-[#B85C38]" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-[#B85C38] mb-2">{businessHealth.declining.count}</p>
-          <p className="text-sm text-[#57534E]">Fewer visits this period</p>
-          <div className="mt-4 pt-4 border-t border-[#E7E5E4]">
-            <p className="text-xs text-[#57534E]">Click to see all {businessHealth.declining.count} businesses</p>
-          </div>
-        </div>
+          </button>
+        ))}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Plan Distribution Pie Chart */}
-        <div className="bg-white border border-[#E7E5E4] rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Businesses by Subscription Plan
-          </h2>
-          <div className="h-80 flex justify-center">
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Section title="Subscription Plans" hint="Distribution of tenants across plan tiers.">
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -329,90 +293,99 @@ export default function AdminDashboard() {
                   cy="50%"
                   labelLine={false}
                   label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={100}
-                  fill="#8884d8"
+                  outerRadius={95}
+                  innerRadius={55}
+                  paddingAngle={3}
                   dataKey="value"
                 >
                   {planDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PLAN_COLORS[entry.name] || '#B85C38'} />
+                    <Cell key={`cell-${index}`} fill={PLAN_COLORS[entry.name] || C.terracotta} stroke="white" strokeWidth={3} />
                   ))}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-sm text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-4">
-            <span className="font-semibold">What does this mean?</span> This shows how many businesses are using each subscription plan. More VIP customers means higher revenue.
-          </p>
-        </div>
+        </Section>
 
-        {/* Business Growth Line Chart */}
-        <div className="bg-white border border-[#E7E5E4] rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Business Growth Over Time
-          </h2>
-          <div className="h-80">
+        <Section title="Business Growth" hint="New tenants joining the platform over time.">
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={tenantGrowth}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                <XAxis dataKey="date" stroke="#57534E" />
-                <YAxis stroke="#57534E" />
-                <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} />
+                <defs>
+                  <linearGradient id="adminGrowth" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%"  stopColor={C.terracotta} stopOpacity={1} />
+                    <stop offset="100%" stopColor={C.rose} stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.hairline} />
+                <XAxis dataKey="date" stroke={C.inkMute} />
+                <YAxis stroke={C.inkMute} />
+                <Tooltip contentStyle={{ backgroundColor: C.cream, border: `1px solid ${C.hairline}`, borderRadius: 12 }} />
                 <Line
                   type="monotone"
                   dataKey="count"
-                  stroke="#B85C38"
-                  dot={{ fill: '#B85C38' }}
-                  strokeWidth={2}
+                  stroke="url(#adminGrowth)"
+                  dot={{ fill: C.terracotta, r: 4 }}
+                  activeDot={{ r: 6 }}
+                  strokeWidth={3}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-sm text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-4">
-            <span className="font-semibold">What does this mean?</span> This tracks how many new businesses have joined the platform over time. An upward trend shows growth.
-          </p>
-        </div>
+        </Section>
       </div>
 
-      {/* Top 5 Performing Businesses Bar Chart */}
-      <div className="bg-white border border-[#E7E5E4] rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Top 5 Performing Businesses
-        </h2>
+      {/* Top performers */}
+      <Section title="Top 5 Performing Businesses" hint="Highest engagement by total customer visits." className="mb-6">
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={topPerformers.slice(0, 5)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis dataKey="name" stroke="#57534E" angle={-45} textAnchor="end" height={80} />
-              <YAxis stroke="#57534E" label={{ value: 'Total Visits', angle: -90, position: 'insideLeft' }} />
-              <Tooltip contentStyle={{ backgroundColor: '#F3EFE7', border: '1px solid #E7E5E4' }} />
-              <Bar dataKey="total_visits" fill="#B85C38" radius={[8, 8, 0, 0]} />
+              <defs>
+                <linearGradient id="adminBar" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%"  stopColor={C.terracotta} />
+                  <stop offset="100%" stopColor={C.rose} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.hairline} />
+              <XAxis dataKey="name" stroke={C.inkMute} angle={-30} textAnchor="end" height={80} />
+              <YAxis stroke={C.inkMute} />
+              <Tooltip contentStyle={{ backgroundColor: C.cream, border: `1px solid ${C.hairline}`, borderRadius: 12 }} />
+              <Bar dataKey="total_visits" fill="url(#adminBar)" radius={[10, 10, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <p className="text-sm text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-4">
-          <span className="font-semibold">What does this mean?</span> These are the businesses with the highest number of customer visits, indicating strong engagement and loyalty program usage.
-        </p>
-      </div>
+      </Section>
 
-      {/* Recent Activity Feed */}
-      <div className="bg-white border border-[#E7E5E4] rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold text-[#1C1917] mb-6" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Recent Activity
-        </h2>
-        <div className="space-y-4">
-          {recentActivity.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-4 pb-4 border-b border-[#E7E5E4] last:border-b-0">
-              <div className="w-2 h-2 rounded-full bg-[#B85C38] mt-2" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-[#1C1917]">{activity.action}</p>
-                <p className="text-sm text-[#57534E]">{activity.detail}</p>
+      {/* Recent activity */}
+      <Section title="Recent Activity" hint="Latest events across all tenants.">
+        <div className="space-y-3">
+          {recentActivity.length === 0 && (
+            <p className="text-sm py-4 text-center" style={{ color: C.inkMute }}>
+              No recent activity to show.
+            </p>
+          )}
+          {recentActivity.map((activity, idx) => (
+            <div
+              key={activity.id || idx}
+              className="flex items-start gap-3 p-3 rounded-xl transition-colors"
+              style={{ background: idx % 2 === 0 ? C.bone : 'white' }}
+            >
+              <div
+                className="w-2 h-2 rounded-full mt-2 shrink-0"
+                style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.rose})` }}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: C.inkDeep }}>{activity.action}</p>
+                <p className="text-xs" style={{ color: C.inkMute }}>{activity.detail}</p>
               </div>
-              <p className="text-xs text-[#A8A29E] whitespace-nowrap">{activity.timestamp}</p>
+              <p className="text-[11px] font-medium whitespace-nowrap" style={{ color: C.inkMute }}>
+                {activity.timestamp}
+              </p>
             </div>
           ))}
         </div>
-      </div>
+      </Section>
 
       {/* Modal for KPI Details */}
       {selectedModal && (
@@ -477,6 +450,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
