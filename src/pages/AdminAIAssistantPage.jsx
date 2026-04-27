@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../lib/api';
 import { Send, Bot, Mail, Sparkles } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 const AdminAIAssistantPage = () => {
   const [query, setQuery] = useState('');
@@ -50,13 +51,13 @@ const AdminAIAssistantPage = () => {
   };
 
   return (
-    <div className="p-8 h-screen flex flex-col bg-[#FDFBF7]">
-      <div>
-        <h1 className="text-4xl font-['Cormorant_Garamond'] font-bold text-[#1C1917] mb-2 flex items-center gap-3">
-            Overlord AI <Sparkles className="w-6 h-6 text-[#E3A869]" />
-        </h1>
-        <p className="text-[#57534E] mb-6">Ask for upsell opportunities, churn risks, and automated outreach parameters.</p>
-      </div>
+    <div className="h-[calc(100vh-5rem)] flex flex-col space-y-4">
+      <PageHeader
+        eyebrow="Overlord"
+        title="AI Intelligence"
+        description="Ask for upsell opportunities, churn risks, and automated outreach drafts — analyzed across every tenant."
+        role="super_admin"
+      />
 
       <div className="flex-1 bg-white rounded-2xl shadow-sm border border-[#E7E5E4] flex flex-col overflow-hidden">
         <div className="flex-1 p-6 overflow-y-auto space-y-6">

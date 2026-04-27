@@ -3,6 +3,7 @@ import { Save, CheckCircle, AlertCircle, Palette, Coins, Award } from 'lucide-re
 import { adminAPI } from '../lib/api';
 import { AuchanEditor, DEFAULT_LAYOUT } from '../components/AuchanCard';
 import NumberInput from '../components/NumberInput';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 const DEFAULT_RULES = {
   points_per_visit: 10,
@@ -144,24 +145,23 @@ export default function AdminCardDesignerPage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1C1917] flex items-center gap-2">
-            <Palette size={22} /> Card Designer
-          </h1>
-          <p className="text-sm text-[#6B7280]">
-            Design a loyalty card for any business — fixed Auchan-style layout, every slot fully editable.
-          </p>
-        </div>
-        <button
-          onClick={save}
-          disabled={saving}
-          className="px-4 py-2 rounded-lg bg-[#B85C38] text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
-        >
-          <Save size={15} /> {saving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader
+        eyebrow="Tenant Tools"
+        title="Card Designer"
+        description="Design a loyalty card on behalf of any business — every slot fully editable across the Auchan-style layout."
+        role="super_admin"
+        actions={
+          <button
+            onClick={save}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-white transition-all shadow-md hover:-translate-y-0.5 disabled:opacity-50"
+            style={{ background: `linear-gradient(135deg, ${C_PS.terracotta}, ${C_PS.rose})` }}
+          >
+            <Save size={14} /> {saving ? 'Saving…' : 'Save'}
+          </button>
+        }
+      />
 
       <div className="rounded-lg border border-gray-200 bg-white p-3">
         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Business</label>

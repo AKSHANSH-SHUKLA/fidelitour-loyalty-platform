@@ -7,6 +7,7 @@ import {
   BarChart, Bar, AreaChart, Area, Legend,
 } from 'recharts';
 import { X, TrendingDown, Users, Euro, Store, MapPin, Award, Megaphone, Star, MessageSquare, ThumbsUp, ThumbsDown, TrendingUp, Activity } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 const PLAN_COLORS = { basic: '#4A5D23', gold: '#E3A869', vip: '#B85C38', chain: '#7B3F00' };
 const TIER_COLORS = { Bronze: '#8B6914', Silver: '#C0C0C0', Gold: '#E3A869' };
@@ -77,22 +78,33 @@ const AdminAnalyticsPage = () => {
   };
 
   if (loading) {
-    return <div className="p-8 bg-[#FDFBF7] min-h-screen text-[#57534E]">Loading analytics...</div>;
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="flex items-center gap-3 text-sm font-medium" style={{ color: C_PS.inkMute }}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C_PS.terracotta }} />
+          Loading analytics…
+        </div>
+      </div>
+    );
   }
 
   if (loadError || !data) {
     return (
-      <div className="p-8 bg-[#FDFBF7] min-h-screen">
-        <div className="max-w-xl mx-auto bg-white border border-[#E7E5E4] rounded-xl p-8 text-center">
-          <h2 className="text-2xl font-bold text-[#B85C38] mb-2">Analytics failed to load</h2>
-          <p className="text-[#57534E] text-sm mb-4">{loadError || 'The server did not return data. It may still be warming up.'}</p>
-          <button
-            onClick={loadAnalytics}
-            className="px-4 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F] transition-colors"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="max-w-xl mx-auto mt-12 rounded-2xl p-8 text-center"
+           style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}>
+        <h2 className="text-2xl font-bold mb-2" style={{ color: C_PS.terracotta, fontFamily: 'Cormorant Garamond' }}>
+          Analytics failed to load
+        </h2>
+        <p className="text-sm mb-5" style={{ color: C_PS.inkMute }}>
+          {loadError || 'The server did not return data. It may still be warming up.'}
+        </p>
+        <button
+          onClick={loadAnalytics}
+          className="px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-md hover:-translate-y-0.5 transition-all"
+          style={{ background: `linear-gradient(135deg, ${C_PS.terracotta}, ${C_PS.rose})` }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -149,13 +161,13 @@ const AdminAnalyticsPage = () => {
   ];
 
   return (
-    <div className="p-8 space-y-8 bg-[#FDFBF7] min-h-screen">
-      <header>
-        <h1 className="text-4xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Global Analytics
-        </h1>
-        <p className="text-[#57534E]">Platform-wide insights across every business. Click any chart or metric to drill in.</p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Platform Analytics"
+        title="Global Analytics"
+        description="Platform-wide insights across every business. Click any chart or metric to drill in."
+        role="super_admin"
+      />
 
       {/* Topline KPIs */}
       <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">

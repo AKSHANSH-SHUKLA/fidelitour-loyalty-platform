@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 const SettingsPage = () => {
     const [settings, setSettings] = useState({
@@ -89,24 +90,24 @@ const SettingsPage = () => {
     };
 
     if (loading) {
-        return <div className="p-8 bg-[#FDFBF7] min-h-screen">Loading settings...</div>;
+        return (
+          <div className="flex items-center justify-center py-32">
+            <div className="flex items-center gap-3 text-sm font-medium" style={{ color: C_PS.inkMute }}>
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C_PS.ochre }} />
+              Loading settings…
+            </div>
+          </div>
+        );
     }
 
     return (
-        <div className="p-8 max-w-4xl mx-auto space-y-8 bg-[#FDFBF7] min-h-screen">
-            <style>{`
-                * {
-                    font-family: 'Manrope', sans-serif;
-                }
-                h1, h2, h3 {
-                    font-family: 'Cormorant Garamond', serif;
-                }
-            `}</style>
-
-            <div>
-                <h1 className="text-4xl font-['Cormorant_Garamond'] font-bold text-[#1C1917] mb-2">Settings</h1>
-                <p className="text-[#57534E]">Manage your business profile and customer join link.</p>
-            </div>
+        <div className="max-w-4xl mx-auto space-y-6">
+            <PageHeader
+              eyebrow="Configuration"
+              title="Settings"
+              description="Manage your business profile, customer join link, and delivery preferences."
+              role="business_owner"
+            />
 
             {message && (
                 <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-[#e8f3e5] border-[#E7E5E4] text-[#2d5016]' : 'bg-red-50 border-red-200 text-red-700'}`}>

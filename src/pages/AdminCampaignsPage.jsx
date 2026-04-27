@@ -4,6 +4,7 @@ import {
   Megaphone, Send, Users, AlertCircle, CheckCircle, Mail, Search,
   Radio, Zap, ArrowUpRight,
 } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 // --------------------------------------------------------------
 // Three tabs:
@@ -16,16 +17,13 @@ const AdminCampaignsPage = () => {
   const [tab, setTab] = useState('business'); // 'business' | 'broadcast' | 'upgrades'
 
   return (
-    <div className="p-8 space-y-6 bg-[#FDFBF7] min-h-screen">
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <Megaphone className="w-8 h-8 text-[#B85C38]" />
-          <h1 className="text-4xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Campaigns
-          </h1>
-        </div>
-        <p className="text-[#57534E]">Messages to business owners, broadcasts to end-customers, and plan-upgrade requests — all in one place.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Outbound"
+        title="Campaigns"
+        description="Messages to business owners, broadcasts to end-customers, and plan-upgrade requests — all in one place."
+        role="super_admin"
+      />
 
       <div className="flex gap-2 border-b border-[#E7E5E4]">
         {[

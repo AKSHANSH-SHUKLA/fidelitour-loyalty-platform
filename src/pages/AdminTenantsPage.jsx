@@ -3,6 +3,7 @@ import api, { adminAPI } from '../lib/api';
 import { Search, Filter, MoreVertical, ChevronDown, X, Download, Mail, TrendingUp, Users, BarChart3 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 import NumberInput from '../components/NumberInput';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 const AdminTenantsPage = () => {
   const [tenants, setTenants] = useState([]);
@@ -255,16 +256,23 @@ const AdminTenantsPage = () => {
     document.body.removeChild(a);
   };
 
-  if (loading) return <div className="p-8 bg-[#FDFBF7] min-h-screen text-[#57534E]">Loading businesses...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-32">
+      <div className="flex items-center gap-3 text-sm font-medium" style={{ color: C_PS.inkMute }}>
+        <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C_PS.terracotta }} />
+        Loading businesses…
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-8 space-y-8 bg-[#FDFBF7] min-h-screen">
-      <div>
-        <h1 className="text-4xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Manage Businesses
-        </h1>
-        <p className="text-[#57534E]">Search, filter, and manage individual businesses on the platform.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Tenant Management"
+        title="Manage Businesses"
+        description="Search, filter, and manage every business on the platform — drill into any tenant for plan changes, analytics, and customer details."
+        role="super_admin"
+      />
 
       <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
         {/* Search and Basic Filters */}

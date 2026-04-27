@@ -5,6 +5,7 @@ import {
   Send, UserPlus, Trash2, CreditCard, Zap, RefreshCw, ChevronRight, X,
   Sparkles, Wand2,
 } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend,
@@ -180,21 +181,22 @@ export default function InsightsPage() {
   };
 
   return (
-    <div className="p-8 space-y-6 bg-[#FDFBF7] min-h-screen">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Insights
-          </h1>
-          <p className="text-sm text-[#57534E]">Everything the platform has learned about your customers.</p>
-        </div>
-        <button
-          onClick={loadAll}
-          className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E7E5E4] rounded-lg text-sm hover:bg-[#F3EFE7]"
-        >
-          <RefreshCw size={14} /> Refresh
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="AI-Powered"
+        title="Insights"
+        description="Everything the platform has learned about your customers — patterns, predictions, and growth opportunities."
+        role="business_owner"
+        actions={
+          <button
+            onClick={loadAll}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5"
+            style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+        }
+      />
 
       {/* AI Suggestions Panel */}
       <Card className="bg-gradient-to-br from-white to-[#FDFBF7]">

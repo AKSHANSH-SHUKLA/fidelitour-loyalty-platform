@@ -3,6 +3,7 @@ import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map, Cloc
 import { useNavigate } from 'react-router-dom';
 import { ownerAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 // Pre-built segments that power one-click targeting. Server-side fields map to
 // the extended GET /api/owner/customers filters.
@@ -338,50 +339,31 @@ export default function CustomersPage() {
   }
 
   return (
-    <div
-      className="min-h-screen p-8"
-      style={{ backgroundColor: '#FDFBF7' }}
-    >
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1
-            className="text-4xl font-semibold mb-2"
-            style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}
-          >
-            Customers
-          </h1>
-          <p style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-            Manage and view your customer database
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => window.location.href = '/dashboard/map'}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-80"
-            style={{
-              backgroundColor: '#B85C38',
-              color: '#FDFBF7',
-              fontFamily: 'Manrope',
-            }}
-          >
-            <Map size={18} />
-            View on Map
-          </button>
-          <button
-            onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-80"
-            style={{
-              backgroundColor: '#57534E',
-              color: '#FDFBF7',
-              fontFamily: 'Manrope',
-            }}
-          >
-            <Download size={18} />
-            Export CSV
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Database"
+        title="Customers"
+        description="Browse, search, segment, and export your loyalty customer base."
+        role="business_owner"
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={() => window.location.href = '/dashboard/map'}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all shadow-md hover:-translate-y-0.5"
+              style={{ background: `linear-gradient(135deg, ${C_PS.ochre}, ${C_PS.terracotta})` }}
+            >
+              <Map size={16} /> Map View
+            </button>
+            <button
+              onClick={exportToCSV}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5"
+              style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}
+            >
+              <Download size={16} /> Export CSV
+            </button>
+          </div>
+        }
+      />
 
       {/* Search Bar */}
       <div className="mb-6">

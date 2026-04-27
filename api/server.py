@@ -295,93 +295,234 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-def generate_varied_customers(tenant_id: str, count: int = 15) -> List[dict]:
-    """Generate customers with varied data for realistic testing"""
+NAMES_POOL = [
+    "Jean Dupont", "Marie Martin", "Pierre Bernard", "Sophie Laurent", "Luc Moreau", "Emma Petit",
+    "Thomas Dubois", "Julie Mercier", "Olivier Fontaine", "Isabelle Arnould", "David Rousseau",
+    "Claire Leblanc", "Marc Renard", "Francoise Deschamps", "Philippe Marchand",
+    "Antoine Leroy", "Camille Faure", "Nicolas Girard", "Léa Bonnet", "Hugo Lefevre",
+    "Chloé Moreau", "Maxime Durand", "Inès Fontaine", "Lucas Blanc", "Sarah Meyer",
+    "Paul Robert", "Louise Perrin", "Gabriel Noël", "Alice Chevalier", "Raphaël Bertrand",
+    "Manon Garnier", "Jules Perez", "Zoé Lambert", "Arthur Henry", "Juliette Rolland",
+    "Théo Roche", "Jade Simon", "Nathan Muller", "Rose Nicolas", "Ethan Carpentier",
+    "Adèle Vasseur", "Liam Mercadier", "Mila Charpentier", "Tom Fournier", "Eva Pasquier",
+    "Sacha Boulanger", "Anaïs Thibault", "Léon Boucher", "Margaux Ferrand", "Noah Dumont",
+]
+
+# Sector-specific archetypes — drives realistic visit cadence, ticket size and
+# tier distribution per business type. The numbers reflect French SMB norms
+# (café avg ticket ≈ €5, fine dining ≈ €45, gym monthly cadence, etc).
+SECTOR_PROFILES = {
+    "cafe":       {"visits_per_year": (40, 120), "avg_ticket": (3.5, 7.0),  "open_hours": (7, 19)},
+    "boulangerie":{"visits_per_year": (60, 200), "avg_ticket": (3.0, 6.5),  "open_hours": (6, 19)},
+    "restaurant": {"visits_per_year": (3,  10),  "avg_ticket": (28, 55),    "open_hours": (12, 22)},
+    "brasserie":  {"visits_per_year": (4,  14),  "avg_ticket": (22, 42),    "open_hours": (12, 23)},
+    "creperie":   {"visits_per_year": (4,  12),  "avg_ticket": (15, 28),    "open_hours": (12, 22)},
+    "burger":     {"visits_per_year": (6,  18),  "avg_ticket": (12, 22),    "open_hours": (11, 23)},
+    "kebab":      {"visits_per_year": (10, 30),  "avg_ticket": (8,  14),    "open_hours": (11, 23)},
+    "pizzeria":   {"visits_per_year": (6,  20),  "avg_ticket": (14, 26),    "open_hours": (11, 23)},
+    "spa":        {"visits_per_year": (3,  10),  "avg_ticket": (55, 110),   "open_hours": (10, 19)},
+    "gym":        {"visits_per_year": (60, 180), "avg_ticket": (40, 60),    "open_hours": (6, 22)},
+    "juice_bar":  {"visits_per_year": (12, 40),  "avg_ticket": (5.5, 11),   "open_hours": (8, 19)},
+    "ice_cream":  {"visits_per_year": (3,  12),  "avg_ticket": (4.5, 9),    "open_hours": (12, 22)},
+    "chocolatier":{"visits_per_year": (4,  12),  "avg_ticket": (12, 28),    "open_hours": (10, 19)},
+    "florist":    {"visits_per_year": (3,   9),  "avg_ticket": (18, 45),    "open_hours": (9, 19)},
+    "bookstore":  {"visits_per_year": (4,  12),  "avg_ticket": (15, 30),    "open_hours": (10, 19)},
+    "wine_bar":   {"visits_per_year": (8,  24),  "avg_ticket": (16, 38),    "open_hours": (17, 23)},
+    "default":    {"visits_per_year": (5,  15),  "avg_ticket": (10, 22),    "open_hours": (9, 20)},
+}
+
+def _profile_for_tenant(tenant_id: str, sector: Optional[str] = None) -> dict:
+    """Pick a sector profile, falling back to a slug-based heuristic."""
+    if sector and sector in SECTOR_PROFILES:
+        return SECTOR_PROFILES[sector]
+    slug = (tenant_id or "").lower()
+    for key in SECTOR_PROFILES:
+        if key in slug:
+            return SECTOR_PROFILES[key]
+    return SECTOR_PROFILES["default"]
+
+
+def generate_varied_customers(
+    tenant_id: str,
+    count: int = 15,
+    *,
+    sector: Optional[str] = None,
+    branch_ids: Optional[List[str]] = None,
+    months_history: int = 14,
+) -> List[dict]:
+    """Generate hyper-realistic customers for one tenant.
+
+    Visit counts and avg tickets follow real French SMB norms per sector
+    (a café customer comes 40-120×/yr at €3-7; a restaurant regular comes
+    3-10×/yr at €28-55). Tier distribution follows the long-tail pattern
+    seen in real loyalty programs: roughly 65% bronze / 25% silver /
+    8% gold / 2% VIP.
+    """
     customers = []
-    names = ["Jean Dupont", "Marie Martin", "Pierre Bernard", "Sophie Laurent", "Luc Moreau", "Emma Petit",
-             "Thomas Dubois", "Julie Mercier", "Olivier Fontaine", "Isabelle Arnould", "David Rousseau",
-             "Claire Leblanc", "Marc Renard", "Francoise Deschamps", "Philippe Marchand",
-             "Antoine Leroy", "Camille Faure", "Nicolas Girard", "Léa Bonnet", "Hugo Lefevre",
-             "Chloé Moreau", "Maxime Durand", "Inès Fontaine", "Lucas Blanc", "Sarah Meyer",
-             "Paul Robert", "Louise Perrin", "Gabriel Noël", "Alice Chevalier", "Raphaël Bertrand",
-             "Manon Garnier", "Jules Perez", "Zoé Lambert", "Arthur Henry", "Juliette Rolland",
-             "Théo Roche", "Jade Simon", "Nathan Muller", "Rose Nicolas", "Ethan Carpentier"]
-    # Spread customers across major French cities (Tours, Paris, Lyon, Marseille, Bordeaux, Lille, Nantes, Toulouse, Nice, Strasbourg)
-    postal_codes = [
-        "37000", "37100", "37200", "37300",  # Tours (local concentration)
-        "37000", "37100", "37200",             # weight Tours heavier
-        "75001", "75008", "69001", "13001",    # Paris, Lyon, Marseille
-        "33000", "59000", "44000", "31000",    # Bordeaux, Lille, Nantes, Toulouse
-        "06000", "67000", "34000",             # Nice, Strasbourg, Montpellier
-    ]
-    acquisition_sources = ["qr_store", "instagram", "facebook", "tiktok"]
+    profile = _profile_for_tenant(tenant_id, sector)
+    branch_ids = branch_ids or []
+
+    # Postal-code mix — Tours-heavy with Paris/Lyon spillover, matching
+    # the platform's primary launch geography.
+    postal_codes = (
+        ["37000"] * 5 + ["37100"] * 4 + ["37200"] * 3 + ["37300"] * 2 +
+        ["75001", "75008", "75011"] +
+        ["69001", "69002"] +
+        ["13001", "33000", "44000", "31000", "59000", "06000", "67000", "34000"]
+    )
+    # Acquisition mix — heavy on QR (in-store sign-up dominates), then
+    # social channels in declining order. Matches the realistic split
+    # owners report when surveyed.
+    acquisition_sources = (
+        ["qr_store"] * 50 + ["instagram"] * 30 + ["facebook"] * 15 + ["tiktok"] * 5
+    )
 
     now = datetime.now(timezone.utc)
-    for i in range(count):
-        visits = random.randint(0, 30)
-        postal = random.choice(postal_codes)
-        source = random.choice(acquisition_sources)
-        join_date = now - timedelta(days=random.randint(0, 180))  # 6 months
+    history_days = months_history * 30
+    annual_min, annual_max = profile["visits_per_year"]
+    ticket_min, ticket_max = profile["avg_ticket"]
 
-        # Tier logic
-        if visits >= 20:
+    for i in range(count):
+        # Years on the program — exponential-ish: most are recent joiners,
+        # a few are veterans. Capped at the history window.
+        days_since_signup = int(min(
+            history_days,
+            random.expovariate(1 / (history_days / 3))
+        ))
+        years_active = max(days_since_signup / 365.0, 0.05)
+
+        # Engagement multiplier per customer — most are average, some are
+        # superfans. Long-tail with Pareto-like skew.
+        engagement = random.choices(
+            [0.2, 0.4, 0.7, 1.0, 1.4, 2.0, 3.0],
+            weights=[10, 18, 22, 22, 14, 9, 5],
+            k=1,
+        )[0]
+
+        annual_visits = random.uniform(annual_min, annual_max) * engagement
+        visits = max(0, int(round(annual_visits * years_active)))
+
+        avg_ticket = random.uniform(ticket_min, ticket_max)
+        # Add per-customer ticket noise so spend doesn't perfectly track visits.
+        spend_noise = random.uniform(0.85, 1.15)
+        total_spent = round(visits * avg_ticket * spend_noise, 2)
+
+        # Tier — driven by visits AND ticket size, matching realistic
+        # loyalty cohorts (frequent + premium = VIP).
+        if visits >= 40 or (visits >= 12 and avg_ticket >= 60):
+            tier = "vip"
+        elif visits >= 20 or (visits >= 8 and avg_ticket >= 45):
             tier = "gold"
-        elif visits >= 10:
+        elif visits >= 8:
             tier = "silver"
         else:
             tier = "bronze"
 
-        # Some have passes issued
-        pass_issued = random.choice([True, False]) if visits >= 5 else False
+        pass_issued = visits >= 3 and random.random() < 0.85
 
-        # Last visit date if they have visits
         last_visit = None
         if visits > 0:
-            last_visit = now - timedelta(days=random.randint(0, 30))
+            # Recently-active customers cluster in the last 30 days; quieter
+            # ones drift back. Linear distribution roughly captures that.
+            recency_bias = random.choices(
+                [7, 21, 60, 120, 300],
+                weights=[30, 30, 22, 12, 6],
+                k=1,
+            )[0]
+            last_visit = now - timedelta(days=random.randint(1, recency_bias))
 
-        customer = Customer(
-            id=f"c-{i}",
+        join_date = now - timedelta(days=days_since_signup)
+        primary_branch = random.choice(branch_ids) if branch_ids else None
+
+        customers.append(Customer(
+            id=f"c-{tenant_id}-{i:03d}" if not tenant_id.startswith("tenant-") else f"c-{i}",
             tenant_id=tenant_id,
             barcode_id=f"FT-{uuid.uuid4().hex[:8].upper()}",
-            name=names[i % len(names)],
-            email=f"customer{i}@mail.com",
+            name=NAMES_POOL[i % len(NAMES_POOL)],
+            email=f"customer{i}@{(tenant_id or 'demo').replace('_','-')}.fr",
             phone=f"06{random.randint(10000000, 99999999)}",
-            postal_code=postal,
+            postal_code=random.choice(postal_codes),
             birthday=f"{random.randint(1,12):02d}-{random.randint(1,28):02d}",
             points=visits * 10,
             visits=visits,
-            total_amount_paid=visits * random.uniform(5, 25),
+            total_amount_paid=total_spent,
             tier=tier,
             pass_issued=pass_issued,
             last_visit_date=last_visit,
-            acquisition_source=source,
-            created_at=join_date
-        )
-        customers.append(customer.model_dump())
+            acquisition_source=random.choices(acquisition_sources, k=1)[0],
+            branch_id=primary_branch,
+            created_at=join_date,
+        ).model_dump())
 
     return customers
 
-def generate_visits(tenant_id: str, customer_ids: List[str], days_back: int = 90) -> List[dict]:
-    """Generate varied visit history over last N days"""
+
+def generate_visits(
+    tenant_id: str,
+    customer_ids: List[str],
+    days_back: int = 365,
+    *,
+    sector: Optional[str] = None,
+    branch_ids: Optional[List[str]] = None,
+    customers: Optional[List[dict]] = None,
+) -> List[dict]:
+    """Generate realistic visit history.
+
+    Visits are scheduled within the customer's actual visit count (not
+    randomly across everyone), spread across a 12-month window with a
+    natural weekday/weekend curve. Hours follow the sector's typical
+    open hours, with lunch and dinner peaks for food businesses.
+    """
     visits = []
+    profile = _profile_for_tenant(tenant_id, sector)
+    open_h, close_h = profile["open_hours"]
+    branch_ids = branch_ids or []
+
+    # Map customer_id → visit count + avg ticket so we can reproduce the
+    # totals stored on each customer doc.
+    by_id = {}
+    if customers:
+        for c in customers:
+            by_id[c["id"]] = c
+
     now = datetime.now(timezone.utc)
+    ticket_min, ticket_max = profile["avg_ticket"]
 
-    for customer_id in customer_ids:
-        num_visits = random.randint(0, 20)
-        for _ in range(num_visits):
-            visit_day = now - timedelta(days=random.randint(0, days_back))
-            visit_time = visit_day.replace(hour=random.randint(7, 19), minute=random.randint(0, 59))
+    for cid in customer_ids:
+        cust = by_id.get(cid)
+        n_visits = (cust or {}).get("visits", random.randint(0, 8))
+        if n_visits <= 0:
+            continue
 
-            visit = Visit(
+        # Spread the customer's visits over the days_back window with a
+        # weekly-cycle bias — roughly +25% likelihood Fri/Sat for hospitality.
+        for _ in range(n_visits):
+            day_offset = int(random.triangular(0, days_back, days_back * 0.4))
+            visit_day = now - timedelta(days=day_offset)
+            # Lunch / dinner peaks for food sectors
+            if open_h <= 12 and close_h >= 14 and random.random() < 0.4:
+                hour = random.choice([12, 13])
+            elif open_h <= 19 and close_h >= 21 and random.random() < 0.3:
+                hour = random.choice([19, 20])
+            else:
+                hour = random.randint(open_h, max(open_h, close_h - 1))
+            visit_time = visit_day.replace(
+                hour=hour,
+                minute=random.randint(0, 59),
+                second=0,
+                microsecond=0,
+            )
+            amount = round(random.uniform(ticket_min, ticket_max) * random.uniform(0.85, 1.2), 2)
+            visits.append(Visit(
                 id=str(uuid.uuid4()),
                 tenant_id=tenant_id,
-                customer_id=customer_id,
-                points_awarded=random.randint(1, 3),
-                amount_paid=random.uniform(3, 20),
+                customer_id=cid,
+                points_awarded=max(1, int(amount / 5)),
+                amount_paid=amount,
+                branch_id=random.choice(branch_ids) if branch_ids else None,
                 visit_time=visit_time,
-                created_at=visit_time
-            )
-            visits.append(visit.model_dump())
+                created_at=visit_time,
+            ).model_dump())
 
     return visits
 

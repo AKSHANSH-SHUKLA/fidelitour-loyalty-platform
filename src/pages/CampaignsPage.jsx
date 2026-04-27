@@ -3,6 +3,7 @@ import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCir
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
 import NumberInput from '../components/NumberInput';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
@@ -515,31 +516,25 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FDFBF7' }}>
-      {/* Header */}
-      <div className="border-b" style={{ borderColor: '#E7E5E4', backgroundColor: '#F3EFE7' }}>
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
-                Campaigns
-              </h1>
-              <p style={{ color: '#57534E', fontFamily: 'Manrope' }}>Create and manage loyalty campaigns for your customers</p>
-            </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-3 rounded-lg font-semibold text-white transition"
-              style={{ backgroundColor: '#B85C38' }}
-            >
-              <Plus size={20} />
-              New Campaign
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Outbound"
+        title="Campaigns"
+        description="Create, schedule, and track loyalty campaigns — wallet pushes, emails, and customer-list sends."
+        role="business_owner"
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-all shadow-md hover:-translate-y-0.5"
+            style={{ background: `linear-gradient(135deg, ${C_PS.ochre} 0%, ${C_PS.terracotta} 100%)` }}
+          >
+            <Plus size={16} /> New Campaign
+          </button>
+        }
+      />
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div>
 
         {/* ============= Quick Send panel ============= */}
         <div className="mb-6 rounded-lg border" style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}>

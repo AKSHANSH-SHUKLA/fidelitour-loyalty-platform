@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ownerAPI } from '../lib/api';
 import { Send, Zap, TrendingUp, Users, MessageCircle, Sparkles } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 const AIAssistantPage = () => {
   const [messages, setMessages] = useState([]);
@@ -141,30 +142,24 @@ const AIAssistantPage = () => {
   }
 
   return (
-    <div className="p-8 bg-[#FDFBF7] min-h-screen flex flex-col items-center">
-      <style>{`
-        * {
-          font-family: 'Manrope', sans-serif;
-        }
-        h1, h2, h3 {
-          font-family: 'Cormorant Garamond', serif;
-        }
-      `}</style>
-
-      <div className="w-full max-w-3xl flex flex-col h-screen max-h-screen">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-['Cormorant_Garamond'] font-bold text-[#1C1917] mb-2 flex items-center gap-2">
-            <Sparkles className="w-8 h-8 text-[#B85C38]" />
-            AI Assistant
-          </h1>
-          <p className="text-[#57534E] text-sm">Get instant insights and create campaigns</p>
-          <div className="mt-4 p-3 bg-white rounded-lg border border-[#E7E5E4] inline-block">
-            <p className="text-sm font-bold text-[#1C1917]">
-              <span className="text-[#B85C38]">{queriesUsed}</span> of <span className="text-[#B85C38]">{queryLimit}</span> queries used today
-            </p>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <PageHeader
+        eyebrow="Your Co-Pilot"
+        title="AI Assistant"
+        description="Get instant insights about your customers and draft targeted campaigns in seconds."
+        role="business_owner"
+        actions={
+          <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold"
+               style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}>
+            <span style={{ color: C_PS.terracotta }}>{queriesUsed}</span>
+            <span>/</span>
+            <span>{queryLimit}</span>
+            <span className="opacity-60">today</span>
           </div>
-        </div>
+        }
+      />
+
+      <div className="w-full flex flex-col h-[calc(100vh-14rem)]">
 
         {/* Messages Container */}
         <div className="flex-1 bg-white rounded-2xl border border-[#E7E5E4] p-6 mb-6 overflow-y-auto space-y-4">

@@ -3,6 +3,7 @@ import { Save, Send, CheckCircle, AlertCircle, Palette, Coins, Award } from 'luc
 import { ownerAPI } from '../lib/api';
 import { AuchanEditor, DEFAULT_LAYOUT } from '../components/AuchanCard';
 import NumberInput from '../components/NumberInput';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
 const DEFAULT_RULES = {
@@ -150,33 +151,33 @@ export default function CardDesignerPage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1C1917] flex items-center gap-2">
-            <Palette size={22} /> Card Designer
-          </h1>
-          <p className="text-sm text-[#6B7280]">
-            Fixed Auchan-style layout — edit every text, font, size, color, style and placement.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={sendPush}
-            disabled={pushing}
-            className="px-4 py-2 rounded-lg bg-white border border-[#B85C38] text-[#B85C38] text-sm font-medium flex items-center gap-2 disabled:opacity-50"
-          >
-            <Send size={15} /> {pushing ? 'Sending…' : 'Send push now'}
-          </button>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#B85C38] text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
-          >
-            <Save size={15} /> {saving ? 'Saving…' : 'Save card design'}
-          </button>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <PageHeader
+        eyebrow="Visual Design"
+        title="Card Designer"
+        description="Edit every text, font, color, and placement on the wallet card. Save to push the new look to all customers."
+        role="business_owner"
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={sendPush}
+              disabled={pushing}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
+              style={{ background: 'white', border: `1px solid ${C_PS.terracotta}`, color: C_PS.terracotta }}
+            >
+              <Send size={14} /> {pushing ? 'Sending…' : 'Send push'}
+            </button>
+            <button
+              onClick={save}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold text-white transition-all shadow-md hover:-translate-y-0.5 disabled:opacity-50"
+              style={{ background: `linear-gradient(135deg, ${C_PS.ochre}, ${C_PS.terracotta})` }}
+            >
+              <Save size={14} /> {saving ? 'Saving…' : 'Save design'}
+            </button>
+          </div>
+        }
+      />
 
       {ok && (
         <div className="rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-2 text-sm flex items-center gap-2">

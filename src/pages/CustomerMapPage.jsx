@@ -6,6 +6,7 @@ import {
   Search, ChevronRight, ChevronDown, Building2, Activity,
   Compass, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Megaphone,
 } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 import TierBadge from '../components/TierBadge';
 
 // --------------------- Quadrant helpers ---------------------
@@ -256,27 +257,32 @@ export default function CustomerMapPage() {
   };
 
   if (loading) {
-    return <div className="p-8 min-h-screen bg-[#FDFBF7] text-[#57534E]">Loading customer map…</div>;
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="flex items-center gap-3 text-sm font-medium" style={{ color: C_PS.inkMute }}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C_PS.ochre }} />
+          Loading customer map…
+        </div>
+      </div>
+    );
   }
   if (error) {
-    return <div className="p-8 min-h-screen bg-[#FDFBF7] text-[#B85C38]">Error: {error}</div>;
+    return (
+      <div className="max-w-xl mx-auto mt-12 rounded-2xl p-8 text-center"
+           style={{ background: 'white', border: `1px solid ${C_PS.hairline}` }}>
+        <p className="text-sm" style={{ color: C_PS.terracotta }}>Error: {error}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 bg-[#FDFBF7] min-h-screen space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <MapPin className="text-[#B85C38]" size={28} />
-          <h1 className="text-4xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Customer Map
-          </h1>
-        </div>
-        <p className="text-[#57534E] max-w-3xl">
-          Your customer base by French <strong>département</strong>. Click a département to see
-          customers grouped by postal code, with revenue, visits and top spenders per area.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Geographic View"
+        title="Customer Map"
+        description="Your customer base by French département. Click a département to see customers grouped by postal code, with revenue, visits and top spenders per area."
+        role="business_owner"
+      />
 
       {/* Overview stat pills */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

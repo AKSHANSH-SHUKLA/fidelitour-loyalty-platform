@@ -8,6 +8,7 @@ import {
   AlertCircle, Sparkles, Users, Euro, TrendingDown, Award, Store,
   CreditCard, Building2, Activity,
 } from 'lucide-react';
+import { PageHeader, C as C_PS } from '../components/PageShell';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 const ACCENT = '#B85C38';
@@ -89,20 +90,13 @@ const AdminInsightsPage = () => {
   const sectors = data.sector_distribution || [];
 
   return (
-    <div className="p-8 space-y-8 bg-[#FDFBF7] min-h-screen">
-      <header>
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="text-[#B85C38]" size={28} />
-          <h1 className="text-4xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Platform Insights
-          </h1>
-        </div>
-        <p className="text-[#57534E] max-w-3xl">
-          Smart alerts, churn signals, lifetime-value benchmarks and reactivation opportunities — aggregated across
-          every business on FidéliTour. Numbers here match the Global Analytics dashboard and each business's own
-          Insights page.
-        </p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Platform-Wide"
+        title="Platform Insights"
+        description="Smart alerts, churn signals, lifetime-value benchmarks and reactivation opportunities — aggregated across every business on FidéliTour."
+        role="super_admin"
+      />
 
       {/* Platform totals */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
