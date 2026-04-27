@@ -254,12 +254,12 @@ export function substitute(text, ctx = {}) {
   const vars = {
     first_name: ctx.first_name || ctx.name?.split(' ')?.[0] || 'Sophie',
     name: ctx.name || 'Sophie Dupont',
-    points: ctx.points ?? '3.4',
+    points: ctx.points ?? '70',
     tier: ctx.tier || 'Bronze',
     birthday: ctx.birthday || '12 Mai',
     business_name: ctx.business_name || 'Mon commerce',
     loyalty_number: ctx.loyalty_number || '049130960',
-    amount: ctx.amount ?? ctx.points ?? '3.4',
+    amount: ctx.amount ?? ctx.points ?? '70',
     stamps_earned: ctx.stamps_earned ?? 7,
     stamps_target: ctx.stamps_target ?? 10,
   };

@@ -617,7 +617,7 @@ export default function InsightsPage() {
       {/* Feature 12: Active cards + upgrade prompt */}
       {activeCards && (
         <Card>
-          <SectionHead icon={CreditCard} title="Cartes actives" subtitle="Utilisation de votre plan" />
+          <SectionHead icon={CreditCard} title="Cartes de fidélité actives" subtitle="Utilisation de votre plan" />
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <div className="flex justify-between text-sm mb-1">
