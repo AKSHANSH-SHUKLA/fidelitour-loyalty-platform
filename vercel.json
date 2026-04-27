@@ -10,5 +10,9 @@
       "runtime": "@vercel/python@4.3.1",
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/daily-triggers", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/monthly-report", "schedule": "0 9 1 * *" }
+  ]
 }

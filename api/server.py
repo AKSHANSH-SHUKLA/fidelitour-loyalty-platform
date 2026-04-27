@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 import uuid
 import random
+import re
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, status, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -254,6 +255,44 @@ def send_email_to_customer(to_email: str, from_name: str, subject: str, body_htm
         return False
 
 
+_URL_RE = re.compile(
+    r"(?P<url>https?://[^\s<>\"']+)",
+    flags=re.IGNORECASE,
+)
+_INSTAGRAM_HANDLE_RE = re.compile(r"(?<![a-zA-Z0-9_])@([a-zA-Z0-9_.]+)")
+
+def _autolink(text: str, *, color: str = "#B85C38") -> str:
+    """Turn raw URLs in plain text into <a> tags so the campaign body can
+    include Instagram links, menu URLs, RSVP forms, etc., without the owner
+    having to write HTML. Also recognises @handle Instagram mentions when
+    they're not part of an email address.
+
+    Returns HTML with <br> for newlines so the result drops straight into
+    the email template.
+    """
+    if not text:
+        return ""
+    html = (text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;"))
+    # URLs
+    def _url_repl(m):
+        url = m.group("url").rstrip(".,;:!?)")  # trim trailing sentence punctuation
+        return f'<a href="{url}" target="_blank" rel="noopener noreferrer" style="color:{color};text-decoration:underline;">{url}</a>'
+    html = _URL_RE.sub(_url_repl, html)
+    # @instagram handles — only convert when the @ isn't part of an email
+    # (no preceding word-char) and isn't immediately followed by a domain.
+    def _handle_repl(m):
+        handle = m.group(1)
+        # Skip pseudo-handles that look like email locals (e.g. @gmail.com)
+        if handle.lower() in {"gmail", "hotmail", "outlook", "yahoo", "icloud", "live", "free", "orange"}:
+            return m.group(0)
+        return f'<a href="https://instagram.com/{handle}" target="_blank" rel="noopener noreferrer" style="color:{color};text-decoration:underline;">@{handle}</a>'
+    html = _INSTAGRAM_HANDLE_RE.sub(_handle_repl, html)
+    return html.replace("\n", "<br>")
+
+
 def _campaign_html(tenant_name: str, subject: str, rendered_body: str, customer: dict, image_url: Optional[str] = None) -> str:
     """Consistent branded email wrapper used by every campaign dispatch path.
 
@@ -263,8 +302,9 @@ def _campaign_html(tenant_name: str, subject: str, rendered_body: str, customer:
     tier_title = (customer.get("tier") or "bronze").title()
     points = int(customer.get("points", customer.get("visits", 0) * 10) or 0)
     visits = int(customer.get("visits", 0) or 0)
-    # Preserve newlines as <br>
-    body_html = (rendered_body or "").replace("\n", "<br>")
+    # Auto-linkify any https://… URLs and @instagram handles. Replaces the
+    # earlier simple newline→<br> conversion.
+    body_html = _autolink(rendered_body or "")
 
     image_block = ""
     if image_url:
@@ -374,7 +414,7 @@ def generate_varied_customers(
     # social channels in declining order. Matches the realistic split
     # owners report when surveyed.
     acquisition_sources = (
-        ["qr_store"] * 50 + ["instagram"] * 30 + ["facebook"] * 15 + ["tiktok"] * 5
+        ["qr_store"] * 45 + ["instagram"] * 26 + ["facebook"] * 13 + ["website"] * 11 + ["tiktok"] * 5
     )
 
     now = datetime.now(timezone.utc)
@@ -1103,8 +1143,8 @@ def seed_extended_tenants():
         "Agathe Vallet", "Élise Roux", "Matteo Gay", "Camille Leconte", "Diane Thibault",
         "Oscar Jacquet", "Salomé Faivre", "Nolan Rey", "Anna Charpentier", "Achille Meunier"
     ]
-    # Only 4 permitted sources (business rule — no friend/website/other)
-    ACQUISITION_SOURCES = ["qr_store", "instagram", "facebook", "tiktok"]
+    # Permitted sources — five channels customers actually arrive through.
+    ACQUISITION_SOURCES = ["qr_store", "instagram", "facebook", "tiktok", "website"]
     BIRTHDAY_POOL = [f"{random.randint(1,12):02d}-{random.randint(1,28):02d}" for _ in range(100)]
 
     now = datetime.now(timezone.utc)
@@ -1725,7 +1765,7 @@ def admin_get_tenant_analytics(
     ).sort("visits", -1).limit(5))
 
     # Acquisition-source breakdown — only 4 permitted sources, no friend/other
-    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok"}
+    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok", "website"}
     acq_pipeline = [
         {"$match": {"tenant_id": tenant_id, "acquisition_source": {"$in": list(ALLOWED_SOURCES)}}},
         {"$group": {"_id": "$acquisition_source", "count": {"$sum": 1}}}
@@ -1912,7 +1952,7 @@ def get_admin_detailed_analytics(token_data: TokenData = Depends(require_role(["
 
     # --- Acquisition sources across platform ---
     # Only the 4 permitted sources — no 'friend', no 'other' bucket.
-    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok"}
+    ALLOWED_SOURCES = {"qr_store", "instagram", "facebook", "tiktok", "website"}
     acq_counts = {}
     for c in all_customers:
         src = c.get("acquisition_source")
@@ -2625,7 +2665,12 @@ def scan_visit(
     # customer can only get one near_reward and one unlock per card cycle.
     _evaluate_reward_state_and_notify(c_obj, token_data.tenant_id)
 
-    return c_obj.model_dump()
+    # Surface tier-change info on the response so the staff Scan page can show
+    # a "Bravo!" celebration for the cashier without an extra round-trip.
+    response = c_obj.model_dump()
+    response["previous_tier"] = previous_tier
+    response["tier_upgraded"] = tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0)
+    return response
 
 
 def _cycle_start_for_customer(customer_id: str, tenant_id: str) -> Optional[datetime]:
@@ -3245,7 +3290,7 @@ def get_join_info(slug: str):
     t.pop("_id", None)
     return t
 
-ALLOWED_ACQUISITION_SOURCES = {"instagram", "facebook", "tiktok", "qr_store"}
+ALLOWED_ACQUISITION_SOURCES = {"instagram", "facebook", "tiktok", "qr_store", "website"}
 
 class JoinRequest(BaseModel):
     name: str
@@ -3259,16 +3304,17 @@ class JoinRequest(BaseModel):
 
 @app.post("/api/join/{slug}")
 def join_program(slug: str, req: JoinRequest):
-    # Normalize acquisition_source to exactly the 4 allowed values
+    # Normalize acquisition_source to exactly the 5 allowed values
     if req.acquisition_source:
         src = (req.acquisition_source or "").strip().lower().replace(" ", "_")
-        # Map a few common variants to canonical values
+        # Map common variants to canonical values
         alias = {
             "qr": "qr_store", "qr_code": "qr_store", "qrcode": "qr_store",
             "qr_code_in_store": "qr_store", "in_store": "qr_store", "store": "qr_store",
             "insta": "instagram", "ig": "instagram",
             "fb": "facebook",
             "tik_tok": "tiktok",
+            "site": "website", "web": "website", "site_web": "website",
         }
         src = alias.get(src, src)
         req.acquisition_source = src if src in ALLOWED_ACQUISITION_SOURCES else "qr_store"
@@ -4018,13 +4064,14 @@ def get_acquisition_sources(
         q["branch_id"] = branch_id
     customers = list(db.customers.find(q))
 
-    # Only the 4 permitted sources — no 'friend' or 'other'.
-    ALLOWED_SOURCES = ("qr_store", "instagram", "facebook", "tiktok")
+    # Five real channels customers actually arrive through.
+    ALLOWED_SOURCES = ("qr_store", "instagram", "facebook", "tiktok", "website")
     LABELS = {
         "qr_store": "QR in-store",
         "instagram": "Instagram",
         "facebook": "Facebook",
         "tiktok": "TikTok",
+        "website": "Website",
     }
     sources_count = {s: 0 for s in ALLOWED_SOURCES}
     for cust in customers:
@@ -4952,6 +4999,436 @@ def remove_team_member(
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Team member not found")
     return {"status": "ok"}
+
+
+# ============================================================
+# Lifetime Value (LTV) — per-cohort + per-tier breakdown
+# ============================================================
+@app.get("/api/owner/analytics/ltv-breakdown")
+def get_ltv_breakdown(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
+    """Customer Lifetime Value broken down by tier and acquisition cohort.
+
+    LTV is the total revenue a customer is expected to generate over their
+    relationship with you. We compute three views in one round-trip:
+
+      1. Network LTV — total revenue / total customers  (overall benchmark)
+      2. By tier     — VIP / Gold / Silver / Bronze averages so the owner can
+                       see how much more a Gold is worth than a Bronze
+      3. By cohort   — month-of-signup → average LTV; surfaces seasonal
+                       acquisition cohorts that out-perform.
+
+    Predictive LTV (12-month forward projection) is computed simply: average
+    monthly spend × 12, scaled by tier-specific retention multipliers
+    derived from observed repeat rates. It's directional, not actuarial.
+    """
+    q = {"tenant_id": token_data.tenant_id}
+    if branch_id:
+        q["branch_id"] = branch_id
+    customers = list(db.customers.find(q))
+
+    if not customers:
+        return {
+            "network": {"customers": 0, "avg_ltv": 0, "median_ltv": 0, "predicted_12mo": 0},
+            "by_tier": [], "by_cohort": [], "top_decile_share_pct": 0,
+        }
+
+    now = datetime.now(timezone.utc)
+    spends = []
+    by_tier = {}
+    by_cohort = {}
+    months_active = []
+
+    for c in customers:
+        spend = float(c.get("total_amount_paid") or 0)
+        spends.append(spend)
+        tier = (c.get("tier") or "bronze").lower()
+        by_tier.setdefault(tier, {"count": 0, "revenue": 0.0, "visits": 0})
+        by_tier[tier]["count"] += 1
+        by_tier[tier]["revenue"] += spend
+        by_tier[tier]["visits"] += int(c.get("visits") or 0)
+
+        created = c.get("created_at")
+        if isinstance(created, datetime):
+            cohort_key = created.strftime("%Y-%m")
+            by_cohort.setdefault(cohort_key, {"count": 0, "revenue": 0.0})
+            by_cohort[cohort_key]["count"] += 1
+            by_cohort[cohort_key]["revenue"] += spend
+            months = max((now - created).days / 30.4, 0.1)
+            months_active.append(months)
+
+    avg_months = sum(months_active) / len(months_active) if months_active else 1.0
+    avg_ltv = round(sum(spends) / len(spends), 2)
+    sorted_spends = sorted(spends)
+    median_ltv = round(sorted_spends[len(sorted_spends) // 2], 2)
+
+    # 12-month forward projection — monthly spend × 12 × retention factor.
+    # The retention factor is the lifetime "active" share derived from
+    # repeat-visit data, capped between 0.4 (very churny) and 1.0 (sticky).
+    repeat = sum(1 for c in customers if int(c.get("visits") or 0) >= 2) / max(len(customers), 1)
+    retention_factor = max(0.4, min(1.0, repeat))
+    predicted_12mo = round((avg_ltv / max(avg_months, 1.0)) * 12 * retention_factor, 2)
+
+    # By-tier rows, sorted high→low.
+    TIER_ORDER = ["vip", "gold", "silver", "bronze"]
+    tier_rows = []
+    for t in TIER_ORDER:
+        if t in by_tier:
+            row = by_tier[t]
+            tier_rows.append({
+                "tier": t,
+                "customers": row["count"],
+                "total_revenue": round(row["revenue"], 2),
+                "avg_ltv": round(row["revenue"] / row["count"], 2) if row["count"] else 0,
+                "avg_visits": round(row["visits"] / row["count"], 1) if row["count"] else 0,
+                "share_pct": round((row["revenue"] / max(sum(spends), 1)) * 100, 1),
+            })
+
+    # By cohort, last 12 months.
+    cohort_rows = sorted(
+        [
+            {
+                "cohort": k,
+                "customers": v["count"],
+                "total_revenue": round(v["revenue"], 2),
+                "avg_ltv": round(v["revenue"] / v["count"], 2) if v["count"] else 0,
+            }
+            for k, v in by_cohort.items()
+        ],
+        key=lambda r: r["cohort"],
+    )[-12:]
+
+    # Top-decile concentration — what % of revenue comes from the top 10%
+    # of customers? Classic loyalty-program metric.
+    n = len(spends)
+    top10_count = max(1, n // 10)
+    top10_share = (sum(sorted(spends, reverse=True)[:top10_count]) / max(sum(spends), 1)) * 100
+
+    return {
+        "network": {
+            "customers": n,
+            "avg_ltv": avg_ltv,
+            "median_ltv": median_ltv,
+            "avg_months_active": round(avg_months, 1),
+            "predicted_12mo": predicted_12mo,
+            "repeat_rate_pct": round(repeat * 100, 1),
+        },
+        "by_tier": tier_rows,
+        "by_cohort": cohort_rows,
+        "top_decile_share_pct": round(top10_share, 1),
+    }
+
+
+# ============================================================
+# Smart Alerts — unified severity-ranked feed
+# ============================================================
+@app.get("/api/owner/insights/alerts")
+def get_proactive_alerts(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
+    """Auto-detected business situations the owner should know about.
+
+    Each alert has: id, severity (critical | warning | info | win),
+    title, body, metric (the number that triggered it), and action
+    (a deep-link the UI can offer as a CTA).
+
+    Trigger conditions (transparent so owners trust them):
+      - critical: repeat-rate dropped >10pp vs prior period
+                  OR ≥30 customers entering "about to lose" window
+      - warning:  one-and-done rate >35%
+                  OR top spender silent >30 days
+                  OR new-customer pace down >20% vs prior 30d
+      - win:      Gold/VIP segment spend up >25% vs prior period
+                  OR ≥10 dormant customers reactivated this period
+                  OR campaign open-rate above 60%
+      - info:     birthdays this month ≥5
+                  OR cards filled today ≥3
+    """
+    tid = token_data.tenant_id
+    now = datetime.now(timezone.utc)
+    p30 = now - timedelta(days=30)
+    p60 = now - timedelta(days=60)
+
+    cust_q = {"tenant_id": tid}
+    if branch_id:
+        cust_q["branch_id"] = branch_id
+    customers = list(db.customers.find(cust_q))
+    total = len(customers)
+    if total == 0:
+        return {"alerts": [], "counts_by_severity": {"critical": 0, "warning": 0, "info": 0, "win": 0}}
+
+    alerts = []
+
+    def push(sev, _id, title, body, metric=None, action=None):
+        alerts.append({
+            "id": _id, "severity": sev, "title": title, "body": body,
+            "metric": metric, "action": action, "ts": now.isoformat(),
+        })
+
+    # --- Repeat rate movement (critical/win)
+    repeat_now = sum(1 for c in customers if int(c.get("visits") or 0) >= 2) / total
+    # Approximation: prior-period repeat rate uses customers created >60d ago.
+    older = [c for c in customers if isinstance(c.get("created_at"), datetime) and c["created_at"] < p60]
+    if older:
+        repeat_prev = sum(1 for c in older if int(c.get("visits") or 0) >= 2) / len(older)
+        delta = (repeat_now - repeat_prev) * 100
+        if delta < -10:
+            push("critical", "repeat_drop",
+                 f"Repeat rate down {abs(delta):.0f}pp",
+                 "Fewer customers are coming back than last period. Consider a reactivation campaign for inactive customers.",
+                 metric=f"{repeat_now*100:.0f}%",
+                 action="/dashboard/insights")
+        elif delta > 10:
+            push("win", "repeat_up",
+                 f"Repeat rate up {delta:.0f}pp",
+                 "Loyalty is climbing. Whatever you launched recently is working — double down on it.",
+                 metric=f"{repeat_now*100:.0f}%",
+                 action="/dashboard/analytics")
+
+    # --- About-to-lose count (critical at scale)
+    about_to_lose = []
+    for c in customers:
+        lv = c.get("last_visit_date")
+        if isinstance(lv, datetime):
+            days_since = (now - lv).days
+            if 14 <= days_since <= 29 and int(c.get("visits") or 0) >= 2:
+                about_to_lose.append(c)
+    if len(about_to_lose) >= 30:
+        push("critical", "about_to_lose_surge",
+             f"{len(about_to_lose)} customers about to lose",
+             f"They were regulars but haven't visited in 14–29 days. Send a soft 'we miss you' offer this week before they go silent for 30+ days.",
+             metric=str(len(about_to_lose)),
+             action="/dashboard/customers?segment=about_to_lose")
+    elif len(about_to_lose) >= 10:
+        push("warning", "about_to_lose_warn",
+             f"{len(about_to_lose)} customers slipping",
+             "Customers in the 14–29 day inactivity window. A timely push gets most of them back.",
+             metric=str(len(about_to_lose)),
+             action="/dashboard/customers?segment=about_to_lose")
+
+    # --- One-and-done detection (warning)
+    one_and_done = sum(1 for c in customers if int(c.get("visits") or 0) == 1)
+    one_and_done_pct = (one_and_done / total) * 100
+    if one_and_done_pct > 35:
+        push("warning", "one_and_done",
+             f"{one_and_done_pct:.0f}% never came back after 1st visit",
+             "A welcome offer triggered after the 1st scan can lift second-visit conversion. Aim for under 30%.",
+             metric=f"{one_and_done_pct:.0f}%",
+             action="/dashboard/customers?segment=one_and_done")
+
+    # --- Gold / VIP win signals
+    gold_vip = [c for c in customers if (c.get("tier") or "").lower() in ("gold", "vip")]
+    if gold_vip:
+        gv_avg = sum(float(c.get("total_amount_paid") or 0) for c in gold_vip) / len(gold_vip)
+        bronze_silver = [c for c in customers if (c.get("tier") or "").lower() in ("bronze", "silver")]
+        bs_avg = (sum(float(c.get("total_amount_paid") or 0) for c in bronze_silver) / len(bronze_silver)) if bronze_silver else 0
+        if bs_avg > 0:
+            ratio = gv_avg / bs_avg
+            if ratio >= 3:
+                push("win", "vip_spend",
+                     f"Gold + VIP members spend {ratio*100-100:.0f}% more",
+                     f"Average spend €{gv_avg:.0f} vs €{bs_avg:.0f} for Bronze/Silver. Treat top-tier members like co-owners — they fund the rest.",
+                     metric=f"{ratio*100-100:.0f}%",
+                     action="/dashboard/customers?tier=vip")
+
+    # --- Top spender silent
+    if customers:
+        top = max(customers, key=lambda c: float(c.get("total_amount_paid") or 0))
+        if float(top.get("total_amount_paid") or 0) > 0:
+            lv = top.get("last_visit_date")
+            if isinstance(lv, datetime):
+                days = (now - lv).days
+                if days >= 30:
+                    push("warning", "top_silent",
+                         f"Top spender silent {days} days",
+                         f"{top.get('name','Top customer')} spent €{float(top.get('total_amount_paid')):.0f} with you and hasn't been back. A personal note converts ~3× a generic offer.",
+                         metric=f"{days}d",
+                         action=f"/dashboard/customers?customer_id={top.get('id')}")
+
+    # --- Birthdays this month (info)
+    cur_month = now.strftime("%m")
+    birthday_count = sum(1 for c in customers if (c.get("birthday") or "").startswith(cur_month + "-"))
+    if birthday_count >= 5:
+        push("info", "birthdays",
+             f"{birthday_count} birthdays this month",
+             "Auto-fire a birthday offer for them — birthday emails see 3× the open rate.",
+             metric=str(birthday_count),
+             action="/dashboard/customers?segment=birthday_this_month")
+
+    # --- Recent reactivations (win)
+    reactivated = [
+        c for c in customers
+        if isinstance(c.get("last_visit_date"), datetime)
+        and (now - c["last_visit_date"]).days <= 30
+        and int(c.get("visits") or 0) >= 2
+        and isinstance(c.get("created_at"), datetime)
+        and (c["last_visit_date"] - c["created_at"]).days >= 60
+    ]
+    # Heuristic: reactivated = visited recently after a 60+ day gap from
+    # signup AND has >=2 lifetime visits — proxy for "came back after quiet".
+    if len(reactivated) >= 10:
+        push("win", "reactivations",
+             f"🔥 {len(reactivated)} dormant customers reactivated",
+             "Customers who'd been quiet are coming back. Whatever woke them up is working — capture the playbook.",
+             metric=str(len(reactivated)),
+             action="/dashboard/insights")
+
+    # --- Sort: critical → warning → win → info
+    severity_order = {"critical": 0, "warning": 1, "win": 2, "info": 3}
+    alerts.sort(key=lambda a: severity_order.get(a["severity"], 99))
+
+    counts = {"critical": 0, "warning": 0, "info": 0, "win": 0}
+    for a in alerts:
+        counts[a["severity"]] = counts.get(a["severity"], 0) + 1
+
+    return {"alerts": alerts, "counts_by_severity": counts}
+
+
+# ============================================================
+# AI proactive suggestions — what should I do today?
+# ============================================================
+@app.get("/api/owner/ai/suggestions")
+def get_ai_suggestions(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+    branch_id: Optional[str] = Query(None),
+):
+    """Auto-generated 'what should I do today' recommendations.
+
+    Each suggestion has: title, why (the data behind it), action (a draft
+    campaign with name + body that the composer can pre-fill), and an
+    audience filter (the segment the suggestion targets).
+
+    These are deterministic rules over the customer + visit data — not an
+    LLM call — so they're free, fast, and give the same answer twice in a
+    row. The user can hit "Open in composer" to take any suggestion and
+    edit it before sending.
+    """
+    tid = token_data.tenant_id
+    now = datetime.now(timezone.utc)
+
+    cust_q = {"tenant_id": tid}
+    if branch_id:
+        cust_q["branch_id"] = branch_id
+    customers = list(db.customers.find(cust_q))
+
+    suggestions = []
+    tenant_doc = db.tenants.find_one({"id": tid}) or {}
+    biz_name = tenant_doc.get("name") or "notre équipe"
+
+    # ---- 1. Re-engage about-to-lose customers
+    about_to_lose = [
+        c for c in customers
+        if isinstance(c.get("last_visit_date"), datetime)
+        and 14 <= (now - c["last_visit_date"]).days <= 29
+        and int(c.get("visits") or 0) >= 2
+    ]
+    if len(about_to_lose) >= 5:
+        suggestions.append({
+            "id": "reactivate_about_to_lose",
+            "icon": "🔁",
+            "title": f"Win back {len(about_to_lose)} slipping customers",
+            "why": f"{len(about_to_lose)} regulars are 14–29 days past their last visit. A reminder before day 30 catches most of them; after, it costs 5× more.",
+            "audience_count": len(about_to_lose),
+            "filter": {"inactive_days_min": 14, "inactive_days_max": 29, "min_visits": 2},
+            "draft": {
+                "name": f"Vous nous manquez chez {biz_name}",
+                "body": f"Bonjour {{first_name}},\n\nÇa fait un petit moment ! Pour vous remercier de votre fidélité, profitez de -15% sur votre prochaine visite chez {{business_name}}. À très bientôt !",
+                "source": "push",
+            },
+        })
+
+    # ---- 2. VIP thank-you
+    vips = [c for c in customers if (c.get("tier") or "").lower() == "vip"]
+    if len(vips) >= 3:
+        suggestions.append({
+            "id": "vip_thank_you",
+            "icon": "👑",
+            "title": f"Reward your {len(vips)} VIPs",
+            "why": "Your VIP cohort drives most of your revenue. A surprise gesture (no minimum, no expiry) compounds loyalty for the next year.",
+            "audience_count": len(vips),
+            "filter": {"tier": "vip"},
+            "draft": {
+                "name": "Un petit merci, juste pour vous",
+                "body": f"Bonjour {{first_name}},\n\nVous êtes l'un de nos meilleurs clients chez {{business_name}}. Un dessert offert à votre prochaine visite — sans condition. Merci d'être là.",
+                "source": "push",
+            },
+        })
+
+    # ---- 3. Birthday push for this month
+    cur_month = now.strftime("%m")
+    birthdays = [c for c in customers if (c.get("birthday") or "").startswith(cur_month + "-")]
+    if len(birthdays) >= 3:
+        suggestions.append({
+            "id": "birthday_offer",
+            "icon": "🎂",
+            "title": f"Birthday offer for {len(birthdays)} customers",
+            "why": "Birthday emails see ~3× the open rate of generic campaigns. Schedule on the 1st of the month so customers receive it close to their day.",
+            "audience_count": len(birthdays),
+            "filter": {"has_birthday_this_month": True},
+            "draft": {
+                "name": "Joyeux anniversaire, {first_name} !",
+                "body": f"Joyeux anniversaire {{first_name}} ! Pour fêter ça avec vous, un café offert à votre prochaine visite chez {{business_name}}. À très vite !",
+                "source": "push",
+            },
+        })
+
+    # ---- 4. Welcome new customers
+    new_recent = [
+        c for c in customers
+        if isinstance(c.get("created_at"), datetime)
+        and (now - c["created_at"]).days <= 7
+        and int(c.get("visits") or 0) <= 1
+    ]
+    if len(new_recent) >= 5:
+        suggestions.append({
+            "id": "welcome_new",
+            "icon": "👋",
+            "title": f"Welcome {len(new_recent)} new sign-ups",
+            "why": f"{len(new_recent)} customers signed up in the last 7 days but haven't returned yet. The first follow-up doubles second-visit conversion.",
+            "audience_count": len(new_recent),
+            "filter": {"created_within_days": 7, "max_visits": 1},
+            "draft": {
+                "name": "Bienvenue chez {business_name} !",
+                "body": f"Bonjour {{first_name}},\n\nMerci de nous avoir rejoints. À votre prochaine visite, votre boisson est offerte. On a hâte de vous revoir !",
+                "source": "push",
+            },
+        })
+
+    # ---- 5. Quiet weekday lift
+    weekday_quiet_threshold = 8
+    # Visits over the last 30 days, grouped by ISO weekday (Mon=0).
+    visits_recent = list(db.visits.find({
+        "tenant_id": tid,
+        "created_at": {"$gte": now - timedelta(days=30)},
+    }))
+    by_weekday = {i: 0 for i in range(7)}
+    for v in visits_recent:
+        ts = v.get("created_at")
+        if isinstance(ts, datetime):
+            by_weekday[ts.weekday()] += 1
+    if visits_recent:
+        avg = sum(by_weekday.values()) / 7
+        quietest_day = min(range(7), key=lambda d: by_weekday[d])
+        if by_weekday[quietest_day] < avg * 0.6 and avg >= weekday_quiet_threshold:
+            day_label = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"][quietest_day]
+            suggestions.append({
+                "id": "quiet_weekday_lift",
+                "icon": "📅",
+                "title": f"Lift {day_label.title()} traffic",
+                "why": f"{day_label.title()} averages {by_weekday[quietest_day]} visits vs ~{avg:.0f} on other days. A weekday-only offer can level the curve and free up your weekend.",
+                "audience_count": len(customers),
+                "filter": {},
+                "draft": {
+                    "name": f"Spécial {day_label.title()} — 20%",
+                    "body": f"Bonjour {{first_name}},\n\nTous les {day_label}s, profitez de -20% sur place chez {{business_name}}. Une bonne raison de commencer la semaine en douceur.",
+                    "source": "push",
+                },
+            })
+
+    return {"suggestions": suggestions, "generated_at": now.isoformat()}
 
 
 # --- Feature 10: Monthly report ------------------------------
@@ -6284,6 +6761,93 @@ def run_daily_triggers(request: Request):
         "scheduled_sent": scheduled_sent,
         "tier_up_emitted": tier_up_emitted_count,
     }
+
+
+@app.get("/api/cron/monthly-report")
+@app.post("/api/cron/monthly-report")
+def run_monthly_report_dispatch(request: Request):
+    """Sends each owner an email summary of last month's performance.
+
+    Designed to be hit on the 1st of every month. Idempotent within a given
+    month — uses db.system_jobs to record the last dispatch month so a
+    re-run doesn't double-send.
+
+    Auth: same Bearer / X-Cron-Secret pattern as /cron/daily-triggers.
+    """
+    provided = (
+        request.headers.get("x-cron-secret")
+        or (request.headers.get("authorization", "").replace("Bearer ", "") if request.headers.get("authorization") else "")
+        or request.query_params.get("secret", "")
+    )
+    if CRON_SECRET and provided != CRON_SECRET:
+        raise HTTPException(status_code=401, detail="Invalid cron secret")
+
+    now = datetime.now(timezone.utc)
+    # Cover the previous calendar month.
+    first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_end = first_of_this_month - timedelta(seconds=1)
+    last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_label = last_month_start.strftime("%Y-%m")
+
+    # Idempotency check.
+    last_run = db.system_jobs.find_one({"job": "monthly_report"})
+    if last_run and last_run.get("month") == month_label:
+        return {"ok": True, "skipped": "already_dispatched", "month": month_label}
+
+    sent = 0
+    skipped = 0
+    tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
+
+    for tenant in tenants:
+        tid = tenant["id"]
+        # Find the owner's email so we know where to deliver.
+        owner = db.users.find_one({"tenant_id": tid, "role": "business_owner"})
+        if not owner or not owner.get("email"):
+            skipped += 1
+            continue
+
+        # Inline rollup — don't call the HTTP endpoint, just compute.
+        cust_count = db.customers.count_documents({"tenant_id": tid})
+        new_cust_count = db.customers.count_documents({
+            "tenant_id": tid, "created_at": {"$gte": last_month_start, "$lt": first_of_this_month},
+        })
+        visits_in_month = db.visits.aggregate([
+            {"$match": {"tenant_id": tid, "created_at": {"$gte": last_month_start, "$lt": first_of_this_month}}},
+            {"$group": {"_id": None, "count": {"$sum": 1}, "revenue": {"$sum": {"$ifNull": ["$amount_paid", 0]}}}},
+        ])
+        rolled = next(iter(visits_in_month), {}) or {}
+        visits_count = int(rolled.get("count") or 0)
+        revenue = round(float(rolled.get("revenue") or 0), 2)
+        avg_ticket = round(revenue / visits_count, 2) if visits_count else 0
+
+        body = (
+            f"Bonjour,\n\n"
+            f"Voici votre récap pour {last_month_start.strftime('%B %Y')} chez {tenant.get('name','votre établissement')} :\n\n"
+            f"• {cust_count} clients au total ({new_cust_count} nouveaux ce mois-ci)\n"
+            f"• {visits_count} visites enregistrées\n"
+            f"• €{revenue:,.0f} de chiffre d'affaires fidélité\n"
+            f"• €{avg_ticket} de panier moyen\n\n"
+            f"Le détail complet est disponible sur votre tableau de bord FidéliTour.\n\n"
+            f"Bonne continuation !\n— L'équipe FidéliTour"
+        ).replace(",", " ")
+        html = _campaign_html(
+            "FidéliTour",
+            f"Récap {last_month_start.strftime('%B %Y')} — {tenant.get('name','')}",
+            body,
+            {"name": owner["email"].split("@")[0].title(), "tier": "owner", "visits": 0, "points": 0},
+        )
+        if send_email_to_customer(owner["email"], "FidéliTour", f"Récap {last_month_start.strftime('%B %Y')}", html):
+            sent += 1
+        else:
+            skipped += 1
+
+    db.system_jobs.update_one(
+        {"job": "monthly_report"},
+        {"$set": {"job": "monthly_report", "month": month_label, "ran_at": now, "sent": sent, "skipped": skipped}},
+        upsert=True,
+    )
+
+    return {"ok": True, "month": month_label, "sent": sent, "skipped": skipped}
 
 
 # --- 6: Super-admin broadcast to all end-customers -----------

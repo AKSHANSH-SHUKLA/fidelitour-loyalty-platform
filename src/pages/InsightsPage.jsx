@@ -58,6 +58,23 @@ export default function InsightsPage() {
   const [senderNameSaving, setSenderNameSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [addTeamForm, setAddTeamForm] = useState({ email: '', password: '', role: 'staff' });
+  // Proactive alerts feed + AI suggestions cards + LTV cohort breakdown.
+  const [proactiveAlerts, setProactiveAlerts] = useState(null);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [ltvBreakdown, setLtvBreakdown] = useState(null);
+  // Open the campaign composer at /dashboard/campaigns with a pre-filled draft.
+  const useSuggestion = (s) => {
+    if (!s?.draft) return;
+    try {
+      sessionStorage.setItem('campaignHandoff', JSON.stringify({
+        suggested_name: s.draft.name,
+        suggested_body: s.draft.body,
+        suggested_source: s.draft.source || 'push',
+        filter: s.filter || {},
+      }));
+    } catch (_e) { /* sessionStorage unavailable, fall through */ }
+    window.location.href = '/dashboard/campaigns';
+  };
 
   // AI suggestions panel state
   const [aiQuestion, setAiQuestion] = useState('');
@@ -116,8 +133,12 @@ export default function InsightsPage() {
       ownerAPI.getReactivationTemplates(),
       ownerAPI.listTeam(),
       ownerAPI.getTenant(),
+      // New proactive panels
+      ownerAPI.getProactiveAlerts(),
+      ownerAPI.getAiSuggestions(),
+      ownerAPI.getLtvBreakdown(),
     ]);
-    const [a, ch, l, t, c, ac, mr, rt, tm, tenant] = results;
+    const [a, ch, l, t, c, ac, mr, rt, tm, tenant, pa, ai, lb] = results;
     if (a.status === 'fulfilled') setAlerts(a.value.data.alerts || []);
     if (ch.status === 'fulfilled') setChurn(ch.value.data);
     if (l.status === 'fulfilled') setLtv(l.value.data);
@@ -130,6 +151,9 @@ export default function InsightsPage() {
     if (tenant.status === 'fulfilled') {
       setSenderName(tenant.value.data?.campaign_sender_name || tenant.value.data?.name || '');
     }
+    if (pa.status === 'fulfilled') setProactiveAlerts(pa.value.data);
+    if (ai.status === 'fulfilled') setAiSuggestions(ai.value.data?.suggestions || []);
+    if (lb.status === 'fulfilled') setLtvBreakdown(lb.value.data);
     setLoading(false);
   };
 
@@ -197,6 +221,246 @@ export default function InsightsPage() {
           </button>
         }
       />
+
+      {/* ─────────── Smart Alerts feed ─────────── */}
+      {proactiveAlerts && Array.isArray(proactiveAlerts.alerts) && proactiveAlerts.alerts.length > 0 && (
+        <div
+          className="rounded-2xl p-6 relative overflow-hidden"
+          style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+        >
+          <div aria-hidden="true" className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
+               style={{ background: C_PS.terracotta }} />
+          <header className="relative flex items-end justify-between gap-4 mb-5">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: C_PS.terracotta }}>
+                Auto-Detected · Today
+              </p>
+              <h2 className="font-['Cormorant_Garamond'] text-3xl font-bold mt-1" style={{ color: C_PS.inkDeep }}>
+                Smart Alerts
+              </h2>
+              <p className="text-sm mt-1" style={{ color: C_PS.inkMute }}>
+                Patterns the platform spotted in your data this week, ranked by urgency.
+              </p>
+            </div>
+            <div className="flex gap-1.5">
+              {Object.entries(proactiveAlerts.counts_by_severity || {}).filter(([, n]) => n > 0).map(([sev, n]) => {
+                const palette = {
+                  critical: { bg: '#FEE2E2', fg: '#991B1B' },
+                  warning:  { bg: '#FEF3C7', fg: '#92400E' },
+                  win:      { bg: `${C_PS.sage}1A`, fg: C_PS.sage },
+                  info:     { bg: `${C_PS.sky}1A`, fg: C_PS.sky },
+                }[sev] || { bg: C_PS.bone, fg: C_PS.inkMute };
+                return (
+                  <span key={sev} className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
+                        style={{ background: palette.bg, color: palette.fg }}>
+                    {n} {sev}
+                  </span>
+                );
+              })}
+            </div>
+          </header>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-3">
+            {proactiveAlerts.alerts.map((a) => {
+              const sevPalette = {
+                critical: { accent: '#DC2626', bg: '#FEF2F2', icon: AlertTriangle, label: 'Critical' },
+                warning:  { accent: '#D97706', bg: '#FFFBEB', icon: AlertTriangle, label: 'Warning' },
+                win:      { accent: C_PS.sage, bg: `${C_PS.sage}0D`, icon: Sparkles,  label: 'Win'    },
+                info:     { accent: C_PS.sky,  bg: `${C_PS.sky}0D`,  icon: Calendar,  label: 'Info'   },
+              }[a.severity] || { accent: C_PS.inkMute, bg: 'white', icon: AlertTriangle, label: 'Note' };
+              const Icon = sevPalette.icon;
+              return (
+                <div
+                  key={a.id}
+                  className="relative p-4 rounded-xl flex gap-3"
+                  style={{ background: sevPalette.bg, border: `1px solid ${sevPalette.accent}33` }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: `${sevPalette.accent}1A`, color: sevPalette.accent, border: `1px solid ${sevPalette.accent}33` }}
+                  >
+                    <Icon size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: sevPalette.accent }}>
+                        {sevPalette.label}
+                      </p>
+                      {a.metric && (
+                        <span className="text-xs font-bold" style={{ color: sevPalette.accent }}>{a.metric}</span>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold leading-tight" style={{ color: C_PS.inkDeep }}>{a.title}</p>
+                    <p className="text-xs leading-relaxed mt-1" style={{ color: C_PS.inkMute }}>{a.body}</p>
+                    {a.action && (
+                      <a
+                        href={a.action}
+                        className="inline-flex items-center gap-1 mt-2 text-xs font-semibold hover:underline"
+                        style={{ color: sevPalette.accent }}
+                      >
+                        Take action <ChevronRight size={12} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────── AI Suggestions ─────────── */}
+      {aiSuggestions.length > 0 && (
+        <div
+          className="rounded-2xl p-6 relative overflow-hidden"
+          style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+        >
+          <div aria-hidden="true" className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
+               style={{ background: C_PS.lavender }} />
+          <header className="relative flex items-end justify-between gap-4 mb-5">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: C_PS.lavender }}>
+                AI · What to do today
+              </p>
+              <h2 className="font-['Cormorant_Garamond'] text-3xl font-bold mt-1" style={{ color: C_PS.inkDeep }}>
+                Recommended Actions
+              </h2>
+              <p className="text-sm mt-1" style={{ color: C_PS.inkMute }}>
+                Pre-built campaign drafts targeting the segments that need attention right now.
+              </p>
+            </div>
+          </header>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {aiSuggestions.map((s) => (
+              <div
+                key={s.id}
+                className="relative p-5 rounded-2xl flex flex-col"
+                style={{
+                  background: `linear-gradient(155deg, ${C_PS.bone} 0%, white 60%)`,
+                  border: `1px solid ${C_PS.hairline}`,
+                }}
+              >
+                <div className="text-3xl mb-2">{s.icon || '✨'}</div>
+                <h3 className="font-['Cormorant_Garamond'] text-xl font-bold leading-tight mb-1" style={{ color: C_PS.inkDeep }}>
+                  {s.title}
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: C_PS.inkMute }}>
+                  {s.why}
+                </p>
+                <div className="mt-3 mb-4 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest self-start px-2 py-1 rounded-full"
+                     style={{ background: `${C_PS.lavender}1A`, color: C_PS.lavender, border: `1px solid ${C_PS.lavender}33` }}>
+                  <Users size={10} /> {s.audience_count} customers
+                </div>
+                <button
+                  onClick={() => useSuggestion(s)}
+                  className="mt-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold text-white transition-all shadow-md hover:-translate-y-0.5"
+                  style={{ background: `linear-gradient(135deg, ${C_PS.lavender}, ${C_PS.terracotta})` }}
+                >
+                  <Send size={12} /> Open in composer
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────── LTV Breakdown ─────────── */}
+      {ltvBreakdown && ltvBreakdown.network && (ltvBreakdown.network.customers || 0) > 0 && (
+        <div
+          className="rounded-2xl p-6 relative overflow-hidden"
+          style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+        >
+          <div aria-hidden="true" className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
+               style={{ background: C_PS.sage }} />
+          <header className="relative flex items-end justify-between gap-4 mb-5">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: C_PS.sage }}>
+                Lifetime Value
+              </p>
+              <h2 className="font-['Cormorant_Garamond'] text-3xl font-bold mt-1" style={{ color: C_PS.inkDeep }}>
+                LTV Breakdown
+              </h2>
+              <p className="text-sm mt-1" style={{ color: C_PS.inkMute }}>
+                What each customer is worth, by tier and acquisition cohort.
+              </p>
+            </div>
+          </header>
+
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            <div className="p-3 rounded-xl" style={{ background: C_PS.bone, border: `1px solid ${C_PS.hairline}` }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C_PS.inkMute }}>Avg LTV</p>
+              <p className="font-['Cormorant_Garamond'] text-2xl font-bold mt-1" style={{ color: C_PS.inkDeep }}>
+                €{ltvBreakdown.network.avg_ltv}
+              </p>
+              <p className="text-[10px] mt-1" style={{ color: C_PS.inkMute }}>Across {ltvBreakdown.network.customers} customers</p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ background: C_PS.bone, border: `1px solid ${C_PS.hairline}` }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C_PS.inkMute }}>Median LTV</p>
+              <p className="font-['Cormorant_Garamond'] text-2xl font-bold mt-1" style={{ color: C_PS.inkDeep }}>
+                €{ltvBreakdown.network.median_ltv}
+              </p>
+              <p className="text-[10px] mt-1" style={{ color: C_PS.inkMute }}>50% spend more, 50% less</p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ background: `${C_PS.sage}1A`, border: `1px solid ${C_PS.sage}33` }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C_PS.sage }}>12-mo Predicted</p>
+              <p className="font-['Cormorant_Garamond'] text-2xl font-bold mt-1" style={{ color: C_PS.inkDeep }}>
+                €{ltvBreakdown.network.predicted_12mo}
+              </p>
+              <p className="text-[10px] mt-1" style={{ color: C_PS.inkMute }}>
+                Forward-looking · {ltvBreakdown.network.repeat_rate_pct}% repeat
+              </p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ background: `${C_PS.terracotta}1A`, border: `1px solid ${C_PS.terracotta}33` }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C_PS.terracotta }}>Top 10% concentration</p>
+              <p className="font-['Cormorant_Garamond'] text-2xl font-bold mt-1" style={{ color: C_PS.inkDeep }}>
+                {ltvBreakdown.top_decile_share_pct}%
+              </p>
+              <p className="text-[10px] mt-1" style={{ color: C_PS.inkMute }}>of revenue from top 10% spenders</p>
+            </div>
+          </div>
+
+          {ltvBreakdown.by_tier && ltvBreakdown.by_tier.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: C_PS.inkMute }}>
+                Average LTV by tier
+              </p>
+              <div className="space-y-2">
+                {ltvBreakdown.by_tier.map((row) => {
+                  const tierColors = {
+                    vip:    C_PS.terracotta,
+                    gold:   C_PS.ochre,
+                    silver: C_PS.lavender,
+                    bronze: C_PS.sage,
+                  };
+                  const accent = tierColors[row.tier] || C_PS.inkMute;
+                  const widthPct = ltvBreakdown.by_tier[0]?.avg_ltv
+                    ? (row.avg_ltv / ltvBreakdown.by_tier[0].avg_ltv) * 100
+                    : 0;
+                  return (
+                    <div key={row.tier}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-semibold capitalize" style={{ color: accent }}>
+                          {row.tier} · {row.customers} customers · {row.avg_visits} avg visits
+                        </span>
+                        <span className="font-bold" style={{ color: C_PS.inkDeep }}>
+                          €{row.avg_ltv} avg
+                          <span className="text-[10px] ml-2" style={{ color: C_PS.inkMute }}>
+                            ({row.share_pct}% of revenue)
+                          </span>
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden" style={{ background: `${accent}1A` }}>
+                        <div className="h-full rounded-full transition-all" style={{ width: `${widthPct}%`, background: `linear-gradient(90deg, ${accent}, ${accent}AA)` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AI Suggestions Panel */}
       <Card className="bg-gradient-to-br from-white to-[#FDFBF7]">

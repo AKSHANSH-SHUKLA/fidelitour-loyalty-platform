@@ -179,7 +179,10 @@ const ScanPage = () => {
         stamps_current: stampsCurrent,
         stamps_required: stampsRequired,
         reward_unlocked: canRedeem,
-        tier_upgraded: false, // Would need previous tier to compare
+        // Backend now returns these so the cashier sees tier-up celebrations.
+        tier: customerData.tier || null,
+        previous_tier: customerData.previous_tier || null,
+        tier_upgraded: !!customerData.tier_upgraded,
         branch_id: branchId || customerData.branch_id || null,
       });
       setStatus({ type: 'success', message: 'Visit recorded successfully!' });
@@ -475,10 +478,24 @@ const ScanPage = () => {
                   </div>
                 )}
 
-                {/* Tier Upgrade Notification */}
-                {scanResult.tier_upgraded && (
-                  <div className="bg-[#E3A869] text-[#1C1917] p-4 rounded-lg mb-6 text-center">
-                    <p className="font-bold">⭐ {scanResult.customer_name} just became {scanResult.new_tier}!</p>
+                {/* Tier Upgrade Celebration — fires when scan_visit returns tier_upgraded:true */}
+                {scanResult.tier_upgraded && scanResult.tier && (
+                  <div
+                    className="relative p-5 rounded-2xl mb-6 text-center overflow-hidden"
+                    style={{
+                      background: `linear-gradient(135deg, ${C_SCAN.ochre} 0%, ${C_SCAN.amber} 60%, ${C_SCAN.terracotta} 100%)`,
+                      color: 'white',
+                      boxShadow: '0 8px 24px rgba(212,165,116,0.35)',
+                    }}
+                  >
+                    <div aria-hidden="true" className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50"
+                         style={{ background: 'rgba(255,255,255,0.4)' }} />
+                    <p className="relative text-2xl font-['Cormorant_Garamond'] font-bold leading-tight">
+                      🎉 Bravo, {scanResult.customer_name?.split(' ')[0]} passe {String(scanResult.tier).toUpperCase()} !
+                    </p>
+                    <p className="relative text-sm mt-1 text-white/85">
+                      They moved up from {String(scanResult.previous_tier || 'their previous tier').toUpperCase()} — a tier-up push notification was already sent.
+                    </p>
                   </div>
                 )}
 

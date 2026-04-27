@@ -123,15 +123,38 @@ export default function CampaignsPage() {
       if (raw) {
         const handoff = JSON.parse(raw);
         sessionStorage.removeItem('campaignHandoff');
+
+        // Two distinct handoff shapes:
+        //   1. Customer Map: customer_ids list → "by-customers" composer mode
+        //   2. AI Suggestion: filter object → "by-filter" mode pre-filled with
+        //      the suggested name + body + audience filter
         if (handoff && Array.isArray(handoff.customer_ids) && handoff.customer_ids.length) {
-          // Pre-open the composer in "by-customers" mode with the ID list baked in.
           setSelectedCampaignTab('by-customers');
           setCampaignCustomers(handoff.customer_ids.join('\n'));
           setFormData((prev) => ({
             ...prev,
             campaignName: handoff.suggested_name || 'Ciblage carte',
-            message: handoff.suggested_message || '',
-            source: handoff.source || 'push',
+            message: handoff.suggested_message || handoff.suggested_body || '',
+            source: handoff.suggested_source || handoff.source || 'push',
+          }));
+          setShowCreateModal(true);
+        } else if (handoff && (handoff.suggested_body || handoff.suggested_name)) {
+          // AI suggestion handoff — translate the audience filter to formData
+          // shape so the by-filter composer opens with the right segment.
+          const f = handoff.filter || {};
+          setSelectedCampaignTab('by-filter');
+          setFormData((prev) => ({
+            ...prev,
+            campaignName: handoff.suggested_name || '',
+            message: handoff.suggested_body || handoff.suggested_message || '',
+            source: handoff.suggested_source || 'push',
+            filters: {
+              tiers: f.tier ? [f.tier] : [],
+              minPoints: 0,
+              minVisits: f.min_visits || 0,
+              postalCodes: '',
+              minAmountPaid: 0,
+            },
           }));
           setShowCreateModal(true);
         }
@@ -1086,18 +1109,42 @@ export default function CampaignsPage() {
 
               {/* Message */}
               <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                  Message
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                    Message
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = window.prompt('Paste a link (Instagram, menu PDF, RSVP form, etc.):', 'https://');
+                      if (!url) return;
+                      const trimmed = url.trim();
+                      if (!/^https?:\/\//i.test(trimmed)) {
+                        alert('Link must start with https:// or http://');
+                        return;
+                      }
+                      const cur = formData.message || '';
+                      const sep = cur.endsWith(' ') || cur.endsWith('\n') || cur === '' ? '' : ' ';
+                      setFormData((prev) => ({ ...prev, message: `${cur}${sep}${trimmed}` }));
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition"
+                    style={{ background: `${C_PS.terracotta}1A`, color: C_PS.terracotta, border: `1px solid ${C_PS.terracotta}33` }}
+                  >
+                    🔗 Add link
+                  </button>
+                </div>
                 <textarea
                   name="message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  placeholder="Your campaign message..."
-                  rows={4}
+                  placeholder="Your campaign message — paste any URL or @handle and it'll auto-link in the email."
+                  rows={5}
                   className="w-full px-4 py-2 border rounded-lg"
-                  style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
+                  style={{ borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
                 />
+                <p className="text-[10px] mt-1.5" style={{ color: C_PS.inkMute }}>
+                  Pro tip: paste a full <code>https://…</code> URL or an <code>@handle</code> — it becomes a clickable link automatically in the email and push.
+                </p>
               </div>
 
               {/* Channel / Source */}
