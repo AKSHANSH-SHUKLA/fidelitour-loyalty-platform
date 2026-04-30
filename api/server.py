@@ -25,7 +25,12 @@ import base64
 from io import BytesIO
 
 # Setup FastAPI App
-app = FastAPI(title="FidéliTour API")
+app = FastAPI(
+    title="FidéliTour API",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+)
 
 # Setup CORS
 app.add_middleware(
