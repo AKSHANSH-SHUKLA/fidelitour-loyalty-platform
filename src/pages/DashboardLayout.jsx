@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
-  Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield
+  Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History
 } from 'lucide-react';
 import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
 
@@ -157,6 +157,7 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/card-designer" icon={CreditCard}   label="Card Designer" currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label="Campaigns"     currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label="AI Assistant"  currentPath={currentPath} role={role} />
+              <NavLink to="/dashboard/history"       icon={History}      label="History"       currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/settings"      icon={Settings2}    label="Settings"      currentPath={currentPath} role={role} />
               <SignOutNavItem onClick={logout} />
             </>
@@ -167,6 +168,7 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/insights"  icon={Sparkles}  label="Insights"     currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/customers" icon={Users}     label="Customers"    currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/map"       icon={MapPin}    label="Customer Map" currentPath={currentPath} role={role} />
+              <NavLink to="/dashboard/history"   icon={History}   label="History"      currentPath={currentPath} role={role} />
               <SignOutNavItem onClick={logout} />
             </>
           )}

@@ -13,6 +13,8 @@ import {
   MessageSquare, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
+import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
+import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#7B3F00' };
 const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
@@ -1605,6 +1607,12 @@ const AnalyticsPage = () => {
           onSent={loadAll}
         />
       )}
+
+      {/* Additive: extended customer-acquisition history with configurable range. */}
+      <HistoricalAcquisitionChart />
+
+      {/* Additive: visits-by-day with campaign send markers (clickable for details). */}
+      <VisitsWithCampaignsChart />
     </div>
   );
 };

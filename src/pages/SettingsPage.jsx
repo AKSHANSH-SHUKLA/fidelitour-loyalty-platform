@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
+import CustomerStatusConfigCard from '../components/CustomerStatusConfigCard';
 
 const SettingsPage = () => {
     const [settings, setSettings] = useState({
@@ -304,6 +305,9 @@ const SettingsPage = () => {
                     {saving ? 'Saving...' : 'Save Settings'}
                 </button>
             </form>
+
+            {/* Additive: configurable Active/Inactive customer definition. */}
+            <CustomerStatusConfigCard />
         </div>
     );
 };

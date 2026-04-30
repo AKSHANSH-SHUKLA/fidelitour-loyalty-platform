@@ -17,6 +17,7 @@ import SettingsPage from './pages/SettingsPage';
 import JoinPage from './pages/JoinPage';
 import MyWalletCardPage from './pages/MyWalletCardPage';
 import InsightsPage from './pages/InsightsPage';
+import HistoryPage from './pages/HistoryPage';
 
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
@@ -121,6 +122,11 @@ function App() {
             <Route path="settings" element={
               <ProtectedRoute allowedRoles={['business_owner']}>
                 <SettingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="history" element={
+              <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+                <HistoryPage />
               </ProtectedRoute>
             } />
           </Route>

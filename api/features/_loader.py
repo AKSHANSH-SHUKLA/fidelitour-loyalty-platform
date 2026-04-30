@@ -23,6 +23,10 @@ MODULES = [
     "features.happy_hour",
     "features.reviews",
     "features.registration_forms",
+    # Owner workflow & visibility
+    "features.history",                 # past campaigns + push notifications
+    "features.analytics_history",       # extended weekly/daily/monthly history
+    "features.customer_status",         # configurable active/inactive definition
     # AI / predictive — fully implemented (math-based)
     "features.ai_send_time",
     "features.ai_churn",
