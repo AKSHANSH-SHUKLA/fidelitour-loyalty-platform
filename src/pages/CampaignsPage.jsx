@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil } from 'lucide-react';
+import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil, X } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
 import NumberInput from '../components/NumberInput';
@@ -1055,8 +1055,17 @@ export default function CampaignsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FDFBF7' }}>
-            <div className="border-b p-6" style={{ borderColor: '#E7E5E4' }}>
-              <h2 className="text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+            <div className="border-b p-6 relative" style={{ borderColor: '#E7E5E4' }}>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowCreateModal(false)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition hover:bg-[#F3EFE7]"
+                style={{ color: '#57534E' }}
+              >
+                <X size={20} />
+              </button>
+              <h2 className="text-3xl font-bold pr-12" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
                 {editingCampaignId ? 'Edit Draft' : 'Create New Campaign'}
               </h2>
               {editingCampaignId && (

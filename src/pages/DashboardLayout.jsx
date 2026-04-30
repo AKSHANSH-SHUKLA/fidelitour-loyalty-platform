@@ -62,6 +62,36 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role }) => {
   );
 };
 
+// Same visual treatment as NavLink, but a button that triggers logout.
+// Placed inline within each role's nav so it sits directly under Settings
+// (or last nav item for roles without Settings).
+const SignOutNavItem = ({ onClick }) => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="relative group flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all w-full text-left"
+      style={{ color: C.inkMute, background: 'transparent' }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.background = '#FEF2F2';
+        e.currentTarget.style.color = '#991B1B';
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = C.inkMute;
+      }}
+    >
+      <span
+        className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
+        style={{ color: 'inherit', border: '1px solid transparent' }}
+      >
+        <LogOut className="w-[18px] h-[18px]" />
+      </span>
+      <span className="truncate">Sign out</span>
+    </button>
+  );
+};
+
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -128,6 +158,7 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label="Campaigns"     currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label="AI Assistant"  currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/settings"      icon={Settings2}    label="Settings"      currentPath={currentPath} role={role} />
+              <SignOutNavItem onClick={logout} />
             </>
           )}
           {role === 'manager' && (
@@ -136,10 +167,14 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/insights"  icon={Sparkles}  label="Insights"     currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/customers" icon={Users}     label="Customers"    currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/map"       icon={MapPin}    label="Customer Map" currentPath={currentPath} role={role} />
+              <SignOutNavItem onClick={logout} />
             </>
           )}
           {role === 'staff' && (
-            <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} role={role} />
+            <>
+              <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} role={role} />
+              <SignOutNavItem onClick={logout} />
+            </>
           )}
           {role === 'super_admin' && (
             <>
@@ -150,13 +185,14 @@ const DashboardLayout = () => {
               <NavLink to="/admin/card-designer" icon={Palette}      label="Card Designer"      currentPath={currentPath} role={role} />
               <NavLink to="/admin/campaigns"     icon={Megaphone}    label="Campaigns"          currentPath={currentPath} role={role} />
               <NavLink to="/admin/ai"            icon={BrainCircuit} label="AI Intelligence"    currentPath={currentPath} role={role} />
+              <SignOutNavItem onClick={logout} />
             </>
           )}
         </nav>
 
-        {/* User chip + sign-out */}
+        {/* User chip — sign-out moved into the nav, directly below Settings */}
         <div className="p-4 mt-auto" style={{ borderTop: `1px solid ${C.hairline}` }}>
-          <div className="flex items-center gap-2.5 mb-3 px-1">
+          <div className="flex items-center gap-2.5 px-1">
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
               style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}
@@ -172,19 +208,6 @@ const DashboardLayout = () => {
               </p>
             </div>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-semibold transition-all hover:-translate-y-px"
-            style={{
-              border: `1px solid ${C.hairline}`,
-              color: C.inkSoft,
-              background: 'white',
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.background = '#FEF2F2'; e.currentTarget.style.color = '#991B1B'; e.currentTarget.style.borderColor = '#FECACA'; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = C.inkSoft; e.currentTarget.style.borderColor = C.hairline; }}
-          >
-            <LogOut className="w-4 h-4" /> Sign out
-          </button>
         </div>
       </aside>
 

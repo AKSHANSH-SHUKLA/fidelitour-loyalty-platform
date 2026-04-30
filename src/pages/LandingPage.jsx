@@ -1258,16 +1258,15 @@ const LandingPage = () => {
                          style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
                       <div aria-hidden="true" className="absolute inset-0 opacity-30 pointer-events-none"
                            style={{ background: `radial-gradient(circle at 30% 0%, ${C.terracotta}33 0%, transparent 60%), radial-gradient(circle at 80% 100%, ${C.lavender}33 0%, transparent 60%)` }} />
-                      <p className="text-xs font-bold uppercase tracking-widest mb-4 relative" style={{ color: C.ochre }}>Chain Pricing — from</p>
-                      <p className="text-5xl font-bold relative">
+                      <p className="text-xs font-bold uppercase tracking-widest mb-4 relative" style={{ color: C.ochre }}>Chain Plan</p>
+                      <p className="text-4xl font-bold relative leading-tight">
                         <span className="bg-clip-text text-transparent"
                               style={{ backgroundImage: `linear-gradient(135deg, #FFD7A8, ${C.ochre})` }}>
-                          €349
+                          Custom pricing
                         </span>
-                        <span className="text-base text-white/60 font-medium">/mo</span>
                       </p>
-                      <p className="text-xs mb-5 relative" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                        Volume discounts above 5 branches
+                      <p className="text-xs mb-5 relative mt-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                        Tailored to your branch count and customer volume — talk to us.
                       </p>
                       <div className="space-y-2.5 relative">
                         {[
