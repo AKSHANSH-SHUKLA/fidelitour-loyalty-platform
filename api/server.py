@@ -7026,6 +7026,16 @@ def resolve_upgrade_request(
     return {"status": "ok", "new_status": new_status}
 
 
+# ============================================================
+# Additive feature pack — see features/_README.md
+# Registers 17 new feature modules (welcome bonus, referrals, happy hour,
+# reviews, registration forms, AI churn/send-time, etc.) without modifying
+# any existing endpoint or model. Safe to comment out to roll back.
+# ============================================================
+from features._loader import register_all
+register_all(app, db)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=True)
