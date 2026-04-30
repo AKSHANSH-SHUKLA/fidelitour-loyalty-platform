@@ -4,6 +4,7 @@ import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
+import CampaignAudienceBuilder from '../components/CampaignAudienceBuilder';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
@@ -1076,30 +1077,6 @@ export default function CampaignsPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Audience Tab Selector */}
-              <div className="flex gap-4 border-b" style={{ borderColor: '#E7E5E4' }}>
-                <button
-                  onClick={() => setSelectedCampaignTab('by-filter')}
-                  className={`pb-3 px-3 font-semibold text-sm border-b-2 transition ${
-                    selectedCampaignTab === 'by-filter'
-                      ? 'border-[#B85C38] text-[#B85C38]'
-                      : 'border-transparent text-[#57534E] hover:text-[#1C1917]'
-                  }`}
-                >
-                  By filter
-                </button>
-                <button
-                  onClick={() => setSelectedCampaignTab('by-customers')}
-                  className={`pb-3 px-3 font-semibold text-sm border-b-2 transition ${
-                    selectedCampaignTab === 'by-customers'
-                      ? 'border-[#B85C38] text-[#B85C38]'
-                      : 'border-transparent text-[#57534E] hover:text-[#1C1917]'
-                  }`}
-                >
-                  By selected customers
-                </button>
-              </div>
-
               {/* Campaign Name */}
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
@@ -1319,137 +1296,17 @@ export default function CampaignsPage() {
                 )}
               </div>
 
-              {/* By Customers Mode */}
-              {selectedCampaignTab === 'by-customers' && (
-                <div className="p-4 rounded border-2" style={{ borderColor: '#E3A869', backgroundColor: '#F3EFE7' }}>
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Customer Names, Emails, or IDs (one per line)
-                  </label>
-                  <textarea
-                    value={campaignCustomers}
-                    onChange={(e) => setCampaignCustomers(e.target.value)}
-                    placeholder="Marie Dubois&#10;john@example.com&#10;..."
-                    rows={4}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
-                  />
-                  <p className="text-xs text-[#57534E] mt-2" style={{ fontFamily: 'Manrope' }}>
-                    Enter customer names, email addresses, or IDs (one per line). The map
-                    "Send campaign" button pre-fills this with the filtered IDs.
-                  </p>
-                </div>
-              )}
-
-              {/* Audience Filters (only in by-filter mode) */}
-              {selectedCampaignTab === 'by-filter' && (
-              <div className="border-t pt-6" style={{ borderColor: '#E7E5E4' }}>
-                <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
-                  Audience Filters
-                </h3>
-
-                {/* Tier */}
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-3" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Tier
-                  </label>
-                  <div className="space-y-2">
-                    {['bronze', 'silver', 'gold'].map((tier) => (
-                      <label key={tier} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.filters.tiers.includes(tier)}
-                          onChange={() => handleTierChange(tier)}
-                          className="w-4 h-4"
-                        />
-                        <span style={{ color: '#57534E', fontFamily: 'Manrope' }}>
-                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Min Points */}
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Minimum Points
-                  </label>
-                  <NumberInput
-                    value={formData.filters.minPoints}
-                    onChange={(n) => handleFilterChange('minPoints', n || 0)}
-                    min={0}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
-                  />
-                </div>
-
-                {/* Min Visits */}
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Minimum Visits
-                  </label>
-                  <NumberInput
-                    value={formData.filters.minVisits}
-                    onChange={(n) => handleFilterChange('minVisits', n || 0)}
-                    min={0}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
-                  />
-                </div>
-
-                {/* Postal Codes */}
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Postal Code Region
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.filters.postalCodes}
-                    onChange={(e) => handleFilterChange('postalCodes', e.target.value)}
-                    placeholder="e.g. 75001 or 75001,75002,75003"
-                    className="w-full px-4 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
-                  />
-                  <p style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '12px' }} className="mt-1">
-                    Enter one or more postal codes separated by commas to target a region
-                  </p>
-                </div>
-
-                {/* Min Amount Paid */}
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                    Minimum Amount Paid (€)
-                  </label>
-                  <NumberInput
-                    value={formData.filters.minAmountPaid}
-                    onChange={(n) => handleFilterChange('minAmountPaid', n || 0)}
-                    min={0}
-                    step={0.01}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
-                  />
-                </div>
-
-                {/* Preview Segment */}
-                <button
-                  onClick={previewSegment}
-                  disabled={previewLoading}
-                  className="w-full px-4 py-2 border rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                  style={{ borderColor: '#B85C38', color: '#B85C38' }}
-                >
-                  <Filter size={18} />
-                  {previewLoading ? 'Previewing...' : 'Preview Segment'}
-                </button>
-
-                {previewCount !== null && (
-                  <div className="mt-3 p-4 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                    <p style={{ color: '#57534E', fontFamily: 'Manrope' }} className="font-semibold">
-                      This campaign will reach <span style={{ color: '#B85C38' }}>{previewCount}</span> customers
-                    </p>
-                  </div>
-                )}
-              </div>
-              )}
+              {/* Unified Audience Builder — replaces the old "By filter" / "By selected
+                  customers" tab UI. Lets the owner pick specific customers via search
+                  (no manual typing of details) and/or apply every filter dimension in
+                  one place, with a live preview count. */}
+              <CampaignAudienceBuilder
+                formData={formData}
+                setFormData={setFormData}
+                campaignCustomers={campaignCustomers}
+                setCampaignCustomers={setCampaignCustomers}
+                setSelectedCampaignTab={setSelectedCampaignTab}
+              />
             </div>
 
             {/* Modal Footer */}

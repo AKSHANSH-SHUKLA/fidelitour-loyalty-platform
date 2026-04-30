@@ -15,6 +15,7 @@ import {
 import TierBadge from '../components/TierBadge';
 import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
 import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
+import CustomerStatusKPI from '../components/CustomerStatusKPI';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#7B3F00' };
 const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
@@ -622,6 +623,10 @@ const AnalyticsPage = () => {
         description="Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante."
         role="business_owner"
       />
+
+      {/* Configurable customer-status KPIs — live, uses the definition from Settings */}
+      <CustomerStatusKPI />
+
       <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex items-center gap-3 flex-wrap">
           {branches.length > 0 && (
