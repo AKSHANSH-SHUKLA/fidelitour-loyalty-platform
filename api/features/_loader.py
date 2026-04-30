@@ -27,6 +27,8 @@ MODULES = [
     "features.history",                 # past campaigns + push notifications
     "features.analytics_history",       # extended weekly/daily/monthly history
     "features.customer_status",         # configurable active/inactive definition
+    "features.tier_definitions",        # custom tier thresholds + big-spender rule
+    "features.auto_campaigns",          # auto birthday + inactive rescue messages
     # AI / predictive — fully implemented (math-based)
     "features.ai_send_time",
     "features.ai_churn",

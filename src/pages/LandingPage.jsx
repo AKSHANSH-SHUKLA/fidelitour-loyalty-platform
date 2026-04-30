@@ -7,6 +7,7 @@ import {
   ChevronRight, Check, ArrowRight, Award, Activity, MessageSquare,
 } from 'lucide-react';
 import { AuchanPreview, DEFAULT_LAYOUT } from '../components/AuchanCard';
+import HeroPhoneShowcase from '../components/HeroPhoneShowcase';
 
 /* =====================================================================
    COLOR SYSTEM — vibrant pastels + saturated accents
@@ -426,9 +427,9 @@ const LandingPage = () => {
             </motion.div>
           </div>
 
-          {/* Right — animated dashboard mockup */}
+          {/* Right — cinematic phone showcase (4-scene loop) */}
           <div className="relative">
-            <HeroDashboardMockup />
+            <HeroPhoneShowcase />
           </div>
         </div>
 

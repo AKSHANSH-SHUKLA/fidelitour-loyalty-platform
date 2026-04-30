@@ -780,33 +780,39 @@ const OwnerDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {Object.keys(heatmap).length > 0 && Object.keys(Object.values(heatmap)[0] || {}).sort((a, b) => parseInt(a) - parseInt(b)).map(hour => (
+              {Object.keys(heatmap).length > 0 && Object.keys(Object.values(heatmap)[0] || {}).sort((a, b) => parseInt(a) - parseInt(b)).map(hour => {
+                // Pre-compute the global max so each cell can be interpolated
+                // against the same scale (avoids recomputing per cell).
+                const maxCount = Math.max(...Object.values(heatmap).flatMap(d => Object.values(d)), 1);
+                return (
                 <tr key={hour} className="border-b border-[#F3EFE7]">
                   <td className="py-2 px-3 font-medium text-[#57534E]">{hour}:00</td>
                   {Object.keys(heatmap).map(day => {
                     const count = heatmap[day]?.[hour] || 0;
-                    const maxCount = Math.max(...Object.values(heatmap).flatMap(d => Object.values(d)), 1);
-                    const intensity = count / maxCount;
-                    const bgColor = count === 0
-                      ? '#F3EFE7'
-                      : intensity > 0.6
-                        ? '#B85C38'
-                        : intensity > 0.3
-                          ? '#E3A869'
-                          : '#F3EFE7';
-                    const textColor = intensity > 0.6 ? '#FDFBF7' : '#57534E';
+                    const intensity = count / maxCount; // 0..1
+                    // Smooth gradient: cream (#FDFBF7) at intensity 0 → deep
+                    // espresso brown (#5C2E1B) at intensity 1.
+                    // Interpolate per RGB channel.
+                    const lerp = (a, b, t) => Math.round(a + (b - a) * t);
+                    const r = lerp(0xFD, 0x5C, intensity);
+                    const g = lerp(0xFB, 0x2E, intensity);
+                    const b = lerp(0xF7, 0x1B, intensity);
+                    const bgColor = count === 0 ? '#FDFBF7' : `rgb(${r}, ${g}, ${b})`;
+                    // Flip text colour once cells get dark enough to need it.
+                    const textColor = intensity > 0.55 ? '#FDFBF7' : '#1C1917';
                     return (
                       <td
                         key={day}
-                        className="text-center py-2 px-2 font-semibold"
+                        className="text-center py-2 px-2 font-semibold transition-colors"
                         style={{ backgroundColor: bgColor, color: textColor }}
+                        title={`${count} visit${count === 1 ? '' : 's'}`}
                       >
                         {count || ''}
                       </td>
                     );
                   })}
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>

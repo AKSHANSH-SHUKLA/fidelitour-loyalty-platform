@@ -3,6 +3,8 @@ import { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CustomerStatusConfigCard from '../components/CustomerStatusConfigCard';
+import TierDefinitionCard from '../components/TierDefinitionCard';
+import AutoCampaignsCard from '../components/AutoCampaignsCard';
 
 const SettingsPage = () => {
     const [settings, setSettings] = useState({
@@ -308,6 +310,12 @@ const SettingsPage = () => {
 
             {/* Additive: configurable Active/Inactive customer definition. */}
             <CustomerStatusConfigCard />
+
+            {/* Additive: custom tier thresholds + big-spender rule. */}
+            <TierDefinitionCard />
+
+            {/* Additive: auto messages for birthdays + inactive customers. */}
+            <AutoCampaignsCard />
         </div>
     );
 };
