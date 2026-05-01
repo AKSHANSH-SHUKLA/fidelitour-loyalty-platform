@@ -170,80 +170,106 @@ const defaultSlot = (over = {}) => ({
   ...over,
 });
 
+// ---------------------------------------------------------------------
+// Elegant default palette — "Champagne & Midnight"
+//   card_bg     : warm cream (luxury hotel feel)
+//   banner_bg   : deep midnight navy (refined, never red)
+//   accent      : antique gold (replaces previous terracotta on stamps + meter)
+//   ink_deep    : graphite black for text on cream
+// Existing merchants' saved layouts are unaffected — only NEW signups (or
+// merchants who hit "reset to default") get these refined defaults.
+// ---------------------------------------------------------------------
+const ELEGANT = {
+  cream:        '#FAF5E9',
+  cream_deep:   '#F1E9D2',
+  midnight:     '#15233D',
+  midnight_2:   '#1F2F4F',
+  gold:         '#C9A961',
+  gold_deep:    '#A88947',
+  charcoal:     '#1C1917',
+  inkSoft:      '#3A3A3A',
+  inkMute:      '#6E6557',
+};
+
 export const DEFAULT_LAYOUT = {
-  card_bg_color: '#FFFFFF',
-  banner_bg_color: '#E30613',
+  card_bg_color: ELEGANT.cream,
+  banner_bg_color: ELEGANT.midnight,
   banner_image_url: '',         // small circular image inside the textual banner
   banner_full_image_url: '',    // full custom banner image — REPLACES the textual banner when set
-  banner_height_px: 116,        // height of the banner area (only when full image is set)
+  banner_height_px: 124,        // a touch taller for breathing room
   banner_object_position: 'center center',  // CSS object-position for the full banner crop
   logo_url: '',
-  // stamps
+  // stamps — refined antique-gold finish
   stamp_style: 'hexagon',
   stamps_target: 10,
-  stamps_color_empty: '#E5E7EB',
-  stamps_color_filled: '#B85C38',
-  // meter
+  stamps_color_empty: '#E8DFC9',
+  stamps_color_filled: ELEGANT.gold,
+  // meter — gold rather than the vivid green
   meter: {
     enabled: true,
-    color_empty: '#E5E7EB',
-    color_filled: '#22C55E',
+    color_empty: '#E8DFC9',
+    color_filled: ELEGANT.gold,
     label: '{stamps_earned} / {stamps_target} visits',
-    label_color: '#6B7280',
+    label_color: ELEGANT.inkMute,
     label_size: 10,
   },
   slots: {
     plus_dinfos: defaultSlot({
       text: 'PLUS D’INFOS sur ...',
-      size: 11, color: '#6B7280', align: 'right', bold: true,
+      size: 10, color: ELEGANT.inkMute, align: 'right', bold: true,
     }),
     banner_eyebrow: defaultSlot({
-      text: 'Du 28 mars au 1er avril 2023',
-      size: 11, color: '#FFFFFF', align: 'center',
+      text: 'Programme fidélité',
+      size: 10, color: ELEGANT.gold, align: 'center', bold: true,
     }),
     banner_subtitle: defaultSlot({
-      text: 'par tranche de 15€ sur les chocolats de pâques',
-      size: 11, color: '#FFFFFF', align: 'center',
+      text: 'Une expérience pensée pour vous',
+      size: 11, color: '#E8DFC9', align: 'center',
+      font: 'Cormorant Garamond', italic: true,
     }),
     banner_title: defaultSlot({
-      text: '5€ offerts',
-      size: 34, color: '#FFFFFF', bold: true, align: 'center',
-      font: 'Montserrat',
+      text: 'Récompense exclusive',
+      size: 26, color: '#FFFFFF', bold: true, align: 'center',
+      font: 'Cormorant Garamond',
     }),
     banner_tag: defaultSlot({
-      text: 'sur vos prochaines courses',
-      size: 10, color: '#E30613', bold: true, align: 'center',
+      text: 'pour nos membres',
+      size: 9, color: ELEGANT.midnight, bold: true, align: 'center',
     }),
     greeting_label: defaultSlot({
-      text: 'BONJOUR', size: 10, color: '#9CA3AF', bold: true,
+      text: 'BIENVENUE', size: 9, color: ELEGANT.gold_deep, bold: true,
     }),
     greeting_name: defaultSlot({
-      text: '{first_name}', size: 22, color: '#1C1917', bold: true, font: 'Montserrat',
+      text: '{first_name}', size: 26, color: ELEGANT.charcoal, bold: true,
+      font: 'Cormorant Garamond',
     }),
     points_label: defaultSlot({
-      text: 'MA CAGNOTTE', size: 10, color: '#9CA3AF', bold: true, align: 'right',
+      text: 'MES POINTS', size: 9, color: ELEGANT.gold_deep, bold: true, align: 'right',
     }),
+    // Points are visit-based integers (e.g. 70 pts for 7 visits at 10 pts/visit).
+    // No more "€" suffix — that conflated points with currency.
     points_value: defaultSlot({
-      text: '{points} €', size: 22, color: '#1C1917', bold: true, align: 'right',
-      font: 'Montserrat',
+      text: '{points} pts', size: 24, color: ELEGANT.charcoal, bold: true, align: 'right',
+      font: 'Cormorant Garamond',
     }),
     // New slots
     business_name: defaultSlot({
-      text: '{business_name}', size: 13, color: '#1C1917', bold: true, align: 'left',
+      text: '{business_name}', size: 12, color: ELEGANT.charcoal, bold: true, align: 'left',
+      font: 'Cormorant Garamond',
     }),
     customer_name: defaultSlot({
-      text: '{name}', size: 12, color: '#6B7280', align: 'left',
+      text: '{name}', size: 11, color: ELEGANT.inkMute, align: 'left',
     }),
     birthday: defaultSlot({
-      text: '🎂 {birthday}', size: 12, color: '#6B7280', align: 'right',
+      text: '🎂 {birthday}', size: 11, color: ELEGANT.inkMute, align: 'right',
     }),
     points: defaultSlot({
-      text: '⭐ {points} pts', size: 12, color: '#B85C38', bold: true, align: 'right',
+      text: '⭐ {points} pts', size: 11, color: ELEGANT.gold_deep, bold: true, align: 'right',
     }),
   },
   push: {
     title: '',
-    body: '5€ offerts 🛒 Sur vos prochaines courses dès 15€ d’achat, jusqu’au 01/04.',
+    body: 'Une attention pour vous chez {business_name} — tournez votre carte pour la révéler.',
   },
 };
 
