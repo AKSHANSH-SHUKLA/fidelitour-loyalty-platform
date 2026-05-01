@@ -59,6 +59,118 @@ const projectToSVG = (lat, lng) => {
   };
 };
 
+// --------------------- Real metropolitan-France outline ---------------------
+// Hand-crafted clockwise from Dunkerque. Each point is a recognisable city or
+// coastal/border landmark. Resolution is intentionally moderate (~65 points)
+// so the silhouette is clearly France-shaped without bloating bundle size.
+const FRANCE_MAINLAND_LATLNG = [
+  [51.05, 2.40],   // Dunkerque
+  [50.95, 1.85],   // Calais
+  [50.73, 1.61],   // Boulogne-sur-Mer
+  [50.10, 1.43],   // Le Touquet
+  [49.93, 1.08],   // Dieppe
+  [49.49, 0.12],   // Le Havre
+  [49.40, -0.30],  // Honfleur / Caen mouth
+  [49.27, -0.37],  // Caen
+  [49.40, -1.30],  // Bayeux coast
+  [49.63, -1.62],  // Cherbourg (top of Cotentin)
+  [49.55, -1.85],  // Cap de la Hague
+  [49.10, -1.85],  // Coutances
+  [48.83, -1.60],  // Granville
+  [48.65, -2.02],  // Saint-Malo
+  [48.60, -2.40],  // Cap Fréhel
+  [48.51, -2.78],  // Saint-Brieuc
+  [48.72, -3.45],  // Morlaix
+  [48.55, -4.25],  // Le Conquet
+  [48.39, -4.49],  // Brest (far west tip)
+  [48.10, -4.55],  // Pointe du Raz
+  [47.99, -4.10],  // Quimper
+  [47.65, -3.36],  // Lorient
+  [47.51, -2.78],  // Vannes
+  [47.27, -2.21],  // Saint-Nazaire
+  [46.90, -2.20],  // Noirmoutier
+  [46.50, -1.78],  // Les Sables-d'Olonne
+  [46.16, -1.15],  // La Rochelle
+  [45.65, -1.05],  // Royan
+  [45.38, -0.85],  // Mouth of the Gironde
+  [44.65, -1.16],  // Arcachon
+  [44.10, -1.30],  // Mimizan
+  [43.70, -1.41],  // Capbreton
+  [43.50, -1.48],  // Bayonne (SW corner)
+  [43.31, -1.48],  // Hendaye / Spanish border
+  [43.10, -0.72],  // Pyrenees foothills
+  [42.86, -0.39],  // Pyrenees mid
+  [42.71, 0.40],   // Pyrenees
+  [42.62, 0.95],   // Andorra
+  [42.50, 1.74],   // Andorra east
+  [42.55, 2.45],   // Cerdagne
+  [42.43, 2.80],   // Pyrénées-Orientales
+  [42.51, 3.03],   // Cap Béar / Mediterranean start
+  [43.04, 3.08],   // Narbonne coast
+  [43.27, 3.50],   // Sète
+  [43.45, 4.18],   // Camargue
+  [43.32, 4.85],   // Mouth of the Rhône
+  [43.29, 5.37],   // Marseille
+  [43.13, 5.74],   // Bandol
+  [43.12, 6.13],   // Toulon
+  [43.27, 6.64],   // Saint-Tropez
+  [43.55, 6.95],   // Cannes
+  [43.70, 7.27],   // Nice
+  [43.78, 7.51],   // Menton
+  [43.90, 7.68],   // Italian border (Ventimiglia)
+  [44.18, 7.46],   // Tende
+  [44.55, 6.80],   // Italian border high alps
+  [44.91, 6.65],   // Briançon
+  [45.20, 6.90],   // Modane
+  [45.50, 7.05],   // Italian border
+  [45.85, 7.05],   // Mont Blanc area
+  [46.20, 6.13],   // Geneva (Swiss border)
+  [46.40, 6.30],   // Lake Geneva north shore
+  [46.85, 6.38],   // Pontarlier
+  [47.15, 6.95],   // Swiss border Jura
+  [47.55, 7.60],   // Basel corner
+  [47.75, 7.34],   // Mulhouse
+  [48.05, 7.55],   // Colmar
+  [48.58, 7.75],   // Strasbourg (far east)
+  [48.95, 8.20],   // German border Rhine
+  [49.20, 6.95],   // Saarbrücken area
+  [49.50, 6.45],   // Luxembourg corner
+  [49.77, 5.27],   // Belgian border
+  [50.10, 4.85],   // Givet
+  [50.38, 4.43],   // Belgian border
+  [50.50, 3.95],   // Mons border
+  [50.65, 3.45],   // Lille area
+  [50.80, 2.90],   // Hazebrouck
+];
+
+// Corsica — a separate island so it gets its own polygon.
+const FRANCE_CORSICA_LATLNG = [
+  [42.99, 9.42],   // Cap Corse north tip
+  [42.95, 9.55],   // Bastia north
+  [42.70, 9.45],   // Bastia
+  [42.20, 9.55],   // Aléria coast
+  [41.85, 9.40],   // Solenzara
+  [41.55, 9.30],   // Porto-Vecchio
+  [41.39, 9.16],   // Bonifacio (south tip)
+  [41.55, 8.78],   // Sartène
+  [41.92, 8.74],   // Ajaccio
+  [42.12, 8.64],   // Sagone
+  [42.38, 8.54],   // Porto / Calanques
+  [42.55, 8.75],   // Calvi
+  [42.70, 9.03],   // Île-Rousse
+  [42.85, 9.27],   // Saint-Florent
+];
+
+const _toPath = (latlngs) => {
+  if (!latlngs.length) return '';
+  return latlngs.map(([lat, lng], i) => {
+    const { x, y } = projectToSVG(lat, lng);
+    return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+  }).join(' ') + ' Z';
+};
+const FRANCE_PATH_D = _toPath(FRANCE_MAINLAND_LATLNG);
+const CORSICA_PATH_D = _toPath(FRANCE_CORSICA_LATLNG);
+
 // --------------------- Main page ---------------------
 export default function CustomerMapPage() {
   const navigate = useNavigate();
@@ -1237,17 +1349,44 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
     <svg
       viewBox={`0 0 ${SVG_W} ${SVG_H}`}
       className="w-full h-auto"
-      style={{ maxHeight: 540, border: '1px solid #E7E5E4', background: '#F8FAFC', borderRadius: 8 }}
+      style={{ maxHeight: 580, border: '1px solid #E7E5E4', background: '#F0F7FF', borderRadius: 8 }}
     >
-      {/* Simplified France silhouette */}
+      {/* Real France mainland — hand-crafted clockwise outline through 76 known
+          coastal and border landmarks (Dunkerque → Brest → Bayonne → Marseille
+          → Strasbourg → back). Reads as a recognisable Hexagone. */}
+      <defs>
+        <linearGradient id="france-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#FEF3E4" />
+          <stop offset="100%" stopColor="#F3DCB7" />
+        </linearGradient>
+      </defs>
       <path
-        d="M 140 80 L 200 70 L 270 65 L 330 75 L 380 95 L 430 125 L 460 180 L 475 240 L 480 300 L 470 360 L 455 420 L 430 470 L 390 510 L 340 530 L 280 535 L 220 525 L 170 500 L 130 450 L 110 390 L 100 320 L 105 250 L 115 180 L 125 120 Z"
-        fill="#E0F2FE"
+        d={FRANCE_PATH_D}
+        fill="url(#france-fill)"
         stroke="#B85C38"
-        strokeOpacity="0.4"
+        strokeOpacity="0.55"
         strokeWidth="1.5"
+        strokeLinejoin="round"
       />
-      <ellipse cx="470" cy="520" rx="18" ry="30" fill="#E0F2FE" stroke="#B85C38" strokeOpacity="0.4" strokeWidth="1" />
+      {/* Corsica */}
+      <path
+        d={CORSICA_PATH_D}
+        fill="url(#france-fill)"
+        stroke="#B85C38"
+        strokeOpacity="0.55"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      {/* Subtle "Paris" marker so users can orient themselves */}
+      {(() => {
+        const p = projectToSVG(48.86, 2.35);
+        return (
+          <g opacity="0.4">
+            <circle cx={p.x} cy={p.y} r="2" fill="#1C1917" />
+            <text x={p.x + 5} y={p.y + 3} fontSize="9" fill="#57534E">Paris</text>
+          </g>
+        );
+      })()}
 
       {/* Department bubbles */}
       {deptList.map((d) => {

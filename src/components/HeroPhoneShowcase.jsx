@@ -456,95 +456,85 @@ const SceneWalletCard = () => {
 /* ===================================================================== */
 /* SCENE 4 — GEOLOCATION                                                  */
 /* ===================================================================== */
-const SceneGeolocation = () => (
+const SceneGeolocation = () => {
+  // Four feature pills cascade in after the map + push notification appear.
+  const features = [
+    { icon: '📍', title: 'Configurable radius', sub: '50m – 2km' },
+    { icon: '👑', title: 'VIP-only opt-in',     sub: 'restrict to top tier' },
+    { icon: '⏱',  title: 'Cooldown protection', sub: 'max 1 nudge / X days' },
+    { icon: '🤫', title: 'Silent on the back-end', sub: 'no popups, just works' },
+  ];
+
+  return (
   <motion.div
     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
     transition={{ duration: 0.4 }}
     className="absolute inset-0 flex flex-col"
   >
-    {/* Stylised map */}
-    <div className="flex-1 relative overflow-hidden"
-      style={{
-        background: 'linear-gradient(180deg, #DCE9D5 0%, #C9DCC2 100%)',
-      }}
-    >
-      {/* Streets */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 290 360" preserveAspectRatio="none">
-        <g stroke="#FDFBF7" strokeWidth="14" strokeLinecap="round">
-          <line x1="-20" y1="100" x2="320" y2="80" />
-          <line x1="-20" y1="240" x2="320" y2="220" />
-          <line x1="80" y1="-20" x2="100" y2="380" />
-          <line x1="220" y1="-20" x2="200" y2="380" />
+    {/* Stylised map (compact — leaves room for the feature pills below) */}
+    <div className="relative overflow-hidden" style={{ height: 200, background: 'linear-gradient(180deg, #DCE9D5 0%, #C9DCC2 100%)' }}>
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 290 200" preserveAspectRatio="none">
+        <g stroke="#FDFBF7" strokeWidth="12" strokeLinecap="round">
+          <line x1="-20" y1="60"  x2="320" y2="50" />
+          <line x1="-20" y1="140" x2="320" y2="130" />
+          <line x1="80" y1="-20" x2="100" y2="220" />
+          <line x1="220" y1="-20" x2="200" y2="220" />
         </g>
-        <g stroke="#E7E5E4" strokeWidth="2" strokeDasharray="4 4">
-          <line x1="-20" y1="100" x2="320" y2="80" />
-          <line x1="-20" y1="240" x2="320" y2="220" />
-        </g>
-        {/* Buildings (small rectangles) */}
         <g fill="#F3EFE7">
-          <rect x="20" y="40" width="40" height="40" rx="3" />
-          <rect x="120" y="120" width="60" height="50" rx="3" />
-          <rect x="240" y="40" width="30" height="40" rx="3" />
-          <rect x="20" y="280" width="50" height="50" rx="3" />
-          <rect x="220" y="270" width="50" height="60" rx="3" />
+          <rect x="20" y="20" width="40" height="32" rx="3" />
+          <rect x="120" y="70" width="60" height="38" rx="3" />
+          <rect x="240" y="20" width="30" height="32" rx="3" />
+          <rect x="20" y="160" width="50" height="32" rx="3" />
         </g>
       </svg>
 
-      {/* Café pin (centred) */}
+      {/* Café pin */}
       <motion.div
-        initial={{ scale: 0, y: -10 }}
-        animate={{ scale: 1, y: 0 }}
+        initial={{ scale: 0, y: -10 }} animate={{ scale: 1, y: 0 }}
         transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 20 }}
         className="absolute z-20"
-        style={{ left: '50%', top: '40%', transform: 'translate(-50%, -100%)' }}
+        style={{ left: '50%', top: '38%', transform: 'translate(-50%, -100%)' }}
       >
-        <div className="relative">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-xl"
-            style={{ background: 'linear-gradient(135deg, ' + C.terracotta + ', ' + C.rose + ')' }}>
-            <Coffee size={20} className="text-white" />
-          </div>
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-3 h-3 rotate-45"
-            style={{ background: C.rose }} />
+        <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-xl"
+          style={{ background: 'linear-gradient(135deg, ' + C.terracotta + ', ' + C.rose + ')' }}>
+          <Coffee size={16} className="text-white" />
         </div>
       </motion.div>
 
-      {/* Customer dot with proximity ring */}
-      <div className="absolute z-10" style={{ left: '32%', top: '60%' }}>
+      {/* Customer dot with pulsing proximity ring */}
+      <div className="absolute z-10" style={{ left: '34%', top: '64%' }}>
         <motion.div
-          className="absolute -inset-6 rounded-full"
+          className="absolute -inset-5 rounded-full"
           style={{ background: C.sky, opacity: 0.4 }}
-          animate={{ scale: [1, 2.2, 1], opacity: [0.5, 0, 0.5] }}
+          animate={{ scale: [1, 2.4, 1], opacity: [0.5, 0, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
         />
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.7 }}
-          className="relative w-4 h-4 rounded-full border-2 border-white shadow-md"
+          initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.7 }}
+          className="relative w-3.5 h-3.5 rounded-full border-2 border-white shadow-md"
           style={{ background: C.sky }}
         />
       </div>
 
       {/* Distance label */}
       <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1 }}
-        className="absolute z-20 px-2 py-0.5 rounded-full text-[9px] font-bold"
-        style={{ left: '40%', top: '53%', background: 'white', color: C.inkDeep, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+        className="absolute z-20 px-2 py-0.5 rounded-full text-[8px] font-bold"
+        style={{ left: '42%', top: '57%', background: 'white', color: C.inkDeep, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
       >
         100 m
       </motion.div>
     </div>
 
-    {/* Push notification at bottom */}
+    {/* Push notification — what THE CUSTOMER receives */}
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="m-3 rounded-2xl px-3 py-2.5 backdrop-blur-md flex items-start gap-2.5"
+      transition={{ delay: 1.2, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="mx-3 mt-3 rounded-2xl px-3 py-2.5 backdrop-blur-md flex items-start gap-2.5"
       style={{
-        background: 'rgba(255, 255, 255, 0.95)',
+        background: 'rgba(255, 255, 255, 0.96)',
         boxShadow: '0 4px 20px -2px rgba(0,0,0,0.2)',
       }}
     >
@@ -554,17 +544,47 @@ const SceneGeolocation = () => (
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold leading-tight" style={{ color: '#1C1917' }}>FidéliTour</p>
+          <p className="text-[10px] font-bold leading-tight" style={{ color: '#1C1917' }}>Café Lumière</p>
           <p className="text-[8px]" style={{ color: '#57534E' }}>now</p>
         </div>
-        <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#1C1917' }}>Sophie is 100 m away</p>
+        <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#1C1917' }}>Vous passez devant ?</p>
         <p className="text-[9px] leading-tight" style={{ color: '#57534E' }}>
-          A Gold-tier regular just walked into your radius. Wave at her!
+          5€ offert sur votre prochain café — entrez nous voir.
         </p>
       </div>
     </motion.div>
+
+    {/* Headline + 4 feature pills (cascade in) */}
+    <div className="px-3 mt-3 mb-1">
+      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C.terracotta }}>
+        When your VIP walks past
+      </p>
+      <p className="text-[10px] font-semibold mt-0.5 leading-tight" style={{ color: C.inkDeep }}>
+        They get a friendly nudge — not you.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-2 gap-1.5 mx-3 mb-3">
+      {features.map((f, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.6 + i * 0.18, duration: 0.4 }}
+          className="rounded-lg px-2 py-1.5 flex items-start gap-1.5"
+          style={{ background: 'white', border: '1px solid ' + C.hairline }}
+        >
+          <span className="text-[12px] leading-none">{f.icon}</span>
+          <div className="min-w-0">
+            <p className="text-[8.5px] font-bold leading-tight truncate" style={{ color: C.inkDeep }}>{f.title}</p>
+            <p className="text-[7.5px] leading-tight truncate" style={{ color: C.inkMute }}>{f.sub}</p>
+          </div>
+        </motion.div>
+      ))}
+    </div>
   </motion.div>
-);
+  );
+};
 
 /* ===================================================================== */
 /* DASHBOARD ECHO — soft desktop mockup behind the phone                  */

@@ -10,6 +10,7 @@
  *   - LockScreenPushPreview
  */
 import React, { useRef, useState } from 'react';
+import AppleWalletFrame from './AppleWalletFrame';
 import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   Eye, EyeOff, RotateCcw, Hexagon, Upload, X,
@@ -412,7 +413,7 @@ function Barcode({ value = '049130960' }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  AuchanPreview                                                     */
+/*  AuchanPreview — also imported by AppleWalletFrame in the editor below */
 /* ------------------------------------------------------------------ */
 export function AuchanPreview({ layout = DEFAULT_LAYOUT, ctx = {}, width = 380 }) {
   const L = {
@@ -986,11 +987,17 @@ export function AuchanEditor({ layout, onChange, ctx = {}, businessName }) {
         )}
       </div>
 
-      {/* ---------- Live preview ---------- */}
+      {/* ---------- Live preview (rendered inside an Apple-Wallet phone frame
+                    so the merchant sees exactly what the customer sees) ---------- */}
       <div className="lg:sticky lg:top-4 self-start">
-        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">Live preview</div>
-        <div className="bg-gray-100 rounded-xl p-4 flex justify-center">
-          <AuchanPreview layout={L} ctx={ctx} width={420} />
+        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">
+          Live preview · Apple Wallet
+        </div>
+        <div className="rounded-xl p-4 flex justify-center"
+          style={{ background: 'linear-gradient(180deg, #F3EFE7 0%, #E7E5E4 100%)' }}>
+          <AppleWalletFrame width={420}>
+            <AuchanPreview layout={L} ctx={ctx} width={360} />
+          </AppleWalletFrame>
         </div>
       </div>
     </div>
