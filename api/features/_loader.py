@@ -34,15 +34,18 @@ MODULES = [
     "features.ai_churn",
     # AI / predictive — stubs with spec
     "features.ai_anomaly",
-    "features.ai_voice_campaign",
+    # "features.ai_voice_campaign",   # ⚠ disabled — code preserved, route unmounted
     "features.ai_birthday",
     "features.ai_translate",
     "features.ai_brand_voice",
     "features.ai_conversational",
-    "features.ai_staffing",
-    "features.ai_competitive",
+    # "features.ai_staffing",         # ⚠ disabled — code preserved, route unmounted
+    # "features.ai_competitive",      # ⚠ disabled — code preserved, route unmounted
     "features.ai_newsletter",
     "features.tier_optimizer",
+    # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
+    # It was a planned/described feature in the docs but never had its own
+    # backend module mounted. So there's nothing to disable here.
 ]
 
 
