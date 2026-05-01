@@ -348,10 +348,20 @@ const SceneNotifications = () => {
 };
 
 /* ===================================================================== */
-/* SCENE 3 — WALLET CARD WITH STAMPS                                      */
+/* SCENE 3 — WALLET CARD WITH STAMPS (Apple Wallet stacked-cards look)    */
 /* ===================================================================== */
+// Elegant palette mirrored from AuchanCard.DEFAULT_LAYOUT — keeps the
+// homepage card identical to what a new merchant gets in the designer.
+const ELEGANT_HERO = {
+  cream: '#FAF5E9',
+  cream_deep: '#F1E9D2',
+  midnight: '#15233D',
+  gold: '#C9A961',
+  gold_deep: '#A88947',
+  charcoal: '#1C1917',
+};
+
 const SceneWalletCard = () => {
-  // Stamps fill in sequence — 7/10 ends up filled, last 3 stay empty.
   const target = 7;
   const total = 10;
   const [filled, setFilled] = useState(0);
@@ -369,42 +379,83 @@ const SceneWalletCard = () => {
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="absolute inset-0 px-3 py-3 flex flex-col"
-      style={{ background: 'linear-gradient(180deg, #E8E5DD 0%, #C8C4BD 100%)' }}
+      className="absolute inset-0 flex flex-col"
+      style={{ background: 'linear-gradient(180deg, #0F0F12 0%, #18181C 100%)' }}
     >
-      {/* Apple Wallet header */}
-      <div className="flex items-center justify-between mt-1 px-1">
-        <p className="text-[9px] font-bold" style={{ color: '#1C1917' }}>Wallet</p>
-        <p className="text-[9px]" style={{ color: '#57534E' }}>•••</p>
+      {/* Apple Wallet header — back chevron, "Wallet" title, ⋯ */}
+      <div className="flex items-center justify-between mt-1 px-3 z-30 relative" style={{ height: 26 }}>
+        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium" style={{ color: '#FF9F0A' }}>
+          <svg width="8" height="11" viewBox="0 0 11 14" fill="none">
+            <path d="M9 1L3 7L9 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Cartes
+        </span>
+        <span className="text-[11px] font-semibold" style={{ color: 'white' }}>Wallet</span>
+        <span className="text-[15px] leading-none" style={{ color: '#FF9F0A' }}>⋯</span>
       </div>
 
-      {/* The card */}
+      {/* Stacked cards above the focus card — peek at the top */}
+      <FakeStack
+        style={{ position: 'absolute', top: 32, left: 18, right: 18, height: 18, transform: 'scale(0.92)' }}
+        gradient="linear-gradient(135deg, #1B1F3A 0%, #6B5B95 100%)"
+        label="ID"
+      />
+      <FakeStack
+        style={{ position: 'absolute', top: 44, left: 14, right: 14, height: 16, transform: 'scale(0.96)' }}
+        gradient="linear-gradient(135deg, #DCB46B 0%, #B8924E 100%)"
+        label="DISCOVER"
+      />
+
+      {/* The focus card — matches AuchanCard.DEFAULT_LAYOUT (cream + navy + gold) */}
       <motion.div
-        initial={{ y: 30, opacity: 0, rotateX: 6 }}
-        animate={{ y: 0, opacity: 1, rotateX: 0 }}
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-3 rounded-2xl p-3.5 shadow-2xl relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(145deg, ' + C.terracotta + ' 0%, #8B3F1E 100%)',
-          color: 'white',
-          minHeight: 360,
-        }}
+        className="mx-3 mt-14 rounded-2xl shadow-2xl overflow-hidden relative z-20"
+        style={{ background: ELEGANT_HERO.cream, fontFamily: "'Inter', sans-serif" }}
       >
-        {/* Logo + brand */}
-        <div className="flex items-start justify-between mb-3">
+        {/* Card top row — logo placeholder + "PLUS D'INFOS" */}
+        <div className="flex items-center justify-between px-3 pt-2.5">
+          <div className="rounded-md flex items-center justify-center" style={{ width: 38, height: 18, background: '#E8DFC9' }}>
+            <span className="text-[7px] font-semibold uppercase tracking-wider" style={{ color: ELEGANT_HERO.gold_deep }}>logo</span>
+          </div>
+          <span className="text-[7.5px] font-bold uppercase tracking-widest" style={{ color: ELEGANT_HERO.gold_deep }}>plus d'infos</span>
+        </div>
+
+        {/* Midnight banner */}
+        <div className="mx-2.5 mt-2 rounded-lg overflow-hidden relative px-3 py-3 text-center"
+          style={{ background: 'linear-gradient(135deg, ' + ELEGANT_HERO.midnight + ' 0%, #1F2F4F 100%)' }}>
+          <p className="text-[7.5px] font-bold uppercase tracking-widest" style={{ color: ELEGANT_HERO.gold }}>
+            Programme fidélité
+          </p>
+          <p className="text-[8px] mt-1 italic" style={{ color: ELEGANT_HERO.cream_deep, fontFamily: 'Cormorant Garamond' }}>
+            Une expérience pensée pour vous
+          </p>
+          <p className="text-[15px] mt-1 font-bold" style={{ color: 'white', fontFamily: 'Cormorant Garamond' }}>
+            Récompense exclusive
+          </p>
+          <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-widest"
+            style={{ background: ELEGANT_HERO.gold, color: ELEGANT_HERO.midnight }}>
+            pour nos membres
+          </span>
+        </div>
+
+        {/* Greeting + points */}
+        <div className="flex justify-between items-end px-3 pt-2.5 pb-1">
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-wider opacity-80">Café Lumière</p>
-            <p className="text-[16px] font-bold leading-tight mt-0.5" style={{ fontFamily: 'Cormorant Garamond' }}>Sophie Dupont</p>
+            <p className="text-[7.5px] font-bold uppercase tracking-widest" style={{ color: ELEGANT_HERO.gold_deep }}>BIENVENUE</p>
+            <p className="text-[15px] font-bold leading-tight" style={{ color: ELEGANT_HERO.charcoal, fontFamily: 'Cormorant Garamond' }}>Sophie</p>
           </div>
           <div className="text-right">
-            <p className="text-[8px] font-bold uppercase tracking-wider opacity-80">Ma cagnotte</p>
-            <p className="text-[18px] font-bold leading-tight">70 €</p>
+            <p className="text-[7.5px] font-bold uppercase tracking-widest" style={{ color: ELEGANT_HERO.gold_deep }}>MES POINTS</p>
+            <p className="text-[15px] font-bold leading-tight" style={{ color: ELEGANT_HERO.charcoal, fontFamily: 'Cormorant Garamond' }}>
+              {filled * 10} pts
+            </p>
           </div>
         </div>
 
-        {/* Stamps grid */}
-        <div className="bg-white/15 rounded-xl p-3 mt-2">
-          <p className="text-[8px] font-bold uppercase tracking-wider mb-2 opacity-90">Cards collected</p>
+        {/* Stamps grid — gold hexagons fill in animatedly */}
+        <div className="px-3 pb-2.5">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: total }).map((_, i) => {
               const isFilled = i < filled;
@@ -412,49 +463,90 @@ const SceneWalletCard = () => {
                 <motion.div
                   key={i}
                   initial={false}
-                  animate={{ scale: isFilled ? [1, 1.25, 1] : 1 }}
+                  animate={{ scale: isFilled ? [1, 1.3, 1] : 1 }}
                   transition={{ duration: 0.4 }}
-                  className="aspect-square rounded-lg flex items-center justify-center"
-                  style={{
-                    background: isFilled ? 'white' : 'rgba(255,255,255,0.2)',
-                    border: '1.5px solid ' + (isFilled ? 'white' : 'rgba(255,255,255,0.3)'),
-                  }}
+                  className="aspect-square flex items-center justify-center"
                 >
-                  {isFilled && <Coffee size={12} style={{ color: C.terracotta }} />}
+                  <svg width="22" height="22" viewBox="0 0 24 24">
+                    <polygon
+                      points="12,2 21,7 21,17 12,22 3,17 3,7"
+                      fill={isFilled ? ELEGANT_HERO.gold : 'transparent'}
+                      stroke={isFilled ? ELEGANT_HERO.gold_deep : '#E8DFC9'}
+                      strokeWidth="1.4"
+                    />
+                  </svg>
                 </motion.div>
               );
             })}
           </div>
-          <p className="text-[9px] mt-2 text-center font-semibold opacity-90">
-            {filled} / {total} — {total - filled} away from a free coffee
+          {/* Progress meter — gold */}
+          <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: '#E8DFC9' }}>
+            <motion.div
+              className="h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${(filled / total) * 100}%` }}
+              transition={{ duration: 0.4 }}
+              style={{ background: 'linear-gradient(90deg, ' + ELEGANT_HERO.gold + ', ' + ELEGANT_HERO.gold_deep + ')' }}
+            />
+          </div>
+          <p className="text-[7.5px] font-semibold mt-1.5 text-center" style={{ color: ELEGANT_HERO.gold_deep }}>
+            {filled} / {total} visites
           </p>
         </div>
 
-        {/* Reward unlocked toast (appears after stamps fill) */}
-        {filled >= target && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="absolute bottom-3 left-3 right-3 rounded-xl px-3 py-2 flex items-center gap-2"
-            style={{ background: 'rgba(255,255,255,0.95)', color: '#1C1917' }}
-          >
-            <Gift size={14} style={{ color: C.terracotta }} />
-            <p className="text-[10px] font-bold flex-1">You're 3 stamps from a free latte ☕</p>
-          </motion.div>
-        )}
-
-        {/* Decorative shine */}
-        <div aria-hidden="true" className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, white 0%, transparent 70%)' }} />
+        {/* Barcode placeholder */}
+        <div className="px-3 pb-3 flex justify-center">
+          <div className="w-full h-7 flex items-end gap-[1px]" aria-hidden="true">
+            {Array.from({ length: 50 }).map((_, i) => (
+              <span key={i} style={{
+                background: ELEGANT_HERO.charcoal,
+                width: 2 + (i % 3),
+                height: '100%',
+                opacity: 0.85 - (i % 5) * 0.05,
+              }} />
+            ))}
+          </div>
+        </div>
       </motion.div>
 
-      <p className="text-[8px] text-center mt-3 font-medium" style={{ color: '#57534E' }}>
-        Apple Wallet · Tap to open
-      </p>
+      {/* Stacked cards below the focus card */}
+      <FakeStack
+        style={{ position: 'absolute', bottom: 50, left: 14, right: 14, height: 18 }}
+        gradient="linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)"
+        label="Dunkin'"
+        flipped
+      />
+      <FakeStack
+        style={{ position: 'absolute', bottom: 38, left: 18, right: 18, height: 16, transform: 'scale(0.95)' }}
+        gradient="linear-gradient(135deg, #2D5F3F 0%, #1F4530 100%)"
+        label="Carrefour"
+        flipped
+      />
+
+      {/* Home indicator */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full"
+        style={{ width: '32%', height: 3, background: 'rgba(255,255,255,0.4)' }} />
     </motion.div>
   );
 };
+
+const FakeStack = ({ style = {}, gradient, label, flipped }) => (
+  <div
+    aria-hidden="true"
+    className="rounded-[10px] flex items-center px-2.5"
+    style={{
+      background: gradient,
+      boxShadow: flipped
+        ? '0 -2px 6px rgba(0, 0, 0, 0.25)'
+        : '0 2px 6px rgba(0, 0, 0, 0.25)',
+      ...style,
+    }}
+  >
+    <span className="text-[6.5px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.85)' }}>
+      {label}
+    </span>
+  </div>
+);
 
 /* ===================================================================== */
 /* SCENE 4 — GEOLOCATION                                                  */
@@ -563,7 +655,7 @@ const SceneGeolocation = () => {
         When your VIP walks past
       </p>
       <p className="text-[10px] font-semibold mt-0.5 leading-tight" style={{ color: C.inkDeep }}>
-        They get a friendly nudge — not you.
+        They get a friendly nudge.
       </p>
     </div>
 

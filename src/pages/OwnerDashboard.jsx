@@ -301,7 +301,7 @@ const OwnerDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <StatCard label="Total Customers"      value={totalCustomers.toLocaleString()} sublabel="Enrolled loyalty members"    icon={Users}      color={C.sky} />
         <StatCard label="Total Visits"         value={totalVisits.toLocaleString()}    sublabel="All-time recorded visits"    icon={Activity}   color={C.sage} />
-        <StatCard label="Repeat Rate"          value={repeatRate}                       sublabel="Customers who returned"      icon={Repeat}     color={C.ochre} variant="dark" />
+        <StatCard label="Repeat Rate"          value={repeatRate}                       sublabel="Customers who returned"      icon={Repeat}     color={C.ochre} />
         <StatCard label="Gold Members"         value={goldCustomers}                    sublabel={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of customers`} icon={Award} color={C.amber} />
         <StatCard label="Avg Visits / Cust."   value={avgVisitsPerCustomer}             sublabel="Higher = stronger loyalty"   icon={TrendingUp} color={C.lavender} />
         <StatCard label="New This Month"       value={newThisMonth}                     sublabel="Joined in the last 4 weeks"  icon={UserPlus}   color={C.teal} />
@@ -783,14 +783,13 @@ const OwnerDashboard = () => {
             <tbody>
               {Object.keys(heatmap).length > 0 && Object.keys(Object.values(heatmap)[0] || {}).sort((a, b) => parseInt(a) - parseInt(b)).map(hour => {
                 const maxCount = Math.max(...Object.values(heatmap).flatMap(d => Object.values(d)), 1);
-                // Vibrant warm ramp (heat-map style): cream → butter → orange
-                // → crimson. Each cell interpolates between adjacent stops so
-                // cool/quiet hours stay light and busy hours pop in red.
+                // High-contrast 2-stop ramp so EVERY step is distinguishable:
+                // very pale cream (idle) → deep terracotta (peak hour).
+                // Linear interpolation between only two anchor colours makes
+                // every intermediate cell visibly different from its neighbours.
                 const STOPS = [
-                  { p: 0.00, c: [0xFD, 0xFB, 0xF7] }, // cream
-                  { p: 0.33, c: [0xFE, 0xF3, 0xC7] }, // butter
-                  { p: 0.66, c: [0xF5, 0x9E, 0x0B] }, // orange
-                  { p: 1.00, c: [0xB9, 0x1C, 0x1C] }, // crimson
+                  { p: 0.00, c: [0xFD, 0xFB, 0xF7] }, // pale cream
+                  { p: 1.00, c: [0x6B, 0x21, 0x0F] }, // deep terracotta-burgundy
                 ];
                 const lerpRamp = (t) => {
                   for (let i = 1; i < STOPS.length; i++) {
