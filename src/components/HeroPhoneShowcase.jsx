@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Activity, TrendingUp, Star, Bell, MapPin,
-  Gift, Sparkles, Coffee, Cake,
+  Gift, Sparkles, Coffee, Cake, BrainCircuit, Zap,
+  Target, AlertTriangle,
 } from 'lucide-react';
 import { C } from './PageShell';
 
@@ -34,6 +35,7 @@ const SCENES = [
   { id: 'notifications', label: 'Notifications' },
   { id: 'wallet',        label: 'Wallet card' },
   { id: 'geolocation',   label: 'Geolocation' },
+  { id: 'ai',            label: 'AI Intelligence' },
 ];
 
 const HeroPhoneShowcase = () => {
@@ -71,6 +73,7 @@ const HeroPhoneShowcase = () => {
             {scene === 1 && <SceneNotifications key="notifications" />}
             {scene === 2 && <SceneWalletCard key="wallet" />}
             {scene === 3 && <SceneGeolocation key="geolocation" />}
+            {scene === 4 && <SceneAIIntelligence key="ai" />}
           </AnimatePresence>
         </PhoneFrame>
       </div>
@@ -587,6 +590,157 @@ const SceneGeolocation = () => {
 };
 
 /* ===================================================================== */
+/* SCENE 5 — AI INTELLIGENCE                                              */
+/* ===================================================================== */
+const SceneAIIntelligence = () => {
+  // Four AI-generated insight cards that cascade in. The first three are
+  // proactive recommendations the merchant can act on; the fourth is a
+  // predictive churn alert.
+  const insights = [
+    {
+      icon: Target, tone: 'lavender',
+      eyebrow: 'Recommended action',
+      title: 'Win back 12 silent Gold customers',
+      detail: 'Send "we miss you" — projected uplift +€340 this week.',
+      metric: '+€340',
+    },
+    {
+      icon: TrendingUp, tone: 'sage',
+      eyebrow: 'Pattern detected',
+      title: 'Tuesday is your peak — by 23%',
+      detail: 'Schedule extra staff 11:00–14:00. Push offer Mon evening.',
+      metric: '+23%',
+    },
+    {
+      icon: AlertTriangle, tone: 'terracotta',
+      eyebrow: 'Churn alert',
+      title: 'Sophie likely to churn in 9 days',
+      detail: 'Best-paying customer drifted from her 6-day rhythm.',
+      metric: 'act today',
+    },
+    {
+      icon: Zap, tone: 'ochre',
+      eyebrow: 'Quick win',
+      title: 'Lower Silver to 8 visits',
+      detail: 'Promotes 47 customers, lifts visit frequency ~19%.',
+      metric: '+47',
+    },
+  ];
+
+  const toneColor = (t) => ({
+    lavender: C.lavender, sage: C.sage, terracotta: C.terracotta, ochre: C.ochre,
+  }[t] || C.terracotta);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+      className="absolute inset-0 px-3.5 py-3 overflow-hidden flex flex-col gap-2"
+      style={{ background: 'linear-gradient(180deg, #FDFBF7 0%, #F0EDFA 100%)' }}
+    >
+      {/* Header — AI assistant identity */}
+      <div className="flex items-center gap-2 mt-1">
+        <motion.div
+          animate={{ rotate: [0, 5, -5, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0"
+          style={{ background: 'linear-gradient(135deg, ' + C.lavender + ', ' + C.terracotta + ')' }}
+        >
+          <BrainCircuit size={14} />
+        </motion.div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold leading-tight" style={{ color: C.inkDeep }}>AI Intelligence</p>
+          <div className="flex items-center gap-1 mt-0.5">
+            <motion.span
+              className="block w-1 h-1 rounded-full"
+              style={{ background: C.sage }}
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <p className="text-[8px]" style={{ color: C.inkMute }}>Live · learning from your data</p>
+          </div>
+        </div>
+        <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded"
+          style={{ background: C.terracotta + '1A', color: C.terracotta }}>
+          4 NEW
+        </span>
+      </div>
+
+      {/* "Auto-detected today" banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+        className="rounded-lg p-2 mt-1"
+        style={{
+          background: 'linear-gradient(135deg, ' + C.lavender + '12, ' + C.terracotta + '08)',
+          border: '1px solid ' + C.lavender + '33',
+        }}
+      >
+        <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: C.lavender }}>
+          ✨ Auto-detected · ranked by impact
+        </p>
+        <p className="text-[9px] mt-0.5" style={{ color: C.inkSoft }}>
+          Patterns the platform spotted in your last 30 days, sorted by projected revenue.
+        </p>
+      </motion.div>
+
+      {/* Stack of 4 insight cards — cascade in 0.3s apart */}
+      <div className="flex flex-col gap-1.5 mt-1 flex-1 overflow-hidden">
+        {insights.map((ins, i) => {
+          const Icon = ins.icon;
+          const accent = toneColor(ins.tone);
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10, scale: 0.96 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ delay: 0.4 + i * 0.32, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="rounded-lg p-2 flex gap-2 items-start"
+              style={{
+                background: 'white',
+                border: '1px solid ' + accent + '33',
+                boxShadow: '0 1px 3px rgba(28,25,23,0.05)',
+              }}
+            >
+              <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                style={{ background: accent + '1A', color: accent, border: '1px solid ' + accent + '33' }}>
+                <Icon size={11} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1.5">
+                  <p className="text-[7.5px] font-bold uppercase tracking-widest leading-none" style={{ color: accent }}>
+                    {ins.eyebrow}
+                  </p>
+                  <span className="text-[8px] font-bold leading-none" style={{ color: accent }}>
+                    {ins.metric}
+                  </span>
+                </div>
+                <p className="text-[10px] font-bold leading-tight mt-0.5" style={{ color: C.inkDeep }}>{ins.title}</p>
+                <p className="text-[8.5px] leading-tight mt-0.5" style={{ color: C.inkMute }}>{ins.detail}</p>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* "Ask anything" prompt at the bottom */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.9, duration: 0.4 }}
+        className="mt-1 rounded-lg px-2 py-1.5 flex items-center gap-2"
+        style={{
+          background: 'linear-gradient(135deg, ' + C.inkDeep + ' 0%, #2A1C2E 100%)',
+          color: 'white',
+        }}
+      >
+        <Sparkles size={11} style={{ color: C.ochre }} />
+        <p className="text-[9px] flex-1 truncate">Ask: "Why did Saturday drop?"</p>
+        <span className="text-[8px] font-bold opacity-70">⌘K</span>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+/* ===================================================================== */
 /* DASHBOARD ECHO — soft desktop mockup behind the phone                  */
 /* ===================================================================== */
 const DashboardEcho = ({ scene }) => (
@@ -626,6 +780,7 @@ const DashboardEcho = ({ scene }) => (
             {scene === 'notifications' && 'Notifications · Live feed'}
             {scene === 'wallet'        && 'Card Designer · Live preview'}
             {scene === 'geolocation'   && 'Customer Map · Geofences'}
+            {scene === 'ai'            && 'Insights · AI recommendations'}
           </p>
           <div className="grid grid-cols-3 gap-1.5">
             {[0,1,2,3,4,5].map((i) => (
