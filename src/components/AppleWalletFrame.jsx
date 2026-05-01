@@ -88,11 +88,49 @@ const AppleWalletFrame = ({ width = 460, children, time = '9:41' }) => {
           <span className="text-[18px] leading-none" style={{ color: '#FF9F0A' }}>⋯</span>
         </div>
 
-        {/* Card slot */}
-        <div className="absolute left-0 right-0 flex justify-center px-3"
-          style={{ top: 76, bottom: 60 }}>
+        {/* "Stacked cards" effect — fake cards peeking above and below the active one,
+             so the preview reads like a real Apple Wallet rather than an isolated card. */}
+        <FakeStackedCard
+          style={{ top: 70, left: 18, right: 18, height: 24, transform: 'scale(0.92)' }}
+          gradient="linear-gradient(135deg, #1B1F3A 0%, #3D3567 60%, #6B5B95 100%)"
+          label="ID"
+        />
+        <FakeStackedCard
+          style={{ top: 86, left: 14, right: 14, height: 22, transform: 'scale(0.96)' }}
+          gradient="linear-gradient(135deg, #DCB46B 0%, #B8924E 100%)"
+          label="DISCOVER"
+        />
+        <FakeStackedCard
+          style={{ top: 100, left: 11, right: 11, height: 20 }}
+          gradient="linear-gradient(135deg, #1C1917 0%, #2A2A30 100%)"
+          label="Apple Cash"
+        />
+
+        {/* Card slot — the merchant's real loyalty card, the focus of the preview */}
+        <div className="absolute left-0 right-0 flex justify-center px-3 z-10"
+          style={{ top: 116, bottom: 88 }}>
           {children}
         </div>
+
+        {/* More fake cards peeking up from the bottom of the wallet */}
+        <FakeStackedCard
+          style={{ bottom: 72, left: 14, right: 14, height: 26 }}
+          gradient="linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)"
+          label="Dunkin' · Balance €5"
+          flipped
+        />
+        <FakeStackedCard
+          style={{ bottom: 56, left: 18, right: 18, height: 22, transform: 'scale(0.96)' }}
+          gradient="linear-gradient(135deg, #2D5F3F 0%, #1F4530 100%)"
+          label="Carrefour"
+          flipped
+        />
+        <FakeStackedCard
+          style={{ bottom: 42, left: 22, right: 22, height: 18, transform: 'scale(0.92)' }}
+          gradient="linear-gradient(135deg, #003D7A 0%, #0066CC 100%)"
+          label="Air France"
+          flipped
+        />
 
         {/* Home indicator */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full"
@@ -101,5 +139,25 @@ const AppleWalletFrame = ({ width = 460, children, time = '9:41' }) => {
     </div>
   );
 };
+
+/* Tiny fake card that peeks above or below the focused loyalty card —
+   makes the preview feel like a real Apple Wallet stack, not a standalone card. */
+const FakeStackedCard = ({ style = {}, gradient, label, flipped }) => (
+  <div
+    aria-hidden="true"
+    className="absolute rounded-[14px] flex items-center px-3"
+    style={{
+      background: gradient,
+      boxShadow: flipped
+        ? '0 -2px 8px rgba(0, 0, 0, 0.25)'
+        : '0 2px 8px rgba(0, 0, 0, 0.25)',
+      ...style,
+    }}
+  >
+    <span className="text-[8px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.85)' }}>
+      {label}
+    </span>
+  </div>
+);
 
 export default AppleWalletFrame;

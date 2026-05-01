@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import TierBadge from '../components/TierBadge';
+import LeafletFranceMap from '../components/LeafletFranceMap';
 
 // --------------------- Quadrant helpers ---------------------
 // Given a set of customers (each with lat/lng) and a reference "city center"
@@ -651,7 +652,7 @@ export default function CustomerMapPage() {
                 <p className="text-xs text-[#8B8680] mb-4">
                   Bubble size = customer count in that département. Click a département on the left list to drill in.
                 </p>
-                <FranceMiniMap deptList={deptList} selectedDept={selectedDept} onSelect={setSelectedDept} />
+                <LeafletFranceMap deptList={deptList} selectedDept={selectedDept} onSelect={setSelectedDept} />
               </div>
 
               {/* Top 5 customers platform-wide */}

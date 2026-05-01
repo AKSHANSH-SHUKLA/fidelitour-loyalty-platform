@@ -5,6 +5,7 @@ import { PageHeader, C as C_PS } from '../components/PageShell';
 import CustomerStatusConfigCard from '../components/CustomerStatusConfigCard';
 import TierDefinitionCard from '../components/TierDefinitionCard';
 import AutoCampaignsCard from '../components/AutoCampaignsCard';
+import WelcomeBonusCard from '../components/WelcomeBonusCard';
 
 const SettingsPage = () => {
     const [settings, setSettings] = useState({
@@ -313,6 +314,9 @@ const SettingsPage = () => {
 
             {/* Additive: custom tier thresholds + big-spender rule. */}
             <TierDefinitionCard />
+
+            {/* Additive: welcome message + bonus points on signup. */}
+            <WelcomeBonusCard />
 
             {/* Additive: auto messages for birthdays + inactive customers. */}
             <AutoCampaignsCard />
