@@ -90,24 +90,55 @@ def _build_ctx(customer: dict, tenant: dict) -> Dict[str, Any]:
 
 
 def _dispatch_message(tenant_id: str, customer: dict, kind: str, title: str, body: str):
-    """Write a push-notification record. The History page surfaces these
-    immediately; real-channel delivery (SMS / Wallet / Email) hooks here in a
-    future iteration without changing callers."""
+    """Record + deliver a message.
+
+    Always:
+      1) Writes to `push_notifications` so the History page surfaces it.
+      2) Writes to `auto_campaign_log` so cooldown logic works.
+    Best-effort:
+      3) Sends a real SMS via Twilio if configured (TWILIO_* env vars set
+         on Render) AND the customer has a phone number on file.
+         Failures are logged in `delivery_log` but never raise — the
+         message is still considered "dispatched" because the platform
+         did everything in its power.
+    """
+    now = datetime.now(timezone.utc)
     _db.push_notifications.insert_one({
         "id": str(uuid.uuid4()),
         "tenant_id": tenant_id,
         "customer_id": customer.get("id"),
-        "type": kind,                  # 'birthday' | 'inactive_rescue'
+        "type": kind,
         "title": title,
         "body": body,
-        "sent_at": datetime.now(timezone.utc),
+        "sent_at": now,
     })
     _db.auto_campaign_log.insert_one({
         "tenant_id": tenant_id,
         "customer_id": customer.get("id"),
         "kind": kind,
-        "sent_at": datetime.now(timezone.utc),
+        "sent_at": now,
     })
+
+    # ---- Real-channel delivery: SMS via Twilio ----
+    try:
+        # Lazy import — the auto_campaigns module must keep working even if
+        # services.sms ever has an import error in a sandboxed dev env.
+        from services.sms import send_sms, is_configured                 # noqa: WPS433
+        phone = customer.get("phone")
+        if phone and is_configured():
+            result = send_sms(phone, body)
+            _db.delivery_log.insert_one({
+                "tenant_id": tenant_id,
+                "customer_id": customer.get("id"),
+                "channel": "sms",
+                "kind": kind,
+                "phone": phone,
+                "result": result,
+                "timestamp": now,
+            })
+    except Exception:
+        # Never let a delivery failure block the message dispatch.
+        pass
 
 
 # ---------- Config endpoints ----------
@@ -316,6 +347,34 @@ def run_almost_there(
         "dry_run": dry_run,
         "preview": previews if dry_run else None,
     }
+
+
+@router.post("/api/owner/auto-campaigns/test-sms")
+def test_sms(
+    body: Dict[str, Any],
+    token_data=Depends(require_role(["business_owner"])),
+):
+    """Send a single test SMS to any phone number — for manual verification
+    that Twilio credentials work end-to-end. Body: {to: str, message?: str}."""
+    from services.sms import send_sms, is_configured                     # noqa: WPS433
+    if not is_configured():
+        return {
+            "sent": False,
+            "error": "twilio_not_configured",
+            "hint": "Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER on Render.",
+        }
+    to = (body or {}).get("to") or ""
+    msg = (body or {}).get("message") or "Test SMS from FidéliTour — Twilio is wired correctly!"
+    result = send_sms(to, msg)
+    _db.delivery_log.insert_one({
+        "tenant_id": token_data.tenant_id,
+        "channel": "sms",
+        "kind": "manual_test",
+        "phone": to,
+        "result": result,
+        "timestamp": datetime.now(timezone.utc),
+    })
+    return result
 
 
 @router.get("/api/owner/auto-campaigns/log")

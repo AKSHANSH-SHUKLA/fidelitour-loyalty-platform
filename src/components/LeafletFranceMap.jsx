@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 /**
+ * Live-polling — set to 30 s. The map auto-refreshes its data without a
+ * page reload, so when a customer scans in the field, their bubble grows
+ * within 30 seconds. Pause when the browser tab is hidden to save battery.
+ */
+const POLL_INTERVAL_MS = 30000;
+
+/**
  * LeafletFranceMap — real interactive map of France using Leaflet + OSM tiles.
  *
  * Loaded via CDN (see index.html). On mount we wait for `window.L` to be

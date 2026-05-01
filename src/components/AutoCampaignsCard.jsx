@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
-import { Cake, BellOff, Play, Save, Eye, Coffee } from 'lucide-react';
+import { Cake, BellOff, Play, Save, Eye, Coffee, Smartphone, Send } from 'lucide-react';
 import { C as C_PS } from './PageShell';
 
 /**
@@ -165,6 +165,9 @@ const AutoCampaignsCard = () => {
         {savedAt && <span className="text-xs" style={{ color: C_PS.inkMute }}>Saved {savedAt.toLocaleTimeString()}</span>}
       </div>
 
+      {/* Twilio test bench — one-shot SMS to any number for end-to-end verification. */}
+      <TwilioTestBench />
+
       {previews && (
         <div className="mt-5 pt-5 border-t" style={{ borderColor: C_PS.hairline }}>
           <p className="text-[10px] uppercase font-bold tracking-widest mb-2" style={{ color: C_PS.inkMute }}>
@@ -235,5 +238,71 @@ const RunButtons = ({ which, running, onDry, onSend, disabled }) => (
     </button>
   </div>
 );
+
+/* Test-bench widget: send a single real SMS via Twilio to any number,
+   so the owner can verify their TWILIO_* env vars are wired correctly
+   on Render before relying on auto-campaigns. */
+const TwilioTestBench = () => {
+  const [phone, setPhone] = React.useState('');
+  const [msg, setMsg] = React.useState('Test SMS from FidéliTour — Twilio is wired correctly! 🎉');
+  const [busy, setBusy] = React.useState(false);
+  const [last, setLast] = React.useState(null);
+
+  const send = async () => {
+    if (!phone.trim()) { alert('Enter a phone number first.'); return; }
+    if (!window.confirm(`Send a real SMS to ${phone} now?`)) return;
+    setBusy(true); setLast(null);
+    try {
+      const res = await api.post('/owner/auto-campaigns/test-sms', { to: phone, message: msg });
+      setLast(res.data);
+    } catch (e) {
+      setLast({ sent: false, error: e?.response?.data?.detail || e.message });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="mt-5 pt-5 border-t" style={{ borderColor: C_PS.hairline }}>
+      <div className="flex items-start gap-2 mb-3">
+        <Smartphone size={16} className="text-[#B85C38] mt-0.5" />
+        <div className="flex-1">
+          <p className="text-sm font-bold" style={{ color: C_PS.inkDeep }}>Test SMS delivery</p>
+          <p className="text-xs" style={{ color: C_PS.inkMute }}>
+            Send a single real SMS to verify your Twilio credentials work.
+            Set <code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>, <code>TWILIO_FROM_NUMBER</code> on
+            Render first. Without those env vars this just no-ops.
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <input
+          type="tel" placeholder="+33612345678 (E.164)"
+          value={phone} onChange={(e) => setPhone(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm" style={{ borderColor: C_PS.hairline }}
+        />
+        <input
+          type="text" placeholder="Message" value={msg}
+          onChange={(e) => setMsg(e.target.value)}
+          className="md:col-span-2 border rounded-lg px-3 py-2 text-sm" style={{ borderColor: C_PS.hairline }}
+        />
+      </div>
+      <button type="button" onClick={send} disabled={busy}
+        className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-xs font-semibold disabled:opacity-50"
+        style={{ background: C_PS.terracotta }}>
+        <Send size={12} /> {busy ? 'Sending…' : 'Send test SMS'}
+      </button>
+      {last && (
+        <div className="mt-3 rounded-lg p-3 text-xs"
+          style={{
+            background: last.sent ? '#ECFDF5' : '#FEF3C7',
+            color: last.sent ? '#065F46' : '#92400E',
+          }}>
+          {last.sent
+            ? <>✓ Sent — Twilio SID <code>{last.sid}</code> to <code>{last.to}</code> · status {last.status}</>
+            : <>⚠ {last.error || 'Failed'}{last.hint ? ' — ' + last.hint : ''}</>}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default AutoCampaignsCard;
