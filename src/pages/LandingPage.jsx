@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { AuchanPreview, DEFAULT_LAYOUT } from '../components/AuchanCard';
 import HeroPhoneShowcase from '../components/HeroPhoneShowcase';
+import AppleWalletFrame from '../components/AppleWalletFrame';
 
 /* =====================================================================
    COLOR SYSTEM — vibrant pastels + saturated accents
@@ -700,60 +701,26 @@ const LandingPage = () => {
                 }}
               />
 
-              {/* Subtle inner frame — adds depth without an iPhone bezel */}
-              <div
-                className="relative rounded-[28px] p-1.5"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.5))',
-                  boxShadow: `
-                    0 40px 80px -20px rgba(28,25,23,0.40),
-                    0 16px 40px -10px ${C.terracotta}30
-                  `,
-                }}
-              >
-                {/* The real production AuchanPreview — wallet-pass dimensions, themed colors */}
+              {/* iPhone + Apple Wallet shell — same component used by the
+                  card-designer live preview and the hero phone showcase, so
+                  the merchant sees the SAME card in three places: hero,
+                  this "customer's view" section, and inside the dashboard. */}
+              <AppleWalletFrame width={400}>
+                {/* No layout overrides — the new champagne+midnight+gold defaults
+                    in AuchanCard.DEFAULT_LAYOUT do all the heavy lifting. */}
                 <AuchanPreview
-                  layout={{
-                    ...DEFAULT_LAYOUT,
-                    // Replace the harsh #E30613 banner red with warm terracotta
-                    banner_bg_color: C.terracotta,
-                    // Use brand colors for the stamps instead of generic gray/red
-                    stamps_color_filled: C.terracotta,
-                    stamps_color_empty: 'rgba(184,92,56,0.12)',
-                    // Subtle warm card background
-                    card_bg_color: '#FFFEFB',
-                    slots: {
-                      ...DEFAULT_LAYOUT.slots,
-                      // Banner tag pill — match terracotta family instead of harsh red
-                      banner_tag: {
-                        ...DEFAULT_LAYOUT.slots.banner_tag,
-                        color: C.terracotta,
-                      },
-                      // Cagnotte value pops in terracotta
-                      points_value: {
-                        ...DEFAULT_LAYOUT.slots.points_value,
-                        color: C.terracotta,
-                      },
-                    },
-                    // Meter bar in sage so progress feels positive (not neutral green)
-                    meter: {
-                      ...DEFAULT_LAYOUT.meter,
-                      color_filled: C.sage,
-                      color_empty: 'rgba(28,25,23,0.08)',
-                    },
-                  }}
                   ctx={{
                     first_name: 'Sophie',
                     name: 'Sophie Dupont',
-                    points: '12,40',
+                    points: '70',
                     business_name: 'Café Lumière',
                     birthday: '12 Mai',
                     stamps_earned: 7,
                     stamps_target: 10,
                   }}
-                  width={380}
+                  width={336}
                 />
-              </div>
+              </AppleWalletFrame>
 
               {/* Floating wallet pill below the card */}
               <motion.div
