@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
-import { Cake, BellOff, Play, Save, Eye } from 'lucide-react';
+import { Cake, BellOff, Play, Save, Eye, Coffee } from 'lucide-react';
 import { C as C_PS } from './PageShell';
 
 /**
@@ -19,6 +19,10 @@ const AutoCampaignsCard = () => {
     inactive_message: '',
     inactive_trigger_days: 0,
     inactive_cooldown_days: 30,
+    almost_there_enabled: true,
+    almost_there_message: '',
+    almost_there_visits_left: 1,
+    almost_there_cooldown_days: 7,
   });
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
@@ -43,11 +47,16 @@ const AutoCampaignsCard = () => {
     } finally { setSaving(false); }
   };
 
+  const ENDPOINTS = {
+    birthdays:    '/owner/auto-campaigns/run-birthdays',
+    inactive:     '/owner/auto-campaigns/run-inactive',
+    almost_there: '/owner/auto-campaigns/run-almost-there',
+  };
+
   const runDry = async (which) => {
     setRunning(which); setPreviews(null);
     try {
-      const ep = which === 'birthdays' ? '/owner/auto-campaigns/run-birthdays' : '/owner/auto-campaigns/run-inactive';
-      const res = await api.post(ep, null, { params: { dry_run: true } });
+      const res = await api.post(ENDPOINTS[which], null, { params: { dry_run: true } });
       setPreviews({ which, ...res.data });
     } catch (e) {
       alert('Dry-run failed: ' + (e?.response?.data?.detail || e.message));
@@ -58,8 +67,7 @@ const AutoCampaignsCard = () => {
     if (!window.confirm(`Really send ${which} messages now? This is a real send.`)) return;
     setRunning(which);
     try {
-      const ep = which === 'birthdays' ? '/owner/auto-campaigns/run-birthdays' : '/owner/auto-campaigns/run-inactive';
-      const res = await api.post(ep);
+      const res = await api.post(ENDPOINTS[which]);
       alert(`${res.data.sent} message${res.data.sent === 1 ? '' : 's'} sent.`);
       setPreviews(null);
     } catch (e) {
@@ -123,6 +131,29 @@ const AutoCampaignsCard = () => {
             hint="Don't message the same person more often than this." />
         </div>
         <RunButtons which="inactive" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.inactive_enabled} />
+      </Section>
+
+      {/* Almost-there block — nudge customers one visit away from the next reward */}
+      <Section
+        title="Almost there — one visit from a reward"
+        enabled={cfg.almost_there_enabled}
+        onToggle={(v) => setCfg({ ...cfg, almost_there_enabled: v })}
+        icon={Coffee}
+      >
+        <Field label="Message template" type="textarea"
+          value={cfg.almost_there_message}
+          onChange={(v) => setCfg({ ...cfg, almost_there_message: v })} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Field label="Trigger when this many visits remain" suffix="visit(s)" type="number"
+            value={cfg.almost_there_visits_left}
+            onChange={(v) => setCfg({ ...cfg, almost_there_visits_left: parseInt(v || '1', 10) })}
+            hint="1 = 'one more visit and the reward is yours'." />
+          <Field label="Cool-down between sends" suffix="days" type="number"
+            value={cfg.almost_there_cooldown_days}
+            onChange={(v) => setCfg({ ...cfg, almost_there_cooldown_days: parseInt(v || '0', 10) })}
+            hint="Avoid spamming the same person on repeat cycles." />
+        </div>
+        <RunButtons which="almost_there" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.almost_there_enabled} />
       </Section>
 
       <div className="flex items-center gap-3 mt-6">

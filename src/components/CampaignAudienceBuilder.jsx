@@ -329,31 +329,6 @@ const CampaignAudienceBuilder = ({
           </select>
         </Row>
 
-        {/* Wallet pass */}
-        <Row label="Wallet pass">
-          <div className="flex gap-2">
-            {[
-              { v: null,  label: 'Either' },
-              { v: true,  label: 'Has' },
-              { v: false, label: 'Missing' },
-            ].map((opt) => {
-              const on = F.hasWalletPass === opt.v;
-              return (
-                <button key={String(opt.v)} type="button"
-                  onClick={() => setF({ hasWalletPass: opt.v })}
-                  className="px-3 py-1.5 rounded-full text-xs font-semibold transition border"
-                  style={{
-                    background: on ? '#B85C38' : 'white',
-                    color: on ? 'white' : '#57534E',
-                    borderColor: on ? '#B85C38' : '#E7E5E4',
-                  }}>
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </Row>
-
         <button
           type="button"
           onClick={() => setAdvOpen((s) => !s)}
@@ -378,14 +353,21 @@ const CampaignAudienceBuilder = ({
                 className="w-full md:w-72 border rounded-lg px-3 py-1.5 text-sm bg-white" style={{ borderColor: '#E7E5E4' }} />
             </Row>
 
-            <Row label="Days since last visit"
-              hint="Empty fields = no constraint. Use 'min' for inactivity rescue, 'max' for active customers.">
-              <RangePair
-                minVal={F.daysSinceLastVisitMin || ''} maxVal={F.daysSinceLastVisitMax || ''}
-                onMinChange={(v) => setF({ daysSinceLastVisitMin: v })}
-                onMaxChange={(v) => setF({ daysSinceLastVisitMax: v })}
-                unit="days" minLabel="≥" maxLabel="≤"
-              />
+            <Row label="Inactive for at least"
+              hint="Target customers who haven't visited for this many days. Empty = no constraint.">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" min={0}
+                  value={F.daysSinceLastVisitMin || ''}
+                  onChange={(e) => setF({
+                    daysSinceLastVisitMin: e.target.value === '' ? null : parseInt(e.target.value, 10),
+                  })}
+                  placeholder="e.g. 30"
+                  className="w-32 border rounded-lg px-3 py-1.5 text-sm bg-white"
+                  style={{ borderColor: '#E7E5E4' }}
+                />
+                <span className="text-xs" style={{ color: C_PS.inkMute }}>days</span>
+              </div>
             </Row>
 
             <Row label="Birthday in month">

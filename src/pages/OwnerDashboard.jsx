@@ -617,14 +617,15 @@ const OwnerDashboard = () => {
                     innerRadius={45}
                     outerRadius={80}
                     dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine={false}
+                    /* No on-slice labels — the side legend already shows
+                       Gold/Silver/Bronze with counts. The previous labels
+                       were colliding inside a 96px-wide donut. */
                   >
                     {tierPieData.map((entry, i) => (
                       <Cell key={i} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ fontFamily: 'Manrope' }} />
+                  <Tooltip contentStyle={{ fontFamily: 'Manrope' }} formatter={(v, n) => [`${v} customers`, n]} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -781,24 +782,37 @@ const OwnerDashboard = () => {
             </thead>
             <tbody>
               {Object.keys(heatmap).length > 0 && Object.keys(Object.values(heatmap)[0] || {}).sort((a, b) => parseInt(a) - parseInt(b)).map(hour => {
-                // Pre-compute the global max so each cell can be interpolated
-                // against the same scale (avoids recomputing per cell).
                 const maxCount = Math.max(...Object.values(heatmap).flatMap(d => Object.values(d)), 1);
+                // Vibrant warm ramp (heat-map style): cream → butter → orange
+                // → crimson. Each cell interpolates between adjacent stops so
+                // cool/quiet hours stay light and busy hours pop in red.
+                const STOPS = [
+                  { p: 0.00, c: [0xFD, 0xFB, 0xF7] }, // cream
+                  { p: 0.33, c: [0xFE, 0xF3, 0xC7] }, // butter
+                  { p: 0.66, c: [0xF5, 0x9E, 0x0B] }, // orange
+                  { p: 1.00, c: [0xB9, 0x1C, 0x1C] }, // crimson
+                ];
+                const lerpRamp = (t) => {
+                  for (let i = 1; i < STOPS.length; i++) {
+                    const a = STOPS[i - 1], b = STOPS[i];
+                    if (t <= b.p) {
+                      const span = b.p - a.p;
+                      const local = span > 0 ? (t - a.p) / span : 0;
+                      const lerp = (x, y) => Math.round(x + (y - x) * local);
+                      return [lerp(a.c[0], b.c[0]), lerp(a.c[1], b.c[1]), lerp(a.c[2], b.c[2])];
+                    }
+                  }
+                  return STOPS[STOPS.length - 1].c;
+                };
                 return (
                 <tr key={hour} className="border-b border-[#F3EFE7]">
                   <td className="py-2 px-3 font-medium text-[#57534E]">{hour}:00</td>
                   {Object.keys(heatmap).map(day => {
                     const count = heatmap[day]?.[hour] || 0;
-                    const intensity = count / maxCount; // 0..1
-                    // Smooth gradient: cream (#FDFBF7) at intensity 0 → deep
-                    // espresso brown (#5C2E1B) at intensity 1.
-                    // Interpolate per RGB channel.
-                    const lerp = (a, b, t) => Math.round(a + (b - a) * t);
-                    const r = lerp(0xFD, 0x5C, intensity);
-                    const g = lerp(0xFB, 0x2E, intensity);
-                    const b = lerp(0xF7, 0x1B, intensity);
-                    const bgColor = count === 0 ? '#FDFBF7' : `rgb(${r}, ${g}, ${b})`;
-                    // Flip text colour once cells get dark enough to need it.
+                    const intensity = count / maxCount;
+                    const [r, g, bb] = lerpRamp(intensity);
+                    const bgColor = count === 0 ? '#FDFBF7' : `rgb(${r}, ${g}, ${bb})`;
+                    // Flip to white text once cells get dark enough.
                     const textColor = intensity > 0.55 ? '#FDFBF7' : '#1C1917';
                     return (
                       <td

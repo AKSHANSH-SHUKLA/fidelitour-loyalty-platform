@@ -53,6 +53,13 @@ class AutoCampaignConfig(BaseModel):
     inactive_trigger_days: int = 0
     # Avoid spamming the same person — wait this many days before re-sending
     inactive_cooldown_days: int = 30
+    # Almost-there nudge: triggered when a customer is N visits away from
+    # unlocking the next reward (default 1, configurable). Reads stamp +
+    # threshold info from the existing card_templates collection.
+    almost_there_enabled: bool = True
+    almost_there_message: str = "{first_name}, vous êtes à 1 visite d'une récompense chez {business_name} ! ☕"
+    almost_there_visits_left: int = 1
+    almost_there_cooldown_days: int = 7
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -231,6 +238,80 @@ def run_inactive(
     return {
         "trigger_days": trigger_days,
         "candidates": len(candidates),
+        "sent": sent,
+        "dry_run": dry_run,
+        "preview": previews if dry_run else None,
+    }
+
+
+@router.post("/api/owner/auto-campaigns/run-almost-there")
+def run_almost_there(
+    dry_run: bool = False,
+    limit: int = 200,
+    token_data=Depends(require_role(["business_owner", "manager"])),
+):
+    """Find customers who are EXACTLY `almost_there_visits_left` visits away
+    from the next reward, and send them a personalised nudge. Reward cycle
+    is read from card_templates: every (visits_per_stamp * reward_threshold_stamps)
+    visits unlocks the next reward."""
+    cfg = _config(token_data.tenant_id)
+    if not cfg.almost_there_enabled:
+        return {"sent": 0, "reason": "disabled"}
+
+    tpl = _db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
+    visits_per_stamp = max(int(tpl.get("visits_per_stamp", 1) or 1), 1)
+    reward_threshold = max(int(tpl.get("reward_threshold_stamps", 10) or 10), 1)
+    cycle = visits_per_stamp * reward_threshold
+
+    target_remaining = max(1, int(cfg.almost_there_visits_left))
+    now = datetime.now(timezone.utc)
+    cooldown_cutoff = now - timedelta(days=max(1, cfg.almost_there_cooldown_days))
+    tenant = _db.tenants.find_one({"id": token_data.tenant_id}) or {}
+
+    sent = 0
+    previews = []
+    candidates = list(_db.customers.find({
+        "tenant_id": token_data.tenant_id,
+        "visits": {"$gt": 0},
+    }).limit(limit * 5))
+
+    for c in candidates:
+        v = int(c.get("visits", 0) or 0)
+        # Visits remaining inside the current reward cycle. When v % cycle == 0
+        # the customer just hit a reward (no nudge needed); otherwise:
+        remaining = cycle - (v % cycle) if (v % cycle) else cycle
+        if remaining != target_remaining:
+            continue
+        # cooldown
+        recent_log = _db.auto_campaign_log.find_one({
+            "tenant_id": token_data.tenant_id,
+            "customer_id": c["id"],
+            "kind": "almost_there",
+            "sent_at": {"$gte": cooldown_cutoff},
+        })
+        if recent_log:
+            continue
+        ctx = _build_ctx(c, tenant)
+        ctx["visits_left"] = target_remaining
+        body = _substitute(cfg.almost_there_message, ctx)
+        title = f"{tenant.get('name', '')}".strip() or "Almost there!"
+        if dry_run:
+            previews.append({
+                "customer_id": c["id"], "name": c.get("name"),
+                "visits": v, "visits_left": target_remaining, "body": body,
+            })
+        else:
+            _dispatch_message(token_data.tenant_id, c, "almost_there", title, body)
+            sent += 1
+        if sent >= limit and not dry_run:
+            break
+        if dry_run and len(previews) >= limit:
+            break
+
+    return {
+        "cycle_visits": cycle,
+        "target_visits_left": target_remaining,
+        "candidates_scanned": len(candidates),
         "sent": sent,
         "dry_run": dry_run,
         "preview": previews if dry_run else None,

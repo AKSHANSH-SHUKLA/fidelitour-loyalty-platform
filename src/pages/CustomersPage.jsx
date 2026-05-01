@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map, Clock, Gift, Calendar, TrendingDown, Zap, Megaphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ownerAPI } from '../lib/api';
+import api, { ownerAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 
 // Pre-built segments that power one-click targeting. Server-side fields map to
 // the extended GET /api/owner/customers filters.
+// NOTE: the big_spenders pill is special — its label and behaviour come from
+// the tenant's configured big-spender rule in Settings. See the runtime
+// label override + dedicated /api/owner/big-spenders fetch below.
 const QUICK_SEGMENTS = [
   { key: 'vip',          label: 'VIPs',                 icon: Award,      serverParams: { tier: 'vip' } },
-  { key: 'big_spenders', label: 'Big spenders €300+',   icon: Zap,        serverParams: { min_amount: 300 } },
+  { key: 'big_spenders', label: 'Big spenders',         icon: Zap,        serverParams: null /* uses /api/owner/big-spenders */ },
   { key: 'loyal_5',      label: 'Loyal (5+ visits)',    icon: Award,      serverParams: { min_visits: 5 } },
   { key: 'birthday',     label: 'Birthday this month',  icon: Calendar,   serverParams: { has_birthday_this_month: true } },
   { key: 'one_and_done', label: 'One-and-done',         icon: TrendingDown, serverParams: { max_visits: 1 } },
@@ -58,6 +61,10 @@ export default function CustomersPage() {
     }
   };
 
+  // Big-spender definition lives in Settings (tier_definitions). Loaded here
+  // so the pill label and behaviour stay in sync with whatever the owner saved.
+  const [bigSpenderDef, setBigSpenderDef] = useState(null);
+
   // Fetch customers + saved segments on mount
   useEffect(() => {
     fetchCustomers();
@@ -67,9 +74,18 @@ export default function CustomersPage() {
         setSavedSegments(r.data?.segments || []);
       } catch (_e) { /* non-fatal */ }
     })();
+    (async () => {
+      try {
+        const r = await api.get('/owner/tier-definitions');
+        setBigSpenderDef({
+          min_amount: Number(r.data?.big_spender_min_amount ?? 500),
+          min_avg_ticket: Number(r.data?.big_spender_min_avg_ticket ?? 0),
+        });
+      } catch (_e) { setBigSpenderDef({ min_amount: 500, min_avg_ticket: 0 }); }
+    })();
   }, []);
 
-  const applyQuickSegment = (seg) => {
+  const applyQuickSegment = async (seg) => {
     // Tap the same pill again to clear it — restores full list.
     if (activeQuickSegment === seg.key) {
       setActiveQuickSegment(null);
@@ -77,6 +93,20 @@ export default function CustomersPage() {
       return;
     }
     setActiveQuickSegment(seg.key);
+    // Special case: big_spenders uses the configured definition from Settings
+    // rather than a hardcoded threshold.
+    if (seg.key === 'big_spenders') {
+      try {
+        setLoading(true);
+        const r = await api.get('/owner/big-spenders');
+        setAllCustomers(r.data?.big_spenders || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     fetchCustomers(seg.serverParams || {});
   };
 
@@ -412,6 +442,10 @@ export default function CustomersPage() {
           {QUICK_SEGMENTS.map((seg) => {
             const Icon = seg.icon;
             const active = activeQuickSegment === seg.key;
+            // Big-spenders pill: show the live threshold from Settings.
+            const dynamicLabel = (seg.key === 'big_spenders' && bigSpenderDef)
+              ? `Big spenders €${bigSpenderDef.min_amount}+${bigSpenderDef.min_avg_ticket > 0 ? ` (avg €${bigSpenderDef.min_avg_ticket}+)` : ''}`
+              : seg.label;
             return (
               <button
                 key={seg.key}
@@ -424,7 +458,7 @@ export default function CustomersPage() {
                 }`}
               >
                 <Icon size={13} />
-                {seg.label}
+                {dynamicLabel}
               </button>
             );
           })}

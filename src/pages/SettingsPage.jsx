@@ -262,8 +262,8 @@ const SettingsPage = () => {
                         <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">Geolocalisation</h2>
                     </div>
                     <p className="text-sm text-[#57534E] max-w-2xl mb-4">
-                        Real-time push notifications when your customers open their wallet card within range of your store.
-                        Managed by the FidéliTour admin team — contact us to adjust.
+                        When a customer with your loyalty card walks into your radius, <b>they</b> receive a push notification on their phone — a personalised offer that pulls them through your door.
+                        You don't get pinged; the customer does. Managed by the FidéliTour admin team — contact us to adjust.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
                         <div className={`p-4 rounded-lg border ${geoConfig.geo_enabled ? 'bg-[#e8f3e5] border-[#4A5D23]/30' : 'bg-[#F3EFE7] border-[#E7E5E4]'}`}>

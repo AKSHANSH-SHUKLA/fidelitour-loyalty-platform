@@ -346,9 +346,12 @@ const AnalyticsPage = () => {
   };
 
   // Build the param object for every API call, adding branch + period scope.
+  // Always pass period_days so changing the period filter actually re-scopes
+  // the data (the previous `!== 30` short-circuit caused the period selector
+  // to silently fall back to whatever the backend's default was).
   const params = (extra = {}) => ({
     ...(branchId ? { branch_id: branchId } : {}),
-    ...(periodDays && periodDays !== 30 ? { period_days: periodDays } : {}),
+    ...(periodDays ? { period_days: periodDays } : {}),
     ...extra,
   });
 
