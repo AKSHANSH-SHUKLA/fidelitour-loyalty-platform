@@ -197,21 +197,21 @@ const SceneAnalytics = () => (
         style={{ background: 'linear-gradient(135deg, ' + C.terracotta + ', ' + C.rose + ')' }}>P</div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-bold leading-tight" style={{ color: C.inkDeep }}>Café Lumière</p>
-        <p className="text-[8px]" style={{ color: C.inkMute }}>Welcome back, Pierre</p>
+        <p className="text-[8px]" style={{ color: C.inkMute }}>Bonjour Pierre</p>
       </div>
     </div>
 
     {/* KPIs */}
     <div className="grid grid-cols-2 gap-2">
-      <KPI icon={Users}      label="Customers" target={2847} accent={C.sky}        bg={C.azure} />
-      <KPI icon={Activity}   label="Visits"    target={14200} suffix="+" accent={C.sage} bg={C.meadow} />
-      <KPI icon={TrendingUp} label="Repeat"    target={96}    suffix="%" accent={C.terracotta} bg={C.shellPink} />
-      <KPI icon={Star}       label="Rating"    target={87}    divisor={10} fixed={1} accent={C.ochre} bg={C.butter} />
+      <KPI icon={Users}      label="Clients"  target={2847} accent={C.sky}        bg={C.azure} />
+      <KPI icon={Activity}   label="Visites"  target={14200} suffix="+" accent={C.sage} bg={C.meadow} />
+      <KPI icon={TrendingUp} label="Retour"   target={96}    suffix="%" accent={C.terracotta} bg={C.shellPink} />
+      <KPI icon={Star}       label="Note"     target={87}    divisor={10} fixed={1} accent={C.ochre} bg={C.butter} />
     </div>
 
     {/* Chart */}
     <div className="rounded-xl p-2.5 border" style={{ background: 'white', borderColor: C.hairline }}>
-      <p className="text-[8px] font-bold uppercase tracking-wider mb-1" style={{ color: C.inkFaint }}>Visits — 14 days</p>
+      <p className="text-[8px] font-bold uppercase tracking-wider mb-1" style={{ color: C.inkFaint }}>Visites — 14 derniers jours</p>
       <svg viewBox="0 0 200 50" className="w-full h-12">
         <defs>
           <linearGradient id="hpx" x1="0" y1="0" x2="0" y2="1">
@@ -233,11 +233,11 @@ const SceneAnalytics = () => (
 
     {/* Live activity */}
     <div className="rounded-xl p-2.5 border space-y-1.5" style={{ background: 'white', borderColor: C.hairline }}>
-      <p className="text-[8px] font-bold uppercase tracking-wider" style={{ color: C.inkFaint }}>Live activity</p>
+      <p className="text-[8px] font-bold uppercase tracking-wider" style={{ color: C.inkFaint }}>Activité en direct</p>
       {[
-        { dot: C.sage,     text: 'Sophie M. visited · +25 pts', t: 'now' },
-        { dot: C.lavender, text: 'Antoine L. became VIP',        t: '2m' },
-        { dot: C.coral,    text: 'Birthday offer · 12 sent',     t: '5m' },
+        { dot: C.sage,     text: 'Sophie M. est passée · +25 pts',  t: 'à l\'instant' },
+        { dot: C.lavender, text: 'Antoine L. devient VIP',          t: '2 min' },
+        { dot: C.coral,    text: 'Anniversaires · 12 envois',       t: '5 min' },
       ].map((a, i) => (
         <motion.div
           key={i}
@@ -293,10 +293,10 @@ const useCountUp = (to, durationMs = 1200) => {
 /* ===================================================================== */
 const SceneNotifications = () => {
   const items = [
-    { icon: Sparkles, tint: C.sage,      title: 'Nouveau client', body: 'Sophie just joined — your 47th this month.' },
-    { icon: TrendingUp,tint: C.terracotta, title: 'Big spender',   body: 'Marie spent €45 — VIP tier reached.' },
-    { icon: Cake,     tint: C.rose,      title: 'Birthday today', body: 'Lisa\'s 30th — auto-message ready.' },
-    { icon: Bell,     tint: C.lavender,  title: 'Tuesday peak',   body: 'Visits up 23% vs last Tuesday.' },
+    { icon: Sparkles, tint: C.sage,      title: 'Nouveau client',     body: 'Sophie vient de s\'inscrire — votre 47ᵉ ce mois-ci.' },
+    { icon: TrendingUp,tint: C.terracotta, title: 'Gros panier',       body: 'Marie a dépensé 45 €  — palier VIP atteint.' },
+    { icon: Cake,     tint: C.rose,      title: 'Anniversaire du jour', body: 'Les 30 ans de Lisa — message prêt à envoyer.' },
+    { icon: Bell,     tint: C.lavender,  title: 'Pic du mardi',         body: 'Visites en hausse de 23 % vs mardi dernier.' },
   ];
   return (
     <motion.div
@@ -334,7 +334,7 @@ const SceneNotifications = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] font-bold leading-tight" style={{ color: '#1C1917' }}>FidéliTour</p>
-                  <p className="text-[8px]" style={{ color: '#57534E' }}>now</p>
+                  <p className="text-[8px]" style={{ color: '#57534E' }}>maintenant</p>
                 </div>
                 <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#1C1917' }}>{n.title}</p>
                 <p className="text-[9px] leading-tight" style={{ color: '#57534E' }}>{n.body}</p>
@@ -640,11 +640,11 @@ const SceneGeolocation = () => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] font-bold leading-tight" style={{ color: '#1C1917' }}>Café Lumière</p>
-          <p className="text-[8px]" style={{ color: '#57534E' }}>now</p>
+          <p className="text-[8px]" style={{ color: '#57534E' }}>maintenant</p>
         </div>
-        <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#1C1917' }}>Vous passez devant ?</p>
+        <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#1C1917' }}>Vous passez devant&nbsp;?</p>
         <p className="text-[9px] leading-tight" style={{ color: '#57534E' }}>
-          5€ offert sur votre prochain café — entrez nous voir.
+          5&nbsp;€ offerts sur votre prochain café — passez nous voir.
         </p>
       </div>
     </motion.div>
@@ -652,10 +652,10 @@ const SceneGeolocation = () => {
     {/* Headline + 4 feature pills (cascade in) */}
     <div className="px-3 mt-3 mb-1">
       <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C.terracotta }}>
-        When your VIP walks past
+        Quand votre VIP passe à côté
       </p>
       <p className="text-[10px] font-semibold mt-0.5 leading-tight" style={{ color: C.inkDeep }}>
-        They get a friendly nudge.
+        Il reçoit une attention.
       </p>
     </div>
 
@@ -691,30 +691,30 @@ const SceneAIIntelligence = () => {
   const insights = [
     {
       icon: Target, tone: 'lavender',
-      eyebrow: 'Recommended action',
-      title: 'Win back 12 silent Gold customers',
-      detail: 'Send "we miss you" — projected uplift +€340 this week.',
-      metric: '+€340',
+      eyebrow: 'Action recommandée',
+      title: 'Réveiller 12 clients Or silencieux',
+      detail: 'Envoyez «&nbsp;vous nous manquez&nbsp;» — gain projeté +340 € cette semaine.',
+      metric: '+340 €',
     },
     {
       icon: TrendingUp, tone: 'sage',
-      eyebrow: 'Pattern detected',
-      title: 'Tuesday is your peak — by 23%',
-      detail: 'Schedule extra staff 11:00–14:00. Push offer Mon evening.',
-      metric: '+23%',
+      eyebrow: 'Tendance détectée',
+      title: 'Le mardi est votre pic — +23 %',
+      detail: 'Renforcez l\'équipe 11h–14h. Poussez l\'offre le lundi soir.',
+      metric: '+23 %',
     },
     {
       icon: AlertTriangle, tone: 'terracotta',
-      eyebrow: 'Churn alert',
-      title: 'Sophie likely to churn in 9 days',
-      detail: 'Best-paying customer drifted from her 6-day rhythm.',
-      metric: 'act today',
+      eyebrow: 'Risque de désengagement',
+      title: 'Sophie risque de partir d\'ici 9 jours',
+      detail: 'Votre meilleure cliente s\'éloigne de son rythme habituel de 6 jours.',
+      metric: 'à faire',
     },
     {
       icon: Zap, tone: 'ochre',
-      eyebrow: 'Quick win',
-      title: 'Lower Silver to 8 visits',
-      detail: 'Promotes 47 customers, lifts visit frequency ~19%.',
+      eyebrow: 'Gain rapide',
+      title: 'Abaisser le palier Argent à 8 visites',
+      detail: 'Promeut 47 clients, augmente la fréquence d\'environ 19 %.',
       metric: '+47',
     },
   ];
@@ -741,7 +741,7 @@ const SceneAIIntelligence = () => {
           <BrainCircuit size={14} />
         </motion.div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold leading-tight" style={{ color: C.inkDeep }}>AI Intelligence</p>
+          <p className="text-[10px] font-bold leading-tight" style={{ color: C.inkDeep }}>Intelligence IA</p>
           <div className="flex items-center gap-1 mt-0.5">
             <motion.span
               className="block w-1 h-1 rounded-full"
@@ -749,12 +749,12 @@ const SceneAIIntelligence = () => {
               animate={{ opacity: [0.3, 1, 0.3] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             />
-            <p className="text-[8px]" style={{ color: C.inkMute }}>Live · learning from your data</p>
+            <p className="text-[8px]" style={{ color: C.inkMute }}>En direct · apprend de vos données</p>
           </div>
         </div>
         <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded"
           style={{ background: C.terracotta + '1A', color: C.terracotta }}>
-          4 NEW
+          4 nouv.
         </span>
       </div>
 
@@ -768,10 +768,10 @@ const SceneAIIntelligence = () => {
         }}
       >
         <p className="text-[8px] font-bold uppercase tracking-widest" style={{ color: C.lavender }}>
-          ✨ Auto-detected · ranked by impact
+          ✨ Détection automatique · classée par impact
         </p>
         <p className="text-[9px] mt-0.5" style={{ color: C.inkSoft }}>
-          Patterns the platform spotted in your last 30 days, sorted by projected revenue.
+          Tendances détectées sur vos 30 derniers jours, triées par revenu projeté.
         </p>
       </motion.div>
 
@@ -868,11 +868,11 @@ const DashboardEcho = ({ scene }) => (
           style={{ background: C.cream, height: 'calc(100% - 28px)' }}
         >
           <p className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: C.inkFaint }}>
-            {scene === 'analytics'     && 'Dashboard · Analytics'}
-            {scene === 'notifications' && 'Notifications · Live feed'}
-            {scene === 'wallet'        && 'Card Designer · Live preview'}
-            {scene === 'geolocation'   && 'Customer Map · Geofences'}
-            {scene === 'ai'            && 'Insights · AI recommendations'}
+            {scene === 'analytics'     && 'Tableau de bord · Analytics'}
+            {scene === 'notifications' && 'Notifications · Flux en direct'}
+            {scene === 'wallet'        && 'Concepteur de carte · Aperçu live'}
+            {scene === 'geolocation'   && 'Carte clients · Périmètres'}
+            {scene === 'ai'            && 'Insights · Recommandations IA'}
           </p>
           <div className="grid grid-cols-3 gap-1.5">
             {[0,1,2,3,4,5].map((i) => (

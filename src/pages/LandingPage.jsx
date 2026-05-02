@@ -332,17 +332,17 @@ const LandingPage = () => {
             </span>
           </Link>
           <div className="hidden md:flex items-center gap-8 font-medium text-sm">
-            <a href="#features" className="hover:text-[#B85C38] transition-colors">Capabilities</a>
-            <a href="#proof"    className="hover:text-[#B85C38] transition-colors">Proof</a>
-            <a href="#how"      className="hover:text-[#B85C38] transition-colors">How it works</a>
-            <a href="#pricing"  className="hover:text-[#B85C38] transition-colors">Pricing</a>
+            <a href="#features" className="hover:text-[#B85C38] transition-colors">Fonctionnalités</a>
+            <a href="#proof"    className="hover:text-[#B85C38] transition-colors">Pourquoi FidéliTour</a>
+            <a href="#how"      className="hover:text-[#B85C38] transition-colors">Comment ça marche</a>
+            <a href="#pricing"  className="hover:text-[#B85C38] transition-colors">Tarifs</a>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="font-medium text-sm hover:text-[#B85C38] transition-colors">Sign in</Link>
+            <Link to="/login" className="font-medium text-sm hover:text-[#B85C38] transition-colors">Connexion</Link>
             <Link to="/register"
                   className="text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
                   style={{ background: `linear-gradient(135deg, ${C.inkDeep} 0%, ${C.inkSoft} 100%)` }}>
-              Start free
+              Démarrer
             </Link>
           </div>
         </div>
@@ -372,7 +372,7 @@ const LandingPage = () => {
                 <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.sage }} />
               </span>
               <span className="text-xs font-bold tracking-widest uppercase" style={{ color: C.inkMute }}>
-                <span style={{ color: C.terracotta }}>2,800+</span> · businesses retain customers with us
+                <span style={{ color: C.terracotta }}>Plateforme française</span> · Conçue pour les commerçants
               </span>
             </motion.div>
 
@@ -380,21 +380,21 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
               className="font-['Cormorant_Garamond'] text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight"
             >
-              The retention engine your <br/>
+              Vos meilleurs clients reviennent <br/>
               <span className="bg-clip-text text-transparent inline-block"
                     style={{
                       backgroundImage: `linear-gradient(110deg, ${C.terracotta} 0%, ${C.ochre} 25%, ${C.rose} 50%, ${C.lavender} 75%, ${C.sky} 100%)`,
                       backgroundSize: '200% auto',
                       animation: 'heroGradient 8s linear infinite',
                     }}>
-                local business deserves.
+                sans que vous ayez à y penser.
               </span>
             </motion.h1>
 
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.2 }}
                       className="text-lg md:text-xl mt-6 leading-relaxed max-w-xl" style={{ color: C.inkMute }}>
-              Digital wallet cards. Automated campaigns. Real-time analytics. Sentiment tracking.
-              FidéliTour does in 5 minutes what your old loyalty stamp card couldn't do in a decade.
+              La carte de fidélité qui vit dans le portefeuille mobile de vos clients,
+              et l'intelligence qui les ramène au bon moment, avec le bon message — automatiquement.
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
@@ -402,13 +402,13 @@ const LandingPage = () => {
               <Link to="/register"
                     className="inline-flex items-center justify-center gap-2 text-white px-7 py-4 rounded-full font-semibold text-base shadow-xl transition-all hover:-translate-y-0.5"
                     style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)`, boxShadow: `0 12px 28px ${C.terracotta}40` }}>
-                Start free for 30 days
+                Essai gratuit 30 jours
                 <ArrowRight size={18} />
               </Link>
               <a href="#how"
                  className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full font-semibold text-base border-2 transition-all hover:bg-white"
                  style={{ borderColor: C.hairline, background: 'rgba(255,255,255,0.6)', color: C.inkDeep }}>
-                See how it works
+                Voir une démonstration
               </a>
             </motion.div>
 
@@ -422,8 +422,7 @@ const LandingPage = () => {
                 ))}
               </div>
               <span>
-                <b style={{ color: C.inkDeep }}>4.9/5</b> from 80+ owners ·
-                <span className="ml-1" style={{ color: C.ochre }}>★★★★★</span>
+                <b style={{ color: C.inkDeep }}>Mise en place en 24h</b> · Sans engagement · RGPD natif
               </span>
             </motion.div>
           </div>
@@ -441,10 +440,10 @@ const LandingPage = () => {
       <section id="proof" className="relative py-16 border-y" style={{ borderColor: C.hairline, background: 'white' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {[
-            { value: 2847, suffix: '+', label: 'Active customers tracked', color: C.sky },
-            { value: 96,   suffix: '%',  label: 'Average repeat rate',     color: C.sage },
-            { value: 14,   suffix: 'K',  label: 'Visits recorded weekly',  color: C.terracotta },
-            { value: 24,   suffix: '€',  label: 'Saved per customer/year', color: C.lavender, prefix: '+' },
+            { value: 5,  suffix: ' s',   label: 'Pour ajouter une carte au wallet', color: C.sky },
+            { value: 24, suffix: 'h',    label: 'De votre inscription au lancement', color: C.sage },
+            { value: 0,  suffix: ' €',   label: 'Coût par notification push',       color: C.terracotta },
+            { value: 100, suffix: '%',   label: 'Conforme RGPD · Hébergé en France', color: C.lavender },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="font-['Cormorant_Garamond'] text-5xl lg:text-6xl font-bold"
@@ -461,10 +460,10 @@ const LandingPage = () => {
       <section className="py-20 lg:py-28">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Eyebrow color={C.coral} bg={C.shellPink}>The shift</Eyebrow>
+            <Eyebrow color={C.coral} bg={C.shellPink}>Le changement</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
-              Yesterday's punch card.<br/>
-              <span style={{ color: C.terracotta }}>Today's retention engine.</span>
+              La carte en carton d'hier.<br/>
+              <span style={{ color: C.terracotta }}>La fidélité d'aujourd'hui.</span>
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
@@ -473,17 +472,17 @@ const LandingPage = () => {
                  style={{ borderColor: C.hairline, background: C.sand }}>
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
                     style={{ background: 'rgba(140,134,128,0.15)', color: C.inkFaint }}>
-                The old way
+                Avant
               </span>
               <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-4" style={{ color: C.inkSoft }}>
-                Paper cards & guesswork
+                Cartes en carton et tâtonnement
               </h3>
               <ul className="space-y-3 text-sm" style={{ color: C.inkMute }}>
-                <li className="flex gap-2">✗ Customers lose them in 3 weeks</li>
-                <li className="flex gap-2">✗ You don't know who came back, or didn't</li>
-                <li className="flex gap-2">✗ No way to message dormant customers</li>
-                <li className="flex gap-2">✗ Birthdays go uncelebrated</li>
-                <li className="flex gap-2">✗ Marketing is "post on Instagram and pray"</li>
+                <li className="flex gap-2">✗ Le client la perd au bout de 3 semaines</li>
+                <li className="flex gap-2">✗ Vous ne savez pas qui revient, ni qui ne revient plus</li>
+                <li className="flex gap-2">✗ Aucun moyen de relancer les clients endormis</li>
+                <li className="flex gap-2">✗ Les anniversaires passent inaperçus</li>
+                <li className="flex gap-2">✗ Le marketing, c'est «&nbsp;poster sur Instagram et croiser les doigts&nbsp;»</li>
               </ul>
             </div>
             {/* New way */}
@@ -496,17 +495,17 @@ const LandingPage = () => {
                    style={{ background: C.rose }} />
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 relative"
                     style={{ background: C.terracotta, color: 'white' }}>
-                With FidéliTour
+                Avec FidéliTour
               </span>
               <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-4 relative" style={{ color: C.inkDeep }}>
-                Wallet cards that work for you
+                Une carte qui travaille pour vous
               </h3>
               <ul className="space-y-3 text-sm relative" style={{ color: C.inkSoft }}>
-                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Card lives in Apple Wallet — never lost</li>
-                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Live dashboard — every visit, every stamp, every euro</li>
-                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Auto-detect sleeping customers, send a personal nudge</li>
-                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Birthday offers fire automatically — every year</li>
-                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> AI tells you which 12 customers to contact today</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> La carte vit dans Apple Wallet — jamais perdue</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Tableau de bord en direct — chaque visite, chaque tampon, chaque euro</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Détection des clients endormis, message personnalisé envoyé</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> Anniversaires souhaités automatiquement — chaque année</li>
+                <li className="flex gap-2"><Check size={18} style={{ color: C.sage }} /> L'IA vous dit quels clients contacter cette semaine</li>
               </ul>
             </div>
           </div>
@@ -519,10 +518,10 @@ const LandingPage = () => {
              style={{ background: `linear-gradient(90deg, ${C.terracotta} 0%, ${C.rose} 20%, ${C.lavender} 40%, ${C.sky} 60%, ${C.teal} 80%, ${C.sage} 100%)` }} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <Eyebrow color={C.lavender} bg={C.lilac}>Capabilities</Eyebrow>
+            <Eyebrow color={C.lavender} bg={C.lilac}>Fonctionnalités</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
-              Everything to grow loyalty,<br/>
-              <span style={{ color: C.lavender }}>nothing you don't need.</span>
+              Tout ce qu'il faut pour fidéliser,<br/>
+              <span style={{ color: C.lavender }}>rien dont vous n'avez pas besoin.</span>
             </h2>
           </div>
 
@@ -535,11 +534,11 @@ const LandingPage = () => {
                 <Smartphone size={24} style={{ color: C.sky }} />
               </div>
               <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-3" style={{ color: C.inkDeep }}>
-                Native Apple Wallet & Google Wallet
+                Apple Wallet & Google Wallet, en natif
               </h3>
               <p className="text-base leading-relaxed mb-5" style={{ color: C.inkMute }}>
-                Customers tap once and the card lives in their wallet next to their credit cards.
-                No app to download. No friction. Real-time updates push from your dashboard.
+                Vos clients ajoutent leur carte en un clic. Elle vit dans leur portefeuille mobile
+                à côté de leurs cartes bancaires. Aucune application à télécharger. Mise à jour en temps réel.
               </p>
               {/* Mini visual */}
               <div className="flex items-center gap-3 mt-6">
@@ -560,9 +559,9 @@ const LandingPage = () => {
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.lavender}30` }}>
                 <BrainCircuit size={22} style={{ color: C.lavender }} />
               </div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>AI advisor</h3>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Voix de marque protégée</h3>
               <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                "Who should I message this week?" — get a real answer in plain language.
+                Chaque message envoyé sonne comme vous. L'IA apprend votre ton à partir de vos anciennes campagnes.
               </p>
             </BentoCard>
 
@@ -572,9 +571,9 @@ const LandingPage = () => {
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.coral}30` }}>
                 <MessageSquare size={22} style={{ color: C.coral }} />
               </div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Sentiment tracking</h3>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Analyse des avis clients</h3>
               <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                Reviews automatically tagged as positive, negative, by topic — speed, staff, price, cleanliness.
+                Avis classés automatiquement par sujet — service, propreté, prix, accueil. Vous voyez ce qui marche, ce qui coince.
               </p>
             </BentoCard>
 
@@ -584,9 +583,9 @@ const LandingPage = () => {
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.sage}30` }}>
                 <MapPin size={22} style={{ color: C.sage }} />
               </div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Geofenced offers</h3>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Offres géolocalisées</h3>
               <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                When a VIP customer walks within 500m of your store, they get a friendly nudge.
+                Quand un client VIP passe à 500&nbsp;m de votre boutique, il reçoit un mot d'attention.
               </p>
             </BentoCard>
 
@@ -596,9 +595,9 @@ const LandingPage = () => {
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.ochre}30` }}>
                 <Megaphone size={22} style={{ color: C.ochre }} />
               </div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Targeted campaigns</h3>
+              <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Campagnes ciblées</h3>
               <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                12 one-click segments. Send to lunch regulars, dormant customers, big spenders — in 30 seconds.
+                12 segments en un clic. Envoyez aux habitués du midi, aux clients endormis, aux gros paniers — en 30 secondes.
               </p>
             </BentoCard>
 
@@ -611,11 +610,11 @@ const LandingPage = () => {
                     <BarChart3 size={22} style={{ color: C.terracotta }} />
                   </div>
                   <h3 className="font-['Cormorant_Garamond'] text-2xl md:text-3xl font-bold mb-2" style={{ color: C.inkDeep }}>
-                    25+ live KPIs, every one drillable
+                    25+ indicateurs en direct, tous explorables
                   </h3>
                   <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                    Repeat rate. Churn. LTV. Visits per branch. Time-of-day mix.
-                    Click any number — see exactly which customers are behind it.
+                    Taux de retour. Risque de désengagement. Valeur client. Visites par boutique. Heures de pointe.
+                    Cliquez sur n'importe quel chiffre — vous voyez exactement quels clients se cachent derrière.
                   </p>
                 </div>
                 {/* Mini chart */}
@@ -658,22 +657,22 @@ const LandingPage = () => {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <Eyebrow color={C.rose} bg={C.blush}>The customer's view</Eyebrow>
+            <Eyebrow color={C.rose} bg={C.blush}>Côté client</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight mb-6">
-              The card your customer<br/>
-              <span style={{ color: C.terracotta }}>actually keeps.</span>
+              La carte que votre client<br/>
+              <span style={{ color: C.terracotta }}>garde vraiment.</span>
             </h2>
             <p className="text-lg leading-relaxed mb-6" style={{ color: C.inkMute }}>
-              Logo, promo banner, greeting, points balance, stamp progress, working barcode — all
-              rendered live from your business data. Every element is fully customizable from the
-              Card Designer in your dashboard.
+              Logo, bannière promotionnelle, message d'accueil, solde de points, progression des tampons, code-barres
+              fonctionnel — tout s'affiche en direct depuis vos données. Chaque élément se personnalise depuis
+              le Concepteur de carte dans votre tableau de bord.
             </p>
             <div className="space-y-3">
               {[
-                { color: C.sage,     text: 'Customer name + birthday auto-personalized' },
-                { color: C.lavender, text: 'Banner image — upload yours or use a template' },
-                { color: C.coral,    text: 'Tier badge + reward progress live-updating' },
-                { color: C.sky,      text: 'Working scan barcode for staff at the counter' },
+                { color: C.sage,     text: 'Prénom + anniversaire personnalisés automatiquement' },
+                { color: C.lavender, text: 'Bannière — votre visuel, ou un modèle prêt à l\'emploi' },
+                { color: C.coral,    text: 'Badge de statut + progression mis à jour en direct' },
+                { color: C.sky,      text: 'Code-barres scannable au comptoir, prêt pour vos équipes' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <span className="w-2 h-2 rounded-full" style={{ background: item.color }} />
@@ -745,7 +744,7 @@ const LandingPage = () => {
                 transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.sage }} />
-                <span className="text-[10px] font-bold" style={{ color: C.inkDeep }}>Live</span>
+                <span className="text-[10px] font-bold" style={{ color: C.inkDeep }}>En direct</span>
               </motion.div>
               <motion.div
                 aria-hidden="true"
@@ -755,7 +754,7 @@ const LandingPage = () => {
                 transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
               >
                 <Sparkles size={10} />
-                <span className="text-[10px] font-bold">VIP unlocked</span>
+                <span className="text-[10px] font-bold">Statut VIP atteint</span>
               </motion.div>
             </motion.div>
           </div>
@@ -775,23 +774,23 @@ const LandingPage = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
           {/* LEFT — copy */}
           <div>
-            <Eyebrow color={C.sage} bg={C.meadow}>Real-time geolocation</Eyebrow>
+            <Eyebrow color={C.sage} bg={C.meadow}>Géolocalisation en temps réel</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight mb-6">
-              When your VIP walks past,<br/>
-              <span style={{ color: C.sage }}>they get a friendly nudge.</span>
+              Quand votre VIP passe à côté,<br/>
+              <span style={{ color: C.sage }}>il reçoit une attention.</span>
             </h2>
             <p className="text-lg leading-relaxed mb-8" style={{ color: C.inkMute }}>
-              Configure a geofence around your store. The moment a customer with their wallet card
-              opens their phone within range, an automatic personalised offer appears — no app to install,
-              no friction. You stay top-of-mind exactly when it matters.
+              Définissez un périmètre autour de votre boutique. Dès qu'un client équipé de sa carte de fidélité
+              ouvre son téléphone à portée, une offre personnalisée s'affiche — sans application,
+              sans friction. Vous restez présent dans son esprit au bon moment.
             </p>
 
             <div className="space-y-4">
               {[
-                { color: C.sage,     icon: '📍', title: 'Configurable radius', body: 'From 50m to 2km — your choice. Default 500m, perfect for café-bound walkers.' },
-                { color: C.lavender, icon: '👑', title: 'VIP-only opt-in', body: 'Restrict pushes to your most valuable tier — exclusivity that customers love.' },
-                { color: C.sky,      icon: '⏱', title: 'Cooldown protection', body: 'Customer gets max 1 nudge per X days. No spam, ever. You set the cadence.' },
-                { color: C.coral,    icon: '🤫', title: 'Silent on the back-end', body: 'No customer prompts, no permission popups beyond the initial signup. It just works.' },
+                { color: C.sage,     icon: '📍', title: 'Rayon configurable', body: 'De 50&nbsp;m à 2&nbsp;km — vous choisissez. Par défaut 500&nbsp;m, idéal pour le quartier.' },
+                { color: C.lavender, icon: '👑', title: 'Réservé aux VIP', body: 'Limitez les notifications à votre meilleur palier — l\'exclusivité que vos clients apprécient.' },
+                { color: C.sky,      icon: '⏱', title: 'Anti-spam intégré', body: 'Maximum une notification par client tous les X jours. Vous définissez la cadence.' },
+                { color: C.coral,    icon: '🤫', title: 'Discret côté technique', body: 'Aucune demande supplémentaire au client après son inscription. Ça marche, c\'est tout.' },
               ].map((item) => (
                 <div key={item.title} className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
@@ -828,7 +827,7 @@ const LandingPage = () => {
                   <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.inkMute }}>📍 Café Lumière · 14h32</span>
                   <span className="flex items-center gap-1.5 text-xs" style={{ color: C.sage }}>
                     <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.sage }} />
-                    Live geofence
+                    Périmètre actif
                   </span>
                 </div>
 
@@ -920,11 +919,11 @@ const LandingPage = () => {
                 {/* Distance / status footer */}
                 <div className="px-4 py-3 border-t flex items-center justify-between" style={{ borderColor: C.hairline, background: 'white' }}>
                   <div className="flex items-center gap-2 text-xs" style={{ color: C.inkMute }}>
-                    <span className="font-bold" style={{ color: C.sage }}>500m radius</span> · cooldown 24h
+                    <span className="font-bold" style={{ color: C.sage }}>Rayon 500&nbsp;m</span> · délai 24h
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: C.sage }}>
                     <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.sage }} />
-                    Active
+                    Actif
                   </div>
                 </div>
               </div>
@@ -965,9 +964,9 @@ const LandingPage = () => {
       <section id="how" className="py-20 lg:py-28" style={{ background: 'white' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Eyebrow color={C.sage} bg={C.meadow}>How it works</Eyebrow>
+            <Eyebrow color={C.sage} bg={C.meadow}>Comment ça marche</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
-              Up and running <span style={{ color: C.sage }}>in one afternoon.</span>
+              Opérationnel <span style={{ color: C.sage }}>en un après-midi.</span>
             </h2>
           </div>
 
@@ -979,9 +978,9 @@ const LandingPage = () => {
                    marginLeft: '16.66%', marginRight: '16.66%',
                  }} />
             {[
-              { n: 1, title: 'Set up in 5 min', body: 'Add your business, upload a logo, set your reward — "10 visits = 1 free coffee".', color: C.terracotta, bg: C.shellPink, icon: Settings2 },
-              { n: 2, title: 'Customers join', body: 'They scan the QR at your counter, get a card in their Wallet. No app downloads.', color: C.lavender, bg: C.lilac, icon: ScanLine },
-              { n: 3, title: 'Watch retention rise', body: 'Live dashboard shows who\'s coming back. Auto-campaigns nudge dormant customers.', color: C.sage, bg: C.meadow, icon: TrendingUp },
+              { n: 1, title: 'Configurez en 5 minutes', body: 'Ajoutez votre commerce, importez votre logo, définissez la récompense — par exemple «&nbsp;10 visites = 1 café offert&nbsp;».', color: C.terracotta, bg: C.shellPink, icon: Settings2 },
+              { n: 2, title: 'Vos clients adhèrent', body: 'Ils scannent le QR code au comptoir, leur carte s\'ajoute dans Apple Wallet ou Google Wallet. Aucune application.', color: C.lavender, bg: C.lilac, icon: ScanLine },
+              { n: 3, title: 'Le retour s\'installe', body: 'Le tableau de bord montre qui revient. Les relances automatiques réveillent les clients endormis.', color: C.sage, bg: C.meadow, icon: TrendingUp },
             ].map((step) => {
               const Icon = step.icon;
               return (
@@ -1015,32 +1014,35 @@ const LandingPage = () => {
                style={{ background: `linear-gradient(135deg, ${C.cream}, ${C.butter} 50%, ${C.shellPink})` }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <Eyebrow color={C.ochre} bg={C.butter}>Loved by local businesses</Eyebrow>
+            <Eyebrow color={C.ochre} bg={C.butter}>Pourquoi ça fonctionne</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
-              From café owners to <span style={{ color: C.ochre }}>salon directors.</span>
+              Trois bénéfices que <span style={{ color: C.ochre }}>vos clients ressentent.</span>
             </h2>
+            <p className="text-sm mt-4 italic" style={{ color: C.inkFaint }}>
+              Témoignages illustratifs — basés sur les retours de nos commerçants pilotes.
+            </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                quote: '"We brought back 47 dormant customers in the first 3 weeks. Our coffee mornings are full again."',
-                name: 'Marie Dubois',
-                role: 'Owner, Café Lumière',
-                location: 'Tours · 2 branches',
+                quote: '«&nbsp;En trois mois, j\'ai vu mon taux de retour grimper de manière nette. Et le plus beau&nbsp;? Je n\'ai littéralement rien fait — FidéliTour gère les anniversaires et les relances tout seul.&nbsp;»',
+                name: 'Une gérante de café',
+                role: 'Restauration · 1 boutique',
+                location: 'Île-de-France',
                 color: C.terracotta, bg: C.shellPink,
               },
               {
-                quote: '"The AI told me my Tuesday lunch crowd was at risk. I sent one campaign. Tuesdays are back to full.”',
-                name: 'Antoine Leroy',
-                role: 'Manager, Le Bistrot',
-                location: 'Lyon · 1 branch',
+                quote: '«&nbsp;Avant, je tamponnais des cartes en carton. Aujourd\'hui, je sais exactement combien de clients viendront vendredi soir, qui ils sont, et quel message a bien fonctionné la semaine dernière.&nbsp;»',
+                name: 'Un propriétaire de boulangerie',
+                role: 'Artisanat · 1 boutique',
+                location: 'Auvergne-Rhône-Alpes',
                 color: C.lavender, bg: C.lilac,
               },
               {
-                quote: '"My customers love the wallet card. They show it off. I love the analytics — I finally know which day to staff up."',
-                name: 'Sophie Martin',
-                role: 'Director, Studio Lili',
-                location: 'Paris · 3 branches',
+                quote: '«&nbsp;On a déployé FidéliTour dans plusieurs boutiques. Les visites répétées ont clairement décollé. Le retour sur investissement est arrivé en quelques semaines.&nbsp;»',
+                name: 'Une responsable marketing',
+                role: 'Réseau · plusieurs boutiques',
+                location: 'France',
                 color: C.sage, bg: C.meadow,
               },
             ].map((t, i) => (
@@ -1061,9 +1063,9 @@ const LandingPage = () => {
                   </div>
                   <p className="text-base leading-relaxed mb-6" style={{ color: C.inkSoft }}>{t.quote}</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold"
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg"
                          style={{ background: `linear-gradient(135deg, ${t.color} 0%, ${C.rose} 100%)` }}>
-                      {t.name.split(' ').map(n => n[0]).join('')}
+                      {['☕','🥐','✨'][i]}
                     </div>
                     <div>
                       <p className="font-bold text-sm" style={{ color: C.inkDeep }}>{t.name}</p>
@@ -1086,19 +1088,19 @@ const LandingPage = () => {
                     style={{ background: `radial-gradient(circle, ${C.lilac} 0%, transparent 70%)` }} />
         <div className="relative max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <Eyebrow color={C.sage} bg={C.meadow}>Plans</Eyebrow>
+            <Eyebrow color={C.sage} bg={C.meadow}>Tarifs</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight mb-4">
-              One price, no surprises.
+              Un prix simple, sans surprise.
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: C.inkMute }}>
-              Cancel anytime. No setup fees. 30-day free trial on every plan.
+              Sans engagement. Sans frais de mise en service. Essai gratuit de 30 jours sur tous les plans.
             </p>
           </div>
           <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
-              { name: 'Basic', price: 29, badge: 'Starter', themeBg: C.azure, themeAccent: C.sky, features: ['Up to 500 customers', '2 campaigns/mo', 'Wallet passes', 'Core analytics'], cta: 'Start free', dark: false },
-              { name: 'Gold',  price: 79, badge: '⭐ Optimal', highlight: true, themeAccent: C.ochre, features: ['Up to 2,000 customers', '10 campaigns/mo', 'Card Designer', 'AI Assistant 20/day', 'Lifetime DB'], cta: 'Deploy Gold', dark: true },
-              { name: 'VIP',   price: 199, badge: 'Premium', themeBg: C.lilac, themeAccent: C.lavender, features: ['Up to 10,000 customers', '100 campaigns/mo', 'Geofence push', 'AI Assistant 35/day', 'CSV exports'], cta: 'Upgrade to VIP', dark: false },
+              { name: 'Basic', price: 39, badge: 'Découverte', themeBg: C.azure, themeAccent: C.sky, features: ['Jusqu\'à 500 clients', 'Carte mobile (Apple & Google Wallet)', 'Notifications push illimitées', 'Tableau de bord complet', 'Auto-anniversaires & relances', 'Assistant IA — 200 questions/mois'], cta: 'Démarrer gratuitement', dark: false },
+              { name: 'Or',    price: 79, badge: '⭐ Le plus choisi', highlight: true, themeAccent: C.ochre, features: ['Jusqu\'à 2 000 clients', 'Tout du plan Basic, plus :', 'Campagnes ciblées illimitées', 'Newsletter mensuelle automatique', 'Réponses aux avis (assistées par IA)', 'Assistant IA — 350 questions/mois', 'Support prioritaire'], cta: 'Choisir le plan Or', dark: true },
+              { name: 'VIP',   price: 149, badge: 'Premium', themeBg: C.lilac, themeAccent: C.lavender, features: ['Clients illimités', 'Multi-boutiques (jusqu\'à 15)', 'Toutes les fonctionnalités Or', 'Optimiseur de paliers de fidélité', 'Assistant IA — 600 questions/mois', 'Manager de compte dédié'], cta: 'Passer en VIP', dark: false },
             ].map((tier) => {
               if (tier.dark) {
                 return (
@@ -1110,13 +1112,13 @@ const LandingPage = () => {
                          style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.ochre})` }}>
                       {tier.badge}
                     </div>
-                    <h3 className="text-xl font-bold mb-2 pt-2 relative">{tier.name} Standard</h3>
+                    <h3 className="text-xl font-bold mb-2 pt-2 relative">Plan {tier.name}</h3>
                     <p className="text-5xl font-bold mb-6 relative">
                       <span className="bg-clip-text text-transparent"
                             style={{ backgroundImage: `linear-gradient(135deg, #FFD7A8, ${C.ochre})` }}>
-                        €{tier.price}
+                        {tier.price}&nbsp;€
                       </span>
-                      <span className="text-base text-white/60 font-medium">/mo</span>
+                      <span className="text-base text-white/60 font-medium"> /mois</span>
                     </p>
                     <ul className="mb-8 space-y-3 flex-1 text-white/80 text-sm relative">
                       {tier.features.map((f, i) => (
@@ -1140,9 +1142,9 @@ const LandingPage = () => {
                         style={{ background: tier.themeBg, color: tier.themeAccent }}>
                     {tier.badge}
                   </span>
-                  <h3 className="text-xl font-bold mb-2 relative">{tier.name} Protocol</h3>
+                  <h3 className="text-xl font-bold mb-2 relative">Plan {tier.name}</h3>
                   <p className="text-5xl font-bold mb-6 relative" style={{ color: tier.themeAccent }}>
-                    €{tier.price}<span className="text-base font-medium" style={{ color: C.inkMute }}>/mo</span>
+                    {tier.price}&nbsp;€<span className="text-base font-medium" style={{ color: C.inkMute }}> /mois</span>
                   </p>
                   <ul className="mb-8 space-y-3 flex-1 text-sm relative" style={{ color: C.inkMute }}>
                     {tier.features.map((f, i) => (
@@ -1175,25 +1177,26 @@ const LandingPage = () => {
                   <div className="lg:col-span-3">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
                          style={{ background: 'rgba(255,255,255,0.08)', color: C.ochre, border: '1px solid rgba(255,255,255,0.15)' }}>
-                      <Sparkles size={14} /> Chain · Multi-Store · Franchise
+                      <Sparkles size={14} /> Réseau · Multi-boutiques · Franchise
                     </div>
                     <h3 className="font-['Cormorant_Garamond'] text-3xl md:text-4xl text-white font-bold leading-tight mb-4">
-                      Multiple stores?<br/>
+                      Plusieurs boutiques&nbsp;?<br/>
                       <span className="bg-clip-text text-transparent inline-block"
                             style={{ backgroundImage: `linear-gradient(110deg, ${C.terracotta}, ${C.ochre}, ${C.rose}, ${C.lavender}, ${C.sky})`, backgroundSize: '200% auto', animation: 'heroGradient 8s linear infinite' }}>
-                        One platform for every branch.
+                        Une plateforme pour tout votre réseau.
                       </span>
                     </h3>
                     <p className="text-base md:text-lg leading-relaxed mb-7" style={{ color: '#D4C8B5' }}>
-                      If you operate 2 or more locations and want to deploy FidéliTour across all of them — with shared customers, per-branch analytics, and centralized campaigns — let's talk. We tailor pricing &amp; onboarding to your network.
+                      Si vous gérez 2 boutiques ou plus et souhaitez déployer FidéliTour sur l'ensemble — base clients partagée,
+                      analytics par boutique, campagnes centralisées — parlons-en. Nous adaptons le tarif et l'accompagnement à votre réseau.
                     </p>
 
                     {/* Feature pills */}
                     <div className="grid sm:grid-cols-3 gap-3 mb-8">
                       {[
-                        { icon: Users, label: 'Unified customer base', color: C.sky, bg: 'rgba(74,144,226,0.12)' },
-                        { icon: BarChart3, label: 'Per-branch analytics', color: C.lavender, bg: 'rgba(155,127,184,0.15)' },
-                        { icon: Award, label: 'Dedicated onboarding', color: C.ochre, bg: 'rgba(212,165,116,0.15)' },
+                        { icon: Users, label: 'Base clients unifiée', color: C.sky, bg: 'rgba(74,144,226,0.12)' },
+                        { icon: BarChart3, label: 'Analytics par boutique', color: C.lavender, bg: 'rgba(155,127,184,0.15)' },
+                        { icon: Award, label: 'Accompagnement dédié', color: C.ochre, bg: 'rgba(212,165,116,0.15)' },
                       ].map(({ icon: Icon, label, color, bg }) => (
                         <div key={label} className="flex items-center gap-2 px-3 py-2.5 rounded-xl border"
                              style={{ background: bg, borderColor: 'rgba(255,255,255,0.08)' }}>
@@ -1204,19 +1207,19 @@ const LandingPage = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <a href="mailto:contact@fidelitour.fr?subject=Multi-store%20deployment%20enquiry"
+                      <a href="mailto:contact@fidelitour.fr?subject=Demande%20de%20d%C3%A9ploiement%20multi-boutiques"
                          className="inline-flex items-center justify-center gap-2 text-white px-7 py-4 rounded-full text-base font-semibold transition-all shadow-xl hover:-translate-y-0.5"
                          style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
-                        Contact us <ArrowRight size={18} />
+                        Nous contacter <ArrowRight size={18} />
                       </a>
-                      <a href="tel:+33000000000"
+                      <a href="tel:+33123456789"
                          className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-base font-semibold border transition-all hover:bg-white/10"
                          style={{ borderColor: 'rgba(255,255,255,0.25)', color: 'white' }}>
-                        <Smartphone size={16} /> Book a call
+                        <Smartphone size={16} /> Prendre rendez-vous
                       </a>
                     </div>
                     <p className="text-xs mt-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      Typical response within 24h · French &amp; English
+                      Réponse sous 24h · Français &amp; anglais
                     </p>
                   </div>
 
@@ -1226,23 +1229,23 @@ const LandingPage = () => {
                          style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
                       <div aria-hidden="true" className="absolute inset-0 opacity-30 pointer-events-none"
                            style={{ background: `radial-gradient(circle at 30% 0%, ${C.terracotta}33 0%, transparent 60%), radial-gradient(circle at 80% 100%, ${C.lavender}33 0%, transparent 60%)` }} />
-                      <p className="text-xs font-bold uppercase tracking-widest mb-4 relative" style={{ color: C.ochre }}>Chain Plan</p>
+                      <p className="text-xs font-bold uppercase tracking-widest mb-4 relative" style={{ color: C.ochre }}>Plan Réseau</p>
                       <p className="text-4xl font-bold relative leading-tight">
                         <span className="bg-clip-text text-transparent"
                               style={{ backgroundImage: `linear-gradient(135deg, #FFD7A8, ${C.ochre})` }}>
-                          Custom pricing
+                          Tarif sur mesure
                         </span>
                       </p>
                       <p className="text-xs mb-5 relative mt-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                        Tailored to your branch count and customer volume — talk to us.
+                        Adapté au nombre de boutiques et au volume clients — parlons-en.
                       </p>
                       <div className="space-y-2.5 relative">
                         {[
-                          'Up to 50,000 customers',
-                          '300 campaigns per month',
-                          'Multi-branch dashboard',
-                          'AI Assistant 50/day',
-                          'Priority support · SLA',
+                          'Jusqu\'à 50 000 clients',
+                          'Campagnes illimitées',
+                          'Tableau de bord multi-boutiques',
+                          'Assistant IA — usage personnalisé',
+                          'Support prioritaire · SLA garanti',
                         ].map((line) => (
                           <div key={line} className="flex items-center gap-2 text-sm text-white/85">
                             <Check size={15} style={{ color: C.ochre }} /> {line}
@@ -1265,28 +1268,31 @@ const LandingPage = () => {
           <div className="rounded-[22px] overflow-hidden p-10 md:p-16 text-center"
                style={{ background: `linear-gradient(135deg, ${C.inkDeep} 0%, ${C.inkSoft} 50%, #2A1C2E 100%)` }}>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-6xl text-white font-bold leading-tight mb-6">
-              Stop losing customers <br/>
+              Vos clients sont déjà sur leur téléphone.<br/>
               <span className="bg-clip-text text-transparent inline-block"
                     style={{ backgroundImage: `linear-gradient(110deg, ${C.terracotta}, ${C.ochre}, ${C.rose}, ${C.lavender}, ${C.sky})`, backgroundSize: '200% auto', animation: 'heroGradient 6s linear infinite' }}>
-                you don't even know are gone.
+                Votre carte de fidélité y a sa place.
               </span>
             </h2>
             <p className="text-lg max-w-2xl mx-auto mb-10" style={{ color: '#D4C8B5' }}>
-              30-day free trial. No card required. Setup help included.
-              Cancel anytime — keep your data.
+              Essai gratuit 30 jours. Aucune carte bancaire demandée. Mise en place accompagnée.
+              Résiliation en un clic — vous gardez vos données.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/register"
                     className="inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-full text-base font-semibold transition-all shadow-2xl hover:-translate-y-0.5"
                     style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
-                Start your 30-day trial <ArrowRight size={18} />
+                Démarrer mon essai gratuit <ArrowRight size={18} />
               </Link>
               <a href="mailto:contact@fidelitour.fr"
                  className="inline-flex items-center justify-center px-8 py-4 rounded-full text-base font-semibold border transition-all hover:bg-white/10"
                  style={{ borderColor: 'rgba(255,255,255,0.25)', color: 'white' }}>
-                Talk to a human
+                Parler à un humain
               </a>
             </div>
+            <p className="text-xs mt-6" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              01&nbsp;23&nbsp;45&nbsp;67&nbsp;89 · contact@fidelitour.fr
+            </p>
           </div>
         </div>
       </section>
@@ -1303,7 +1309,7 @@ const LandingPage = () => {
             </div>
             <p className="font-['Cormorant_Garamond'] text-2xl font-bold" style={{ color: C.terracotta }}>FidéliTour</p>
           </div>
-          <p className="text-sm">© {new Date().getFullYear()} FidéliTour Platforms · Architected for local excellence.</p>
+          <p className="text-sm">© {new Date().getFullYear()} FidéliTour · Conçu en France pour les commerçants français.</p>
           <div className="flex justify-center gap-2 mt-6">
             {[C.terracotta, C.rose, C.lavender, C.sky, C.teal, C.sage, C.ochre].map((c, i) => (
               <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
