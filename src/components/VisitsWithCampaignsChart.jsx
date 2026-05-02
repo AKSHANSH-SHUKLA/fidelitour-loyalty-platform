@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../lib/api';
-import { Megaphone, Send, Eye, MousePointerClick, Users, X } from 'lucide-react';
+import { Megaphone, Send, Eye, MousePointerClick, Users, X, CalendarDays, ExternalLink } from 'lucide-react';
 import {
   ComposedChart, Bar, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -27,6 +27,16 @@ const VisitsWithCampaignsChart = () => {
   const [data, setData] = useState({ visit_series: [], campaign_markers: [], totals: {} });
   const [loading, setLoading] = useState(true);
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
+
+  // Click-a-bar drill-down: customers who visited on a specific day
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [dayDetail, setDayDetail] = useState(null);          // { rows, visits_count, unique_customers, total_revenue }
+  const [dayLoading, setDayLoading] = useState(false);
+  const [dayError, setDayError] = useState(null);
+
+  // Click-a-campaign drill-down: recipient list + who actually visited after
+  const [campaignTracking, setCampaignTracking] = useState(null);
+  const [campaignTrackingLoading, setCampaignTrackingLoading] = useState(false);
 
   const days = TimeRangeSelector.toDays(range) ?? 30;
 
@@ -108,6 +118,52 @@ const VisitsWithCampaignsChart = () => {
     setSelectedCampaignId(camps[0].id);
   };
 
+  // Click-a-bar handler: fetch the customers who visited that day
+  const onBarClick = (point) => {
+    const date = point?.activeLabel || point?.date || point?.payload?.date;
+    if (!date) return;
+    if (selectedDate === date) {
+      // Toggle off if user clicks the same bar again
+      setSelectedDate(null);
+      setDayDetail(null);
+      return;
+    }
+    setSelectedDate(date);
+  };
+
+  // Fetch the day-detail (customers who visited) when selectedDate changes
+  useEffect(() => {
+    if (!selectedDate) return;
+    let cancelled = false;
+    setDayLoading(true);
+    setDayError(null);
+    setDayDetail(null);
+    api.get('/owner/analytics/history/visits-on-day', { params: { date: selectedDate } })
+      .then((res) => { if (!cancelled) setDayDetail(res.data); })
+      .catch((e) => {
+        if (!cancelled) setDayError(e?.response?.data?.detail || 'Failed to load customers for this day.');
+      })
+      .finally(() => { if (!cancelled) setDayLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedDate]);
+
+  // Fetch full campaign tracking (recipients with name/email/opened/visited)
+  // when a campaign is selected. Falls back gracefully if the endpoint errors.
+  useEffect(() => {
+    if (!selectedCampaignId) {
+      setCampaignTracking(null);
+      return;
+    }
+    let cancelled = false;
+    setCampaignTrackingLoading(true);
+    setCampaignTracking(null);
+    api.get(`/owner/campaigns/${selectedCampaignId}/tracking`)
+      .then((res) => { if (!cancelled) setCampaignTracking(res.data); })
+      .catch(() => { /* silent — falls back to summary metrics only */ })
+      .finally(() => { if (!cancelled) setCampaignTrackingLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedCampaignId]);
+
   return (
     <div className="rounded-xl bg-white p-6 mt-6" style={{ border: `1px solid ${C_PS.hairline}` }}>
       <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
@@ -140,7 +196,11 @@ const VisitsWithCampaignsChart = () => {
           <div className="h-full flex items-center justify-center text-sm" style={{ color: C_PS.inkMute }}>Loading…</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 16, right: 16, bottom: 8, left: 0 }}
+              onClick={onBarClick}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
               <XAxis dataKey="date" tickFormatter={fmtTickDate} stroke="#57534E" fontSize={11}
                 interval={Math.max(0, Math.floor(chartData.length / 12))} />
@@ -148,11 +208,17 @@ const VisitsWithCampaignsChart = () => {
               <Tooltip content={<TooltipContent />} />
               <Legend
                 payload={[
-                  { value: 'Visits', type: 'square', color: C_PS.terracotta },
-                  { value: 'Campaign sent', type: 'circle', color: CAMPAIGN_COLOR },
+                  { value: 'Visits (click a bar to see customers)', type: 'square', color: C_PS.terracotta },
+                  { value: 'Campaign sent (click for recipients)', type: 'circle', color: CAMPAIGN_COLOR },
                 ]}
               />
-              <Bar dataKey="visits" fill={C_PS.terracotta} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="visits"
+                fill={C_PS.terracotta}
+                radius={[4, 4, 0, 0]}
+                cursor="pointer"
+                onClick={onBarClick}
+              />
               <Scatter
                 name="Campaign sent"
                 dataKey="campaign_y"
@@ -165,6 +231,53 @@ const VisitsWithCampaignsChart = () => {
           </ResponsiveContainer>
         )}
       </div>
+
+      {/* Day-detail panel — appears when a bar is clicked */}
+      {selectedDate && (
+        <div className="mt-4 rounded-xl p-4 relative"
+          style={{ background: `${C_PS.terracotta}0D`, border: `1px solid ${C_PS.terracotta}33` }}>
+          <button
+            type="button"
+            aria-label="Close day details"
+            onClick={() => { setSelectedDate(null); setDayDetail(null); }}
+            className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/40"
+            style={{ color: C_PS.terracotta }}
+          >
+            <X size={14} />
+          </button>
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarDays size={14} style={{ color: C_PS.terracotta }} />
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C_PS.terracotta }}>
+              Customers on {fmtFullDate(selectedDate)}
+            </p>
+          </div>
+
+          {dayLoading && (
+            <p className="text-sm" style={{ color: C_PS.inkMute }}>Loading customers…</p>
+          )}
+          {dayError && (
+            <p className="text-sm text-red-600">{dayError}</p>
+          )}
+
+          {dayDetail && !dayLoading && (
+            <>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <Metric label="Visits" value={dayDetail.visits_count} icon={Megaphone} />
+                <Metric label="Unique customers" value={dayDetail.unique_customers} icon={Users} />
+                <Metric label="Revenue" value={`€${(dayDetail.total_revenue ?? 0).toFixed(2)}`} icon={Send} />
+              </div>
+
+              {dayDetail.rows.length === 0 ? (
+                <p className="text-sm italic" style={{ color: C_PS.inkMute }}>
+                  No visits recorded on this day.
+                </p>
+              ) : (
+                <CustomerList rows={dayDetail.rows} mode="day" />
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Campaign chips (click to inspect) */}
       {(data.campaign_markers || []).length > 0 && (
@@ -229,6 +342,30 @@ const VisitsWithCampaignsChart = () => {
               hint="Visits within 15 days of send"
             />
           </div>
+
+          {/* Recipient drill-down */}
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: `${CAMPAIGN_COLOR}33` }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: CAMPAIGN_COLOR }}>
+              Recipients & responses
+            </p>
+            {campaignTrackingLoading && (
+              <p className="text-sm" style={{ color: C_PS.inkMute }}>Loading recipients…</p>
+            )}
+            {!campaignTrackingLoading && campaignTracking && Array.isArray(campaignTracking.recipients) && (
+              campaignTracking.recipients.length === 0 ? (
+                <p className="text-sm italic" style={{ color: C_PS.inkMute }}>
+                  No recipients recorded for this campaign.
+                </p>
+              ) : (
+                <CustomerList rows={campaignTracking.recipients} mode="campaign" />
+              )
+            )}
+            {!campaignTrackingLoading && !campaignTracking && (
+              <p className="text-sm italic" style={{ color: C_PS.inkMute }}>
+                Recipient details unavailable.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -251,6 +388,111 @@ const Metric = ({ label, value, icon: Icon, hint }) => (
     <p className="text-base font-bold" style={{ color: C_PS.inkDeep }}>{value ?? 0}</p>
     {hint && <p className="text-[10px] mt-0.5" style={{ color: C_PS.inkMute }}>{hint}</p>}
   </div>
+);
+
+/**
+ * Generic table of customers used by both the day-detail and the campaign-detail panels.
+ *
+ *   mode="day"      — shows visit_time, amount_paid, points_awarded
+ *   mode="campaign" — shows opened / visited badges
+ */
+const CustomerList = ({ rows, mode }) => {
+  const tierStyle = (tier) => {
+    const t = (tier || 'bronze').toLowerCase();
+    if (t === 'vip')    return { bg: '#1C1917', color: '#FFFFFF' };
+    if (t === 'gold')   return { bg: '#E3A869', color: '#1C1917' };
+    if (t === 'silver') return { bg: '#C0C0C0', color: '#1C1917' };
+    return { bg: '#A0826D', color: '#FFFFFF' };
+  };
+
+  const fmtTime = (iso) => {
+    if (!iso) return '—';
+    const dt = new Date(iso);
+    return dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div className="rounded-lg overflow-hidden bg-white" style={{ border: `1px solid ${C_PS.hairline}` }}>
+      <div
+        className="grid gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest"
+        style={{
+          color: C_PS.inkMute,
+          background: '#FAF8F4',
+          borderBottom: `1px solid ${C_PS.hairline}`,
+          gridTemplateColumns: mode === 'day'
+            ? '1.5fr 1.4fr 70px 70px 80px 70px'
+            : '1.5fr 1.6fr 70px 90px 90px',
+        }}
+      >
+        <span>Customer</span>
+        <span>Email</span>
+        <span>Tier</span>
+        {mode === 'day' && <><span>Time</span><span>Amount</span><span>Points</span></>}
+        {mode === 'campaign' && <><span>Opened</span><span>Visited</span></>}
+      </div>
+      <div className="max-h-72 overflow-y-auto divide-y" style={{ borderColor: C_PS.hairline }}>
+        {rows.map((r, i) => {
+          const ts = tierStyle(r.tier);
+          return (
+            <div
+              key={(r.customer_id || r.visit_id || i) + '_' + i}
+              className="grid gap-2 px-3 py-2 text-sm items-center"
+              style={{
+                gridTemplateColumns: mode === 'day'
+                  ? '1.5fr 1.4fr 70px 70px 80px 70px'
+                  : '1.5fr 1.6fr 70px 90px 90px',
+              }}
+            >
+              <span className="font-semibold truncate" style={{ color: C_PS.inkDeep }}>
+                {r.name || r.customer_name || '—'}
+              </span>
+              <span className="truncate text-xs" style={{ color: C_PS.inkMute }}>
+                {r.email || '—'}
+              </span>
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center"
+                style={{ background: ts.bg, color: ts.color }}
+              >
+                {(r.tier || 'bronze')}
+              </span>
+
+              {mode === 'day' && (
+                <>
+                  <span className="text-xs" style={{ color: C_PS.inkSoft }}>{fmtTime(r.visit_time)}</span>
+                  <span className="text-xs font-semibold" style={{ color: C_PS.inkDeep }}>
+                    €{(r.amount_paid ?? 0).toFixed(2)}
+                  </span>
+                  <span className="text-xs" style={{ color: C_PS.inkSoft }}>
+                    +{r.points_awarded ?? 0}
+                  </span>
+                </>
+              )}
+
+              {mode === 'campaign' && (
+                <>
+                  <Pill on={r.opened} labelOn="Yes" labelOff="No" colorOn="#7C3AED" />
+                  <Pill on={r.visited || r.visited_after} labelOn="Yes" labelOff="No" colorOn="#4A5D23" />
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const Pill = ({ on, labelOn, labelOff, colorOn }) => (
+  <span
+    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-center"
+    style={{
+      background: on ? `${colorOn}1A` : '#F5F5F4',
+      color: on ? colorOn : '#A8A29E',
+      border: `1px solid ${on ? colorOn + '44' : '#E7E5E4'}`,
+    }}
+  >
+    {on ? labelOn : labelOff}
+  </span>
 );
 
 export default VisitsWithCampaignsChart;

@@ -237,3 +237,71 @@ def visits_with_campaigns(
             "campaigns_sent": len(campaign_markers),
         },
     }
+
+
+@router.get("/api/owner/analytics/history/visits-on-day")
+def visits_on_day(
+    date: str,                                  # YYYY-MM-DD
+    token_data=Depends(require_role(["business_owner", "manager"])),
+):
+    """List the customers who visited on a specific day.
+
+    Powers the click-on-bar drill-down inside the "Visits with campaign markers"
+    chart on the Analytics page. Returns one row per visit (so a single
+    customer who visited twice that day shows up twice — sorted by visit_time).
+
+    Each row includes enough customer data to render a useful list inline:
+    name, email, phone, tier, total points, total visits, and the visit's
+    own amount_paid + points_awarded.
+    """
+    if not date or len(date) != 10:
+        raise HTTPException(status_code=400, detail="date must be YYYY-MM-DD")
+    try:
+        day_start = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid date format")
+    day_end = day_start + timedelta(days=1)
+    tid = token_data.tenant_id
+
+    visits = list(_db.visits.find({
+        "tenant_id": tid,
+        "visit_time": {"$gte": day_start, "$lt": day_end},
+    }).sort("visit_time", 1))
+
+    # Hydrate customer info with one batched query (cheaper than N find_ones).
+    cust_ids = list({v.get("customer_id") for v in visits if v.get("customer_id")})
+    customers_by_id: dict[str, dict] = {}
+    if cust_ids:
+        for c in _db.customers.find({"id": {"$in": cust_ids}}):
+            customers_by_id[c["id"]] = c
+
+    rows = []
+    total_revenue = 0.0
+    for v in visits:
+        cid = v.get("customer_id")
+        c = customers_by_id.get(cid) or {}
+        amount = float(v.get("amount_paid") or 0)
+        total_revenue += amount
+        ts = v.get("visit_time")
+        rows.append({
+            "visit_id": v.get("id"),
+            "visit_time": ts.isoformat() if isinstance(ts, datetime) else None,
+            "amount_paid": amount,
+            "points_awarded": int(v.get("points_awarded") or 0),
+            "customer_id": cid,
+            "name": c.get("name") or "—",
+            "email": c.get("email") or "",
+            "phone": c.get("phone") or "",
+            "tier": c.get("tier") or "bronze",
+            "total_points": int(c.get("points") or 0),
+            "total_visits": int(c.get("visits") or 0),
+            "barcode_id": c.get("barcode_id") or "",
+        })
+
+    return {
+        "date": date,
+        "visits_count": len(rows),
+        "unique_customers": len({r["customer_id"] for r in rows if r["customer_id"]}),
+        "total_revenue": round(total_revenue, 2),
+        "rows": rows,
+    }

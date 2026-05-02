@@ -119,26 +119,44 @@ def _dispatch_message(tenant_id: str, customer: dict, kind: str, title: str, bod
         "sent_at": now,
     })
 
-    # ---- Real-channel delivery: SMS via Twilio ----
+    # ---- Real-channel delivery — Web Push first, SMS as fallback ----
+    # Channel preference: Web Push > SMS > (email later).
+    # Web Push is free, instant, and customer already opted in via the wallet
+    # card page. SMS is the fallback for customers who haven't subscribed.
+    push_sent = False
     try:
-        # Lazy import — the auto_campaigns module must keep working even if
-        # services.sms ever has an import error in a sandboxed dev env.
-        from services.sms import send_sms, is_configured                 # noqa: WPS433
-        phone = customer.get("phone")
-        if phone and is_configured():
-            result = send_sms(phone, body)
-            _db.delivery_log.insert_one({
-                "tenant_id": tenant_id,
-                "customer_id": customer.get("id"),
-                "channel": "sms",
-                "kind": kind,
-                "phone": phone,
-                "result": result,
-                "timestamp": now,
-            })
+        from features.push_subscriptions import fan_out_to_customer       # noqa: WPS433
+        push_result = fan_out_to_customer(tenant_id, customer.get("id"), title, body)
+        push_sent = (push_result.get("sent", 0) > 0)
+        _db.delivery_log.insert_one({
+            "tenant_id": tenant_id,
+            "customer_id": customer.get("id"),
+            "channel": "web_push",
+            "kind": kind,
+            "result": push_result,
+            "timestamp": now,
+        })
     except Exception:
-        # Never let a delivery failure block the message dispatch.
         pass
+
+    # SMS fallback only if push didn't reach any device
+    if not push_sent:
+        try:
+            from services.sms import send_sms, is_configured              # noqa: WPS433
+            phone = customer.get("phone")
+            if phone and is_configured():
+                result = send_sms(phone, body)
+                _db.delivery_log.insert_one({
+                    "tenant_id": tenant_id,
+                    "customer_id": customer.get("id"),
+                    "channel": "sms_fallback",
+                    "kind": kind,
+                    "phone": phone,
+                    "result": result,
+                    "timestamp": now,
+                })
+        except Exception:
+            pass
 
 
 # ---------- Config endpoints ----------

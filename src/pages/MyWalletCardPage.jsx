@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Bell, RefreshCw, Trash2, Gift, Sparkles, ChevronRight, Store, MapPin, Phone, Globe, CheckCircle2, XCircle, Clock, ChevronDown, X } from 'lucide-react';
 import api, { publicAPI } from '../lib/api';
+import { ensureSubscribed, unsubscribe as unsubscribePush, isSupported as isPushSupported } from '../lib/webpush';
 import TierBadge from '../components/TierBadge';
 import { AuchanPreview, DEFAULT_LAYOUT as AUCHAN_DEFAULT } from '../components/AuchanCard';
 
@@ -143,6 +144,20 @@ const MyWalletCardPage = () => {
     })();
   }, [barcodeId]);
 
+  // Self-healing web-push subscription: if the customer has push_enabled=true
+  // (set on a previous visit) but the browser has no live subscription right
+  // now — e.g. they cleared site data, switched device, or the browser rotated
+  // the endpoint — silently re-register. This runs only when permission is
+  // already granted, so we never prompt the user unexpectedly.
+  useEffect(() => {
+    if (!data?.prefs?.push_enabled) return;
+    if (!isPushSupported()) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const tenantSlug = data?.tenant?.slug;
+    if (!tenantSlug || !barcodeId) return;
+    ensureSubscribed(tenantSlug, barcodeId).catch(() => { /* silent */ });
+  }, [data?.prefs?.push_enabled, data?.tenant?.slug, barcodeId]);
+
   // Real-time proximity push: when the wallet card page opens AND the user has
   // already granted geolocation, ping the backend with the current GPS. If the
   // customer is within the tenant's configured radius, a proximity push is
@@ -186,13 +201,38 @@ const MyWalletCardPage = () => {
     setSavingPrefs(true);
     const newVal = !data.prefs[key];
     try {
+      // Persist the preference flag first so the backend knows the user's intent
       const res = await api.put(`/card/${barcodeId}/prefs`, { [key]: newVal });
       setData({ ...data, prefs: res.data });
-      showToast(
-        key === 'auto_update'
-          ? (newVal ? 'Mise à jour automatique activée' : 'Mise à jour automatique désactivée')
-          : (newVal ? 'Notifications activées' : 'Notifications désactivées')
-      );
+
+      // For the push toggle, also drive the actual browser subscription.
+      // We do this AFTER the prefs save so the toggle visibly flips first.
+      if (key === 'push_enabled') {
+        const tenantSlug = data?.tenant?.slug;
+        if (newVal) {
+          if (!isPushSupported()) {
+            showToast("Ce navigateur ne supporte pas les notifications push.");
+          } else {
+            const result = await ensureSubscribed(tenantSlug, barcodeId);
+            if (result.ok) {
+              showToast('Notifications activées');
+            } else if (result.status === 'permission_denied') {
+              showToast("Veuillez autoriser les notifications dans votre navigateur.");
+            } else if (result.status === 'vapid_not_configured') {
+              showToast("Notifications push non configurées (contactez le commerçant).");
+            } else {
+              showToast("Impossible d'activer les notifications.");
+            }
+          }
+        } else {
+          await unsubscribePush(tenantSlug, barcodeId).catch(() => {});
+          showToast('Notifications désactivées');
+        }
+      } else {
+        showToast(
+          newVal ? 'Mise à jour automatique activée' : 'Mise à jour automatique désactivée'
+        );
+      }
     } catch (e) {
       showToast('Échec de la mise à jour');
     } finally {

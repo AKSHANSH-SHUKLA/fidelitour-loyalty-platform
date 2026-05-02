@@ -29,6 +29,7 @@ MODULES = [
     "features.customer_status",         # configurable active/inactive definition
     "features.tier_definitions",        # custom tier thresholds + big-spender rule
     "features.auto_campaigns",          # auto birthday + inactive rescue messages
+    "features.push_subscriptions",      # web push subscriptions + dispatch helper
     # AI / predictive — fully implemented (math-based)
     "features.ai_send_time",
     "features.ai_churn",
