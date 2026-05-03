@@ -587,16 +587,16 @@ const LandingPage = () => {
           <div className="text-center mb-14">
             <Eyebrow color={C.ochre} bg={C.butter}>Conçu pour vous</Eyebrow>
             <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
-              Trois métiers, trois quotidiens,<br/>
-              <span style={{ color: C.ochre }}>une même solution.</span>
+              Quel que soit votre métier,<br/>
+              <span style={{ color: C.ochre }}>FidéliTour s'adapte.</span>
             </h2>
             <p className="text-base mt-5 max-w-2xl mx-auto" style={{ color: C.inkMute }}>
-              FidéliTour est pensé pour la restauration, l'artisanat et les commerces de quartier.
-              Voici ce que ça donne concrètement.
+              Restauration, beauté, mode, artisanat, services de quartier — chaque commerçant
+              configure FidéliTour à son rythme et à ses règles. Voici ce que ça donne, concrètement.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 icon: '☕',
@@ -633,6 +633,42 @@ const LandingPage = () => {
                   'Promotions ciblées pour les soirs creux',
                 ],
                 color: C.lavender, bg: C.lilac,
+              },
+              {
+                icon: '✂️',
+                title: 'Salon de coiffure · Barbier',
+                lead: 'Un salon avec 200 clientes régulières.',
+                story: 'Le rendez-vous mensuel devient une relation suivie. La carte se remplit à chaque visite — au 8ᵉ passage, un soin offert. Les clientes qui n\'ont pas pris rendez-vous depuis 8 semaines reçoivent une relance personnalisée.',
+                wins: [
+                  'Cycle de fidélité aligné sur le rythme mensuel',
+                  'Réactivation des clientes qui s\'éloignent',
+                  'Promotions ciblées par type de prestation',
+                ],
+                color: C.rose, bg: C.blush,
+              },
+              {
+                icon: '👗',
+                title: 'Boutique mode · Concept store',
+                lead: 'Une boutique avec 1 200 clientes saisonnières.',
+                story: 'Les VIP sont prévenues en avant-première lors des nouvelles collections. Les anniversaires donnent droit à un avantage privé. Les clientes qui ont acheté plus de trois fois passent automatiquement au statut Or.',
+                wins: [
+                  'Avant-premières exclusives pour vos VIP',
+                  'Reconnaissance immédiate en magasin',
+                  'Suivi du parcours d\'achat sur la durée',
+                ],
+                color: C.sky, bg: C.azure,
+              },
+              {
+                icon: '🌿',
+                title: 'Fleuriste · Boutique cadeau',
+                lead: 'Un fleuriste avec 350 clients réguliers.',
+                story: 'Les clients qui passent chaque vendredi soir reçoivent une attention. Les anniversaires de mariage, fêtes des mères et grandes occasions sont anticipés par notification push, quelques jours avant la date.',
+                wins: [
+                  'Rappel automatique des grandes occasions',
+                  'Habitudes hebdomadaires reconnues',
+                  'Notification push avant chaque date clé',
+                ],
+                color: C.sage, bg: C.meadow,
               },
             ].map((sector, i) => (
               <motion.div
