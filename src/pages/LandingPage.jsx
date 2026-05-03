@@ -290,21 +290,60 @@ function HeroDashboardMockup() {
 /* =====================================================================
    BENTO FEATURE CARD — varied sizes, colorful surfaces
    ===================================================================== */
-function BentoCard({ children, className = '', tint = 'white', border = C.hairline, glow }) {
+function BentoCard({ children, className = '', tint = 'white', border = C.hairline, glow, accent }) {
+  // Resolve a faint accent for the second orb (defaults to glow's hue)
+  const orb2 = accent || glow || `${C.terracotta}33`;
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ type: 'spring', stiffness: 300 }}
+      whileHover={{ y: -4, scale: 1.005 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
       className={`relative rounded-3xl p-7 border overflow-hidden ${className}`}
-      style={{ background: tint, borderColor: border }}
+      style={{
+        // Subtle gradient mesh instead of flat tint — adds depth without busy-ness.
+        background: `
+          radial-gradient(circle at 100% 0%, ${tint} 0%, transparent 55%),
+          radial-gradient(circle at 0% 100%, ${tint} 0%, transparent 55%),
+          ${tint}
+        `,
+        borderColor: border,
+      }}
     >
+      {/* Top-right glow orb */}
       {glow && (
         <div
           aria-hidden="true"
-          className="absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl opacity-50 pointer-events-none"
+          className="absolute -top-16 -right-16 w-52 h-52 rounded-full blur-3xl opacity-60 pointer-events-none"
           style={{ background: glow }}
         />
       )}
+      {/* Bottom-left soft orb (always present, very subtle) */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute -bottom-20 -left-20 w-44 h-44 rounded-full blur-3xl pointer-events-none"
+        style={{ background: orb2, opacity: 0.35 }}
+        animate={{ x: [0, 12, 0], y: [0, -8, 0] }}
+        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      {/* Floating sparkle dots — three at different rhythms, very small */}
+      {[
+        { left: '18%', top: '24%', size: 4,  delay: 0,   color: glow || C.ochre },
+        { left: '78%', top: '42%', size: 3,  delay: 1.5, color: accent || C.rose },
+        { left: '55%', top: '78%', size: 5,  delay: 0.7, color: glow || C.lavender },
+      ].map((s, i) => (
+        <motion.span
+          key={i}
+          aria-hidden="true"
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            left: s.left, top: s.top,
+            width: s.size, height: s.size,
+            background: s.color,
+            filter: 'blur(0.5px)',
+          }}
+          animate={{ opacity: [0.15, 0.7, 0.15], scale: [1, 1.4, 1] }}
+          transition={{ duration: 3.5 + i * 0.6, repeat: Infinity, delay: s.delay, ease: 'easeInOut' }}
+        />
+      ))}
       <div className="relative">{children}</div>
     </motion.div>
   );
@@ -758,15 +797,50 @@ const LandingPage = () => {
                   </div>
                 </div>
 
-                {/* RIGHT — actual wallet card preview, tilted */}
+                {/* RIGHT — actual wallet card preview, tilted, with rainbow halo */}
                 <div className="relative hidden md:flex items-center justify-center">
+                  {/* Conic-gradient rainbow halo behind the card */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute rounded-[40px] blur-2xl pointer-events-none"
+                    style={{
+                      width: '110%', height: '85%',
+                      background: `conic-gradient(from 90deg, ${C.terracotta}, ${C.ochre}, ${C.rose}, ${C.lavender}, ${C.sky}, ${C.teal}, ${C.terracotta})`,
+                      opacity: 0.55,
+                    }}
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+                  />
+                  {/* Floating "live" badge */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute -left-2 top-3 z-10 hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-xl border"
+                    style={{ background: 'white', borderColor: C.hairline }}
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.sage }} />
+                    <span className="text-[9px] font-bold" style={{ color: C.inkDeep }}>Mise à jour live</span>
+                  </motion.div>
+                  {/* Floating "+25 pts" pill */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute -right-2 bottom-12 z-10 hidden md:flex items-center gap-1 px-2.5 py-1 rounded-full shadow-xl"
+                    style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.rose})`, color: 'white' }}
+                    animate={{ y: [0, 6, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+                  >
+                    <Sparkles size={10} />
+                    <span className="text-[9px] font-bold">+25 pts</span>
+                  </motion.div>
+                  {/* The actual card */}
                   <motion.div
                     initial={{ opacity: 0, rotate: 0, y: 10 }}
                     whileInView={{ opacity: 1, rotate: 6, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="origin-center"
-                    style={{ filter: 'drop-shadow(0 18px 40px rgba(28,25,23,0.20))' }}
+                    className="relative origin-center"
+                    style={{ filter: 'drop-shadow(0 22px 40px rgba(28,25,23,0.28))' }}
                   >
                     <AuchanPreview
                       ctx={{
@@ -781,9 +855,9 @@ const LandingPage = () => {
                       width={260}
                     />
                   </motion.div>
-                  {/* "Apple Wallet" tag floating below the card */}
-                  <span className="absolute bottom-1 right-2 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur text-[9px] font-bold uppercase tracking-widest border"
-                        style={{ color: C.inkMute, borderColor: C.hairline }}>
+                  {/* "Aperçu réel" tag floating below */}
+                  <span className="absolute bottom-1 right-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[9px] font-bold uppercase tracking-widest border z-10"
+                        style={{ color: C.terracotta, borderColor: `${C.terracotta}33`, boxShadow: `0 4px 12px ${C.terracotta}33` }}>
                     Aperçu réel
                   </span>
                 </div>
@@ -800,14 +874,32 @@ const LandingPage = () => {
               <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
                 Chaque message sonne comme vous. L'IA apprend votre ton à partir de vos anciennes campagnes.
               </p>
-              {/* Chat-bubble preview */}
-              <div className="rounded-2xl p-3 border space-y-2"
-                   style={{ background: 'white', borderColor: C.hairline }}>
-                <div className="rounded-xl px-3 py-2" style={{ background: `${C.lavender}15` }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: C.lavender }}>
-                    Votre voix
-                  </p>
-                  <p className="text-xs leading-snug" style={{ color: C.inkSoft }}>
+              {/* Chat-bubble preview — vivid gradient backdrop with sparkle */}
+              <div className="relative rounded-2xl p-3.5 border overflow-hidden"
+                   style={{
+                     background: `linear-gradient(135deg, white 0%, ${C.lilac} 60%, ${C.shellPink} 100%)`,
+                     borderColor: `${C.lavender}55`,
+                     boxShadow: `0 6px 20px -8px ${C.lavender}55`,
+                   }}>
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-60 pointer-events-none"
+                  style={{ background: C.rose }}
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <div className="relative rounded-xl px-3 py-2.5 backdrop-blur-sm"
+                     style={{
+                       background: `linear-gradient(135deg, ${C.lavender}25 0%, ${C.rose}20 100%)`,
+                       border: `1px solid ${C.lavender}33`,
+                     }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Sparkles size={10} style={{ color: C.lavender }} />
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C.lavender }}>
+                      Votre voix
+                    </p>
+                  </div>
+                  <p className="text-xs leading-snug font-medium" style={{ color: C.inkDeep }}>
                     «&nbsp;Marie, on a remarqué votre absence — un café offert vous attend cette semaine.&nbsp;»
                   </p>
                 </div>
@@ -824,32 +916,53 @@ const LandingPage = () => {
               <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
                 Avis classés par sujet — service, propreté, prix, accueil. Vous voyez ce qui marche, ce qui coince.
               </p>
-              {/* Stars + topic distribution */}
-              <div className="rounded-2xl p-3 border space-y-2.5"
-                   style={{ background: 'white', borderColor: C.hairline }}>
-                <div className="flex items-center justify-between">
+              {/* Stars + topic distribution — gradient backdrop, twinkling stars */}
+              <div className="relative rounded-2xl p-3.5 border overflow-hidden space-y-2.5"
+                   style={{
+                     background: `linear-gradient(135deg, white 0%, ${C.shellPink} 60%, ${C.butter} 100%)`,
+                     borderColor: `${C.coral}55`,
+                     boxShadow: `0 6px 20px -8px ${C.coral}55`,
+                   }}>
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute -top-6 -left-6 w-20 h-20 rounded-full blur-2xl opacity-60 pointer-events-none"
+                  style={{ background: C.ochre }}
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <div className="relative flex items-center justify-between">
                   <div className="flex gap-0.5">
-                    {[1,2,3,4,5].map((s) => (
-                      <Star key={s} size={12} fill={C.ochre} stroke={C.ochre} />
+                    {[0,1,2,3,4].map((i) => (
+                      <motion.span
+                        key={i}
+                        animate={{ scale: [1, 1.18, 1] }}
+                        transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.18, ease: 'easeInOut' }}
+                        style={{ display: 'inline-flex' }}
+                      >
+                        <Star size={13} fill={C.ochre} stroke={C.ochre} />
+                      </motion.span>
                     ))}
                   </div>
-                  <span className="text-xs font-bold" style={{ color: C.inkDeep }}>4,7/5</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: 'white', color: C.ochre, border: `1px solid ${C.ochre}55` }}>
+                    4,7/5
+                  </span>
                 </div>
                 {[
                   { topic: 'Service',   pct: 92, color: C.sage },
                   { topic: 'Propreté',  pct: 88, color: C.sky },
                   { topic: 'Accueil',   pct: 80, color: C.lavender },
                 ].map((t) => (
-                  <div key={t.topic} className="flex items-center gap-2">
-                    <span className="text-[10px] font-semibold w-14 shrink-0" style={{ color: C.inkMute }}>{t.topic}</span>
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: C.hairline }}>
+                  <div key={t.topic} className="relative flex items-center gap-2">
+                    <span className="text-[10px] font-bold w-14 shrink-0" style={{ color: C.inkSoft }}>{t.topic}</span>
+                    <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.7)' }}>
                       <motion.div
                         initial={{ width: 0 }}
                         whileInView={{ width: `${t.pct}%` }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                        transition={{ duration: 0.9, ease: 'easeOut' }}
                         className="h-full rounded-full"
-                        style={{ background: t.color }}
+                        style={{ background: `linear-gradient(90deg, ${t.color}, ${C.terracotta})` }}
                       />
                     </div>
                     <span className="text-[10px] font-bold w-7 text-right" style={{ color: t.color }}>{t.pct}%</span>
@@ -868,42 +981,80 @@ const LandingPage = () => {
               <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
                 Quand un client VIP passe à 500&nbsp;m de votre boutique, il reçoit un mot d'attention.
               </p>
-              {/* Mini map with pulsing geofence */}
+              {/* Mini map with pulsing geofence — vivid gradient base */}
               <div className="relative rounded-2xl border overflow-hidden"
-                   style={{ background: '#E8F0E5', borderColor: C.hairline, height: 120 }}>
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 120" preserveAspectRatio="xMidYMid slice">
+                   style={{
+                     background: `linear-gradient(135deg, #E8F4E2 0%, #D4ECCB 50%, #C8E0D8 100%)`,
+                     borderColor: `${C.sage}55`,
+                     height: 130,
+                     boxShadow: `0 6px 20px -8px ${C.sage}66`,
+                   }}>
+                {/* River accent */}
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 130" preserveAspectRatio="xMidYMid slice">
+                  {/* Soft park / river patches */}
+                  <path d="M 0 100 Q 90 88 180 102 T 280 96 L 280 130 L 0 130 Z" fill="#BDD9B2" opacity="0.55" />
+                  <circle cx="240" cy="30" r="22" fill="#A6CC97" opacity="0.45" />
                   {/* Streets */}
-                  <line x1="0" y1="40" x2="280" y2="40" stroke="white" strokeWidth="6" />
-                  <line x1="0" y1="80" x2="280" y2="80" stroke="white" strokeWidth="4" />
-                  <line x1="100" y1="0" x2="100" y2="120" stroke="white" strokeWidth="5" />
-                  <line x1="200" y1="0" x2="200" y2="120" stroke="white" strokeWidth="4" />
+                  <line x1="0" y1="40" x2="280" y2="40" stroke="white" strokeWidth="7" />
+                  <line x1="0" y1="80" x2="280" y2="80" stroke="white" strokeWidth="5" />
+                  <line x1="100" y1="0" x2="100" y2="130" stroke="white" strokeWidth="6" />
+                  <line x1="200" y1="0" x2="200" y2="130" stroke="white" strokeWidth="5" />
                   {/* Buildings */}
                   <rect x="40" y="50" width="40" height="22" fill="white" stroke="#D5D0C9" strokeWidth="1" rx="2" />
                   <rect x="220" y="48" width="34" height="26" fill="white" stroke="#D5D0C9" strokeWidth="1" rx="2" />
+                  <rect x="125" y="48" width="28" height="22" fill="white" stroke="#D5D0C9" strokeWidth="1" rx="2" />
                 </svg>
                 {/* Pulse ring + pin centered */}
                 <motion.div
                   aria-hidden="true"
                   className="absolute rounded-full border-2 border-dashed"
                   style={{
-                    left: '50%', top: '50%', width: 110, height: 110,
+                    left: '50%', top: '50%', width: 120, height: 120,
                     transform: 'translate(-50%, -50%)',
                     borderColor: C.sage,
-                    background: `radial-gradient(circle, ${C.sage}25 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${C.sage}30 0%, ${C.teal}15 50%, transparent 75%)`,
                   }}
-                  animate={{ scale: [1, 1.06, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  animate={{ scale: [1, 1.08, 1], rotate: [0, 360] }}
+                  transition={{
+                    scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+                    rotate: { duration: 60, repeat: Infinity, ease: 'linear' },
+                  }}
                 />
-                <div className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white"
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute"
+                  style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-xl border-2 border-white"
                        style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.rose})` }}>
-                    <span className="text-xs">☕</span>
+                    <span className="text-sm">☕</span>
                   </div>
-                </div>
+                </motion.div>
+                {/* Customer dot moving toward shop */}
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute"
+                  initial={{ left: '12%', top: '85%' }}
+                  animate={{ left: ['12%', '32%', '50%'], top: ['85%', '70%', '50%'] }}
+                  transition={{ duration: 5, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut', repeatDelay: 1 }}
+                >
+                  <div className="relative -translate-x-1/2 -translate-y-1/2">
+                    <span className="absolute -inset-1.5 rounded-full opacity-50 animate-ping" style={{ background: C.sky }} />
+                    <div className="relative w-3.5 h-3.5 rounded-full border-2 border-white shadow-md" style={{ background: C.sky }} />
+                  </div>
+                </motion.div>
                 {/* Distance label */}
-                <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold"
-                      style={{ background: 'white', color: C.sage, border: `1px solid ${C.sage}33` }}>
+                <span className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-bold backdrop-blur"
+                      style={{ background: 'rgba(255,255,255,0.92)', color: C.sage, border: `1px solid ${C.sage}55`, boxShadow: `0 2px 8px ${C.sage}33` }}>
                   500&nbsp;m
+                </span>
+                {/* Live indicator */}
+                <span className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold backdrop-blur"
+                      style={{ background: 'rgba(255,255,255,0.92)', color: C.sage, border: `1px solid ${C.sage}33` }}>
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.sage }} />
+                  En direct
                 </span>
               </div>
             </BentoCard>
@@ -918,9 +1069,21 @@ const LandingPage = () => {
               <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
                 12 segments en un clic. Habitués du midi, clients endormis, gros paniers — en 30 secondes.
               </p>
-              {/* Segment chips */}
-              <div className="rounded-2xl p-3 border"
-                   style={{ background: 'white', borderColor: C.hairline }}>
+              {/* Segment chips — gradient backdrop with floating glow */}
+              <div className="relative rounded-2xl p-3.5 border overflow-hidden"
+                   style={{
+                     background: `linear-gradient(135deg, white 0%, ${C.butter} 60%, ${C.shellPink} 100%)`,
+                     borderColor: `${C.ochre}55`,
+                     boxShadow: `0 6px 20px -8px ${C.ochre}66`,
+                   }}>
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-60 pointer-events-none"
+                  style={{ background: C.terracotta }}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <div className="relative">
                 <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: C.inkFaint }}>
                   Choisissez vos clients
                 </p>
@@ -949,12 +1112,17 @@ const LandingPage = () => {
                     </motion.span>
                   ))}
                 </div>
-                <div className="flex items-center justify-between mt-3 pt-2.5 border-t" style={{ borderColor: C.hairline }}>
+                <div className="flex items-center justify-between mt-3 pt-2.5 border-t" style={{ borderColor: `${C.ochre}33` }}>
                   <span className="text-[10px]" style={{ color: C.inkMute }}>~ <b style={{ color: C.inkDeep }}>184 clients</b> ciblés</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: C.terracotta, color: 'white' }}>
+                  <motion.span
+                    className="text-[10px] font-bold px-2.5 py-1 rounded-full text-white"
+                    style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.rose})`, boxShadow: `0 4px 12px ${C.terracotta}55` }}
+                    animate={{ scale: [1, 1.04, 1] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
                     Envoyer →
-                  </span>
+                  </motion.span>
+                </div>
                 </div>
               </div>
             </BentoCard>
