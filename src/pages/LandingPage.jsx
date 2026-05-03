@@ -730,78 +730,233 @@ const LandingPage = () => {
 
           {/* Bento — 6 cards in a varied grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 auto-rows-fr">
-            {/* LARGE — Wallet integration */}
+            {/* LARGE — Wallet integration (with real card preview as visual) */}
             <BentoCard className="md:col-span-2 md:row-span-2" tint={C.azure} border={`${C.sky}40`} glow={C.sky + '50'}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                   style={{ background: 'white', boxShadow: `0 4px 12px ${C.sky}30` }}>
-                <Smartphone size={24} style={{ color: C.sky }} />
-              </div>
-              <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-3" style={{ color: C.inkDeep }}>
-                Apple Wallet & Google Wallet, en natif
-              </h3>
-              <p className="text-base leading-relaxed mb-5" style={{ color: C.inkMute }}>
-                Vos clients ajoutent leur carte en un clic. Elle vit dans leur portefeuille mobile
-                à côté de leurs cartes bancaires. Aucune application à télécharger. Mise à jour en temps réel.
-              </p>
-              {/* Mini visual */}
-              <div className="flex items-center gap-3 mt-6">
-                <div className="flex-1 rounded-xl p-3 border" style={{ background: 'white', borderColor: C.hairline }}>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>Apple Wallet</p>
-                  <p className="text-sm font-bold mt-1" style={{ color: C.inkDeep }}>iOS · iPadOS</p>
+              <div className="grid md:grid-cols-[1.1fr,0.9fr] gap-6 items-stretch">
+                {/* LEFT — text */}
+                <div>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                       style={{ background: 'white', boxShadow: `0 4px 12px ${C.sky}30` }}>
+                    <Smartphone size={24} style={{ color: C.sky }} />
+                  </div>
+                  <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mb-3" style={{ color: C.inkDeep }}>
+                    Apple Wallet & Google Wallet, en natif
+                  </h3>
+                  <p className="text-base leading-relaxed mb-5" style={{ color: C.inkMute }}>
+                    Vos clients ajoutent leur carte en un clic. Elle vit dans leur portefeuille mobile
+                    à côté de leurs cartes bancaires. Aucune application à télécharger. Mise à jour en temps réel.
+                  </p>
+                  <div className="flex items-center gap-3 mt-6">
+                    <div className="flex-1 rounded-xl p-3 border" style={{ background: 'white', borderColor: C.hairline }}>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>Apple Wallet</p>
+                      <p className="text-sm font-bold mt-1" style={{ color: C.inkDeep }}>iOS · iPadOS</p>
+                    </div>
+                    <div className="flex-1 rounded-xl p-3 border" style={{ background: 'white', borderColor: C.hairline }}>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>Google Wallet</p>
+                      <p className="text-sm font-bold mt-1" style={{ color: C.inkDeep }}>Android · Chrome</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 rounded-xl p-3 border" style={{ background: 'white', borderColor: C.hairline }}>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: C.inkFaint }}>Google Wallet</p>
-                  <p className="text-sm font-bold mt-1" style={{ color: C.inkDeep }}>Android · Chrome</p>
+
+                {/* RIGHT — actual wallet card preview, tilted */}
+                <div className="relative hidden md:flex items-center justify-center">
+                  <motion.div
+                    initial={{ opacity: 0, rotate: 0, y: 10 }}
+                    whileInView={{ opacity: 1, rotate: 6, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="origin-center"
+                    style={{ filter: 'drop-shadow(0 18px 40px rgba(28,25,23,0.20))' }}
+                  >
+                    <AuchanPreview
+                      ctx={{
+                        first_name: 'Sophie',
+                        name: 'Sophie Dupont',
+                        points: '70',
+                        business_name: 'Café Lumière',
+                        birthday: '12 Mai',
+                        stamps_earned: 7,
+                        stamps_target: 10,
+                      }}
+                      width={260}
+                    />
+                  </motion.div>
+                  {/* "Apple Wallet" tag floating below the card */}
+                  <span className="absolute bottom-1 right-2 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur text-[9px] font-bold uppercase tracking-widest border"
+                        style={{ color: C.inkMute, borderColor: C.hairline }}>
+                    Aperçu réel
+                  </span>
                 </div>
               </div>
             </BentoCard>
 
-            {/* SMALL — AI */}
+            {/* SMALL — Voix de marque (with message-bubble preview) */}
             <BentoCard tint={C.lilac} border={`${C.lavender}40`} glow={C.lavender + '50'}>
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.lavender}30` }}>
                 <BrainCircuit size={22} style={{ color: C.lavender }} />
               </div>
               <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Voix de marque protégée</h3>
-              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                Chaque message envoyé sonne comme vous. L'IA apprend votre ton à partir de vos anciennes campagnes.
+              <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
+                Chaque message sonne comme vous. L'IA apprend votre ton à partir de vos anciennes campagnes.
               </p>
+              {/* Chat-bubble preview */}
+              <div className="rounded-2xl p-3 border space-y-2"
+                   style={{ background: 'white', borderColor: C.hairline }}>
+                <div className="rounded-xl px-3 py-2" style={{ background: `${C.lavender}15` }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: C.lavender }}>
+                    Votre voix
+                  </p>
+                  <p className="text-xs leading-snug" style={{ color: C.inkSoft }}>
+                    «&nbsp;Marie, on a remarqué votre absence — un café offert vous attend cette semaine.&nbsp;»
+                  </p>
+                </div>
+              </div>
             </BentoCard>
 
-            {/* SMALL — Sentiment */}
+            {/* SMALL — Sentiment / Avis (with stars + topic bars) */}
             <BentoCard tint={C.shellPink} border={`${C.coral}40`} glow={C.coral + '50'}>
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.coral}30` }}>
                 <MessageSquare size={22} style={{ color: C.coral }} />
               </div>
               <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Analyse des avis clients</h3>
-              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                Avis classés automatiquement par sujet — service, propreté, prix, accueil. Vous voyez ce qui marche, ce qui coince.
+              <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
+                Avis classés par sujet — service, propreté, prix, accueil. Vous voyez ce qui marche, ce qui coince.
               </p>
+              {/* Stars + topic distribution */}
+              <div className="rounded-2xl p-3 border space-y-2.5"
+                   style={{ background: 'white', borderColor: C.hairline }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-0.5">
+                    {[1,2,3,4,5].map((s) => (
+                      <Star key={s} size={12} fill={C.ochre} stroke={C.ochre} />
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold" style={{ color: C.inkDeep }}>4,7/5</span>
+                </div>
+                {[
+                  { topic: 'Service',   pct: 92, color: C.sage },
+                  { topic: 'Propreté',  pct: 88, color: C.sky },
+                  { topic: 'Accueil',   pct: 80, color: C.lavender },
+                ].map((t) => (
+                  <div key={t.topic} className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold w-14 shrink-0" style={{ color: C.inkMute }}>{t.topic}</span>
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: C.hairline }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${t.pct}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                        className="h-full rounded-full"
+                        style={{ background: t.color }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold w-7 text-right" style={{ color: t.color }}>{t.pct}%</span>
+                  </div>
+                ))}
+              </div>
             </BentoCard>
 
-            {/* MEDIUM — Geofence */}
+            {/* MEDIUM — Geofence (mini animated map) */}
             <BentoCard tint={C.meadow} border={`${C.sage}40`} glow={C.sage + '50'}>
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.sage}30` }}>
                 <MapPin size={22} style={{ color: C.sage }} />
               </div>
               <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Offres géolocalisées</h3>
-              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
+              <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
                 Quand un client VIP passe à 500&nbsp;m de votre boutique, il reçoit un mot d'attention.
               </p>
+              {/* Mini map with pulsing geofence */}
+              <div className="relative rounded-2xl border overflow-hidden"
+                   style={{ background: '#E8F0E5', borderColor: C.hairline, height: 120 }}>
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 120" preserveAspectRatio="xMidYMid slice">
+                  {/* Streets */}
+                  <line x1="0" y1="40" x2="280" y2="40" stroke="white" strokeWidth="6" />
+                  <line x1="0" y1="80" x2="280" y2="80" stroke="white" strokeWidth="4" />
+                  <line x1="100" y1="0" x2="100" y2="120" stroke="white" strokeWidth="5" />
+                  <line x1="200" y1="0" x2="200" y2="120" stroke="white" strokeWidth="4" />
+                  {/* Buildings */}
+                  <rect x="40" y="50" width="40" height="22" fill="white" stroke="#D5D0C9" strokeWidth="1" rx="2" />
+                  <rect x="220" y="48" width="34" height="26" fill="white" stroke="#D5D0C9" strokeWidth="1" rx="2" />
+                </svg>
+                {/* Pulse ring + pin centered */}
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute rounded-full border-2 border-dashed"
+                  style={{
+                    left: '50%', top: '50%', width: 110, height: 110,
+                    transform: 'translate(-50%, -50%)',
+                    borderColor: C.sage,
+                    background: `radial-gradient(circle, ${C.sage}25 0%, transparent 70%)`,
+                  }}
+                  animate={{ scale: [1, 1.06, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <div className="absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white"
+                       style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.rose})` }}>
+                    <span className="text-xs">☕</span>
+                  </div>
+                </div>
+                {/* Distance label */}
+                <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold"
+                      style={{ background: 'white', color: C.sage, border: `1px solid ${C.sage}33` }}>
+                  500&nbsp;m
+                </span>
+              </div>
             </BentoCard>
 
-            {/* MEDIUM — Campaigns */}
+            {/* MEDIUM — Campaigns (segment chips preview) */}
             <BentoCard tint={C.butter} border={`${C.ochre}40`} glow={C.ochre + '50'}>
               <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
                    style={{ background: 'white', boxShadow: `0 4px 12px ${C.ochre}30` }}>
                 <Megaphone size={22} style={{ color: C.ochre }} />
               </div>
               <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Campagnes ciblées</h3>
-              <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>
-                12 segments en un clic. Envoyez aux habitués du midi, aux clients endormis, aux gros paniers — en 30 secondes.
+              <p className="text-sm leading-relaxed mb-4" style={{ color: C.inkMute }}>
+                12 segments en un clic. Habitués du midi, clients endormis, gros paniers — en 30 secondes.
               </p>
+              {/* Segment chips */}
+              <div className="rounded-2xl p-3 border"
+                   style={{ background: 'white', borderColor: C.hairline }}>
+                <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: C.inkFaint }}>
+                  Choisissez vos clients
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: '👑 VIP', active: true,  color: C.ochre },
+                    { label: '🎂 Anniversaires', active: true, color: C.rose },
+                    { label: '☕ Habitués midi', active: false, color: C.sage },
+                    { label: '😴 Endormis 30j+', active: true, color: C.lavender },
+                    { label: '💎 Gros paniers', active: false, color: C.sky },
+                  ].map((s, i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.08, duration: 0.3 }}
+                      className="text-[10px] font-bold px-2 py-1 rounded-full"
+                      style={{
+                        background: s.active ? s.color : `${s.color}18`,
+                        color: s.active ? 'white' : s.color,
+                        border: `1px solid ${s.color}55`,
+                      }}
+                    >
+                      {s.label}
+                    </motion.span>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between mt-3 pt-2.5 border-t" style={{ borderColor: C.hairline }}>
+                  <span className="text-[10px]" style={{ color: C.inkMute }}>~ <b style={{ color: C.inkDeep }}>184 clients</b> ciblés</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: C.terracotta, color: 'white' }}>
+                    Envoyer →
+                  </span>
+                </div>
+              </div>
             </BentoCard>
 
             {/* WIDE — Analytics */}
