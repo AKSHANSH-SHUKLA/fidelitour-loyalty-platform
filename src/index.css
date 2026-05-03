@@ -95,36 +95,24 @@
 /* ─────────────────────────────────────────────────────────────────────
  * Brand-signature animated gradient text
  * Used wherever we want the title to "breathe" the FidéliTour palette.
- * Apply with: <span class="ft-gradient-text">…</span>
+ * Apply with: <span class="ft-gradient-text">…</span> or on any heading.
  *
  * The colours are fixed to the brand palette (terracotta → ochre → rose →
- * lavender → sky) so we don't need to pass them in every time. The
- * animation is GPU-accelerated (just shifts background-position) so it's
- * cheap even on dozens of headings.
+ * lavender → sky). Animation is GPU-accelerated (background-position only).
+ *
+ * Why the !important rules below:
+ * Many of our existing headings already carry inline `style={{ color: ... }}`
+ * from the design system. Plain CSS classes lose to inline styles. We use
+ * !important here so the gradient always wins — it's the brand identity,
+ * not a tweak — and so the developer adding `ft-gradient-text` doesn't
+ * have to remember to also strip the inline color.
  * ───────────────────────────────────────────────────────────────────── */
 @keyframes ftGradientText {
-  to { background-position: 200% center; }
+  0%   { background-position: 0%   center; }
+  100% { background-position: 200% center; }
 }
 
-.ft-gradient-text {
-  background-image: linear-gradient(
-    110deg,
-    #B85C38 0%,
-    #E3A869 25%,
-    #D77FA0 50%,
-    #8B7DC9 75%,
-    #6BA4D9 100%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation: ftGradientText 8s linear infinite;
-  display: inline-block;
-}
-
-/* Slower variant for body-flow headings — feels less hectic on long pages */
+.ft-gradient-text,
 .ft-gradient-text-slow {
   background-image: linear-gradient(
     110deg,
@@ -133,20 +121,27 @@
     #D77FA0 50%,
     #8B7DC9 75%,
     #6BA4D9 100%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  animation: ftGradientText 12s linear infinite;
+  ) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+          background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
   display: inline-block;
+}
+
+.ft-gradient-text {
+  animation: ftGradientText 8s linear infinite !important;
+}
+
+.ft-gradient-text-slow {
+  animation: ftGradientText 12s linear infinite !important;
 }
 
 /* Respect users who prefer reduced motion — show the gradient statically. */
 @media (prefers-reduced-motion: reduce) {
   .ft-gradient-text,
   .ft-gradient-text-slow {
-    animation: none;
+    animation: none !important;
   }
 }
