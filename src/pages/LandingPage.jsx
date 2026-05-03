@@ -716,12 +716,40 @@ const LandingPage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-3xl p-7 shadow-sm border-2 flex flex-col"
-                style={{ borderColor: sector.bg }}
+                whileHover={{ y: -6, scale: 1.01 }}
+                className="relative rounded-3xl p-7 border-2 flex flex-col overflow-hidden"
+                style={{
+                  background: `
+                    radial-gradient(circle at 100% 0%, ${sector.bg} 0%, transparent 50%),
+                    radial-gradient(circle at 0% 100%, ${sector.bg} 0%, transparent 60%),
+                    linear-gradient(135deg, white 0%, #FDFBF7 100%)
+                  `,
+                  borderColor: `${sector.color}33`,
+                  boxShadow: `0 10px 30px -12px ${sector.color}33`,
+                }}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
-                       style={{ background: sector.bg }}>
+                {/* Animated decorative orbs */}
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                  style={{ background: sector.color, opacity: 0.18 }}
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ duration: 5 + i * 0.4, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute -bottom-16 -left-16 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                  style={{ background: sector.color, opacity: 0.12 }}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 6 + i * 0.3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                />
+
+                <div className="relative flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-md"
+                       style={{
+                         background: `linear-gradient(135deg, white 0%, ${sector.bg} 100%)`,
+                         border: `1px solid ${sector.color}33`,
+                       }}>
                     {sector.icon}
                   </div>
                   <h3 className="font-['Cormorant_Garamond'] text-2xl font-bold" style={{ color: C.inkDeep }}>
@@ -729,18 +757,22 @@ const LandingPage = () => {
                   </h3>
                 </div>
 
-                <p className="text-sm font-semibold italic mb-2" style={{ color: sector.color }}>
+                <p className="relative text-sm font-bold italic mb-2" style={{ color: sector.color }}>
                   {sector.lead}
                 </p>
-                <p className="text-sm leading-relaxed mb-5" style={{ color: C.inkMute }}>
+                <p className="relative text-sm leading-relaxed mb-5" style={{ color: C.inkSoft }}>
                   {sector.story}
                 </p>
 
-                <div className="mt-auto pt-4 border-t space-y-2" style={{ borderColor: C.hairline }}>
+                <div className="relative mt-auto pt-4 border-t space-y-2"
+                     style={{ borderColor: `${sector.color}22` }}>
                   {sector.wins.map((w, j) => (
                     <div key={j} className="flex items-start gap-2 text-xs" style={{ color: C.inkSoft }}>
-                      <Check size={14} style={{ color: sector.color, marginTop: 2 }} className="shrink-0" />
-                      <span>{w}</span>
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                            style={{ background: `${sector.color}1F`, border: `1px solid ${sector.color}55` }}>
+                        <Check size={10} style={{ color: sector.color }} strokeWidth={3} />
+                      </span>
+                      <span className="font-medium">{w}</span>
                     </div>
                   ))}
                 </div>
@@ -1516,18 +1548,56 @@ const LandingPage = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: step.n * 0.1 }}
-                  className="relative bg-white rounded-3xl p-7 border-2 z-10"
-                  style={{ borderColor: step.bg }}
+                  whileHover={{ y: -6, scale: 1.01 }}
+                  className="relative rounded-3xl p-7 border-2 z-10 overflow-hidden"
+                  style={{
+                    background: `
+                      radial-gradient(circle at 100% 0%, ${step.bg} 0%, transparent 55%),
+                      radial-gradient(circle at 0% 100%, ${step.bg} 0%, transparent 65%),
+                      linear-gradient(135deg, white 0%, #FDFBF7 100%)
+                    `,
+                    borderColor: `${step.color}40`,
+                    boxShadow: `0 12px 32px -14px ${step.color}55`,
+                  }}
                 >
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-['Cormorant_Garamond'] text-2xl font-bold"
-                         style={{ background: `linear-gradient(135deg, ${step.color} 0%, ${C.rose} 100%)` }}>
+                  {/* Decorative accent orbs */}
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+                    style={{ background: step.color, opacity: 0.18 }}
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 5 + step.n * 0.5, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  {/* Big numeric watermark */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-4 right-4 font-['Cormorant_Garamond'] font-bold leading-none pointer-events-none select-none"
+                    style={{
+                      fontSize: 160,
+                      color: `${step.color}12`,
+                    }}
+                  >
+                    {step.n}
+                  </span>
+
+                  <div className="relative flex items-center gap-3 mb-5">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-['Cormorant_Garamond'] text-3xl font-bold shadow-lg"
+                         style={{
+                           background: `linear-gradient(135deg, ${step.color} 0%, ${C.rose} 100%)`,
+                           boxShadow: `0 8px 20px -6px ${step.color}80`,
+                         }}>
                       {step.n}
                     </div>
-                    <Icon size={22} style={{ color: step.color }} />
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                         style={{
+                           background: `linear-gradient(135deg, white 0%, ${step.bg} 100%)`,
+                           border: `1px solid ${step.color}33`,
+                         }}>
+                      <Icon size={20} style={{ color: step.color }} />
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2" style={{ color: C.inkDeep }}>{step.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>{step.body}</p>
+                  <h3 className="relative text-xl font-bold mb-2" style={{ color: C.inkDeep }}>{step.title}</h3>
+                  <p className="relative text-sm leading-relaxed" style={{ color: C.inkSoft }}>{step.body}</p>
                 </motion.div>
               );
             })}
@@ -1576,26 +1646,70 @@ const LandingPage = () => {
                 key={i}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white rounded-3xl p-7 shadow-lg border relative overflow-hidden"
-                style={{ borderColor: C.hairline }}
+                whileHover={{ y: -6, scale: 1.01 }}
+                className="rounded-3xl p-7 relative overflow-hidden border-2"
+                style={{
+                  background: `
+                    radial-gradient(circle at 100% 0%, ${t.bg} 0%, transparent 50%),
+                    radial-gradient(circle at 0% 100%, ${t.bg} 0%, transparent 60%),
+                    linear-gradient(135deg, white 0%, #FDFBF7 100%)
+                  `,
+                  borderColor: `${t.color}33`,
+                  boxShadow: `0 14px 36px -14px ${t.color}55`,
+                }}
               >
-                <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-50" style={{ background: t.bg }} />
+                {/* Animated decorative orbs */}
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute -top-14 -right-14 w-44 h-44 rounded-full blur-3xl pointer-events-none"
+                  style={{ background: t.color, opacity: 0.22 }}
+                  animate={{ scale: [1, 1.18, 1] }}
+                  transition={{ duration: 6 + i * 0.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  aria-hidden="true"
+                  className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+                  style={{ background: t.color, opacity: 0.14 }}
+                  animate={{ scale: [1, 1.12, 1] }}
+                  transition={{ duration: 7 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                />
+                {/* Big quote watermark */}
+                <span aria-hidden="true"
+                      className="absolute font-['Cormorant_Garamond'] font-bold leading-none pointer-events-none select-none"
+                      style={{
+                        top: -28, left: 18,
+                        fontSize: 160,
+                        color: `${t.color}1A`,
+                      }}>
+                  "
+                </span>
+
                 <div className="relative">
-                  {/* 5 stars */}
+                  {/* 5 sparkling stars */}
                   <div className="flex gap-0.5 mb-4">
-                    {[1,2,3,4,5].map((s) => (
-                      <Star key={s} size={16} fill={C.ochre} stroke={C.ochre} />
+                    {[0,1,2,3,4].map((s) => (
+                      <motion.span
+                        key={s}
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ duration: 2.4, repeat: Infinity, delay: s * 0.18, ease: 'easeInOut' }}
+                        style={{ display: 'inline-flex' }}
+                      >
+                        <Star size={16} fill={C.ochre} stroke={C.ochre} />
+                      </motion.span>
                     ))}
                   </div>
-                  <p className="text-base leading-relaxed mb-6" style={{ color: C.inkSoft }}>{t.quote}</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                         style={{ background: `linear-gradient(135deg, ${t.color} 0%, ${C.rose} 100%)` }}>
+                  <p className="text-base leading-relaxed mb-6 font-medium" style={{ color: C.inkSoft }}>{t.quote}</p>
+                  <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: `${t.color}22` }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg"
+                         style={{
+                           background: `linear-gradient(135deg, ${t.color} 0%, ${C.rose} 100%)`,
+                           boxShadow: `0 6px 16px -4px ${t.color}80`,
+                         }}>
                       {['☕','🥐','✨'][i]}
                     </div>
                     <div>
                       <p className="font-bold text-sm" style={{ color: C.inkDeep }}>{t.name}</p>
-                      <p className="text-xs" style={{ color: C.inkMute }}>{t.role}</p>
+                      <p className="text-xs font-medium" style={{ color: t.color }}>{t.role}</p>
                       <p className="text-xs" style={{ color: C.inkFaint }}>{t.location}</p>
                     </div>
                   </div>
@@ -1622,69 +1736,260 @@ const LandingPage = () => {
               Sans engagement. Sans frais de mise en service. Essai gratuit de 30 jours sur tous les plans.
             </p>
           </div>
-          <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              { name: 'Basic', price: 39, badge: 'Découverte', themeBg: C.azure, themeAccent: C.sky, features: ['Jusqu\'à 500 clients', 'Carte mobile (Apple & Google Wallet)', 'Notifications push illimitées', 'Tableau de bord complet', 'Auto-anniversaires & relances', 'Assistant IA — 200 questions/mois'], cta: 'Démarrer gratuitement', dark: false },
-              { name: 'Or',    price: 79, badge: '⭐ Le plus choisi', highlight: true, themeAccent: C.ochre, features: ['Jusqu\'à 2 000 clients', 'Tout du plan Basic, plus :', 'Campagnes ciblées illimitées', 'Newsletter mensuelle automatique', 'Réponses aux avis (assistées par IA)', 'Assistant IA — 350 questions/mois', 'Support prioritaire'], cta: 'Choisir le plan Or', dark: true },
-              { name: 'VIP',   price: 149, badge: 'Premium', themeBg: C.lilac, themeAccent: C.lavender, features: ['Clients illimités', 'Multi-boutiques (jusqu\'à 15)', 'Toutes les fonctionnalités Or', 'Optimiseur de paliers de fidélité', 'Assistant IA — 600 questions/mois', 'Manager de compte dédié'], cta: 'Passer en VIP', dark: false },
-            ].map((tier) => {
-              if (tier.dark) {
-                return (
-                  <div key={tier.name} className="text-white p-10 rounded-3xl shadow-2xl relative transform lg:-translate-y-4 flex flex-col overflow-hidden"
-                       style={{ background: `linear-gradient(155deg, ${C.inkDeep} 0%, ${C.inkSoft} 50%, ${C.inkDeep} 100%)` }}>
-                    <div aria-hidden="true" className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-40" style={{ background: C.ochre }} />
-                    <div aria-hidden="true" className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full blur-3xl opacity-30" style={{ background: C.terracotta }} />
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-sm font-bold px-5 py-1.5 rounded-full shadow-lg"
-                         style={{ background: `linear-gradient(135deg, ${C.terracotta}, ${C.ochre})` }}>
-                      {tier.badge}
-                    </div>
-                    <h3 className="text-xl font-bold mb-2 pt-2 relative">Plan {tier.name}</h3>
-                    <p className="text-5xl font-bold mb-6 relative">
-                      <span className="bg-clip-text text-transparent"
-                            style={{ backgroundImage: `linear-gradient(135deg, #FFD7A8, ${C.ochre})` }}>
-                        {tier.price}&nbsp;€
-                      </span>
-                      <span className="text-base text-white/60 font-medium"> /mois</span>
-                    </p>
-                    <ul className="mb-8 space-y-3 flex-1 text-white/80 text-sm relative">
-                      {tier.features.map((f, i) => (
-                        <li key={i} className="flex gap-2"><Check size={16} style={{ color: C.ochre }} /> {f}</li>
-                      ))}
-                    </ul>
-                    <Link to="/register"
-                          className="relative block text-center w-full text-white font-semibold px-6 py-4 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all"
-                          style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
-                      {tier.cta}
-                    </Link>
-                  </div>
-                );
-              }
-              return (
-                <div key={tier.name} className="bg-white p-10 rounded-3xl border-2 shadow-sm flex flex-col relative overflow-hidden hover:-translate-y-1 transition-transform"
-                     style={{ borderColor: tier.themeBg }}>
-                  <div aria-hidden="true" className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-60"
-                       style={{ background: tier.themeBg }} />
-                  <span className="inline-block self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 relative"
-                        style={{ background: tier.themeBg, color: tier.themeAccent }}>
-                    {tier.badge}
-                  </span>
-                  <h3 className="text-xl font-bold mb-2 relative">Plan {tier.name}</h3>
-                  <p className="text-5xl font-bold mb-6 relative" style={{ color: tier.themeAccent }}>
-                    {tier.price}&nbsp;€<span className="text-base font-medium" style={{ color: C.inkMute }}> /mois</span>
-                  </p>
-                  <ul className="mb-8 space-y-3 flex-1 text-sm relative" style={{ color: C.inkMute }}>
-                    {tier.features.map((f, i) => (
-                      <li key={i} className="flex gap-2"><Check size={16} style={{ color: tier.themeAccent }} /> {f}</li>
-                    ))}
-                  </ul>
-                  <Link to="/register"
-                        className="relative block text-center w-full font-semibold px-6 py-4 rounded-xl transition-all hover:shadow-md"
-                        style={{ background: tier.themeBg, color: tier.themeAccent }}>
-                    {tier.cta}
-                  </Link>
+          <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto items-stretch">
+            {/* ─────── PLAN BASIC — friendly sky/azure light card ─────── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              whileHover={{ y: -6, scale: 1.01 }}
+              className="relative rounded-3xl p-10 border-2 flex flex-col overflow-hidden"
+              style={{
+                background: `
+                  radial-gradient(circle at 100% 0%, ${C.azure} 0%, transparent 55%),
+                  radial-gradient(circle at 0% 100%, ${C.mint} 0%, transparent 60%),
+                  linear-gradient(135deg, white 0%, #FDFBF7 100%)
+                `,
+                borderColor: `${C.sky}55`,
+                boxShadow: `0 16px 40px -16px ${C.sky}55`,
+              }}
+            >
+              <motion.div aria-hidden="true"
+                className="absolute -top-16 -right-16 w-44 h-44 rounded-full blur-3xl pointer-events-none"
+                style={{ background: C.sky, opacity: 0.22 }}
+                animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} />
+              <motion.div aria-hidden="true"
+                className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full blur-3xl pointer-events-none"
+                style={{ background: C.teal, opacity: 0.16 }}
+                animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1 }} />
+
+              <span className="relative inline-block self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] mb-5"
+                    style={{ background: `linear-gradient(135deg, ${C.azure}, ${C.mint})`, color: C.sky, border: `1px solid ${C.sky}33` }}>
+                Découverte
+              </span>
+              <h3 className="relative text-xl font-bold mb-2" style={{ color: C.inkDeep }}>Plan Basic</h3>
+              <p className="relative text-5xl font-bold mb-6 leading-none">
+                <span className="bg-clip-text text-transparent"
+                      style={{ backgroundImage: `linear-gradient(135deg, ${C.sky}, ${C.teal})` }}>
+                  39&nbsp;€
+                </span>
+                <span className="text-base font-medium" style={{ color: C.inkMute }}> /mois</span>
+              </p>
+              <ul className="relative mb-8 space-y-3 flex-1 text-sm" style={{ color: C.inkSoft }}>
+                {['Jusqu\'à 500 clients',
+                  'Carte mobile (Apple & Google Wallet)',
+                  'Notifications push illimitées',
+                  'Tableau de bord complet',
+                  'Auto-anniversaires & relances',
+                  'Assistant IA — 200 questions/mois'].map((f, i) => (
+                  <li key={i} className="flex gap-2 items-start">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ background: `${C.sky}1F`, border: `1px solid ${C.sky}55` }}>
+                      <Check size={11} style={{ color: C.sky }} strokeWidth={3} />
+                    </span>
+                    <span className="font-medium">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register"
+                    className="relative block text-center w-full font-semibold px-6 py-4 rounded-2xl transition-all hover:shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${C.sky}, ${C.teal})`,
+                      color: 'white',
+                      boxShadow: `0 8px 20px -6px ${C.sky}66`,
+                    }}>
+                Démarrer gratuitement
+              </Link>
+            </motion.div>
+
+            {/* ─────── PLAN OR — royal gold dark card ─────── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="text-white p-10 rounded-3xl shadow-2xl relative lg:-translate-y-4 flex flex-col overflow-hidden"
+              style={{
+                background: `
+                  radial-gradient(circle at 50% 0%, #2A1F12 0%, transparent 50%),
+                  linear-gradient(155deg, #1C1408 0%, #2A1F12 50%, #1C1408 100%)
+                `,
+                border: `1px solid ${C.ochre}66`,
+                boxShadow: `0 24px 60px -20px rgba(201,169,97,0.55), 0 0 0 1px ${C.ochre}33 inset`,
+              }}
+            >
+              {/* Glowing orbs */}
+              <motion.div aria-hidden="true"
+                className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none"
+                style={{ background: '#C9A961', opacity: 0.45 }}
+                animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }} />
+              <motion.div aria-hidden="true"
+                className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full blur-3xl pointer-events-none"
+                style={{ background: C.terracotta, opacity: 0.30 }}
+                animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }} />
+
+              {/* Ornate corner shimmer */}
+              <motion.div aria-hidden="true"
+                className="absolute top-6 right-6 pointer-events-none"
+                animate={{ rotate: [0, 360], opacity: [0.4, 0.9, 0.4] }}
+                transition={{ rotate: { duration: 16, repeat: Infinity, ease: 'linear' }, opacity: { duration: 4, repeat: Infinity, ease: 'easeInOut' } }}
+              >
+                <Sparkles size={18} style={{ color: '#FFD7A8' }} />
+              </motion.div>
+
+              {/* "Le plus choisi" floating ribbon */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-xl tracking-wider whitespace-nowrap"
+                   style={{
+                     background: `linear-gradient(135deg, ${C.terracotta}, #FFD7A8 50%, ${C.ochre})`,
+                     boxShadow: `0 8px 24px -4px rgba(201,169,97,0.6)`,
+                   }}>
+                ⭐ LE PLUS CHOISI
+              </div>
+
+              {/* Crown badge */}
+              <div className="relative flex items-center gap-2 mb-3 mt-2">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg"
+                     style={{
+                       background: `linear-gradient(135deg, #FFD7A8, ${C.ochre} 60%, #8C6B36)`,
+                       boxShadow: `0 4px 16px -4px ${C.ochre}88, 0 0 0 1px rgba(255,215,168,0.4) inset`,
+                     }}>
+                  👑
                 </div>
-              );
-            })}
+                <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond' }}>Plan Or</h3>
+              </div>
+
+              <p className="relative text-6xl font-bold mb-6 leading-none" style={{ fontFamily: 'Cormorant Garamond' }}>
+                <span className="bg-clip-text text-transparent"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, #FFE5BC 0%, #FFD7A8 30%, ${C.ochre} 60%, #8C6B36 100%)`,
+                        filter: 'drop-shadow(0 2px 8px rgba(201,169,97,0.5))',
+                      }}>
+                  79&nbsp;€
+                </span>
+                <span className="text-base text-white/55 font-medium"> /mois</span>
+              </p>
+
+              <ul className="relative mb-8 space-y-3 flex-1 text-white/85 text-sm">
+                {['Jusqu\'à 2 000 clients',
+                  'Tout du plan Basic, plus :',
+                  'Campagnes ciblées illimitées',
+                  'Newsletter mensuelle automatique',
+                  'Réponses aux avis (assistées par IA)',
+                  'Assistant IA — 350 questions/mois',
+                  'Support prioritaire'].map((f, i) => (
+                  <li key={i} className="flex gap-2 items-start">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ background: 'rgba(201,169,97,0.18)', border: '1px solid rgba(201,169,97,0.5)' }}>
+                      <Check size={11} style={{ color: '#FFD7A8' }} strokeWidth={3} />
+                    </span>
+                    <span className="font-medium">{f}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link to="/register"
+                    className="relative block text-center w-full font-bold px-6 py-4 rounded-2xl transition-all hover:-translate-y-0.5"
+                    style={{
+                      background: `linear-gradient(135deg, #FFD7A8 0%, ${C.ochre} 50%, #8C6B36 100%)`,
+                      color: '#1C1408',
+                      boxShadow: '0 12px 28px -6px rgba(201,169,97,0.7), 0 0 0 1px rgba(255,215,168,0.6) inset',
+                    }}>
+                Choisir le plan Or
+              </Link>
+            </motion.div>
+
+            {/* ─────── PLAN VIP — platinum elegant card ─────── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              whileHover={{ y: -6, scale: 1.01 }}
+              className="text-white p-10 rounded-3xl shadow-2xl relative flex flex-col overflow-hidden"
+              style={{
+                background: `
+                  radial-gradient(circle at 100% 0%, #2A2540 0%, transparent 55%),
+                  radial-gradient(circle at 0% 100%, #181425 0%, transparent 65%),
+                  linear-gradient(155deg, #0E0B1A 0%, #1A1530 50%, #0E0B1A 100%)
+                `,
+                border: `1px solid rgba(220,220,235,0.25)`,
+                boxShadow: `0 24px 60px -20px rgba(155,127,184,0.55), 0 0 0 1px rgba(220,220,235,0.15) inset`,
+              }}
+            >
+              {/* Iridescent glow orbs */}
+              <motion.div aria-hidden="true"
+                className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none"
+                style={{ background: C.lavender, opacity: 0.45 }}
+                animate={{ scale: [1, 1.18, 1] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+              <motion.div aria-hidden="true"
+                className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full blur-3xl pointer-events-none"
+                style={{ background: C.sky, opacity: 0.30 }}
+                animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 2 }} />
+              {/* Floating star */}
+              <motion.div aria-hidden="true"
+                className="absolute top-6 right-6 pointer-events-none"
+                animate={{ rotate: [0, 360], opacity: [0.5, 1, 0.5] }}
+                transition={{ rotate: { duration: 20, repeat: Infinity, ease: 'linear' }, opacity: { duration: 4, repeat: Infinity, ease: 'easeInOut' } }}
+              >
+                <Sparkles size={18} style={{ color: '#E5E0F5' }} />
+              </motion.div>
+
+              {/* Premium ribbon */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-xs font-bold px-5 py-1.5 rounded-full shadow-xl tracking-[0.18em] whitespace-nowrap"
+                   style={{
+                     background: `linear-gradient(135deg, #E5E0F5 0%, #C5BCDE 50%, #8B7DC9)`,
+                     color: '#0E0B1A',
+                     boxShadow: '0 8px 24px -4px rgba(139,125,201,0.6)',
+                   }}>
+                💎 PLATINE
+              </div>
+
+              {/* Diamond badge */}
+              <div className="relative flex items-center gap-2 mb-3 mt-2">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg"
+                     style={{
+                       background: `linear-gradient(135deg, #E5E0F5, #C5BCDE 50%, #8B7DC9)`,
+                       boxShadow: '0 4px 16px -4px rgba(139,125,201,0.7), 0 0 0 1px rgba(229,224,245,0.5) inset',
+                     }}>
+                  💎
+                </div>
+                <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond' }}>Plan VIP</h3>
+              </div>
+
+              <p className="relative text-6xl font-bold mb-6 leading-none" style={{ fontFamily: 'Cormorant Garamond' }}>
+                <span className="bg-clip-text text-transparent"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, #FFFFFF 0%, #E5E0F5 30%, ${C.lavender} 65%, #5E527C 100%)`,
+                        filter: 'drop-shadow(0 2px 10px rgba(229,224,245,0.5))',
+                      }}>
+                  149&nbsp;€
+                </span>
+                <span className="text-base text-white/55 font-medium"> /mois</span>
+              </p>
+
+              <ul className="relative mb-8 space-y-3 flex-1 text-white/85 text-sm">
+                {['Clients illimités',
+                  'Multi-boutiques (jusqu\'à 15)',
+                  'Toutes les fonctionnalités Or',
+                  'Optimiseur de paliers de fidélité',
+                  'Assistant IA — 600 questions/mois',
+                  'Manager de compte dédié'].map((f, i) => (
+                  <li key={i} className="flex gap-2 items-start">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ background: 'rgba(229,224,245,0.15)', border: '1px solid rgba(229,224,245,0.4)' }}>
+                      <Check size={11} style={{ color: '#E5E0F5' }} strokeWidth={3} />
+                    </span>
+                    <span className="font-medium">{f}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link to="/register"
+                    className="relative block text-center w-full font-bold px-6 py-4 rounded-2xl transition-all hover:-translate-y-0.5"
+                    style={{
+                      background: `linear-gradient(135deg, #FFFFFF 0%, #E5E0F5 50%, #8B7DC9 100%)`,
+                      color: '#0E0B1A',
+                      boxShadow: '0 12px 28px -6px rgba(139,125,201,0.7), 0 0 0 1px rgba(255,255,255,0.6) inset',
+                    }}>
+                Passer en VIP
+              </Link>
+            </motion.div>
           </div>
 
           {/* ───── MULTI-STORE CONTACT CTA ───── */}
