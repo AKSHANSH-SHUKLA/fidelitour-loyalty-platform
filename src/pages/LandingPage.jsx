@@ -1510,7 +1510,7 @@ const LandingPage = () => {
                  style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
               F
             </div>
-            <p className="font-['Cormorant_Garamond'] text-2xl font-bold" style={{ color: C.terracotta }}>FidéliTour</p>
+            <p className="font-['Cormorant_Garamond'] text-2xl font-bold ft-gradient-text-slow">FidéliTour</p>
           </div>
           <p className="text-sm">© {new Date().getFullYear()} FidéliTour · Conçu en France pour les commerçants français.</p>
           <div className="flex justify-center gap-2 mt-6">

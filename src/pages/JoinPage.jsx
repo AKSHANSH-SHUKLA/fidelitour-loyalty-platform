@@ -83,8 +83,8 @@ const JoinPage = () => {
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-['Manrope'] flex flex-col items-center py-20 px-4">
       <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-md border border-[#E7E5E4]">
-        <h1 className="font-['Cormorant_Garamond'] text-3xl font-bold text-center text-[#B85C38] mb-2">{tenant.name}</h1>
-        <p className="text-center text-[#57534E] mb-8">Join our loyalty program</p>
+        <h1 className="font-['Cormorant_Garamond'] text-3xl font-bold text-center mb-2 ft-gradient-text-slow">{tenant.name}</h1>
+        <p className="text-center text-[#57534E] mb-8">Rejoignez notre programme de fidélité</p>
         
         {success ? (
           <div className="text-center space-y-6">

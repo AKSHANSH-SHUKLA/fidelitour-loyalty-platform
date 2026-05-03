@@ -24,9 +24,9 @@ const LoginPage = () => {
     <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E7E5E4] w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="font-['Cormorant_Garamond'] text-3xl font-bold text-[#B85C38]">FidéliTour</Link>
-          <h2 className="text-2xl font-bold text-[#1C1917] mt-6">Welcome back</h2>
-          <p className="text-[#57534E]">Enter your details to sign in</p>
+          <Link to="/" className="font-['Cormorant_Garamond'] text-3xl font-bold ft-gradient-text">FidéliTour</Link>
+          <h2 className="text-2xl font-bold text-[#1C1917] mt-6">Bon retour parmi nous</h2>
+          <p className="text-[#57534E]">Connectez-vous pour accéder à votre tableau de bord</p>
         </div>
         
         {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">{error}</div>}

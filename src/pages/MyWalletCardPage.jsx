@@ -369,7 +369,7 @@ const MyWalletCardPage = () => {
           {/* RIGHT: Settings + offers panel */}
           <aside className="bg-white rounded-2xl border border-[#E7E5E4] shadow-sm overflow-hidden">
             <div className="p-5 border-b border-[#E7E5E4]">
-              <h2 className="font-['Cormorant_Garamond'] text-2xl font-bold text-[#1C1917]">Mon Programme de Fidélité</h2>
+              <h2 className="font-['Cormorant_Garamond'] text-2xl font-bold ft-gradient-text-slow">Mon Programme de Fidélité</h2>
               <p className="text-xs text-[#57534E] mt-1">{customer.name} · {customer.email}</p>
             </div>
 

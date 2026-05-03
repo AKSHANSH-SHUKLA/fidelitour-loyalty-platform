@@ -70,7 +70,7 @@ export const PageHeader = ({ eyebrow, title, description, actions, role = 'defau
             className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-[1.1]"
             style={{ color: C.inkDeep }}
           >
-            {title}
+            <span className="ft-gradient-text-slow">{title}</span>
             <span
               className="ml-3 inline-block h-1.5 rounded-full align-middle"
               style={{

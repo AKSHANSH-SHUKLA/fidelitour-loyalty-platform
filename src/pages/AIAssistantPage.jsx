@@ -116,8 +116,8 @@ const AIAssistantPage = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#F3EFE7] mb-6">
             <Sparkles className="w-8 h-8 text-[#B85C38]" />
           </div>
-          <h1 className="text-3xl font-['Cormorant_Garamond'] font-bold text-[#1C1917] mb-3">AI Assistant</h1>
-          <p className="text-[#57534E] mb-8">Get AI-powered insights for your loyalty program and create targeted campaigns instantly.</p>
+          <h1 className="text-3xl font-['Cormorant_Garamond'] font-bold mb-3 ft-gradient-text-slow">Assistant IA</h1>
+          <p className="text-[#57534E] mb-8">Obtenez des analyses propulsées par l'IA pour votre programme de fidélité et créez des campagnes ciblées en un clic.</p>
 
           <div className="bg-white p-6 rounded-2xl border border-[#E7E5E4] mb-8">
             <p className="text-sm font-bold uppercase tracking-wide text-[#1C1917] mb-4">Upgrade to use AI</p>

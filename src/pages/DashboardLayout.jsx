@@ -125,8 +125,7 @@ const DashboardLayout = () => {
             </div>
             <div className="min-w-0">
               <p
-                className="font-['Cormorant_Garamond'] text-[22px] font-bold leading-none"
-                style={{ color: C.inkDeep }}
+                className="font-['Cormorant_Garamond'] text-[22px] font-bold leading-none ft-gradient-text-slow"
               >
                 FidéliTour
               </p>
