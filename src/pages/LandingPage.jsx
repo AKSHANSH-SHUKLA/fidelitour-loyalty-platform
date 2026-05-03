@@ -436,23 +436,87 @@ const LandingPage = () => {
         <style>{`@keyframes heroGradient { to { background-position: 200% center; } }`}</style>
       </section>
 
-      {/* ───────────── STATS STRIP — animated counters ───────────── */}
+      {/* ───────────── AVANT / APRÈS — emotional reframe ───────────── */}
       <section id="proof" className="relative py-16 border-y" style={{ borderColor: C.hairline, background: 'white' }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {[
-            { value: 5,  suffix: ' s',   label: 'Pour ajouter une carte au wallet', color: C.sky },
-            { value: 24, suffix: 'h',    label: 'De votre inscription au lancement', color: C.sage },
-            { value: 0,  suffix: ' €',   label: 'Coût par notification push',       color: C.terracotta },
-            { value: 100, suffix: '%',   label: 'Conforme RGPD · Hébergé en France', color: C.lavender },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="font-['Cormorant_Garamond'] text-5xl lg:text-6xl font-bold"
-                 style={{ color: stat.color }}>
-                {stat.prefix || ''}<AnimatedNumber to={stat.value} suffix={stat.suffix} />
-              </p>
-              <p className="text-sm font-medium mt-2" style={{ color: C.inkMute }}>{stat.label}</p>
-            </div>
-          ))}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: C.terracotta }}>
+              Le quotidien d'un commerçant
+            </p>
+            <p className="font-['Cormorant_Garamond'] text-2xl md:text-3xl font-bold mt-2" style={{ color: C.inkDeep }}>
+              Quatre petits riens qui changent tout.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                before: 'Carte oubliée chez 8 clients sur 10',
+                after: 'Carte toujours dans la poche',
+                tone: C.sky, bg: C.azure,
+              },
+              {
+                before: 'Anniversaires oubliés',
+                after: 'Souhaités automatiquement',
+                tone: C.rose, bg: C.shellPink,
+              },
+              {
+                before: 'Aucune idée de qui est parti',
+                after: 'Liste claire des clients à reconquérir',
+                tone: C.lavender, bg: C.lilac,
+              },
+              {
+                before: 'SMS de masse à 0,08 €',
+                after: 'Notifications push à 0 €',
+                tone: C.sage, bg: C.meadow,
+              },
+            ].map((row, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: i * 0.08 }}
+                className="rounded-2xl border overflow-hidden"
+                style={{ borderColor: C.hairline, background: 'white' }}
+              >
+                {/* Avant */}
+                <div className="px-5 py-4 border-b" style={{ borderColor: C.hairline, background: C.sand }}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5" style={{ color: C.inkFaint }}>
+                    Avant
+                  </p>
+                  <p className="text-sm leading-snug line-through opacity-70" style={{ color: C.inkMute }}>
+                    {row.before}
+                  </p>
+                </div>
+                {/* Après */}
+                <div className="px-5 py-4" style={{ background: row.bg }}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5" style={{ color: row.tone }}>
+                    Avec FidéliTour
+                  </p>
+                  <p className="text-sm font-bold leading-snug" style={{ color: C.inkDeep }}>
+                    {row.after}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Trust pills below */}
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-10 text-xs" style={{ color: C.inkMute }}>
+            <span className="flex items-center gap-1.5">
+              <Check size={14} style={{ color: C.sage }} /> Conçu en France
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check size={14} style={{ color: C.sage }} /> Hébergé en France
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check size={14} style={{ color: C.sage }} /> RGPD natif
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check size={14} style={{ color: C.sage }} /> Sans application à télécharger
+            </span>
+          </div>
         </div>
       </section>
 
@@ -509,6 +573,109 @@ const LandingPage = () => {
               </ul>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ───────────── SECTOR USE-CASES — speaks directly to the visitor ───────────── */}
+      <section className="relative py-20 lg:py-28 overflow-hidden"
+               style={{ background: `linear-gradient(180deg, ${C.cream} 0%, ${C.sand} 100%)` }}>
+        <motion.div aria-hidden="true" className="absolute top-1/3 -left-32 w-[420px] h-[420px] rounded-full blur-3xl opacity-30 pointer-events-none"
+                    style={{ background: `radial-gradient(circle, ${C.ochre} 0%, transparent 70%)` }}
+                    animate={{ x: [0, 40, 0], y: [0, -30, 0] }} transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <Eyebrow color={C.ochre} bg={C.butter}>Conçu pour vous</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
+              Trois métiers, trois quotidiens,<br/>
+              <span style={{ color: C.ochre }}>une même solution.</span>
+            </h2>
+            <p className="text-base mt-5 max-w-2xl mx-auto" style={{ color: C.inkMute }}>
+              FidéliTour est pensé pour la restauration, l'artisanat et les commerces de quartier.
+              Voici ce que ça donne concrètement.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: '☕',
+                title: 'Café · Bistrot',
+                lead: 'Un café avec 800 clients fidèles.',
+                story: 'FidéliTour relance automatiquement les 47 qui ne sont pas revenus depuis 3 semaines. Les anniversaires sont souhaités. Les habitués du midi reçoivent une offre pour le mardi creux.',
+                wins: [
+                  'Mardis remplis grâce à une campagne ciblée',
+                  '+1 visite par mois en moyenne sur les habitués',
+                  'Plus aucun anniversaire oublié',
+                ],
+                color: C.terracotta, bg: C.shellPink,
+              },
+              {
+                icon: '🥐',
+                title: 'Boulangerie · Pâtisserie',
+                lead: 'Une boulangerie qui voit 400 clients par jour.',
+                story: 'Carte tamponnée automatiquement à chaque passage en caisse. Au 10ᵉ tampon, le client reçoit une viennoiserie offerte par notification push. Pas d\'application à installer.',
+                wins: [
+                  'Adhésion en 2 secondes au comptoir',
+                  'Suivi de chaque client sans effort',
+                  'Communication directe sans SMS payants',
+                ],
+                color: C.ochre, bg: C.butter,
+              },
+              {
+                icon: '🍽️',
+                title: 'Restaurant · Brasserie',
+                lead: 'Un restaurant avec 15 réservations par soir.',
+                story: 'Vos meilleurs clients reçoivent une attention pour leur anniversaire. Les habitudes de fréquentation s\'affichent en direct. Les VIP qui passent à proximité reçoivent un mot avant le service.',
+                wins: [
+                  'Tableau de bord clair, par soir et par table',
+                  'VIP reconnus dès l\'arrivée',
+                  'Promotions ciblées pour les soirs creux',
+                ],
+                color: C.lavender, bg: C.lilac,
+              },
+            ].map((sector, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-white rounded-3xl p-7 shadow-sm border-2 flex flex-col"
+                style={{ borderColor: sector.bg }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                       style={{ background: sector.bg }}>
+                    {sector.icon}
+                  </div>
+                  <h3 className="font-['Cormorant_Garamond'] text-2xl font-bold" style={{ color: C.inkDeep }}>
+                    {sector.title}
+                  </h3>
+                </div>
+
+                <p className="text-sm font-semibold italic mb-2" style={{ color: sector.color }}>
+                  {sector.lead}
+                </p>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: C.inkMute }}>
+                  {sector.story}
+                </p>
+
+                <div className="mt-auto pt-4 border-t space-y-2" style={{ borderColor: C.hairline }}>
+                  {sector.wins.map((w, j) => (
+                    <div key={j} className="flex items-start gap-2 text-xs" style={{ color: C.inkSoft }}>
+                      <Check size={14} style={{ color: sector.color, marginTop: 2 }} className="shrink-0" />
+                      <span>{w}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <p className="text-xs text-center mt-8 italic" style={{ color: C.inkFaint }}>
+            Scénarios illustratifs — chaque commerçant configure FidéliTour selon ses propres règles.
+          </p>
         </div>
       </section>
 
