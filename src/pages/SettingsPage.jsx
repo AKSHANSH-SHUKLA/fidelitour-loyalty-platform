@@ -114,6 +114,8 @@ const SettingsPage = () => {
               role="business_owner"
             />
 
+            <SettingsNavigator />
+
             {message && (
                 <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-[#e8f3e5] border-[#E7E5E4] text-[#2d5016]' : 'bg-red-50 border-red-200 text-red-700'}`}>
                     {message.text}
@@ -123,7 +125,7 @@ const SettingsPage = () => {
             <form onSubmit={handleSave} className="space-y-8">
 
                 {/* Business Profile Section */}
-                <div className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden">
+                <div id="settings-profile" className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden scroll-mt-24">
                     <div className="absolute right-0 top-0 w-32 h-32 bg-[#E3A869]/10 rounded-bl-full pointer-events-none"></div>
 
                     <div className="flex items-center gap-3 mb-6">
@@ -190,7 +192,7 @@ const SettingsPage = () => {
                 </div>
 
                 {/* Join URL Section */}
-                <div className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden">
+                <div id="settings-join" className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden scroll-mt-24">
                     <div className="absolute right-0 top-0 w-32 h-32 bg-[#E3A869]/10 rounded-bl-full pointer-events-none"></div>
 
                     <div className="flex items-center gap-3 mb-6">
@@ -256,7 +258,9 @@ const SettingsPage = () => {
                 </div>
 
                 {/* Geolocalisation — owner-editable. Radius / cooldown / on-off all owner-controlled. */}
-                <OwnerGeoCard initial={geoConfig} />
+                <div id="settings-geo" className="scroll-mt-24">
+                  <OwnerGeoCard initial={geoConfig} />
+                </div>
 
 
                 {/* Save Button */}
@@ -271,22 +275,82 @@ const SettingsPage = () => {
             </form>
 
             {/* Additive: configurable Active/Inactive customer definition. */}
-            <CustomerStatusConfigCard />
+            <div id="settings-status" className="scroll-mt-24"><CustomerStatusConfigCard /></div>
 
             {/* Additive: editable time-of-day periods (replaces hard-coded breakfast/lunch/dinner). */}
-            <DaypartConfigCard />
+            <div id="settings-dayparts" className="scroll-mt-24"><DaypartConfigCard /></div>
 
             {/* Additive: custom tier thresholds + big-spender rule. */}
-            <TierDefinitionCard />
+            <div id="settings-tiers" className="scroll-mt-24"><TierDefinitionCard /></div>
 
             {/* Additive: welcome message + bonus points on signup. */}
-            <WelcomeBonusCard />
+            <div id="settings-welcome" className="scroll-mt-24"><WelcomeBonusCard /></div>
 
             {/* Additive: auto messages for birthdays + inactive customers. */}
-            <AutoCampaignsCard />
+            <div id="settings-auto" className="scroll-mt-24"><AutoCampaignsCard /></div>
         </div>
     );
 };
+
+/* ──────────────────────────────────────────────────────────────────
+ * SettingsNavigator — sticky dropdown that lets the owner jump straight
+ * to a section instead of scrolling through the whole page.
+ * On mobile it stays at the top; on desktop it appears as a select dropdown.
+ * ────────────────────────────────────────────────────────────────── */
+function SettingsNavigator() {
+  const sections = [
+    { id: 'settings-profile',  label: '🏪 Profil de l\'entreprise' },
+    { id: 'settings-join',     label: '🔗 Lien d\'inscription' },
+    { id: 'settings-geo',      label: '📍 Géolocalisation' },
+    { id: 'settings-status',   label: '👥 Statut des clients' },
+    { id: 'settings-dayparts', label: '⏰ Périodes de la journée' },
+    { id: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
+    { id: 'settings-welcome',  label: '🎁 Message de bienvenue' },
+    { id: 'settings-auto',     label: '🤖 Campagnes automatiques' },
+  ];
+
+  const jumpTo = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  return (
+    <div className="sticky top-2 z-30 bg-white/90 backdrop-blur rounded-2xl border shadow-sm p-3"
+         style={{ borderColor: '#EFE9E0' }}>
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B8680' }}>
+          Aller à :
+        </span>
+        {/* Dropdown for mobile / quick jump */}
+        <select
+          onChange={(e) => e.target.value && jumpTo(e.target.value)}
+          className="flex-1 md:flex-none border rounded-lg px-3 py-1.5 text-sm font-medium"
+          style={{ borderColor: '#E7E5E4', background: 'white', minWidth: 220 }}
+          defaultValue=""
+        >
+          <option value="" disabled>Choisir une section…</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>{s.label}</option>
+          ))}
+        </select>
+        {/* Quick-jump pills (desktop only) */}
+        <div className="hidden lg:flex flex-wrap gap-1.5">
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => jumpTo(s.id)}
+              className="px-2.5 py-1 text-[11px] font-semibold rounded-full border transition hover:bg-[#FAF8F4]"
+              style={{ borderColor: '#E7E5E4', color: '#3D2820' }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ──────────────────────────────────────────────────────────────────
  * OwnerGeoCard — owner-editable geolocalisation settings

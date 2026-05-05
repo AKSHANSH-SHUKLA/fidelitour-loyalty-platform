@@ -168,50 +168,79 @@ def visits_history(
     count: Optional[int] = None,
     token_data=Depends(require_role(["business_owner", "manager"])),
 ):
-    """Companion endpoint — visits over a configurable range (used by #6 chart)."""
-    if unit not in ("days", "weeks", "months", "all"):
-        raise HTTPException(status_code=400, detail="unit must be one of days|weeks|months|all")
+    """Visits over a configurable range with same caps + pre-seeding as new-customers."""
+    if unit not in ("days", "weeks", "months", "years", "all"):
+        raise HTTPException(status_code=400, detail="unit must be one of days|weeks|months|years|all")
+
+    UNIT_CAPS = {"days": 30, "weeks": 52, "months": 24, "years": 5}
+    UNIT_DEFAULTS = {"days": 30, "weeks": 12, "months": 12, "years": 5}
+    if unit != "all":
+        n = count if count and count > 0 else UNIT_DEFAULTS[unit]
+        n = min(n, UNIT_CAPS[unit])
+    else:
+        n = 0
 
     tid = token_data.tenant_id
     now = datetime.now(timezone.utc)
+    bucket_unit = unit
 
     if unit == "all":
         first = _db.visits.find_one({"tenant_id": tid}, sort=[("visit_time", 1)])
         cutoff = (first.get("visit_time") if first else None) or (now - timedelta(days=1))
+        days_span = (now - cutoff).days
+        if days_span > 365 * 2:
+            bucket_unit = "months"
+        elif days_span > 90:
+            bucket_unit = "weeks"
+        else:
+            bucket_unit = "days"
     else:
-        n = count if count and count > 0 else 12
         if unit == "days":
             cutoff = now - timedelta(days=n)
         elif unit == "weeks":
             cutoff = now - timedelta(weeks=n)
-        else:
+        elif unit == "months":
             cutoff = now - timedelta(days=n * 31)
+        elif unit == "years":
+            cutoff = now - timedelta(days=n * 365)
 
     visits = list(_db.visits.find({
         "tenant_id": tid,
         "visit_time": {"$gte": cutoff},
     }))
 
-    bucket_unit = "weeks" if unit == "all" else unit
-    if unit == "all":
-        days_span = (now - cutoff).days
-        bucket_unit = "months" if days_span > 365 * 2 else ("weeks" if days_span > 90 else "days")
-
     bucket_counts: dict[str, int] = {}
+    if unit != "all":
+        for label in _seed_buckets(now, unit, n):
+            bucket_counts[label] = 0
+
+    unique_visitors_per_bucket: dict[str, set] = {}
     for v in visits:
         ts = v.get("visit_time")
         if not ts:
             continue
         key = _bucket_label(ts, bucket_unit)
         bucket_counts[key] = bucket_counts.get(key, 0) + 1
+        cid = v.get("customer_id")
+        if cid:
+            unique_visitors_per_bucket.setdefault(key, set()).add(cid)
 
-    series = [{"label": k, "count": v} for k, v in sorted(bucket_counts.items())]
+    series = [
+        {"label": k, "count": v, "unique_visitors": len(unique_visitors_per_bucket.get(k, set()))}
+        for k, v in sorted(bucket_counts.items())
+    ]
+    total_visits = len(visits)
+    avg_per_bucket = round(total_visits / max(len(series), 1), 1)
+
     return {
         "unit_requested": unit,
         "bucket_unit": bucket_unit,
         "from": cutoff.isoformat(),
         "to": now.isoformat(),
-        "total_visits": len(visits),
+        "total_visits": total_visits,
+        "average_per_bucket": avg_per_bucket,
+        "buckets_count": len(series),
+        "max_count_for_unit": UNIT_CAPS.get(unit),
         "series": series,
     }
 

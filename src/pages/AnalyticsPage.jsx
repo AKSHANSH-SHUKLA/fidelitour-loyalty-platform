@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
+import VisitsOverTimeChart from '../components/VisitsOverTimeChart';
 import LoadingDistraction from '../components/LoadingDistraction';
 import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 import CustomerStatusKPI from '../components/CustomerStatusKPI';
@@ -828,13 +829,20 @@ const AnalyticsPage = () => {
       </div>
 
       {/* Row 1b — Retention health: first-time today, inactive (custom), about-to-lose, cards filled today */}
-      <section className="bg-white border border-[#E7E5E4] rounded-xl p-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section
+        className="rounded-xl p-5 space-y-3 relative overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, #FCE3DC 0%, transparent 50%), radial-gradient(circle at 0% 100%, #FBE0E8 0%, transparent 60%), white`,
+          border: '1px solid #B85C3833',
+          boxShadow: '0 6px 18px -10px #B85C3855',
+        }}
+      >
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <h3 className="text-lg font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#B85C38' }}>
               Retention health
             </h3>
-            <p className="text-xs text-[#8B8680]">
+            <p className="text-xs" style={{ color: '#7B3F00' }}>
               First-time signups today, inactive customers (your own threshold), at-risk customers about to churn, and card completions today. Click any card to see the customer list.
             </p>
           </div>
@@ -940,12 +948,19 @@ const AnalyticsPage = () => {
       </section>
 
       {/* Row 1c — Rewards & celebrations: redemptions + birthdays + VIPs */}
-      <section className="bg-white border border-[#E7E5E4] rounded-xl p-4 space-y-3">
-        <div>
-          <h3 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+      <section
+        className="rounded-xl p-5 space-y-3 relative overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, #FDF1DC 0%, transparent 55%), radial-gradient(circle at 0% 100%, #FEF9E7 0%, transparent 60%), white`,
+          border: '1px solid #E3A86955',
+          boxShadow: '0 6px 18px -10px #E3A86955',
+        }}
+      >
+        <div className="relative">
+          <h3 className="text-lg font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#7B3F00' }}>
             Rewards & celebrations
           </h3>
-          <p className="text-xs text-[#8B8680]">
+          <p className="text-xs" style={{ color: '#7B3F00' }}>
             Real-time redemption counts (staff-logged), birthdays coming up this month, and your new VIP tier.
             Click any card to drill into the customer list.
           </p>
@@ -1192,9 +1207,16 @@ const AnalyticsPage = () => {
       </section>
 
       {/* Row 4 — Recovered Filter */}
-      <section className="bg-white border border-[#E7E5E4] rounded-xl p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-          <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+      <section
+        className="rounded-xl p-6 relative overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, #DDF1ED 0%, transparent 55%), radial-gradient(circle at 0% 100%, #E5F0DC 0%, transparent 60%), white`,
+          border: '1px solid #6FA89C44',
+          boxShadow: '0 6px 18px -10px #6FA89C55',
+        }}
+      >
+        <div className="relative flex flex-wrap items-start justify-between gap-3 mb-2">
+          <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#2d5016' }}>
             Customize Recovered Customers Filter
           </h3>
           <SendCampaignButton
@@ -1269,13 +1291,20 @@ const AnalyticsPage = () => {
       </section>
 
       {/* Row 4b — Customer reviews & sentiment */}
-      <section className="bg-white border border-[#E7E5E4] rounded-xl p-6 space-y-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+      <section
+        className="rounded-xl p-6 space-y-4 relative overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, #F0EBF8 0%, transparent 55%), radial-gradient(circle at 0% 100%, #FCE3DC 0%, transparent 60%), white`,
+          border: '1px solid #8B7DC944',
+          boxShadow: '0 6px 18px -10px #8B7DC966',
+        }}
+      >
+        <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#5E527C' }}>
               Customer reviews & sentiment
             </h3>
-            <p className="text-xs text-[#8B8680] max-w-3xl mt-1">
+            <p className="text-xs max-w-3xl mt-1" style={{ color: '#5E527C' }}>
               Every rating is /10. Customers leave ratings on their wallet card after a visit.
               Sentiment and topics are computed from the review text on submit — numbers stay up to date
               automatically whenever a new review is posted.
@@ -1506,9 +1535,16 @@ const AnalyticsPage = () => {
       </section>
 
       {/* Row 5 — Ranking Tabs */}
-      <section className="bg-white border border-[#E7E5E4] rounded-xl p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+      <section
+        className="rounded-xl p-6 relative overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, #DDEBF6 0%, transparent 55%), radial-gradient(circle at 0% 100%, #DDF1ED 0%, transparent 60%), white`,
+          border: '1px solid #6BA4D944',
+          boxShadow: '0 6px 18px -10px #6BA4D955',
+        }}
+      >
+        <div className="relative flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1E40AF' }}>
             Customer Ranking
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -1636,6 +1672,9 @@ const AnalyticsPage = () => {
 
       {/* Additive: extended customer-acquisition history with configurable range. */}
       <HistoricalAcquisitionChart />
+
+      {/* Additive: visits-over-time with day/week/month/year selector (item #14). */}
+      <VisitsOverTimeChart />
 
       {/* Additive: visits-by-day with campaign send markers (clickable for details). */}
       <VisitsWithCampaignsChart />

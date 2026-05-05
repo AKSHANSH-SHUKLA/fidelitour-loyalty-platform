@@ -317,12 +317,53 @@ const ScanPage = () => {
               className="w-full rounded-xl border-2 border-[#E7E5E4] bg-[#1C1917]"
               style={{ maxHeight: '400px', objectFit: 'cover' }}
             />
+
+            {/* Inline amount field — fill BEFORE scanning so we capture the visit value */}
+            <div className="rounded-xl border-2 p-4 space-y-3"
+                 style={{ borderColor: '#E3A86955', background: 'linear-gradient(135deg, #FEF9E7 0%, #FFFFFF 100%)' }}>
+              <div className="flex items-start gap-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                     style={{ background: '#E3A869', color: 'white' }}>
+                  <Euro size={16} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#7B3F00' }}>
+                    Montant payé par ce client
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#57534E' }}>
+                    Saisissez le montant maintenant — il sera enregistré automatiquement à la détection du code-barres.
+                  </p>
+                </div>
+              </div>
+              <div className="relative">
+                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={amountPaid}
+                  onChange={handleAmountPaidChange}
+                  placeholder="0,00"
+                  className="w-full pl-12 pr-4 py-3 rounded-lg border-2 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
+                  style={{ borderColor: '#E7E5E4', background: 'white' }}
+                  onFocus={(e) => (e.target.style.borderColor = '#B85C38')}
+                  onBlur={(e) => (e.target.style.borderColor = '#E7E5E4')}
+                />
+              </div>
+              {amountPaid && parseFloat(amountPaid) > 0 && (
+                <p className="text-[11px] font-semibold" style={{ color: '#4A5D23' }}>
+                  ✓ {Math.floor(parseFloat(amountPaid) * 10)} points seront crédités après le scan
+                </p>
+              )}
+            </div>
+
             {cameraActive && (
               <button
                 onClick={stopCamera}
                 className="w-full py-3 rounded-xl text-white font-bold bg-[#B85C38] hover:bg-[#9C4E2F] transition-all"
               >
-                Stop Camera
+                Arrêter la caméra
               </button>
             )}
           </div>
