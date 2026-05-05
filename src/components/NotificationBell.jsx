@@ -9,7 +9,7 @@
  */
 import React, { useEffect, useState, useRef } from 'react';
 import { Bell, AlertTriangle, TrendingDown, TrendingUp, Sparkles, X, Building2 } from 'lucide-react';
-import { ownerAPI } from '../lib/api';
+import api, { ownerAPI } from '../lib/api';
 
 const STORAGE_KEY = 'ft_read_alerts_v1';
 
@@ -45,13 +45,21 @@ const NotificationBell = () => {
   const [stores, setStores] = useState([]);
   const wrapperRef = useRef(null);
 
-  // Fetch alerts on mount + every 5 minutes while page is open
+  // Fetch alerts on mount + every 5 minutes while page is open.
+  // Uses the multi-store endpoint so each alert is tagged with its branch_name —
+  // the user instantly sees which store the alert refers to.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
       try {
-        const res = await ownerAPI.getProactiveAlerts({});
+        // Try multi-store first; fall back to single-tenant if it 404s
+        let res;
+        try {
+          res = await api.get('/owner/insights/alerts/multi-store');
+        } catch (_e) {
+          res = await ownerAPI.getProactiveAlerts({});
+        }
         if (!cancelled) setAlerts(Array.isArray(res.data?.alerts) ? res.data.alerts : (res.data || []));
       } catch (_e) { /* silent */ }
       finally { if (!cancelled) setLoading(false); }
@@ -209,17 +217,25 @@ const NotificationBell = () => {
                       <Icon size={16} style={{ color }} />
                     </div>
                     <div className="flex-1 min-w-0">
+                      {/* Branch badge on TOP of the alert title — the owner instantly sees which store this alert is about */}
+                      {a.branch_name && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1.5"
+                          style={{
+                            background: a.scope === 'tenant' ? '#1C19170D' : `${color}1A`,
+                            color: a.scope === 'tenant' ? '#3D2820' : color,
+                            border: `1px solid ${a.scope === 'tenant' ? '#1C191722' : color + '33'}`,
+                          }}
+                        >
+                          <Building2 size={9} /> {a.branch_name}
+                        </span>
+                      )}
                       <p className="text-sm font-bold leading-tight" style={{ color: '#1C1917' }}>
                         {a.title}
                       </p>
                       {a.body && (
                         <p className="text-xs mt-1 leading-snug" style={{ color: '#57534E' }}>
                           {a.body}
-                        </p>
-                      )}
-                      {a.branch_name && (
-                        <p className="text-[10px] mt-1.5 font-bold uppercase tracking-widest" style={{ color }}>
-                          📍 {a.branch_name}
                         </p>
                       )}
                     </div>

@@ -5369,6 +5369,77 @@ def get_proactive_alerts(
     return {"alerts": alerts, "counts_by_severity": counts}
 
 
+@app.get("/api/owner/insights/alerts/multi-store")
+def get_proactive_alerts_multi_store(
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+):
+    """Multi-store alerts wrapper. For each branch under the tenant, call the
+    same alert engine as get_proactive_alerts() and tag each result with
+    `branch_id` and `branch_name`. Also returns a tenant-wide ('all branches')
+    section. The Notification Bell renders this so the owner instantly sees
+    which store each alert refers to.
+    """
+    tid = token_data.tenant_id
+    branches = list(db.branches.find({"tenant_id": tid})) if 'branches' in db.list_collection_names() else []
+    # Fall back to tenant.branches list if no branches collection
+    if not branches:
+        tenant = db.tenants.find_one({"id": tid}) or {}
+        branches = tenant.get("branches") or []
+
+    alerts_combined: list = []
+
+    # 1) Tenant-wide ("all branches") pass — always run, useful for accounts with one branch
+    try:
+        tenant_alerts = get_proactive_alerts(token_data=token_data, branch_id=None)
+        for a in tenant_alerts.get("alerts") or []:
+            alerts_combined.append({
+                **a,
+                "id": f"tenant__{a.get('id')}",
+                "branch_id": None,
+                "branch_name": "Toutes les boutiques",
+                "scope": "tenant",
+            })
+    except Exception:
+        pass
+
+    # 2) Per-branch passes — only meaningful when there are 2+ branches
+    if len(branches) >= 2:
+        for b in branches:
+            bid = b.get("id")
+            bname = b.get("name") or "Boutique"
+            if not bid:
+                continue
+            try:
+                br_alerts = get_proactive_alerts(token_data=token_data, branch_id=bid)
+                for a in br_alerts.get("alerts") or []:
+                    alerts_combined.append({
+                        **a,
+                        "id": f"{bid}__{a.get('id')}",
+                        "branch_id": bid,
+                        "branch_name": bname,
+                        "scope": "branch",
+                    })
+            except Exception:
+                continue
+
+    # Sort: tenant-wide first, then by severity
+    severity_order = {"critical": 0, "warning": 1, "win": 2, "info": 3}
+    alerts_combined.sort(key=lambda a: (
+        0 if a.get("scope") == "tenant" else 1,
+        severity_order.get(a.get("severity"), 99),
+    ))
+
+    counts = {"critical": 0, "warning": 0, "info": 0, "win": 0}
+    for a in alerts_combined:
+        counts[a.get("severity", "info")] = counts.get(a.get("severity", "info"), 0) + 1
+
+    return {
+        "alerts": alerts_combined,
+        "counts_by_severity": counts,
+        "branches_covered": len(branches) if len(branches) >= 2 else 1,
+    }
+
+
 # ============================================================
 # AI proactive suggestions — what should I do today?
 # ============================================================
