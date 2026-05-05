@@ -220,6 +220,29 @@ const AutoCampaignsCard = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm-before-send modal (item #5 + #6).
+          MUST be inside AutoCampaignsCard so confirmFor / setConfirmFor /
+          sendConfirmed / businessName are in scope. Was previously placed
+          inside TwilioTestBench by mistake — caused 'confirmFor is not
+          defined' at runtime. */}
+      <PushNotificationPreviewModal
+        open={!!confirmFor}
+        onClose={() => setConfirmFor(null)}
+        onConfirm={sendConfirmed}
+        businessName={businessName}
+        primaryColor={C_PS.terracotta}
+        recipientCount={confirmFor?.count ?? 0}
+        trigger={
+          confirmFor?.which === 'birthdays' ? 'Anniversaires automatiques'
+          : confirmFor?.which === 'inactive' ? 'Relance des clients endormis'
+          : confirmFor?.which === 'almost_there' ? 'Plus qu\'une visite — récompense'
+          : 'Campagne automatique'
+        }
+        defaultTitle={confirmFor?.title || ''}
+        defaultBody={confirmFor?.body || ''}
+        editable={true}
+      />
     </div>
   );
 };
@@ -334,25 +357,6 @@ const TwilioTestBench = () => {
             : <>⚠ {last.error || 'Failed'}{last.hint ? ' — ' + last.hint : ''}</>}
         </div>
       )}
-
-      {/* Confirm-before-send modal (item #5 + #6) */}
-      <PushNotificationPreviewModal
-        open={!!confirmFor}
-        onClose={() => setConfirmFor(null)}
-        onConfirm={sendConfirmed}
-        businessName={businessName}
-        primaryColor={C_PS.terracotta}
-        recipientCount={confirmFor?.count ?? 0}
-        trigger={
-          confirmFor?.which === 'birthdays' ? 'Anniversaires automatiques'
-          : confirmFor?.which === 'inactive' ? 'Relance des clients endormis'
-          : confirmFor?.which === 'almost_there' ? 'Plus qu\'une visite — récompense'
-          : 'Campagne automatique'
-        }
-        defaultTitle={confirmFor?.title || ''}
-        defaultBody={confirmFor?.body || ''}
-        editable={true}
-      />
     </div>
   );
 };
