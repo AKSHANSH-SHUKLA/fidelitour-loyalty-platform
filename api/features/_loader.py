@@ -30,6 +30,7 @@ MODULES = [
     "features.tier_definitions",        # custom tier thresholds + big-spender rule
     "features.auto_campaigns",          # auto birthday + inactive rescue messages
     "features.push_subscriptions",      # web push subscriptions + dispatch helper
+    "features.business_hours",          # weekly schedule + French public holidays + annual closures
     # AI / predictive — fully implemented (math-based)
     "features.ai_send_time",
     "features.ai_churn",

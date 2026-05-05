@@ -101,8 +101,29 @@ def _dispatch_message(tenant_id: str, customer: dict, kind: str, title: str, bod
          Failures are logged in `delivery_log` but never raise — the
          message is still considered "dispatched" because the platform
          did everything in its power.
+
+    Closure check:
+      Before sending, ask features.business_hours.is_open_on(today). If the
+      tenant is closed today (weekly closure, public holiday, or annual
+      vacation), the message is skipped — we never send 'come visit today'
+      on a day the door is locked.
     """
     now = datetime.now(timezone.utc)
+    # Respect tenant closures — never push 'come visit' on a closed day
+    try:
+        from features.business_hours import is_open_on        # noqa: WPS433
+        if not is_open_on(tenant_id, now.date()):
+            _db.delivery_log.insert_one({
+                "tenant_id": tenant_id,
+                "customer_id": customer.get("id"),
+                "channel": "skipped_closed_day",
+                "kind": kind,
+                "result": {"reason": "tenant_closed_today"},
+                "timestamp": now,
+            })
+            return
+    except Exception:
+        pass    # never let a closure-check failure block dispatch
     _db.push_notifications.insert_one({
         "id": str(uuid.uuid4()),
         "tenant_id": tenant_id,

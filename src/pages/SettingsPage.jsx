@@ -5,6 +5,7 @@ import LoadingDistraction from '../components/LoadingDistraction';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CustomerStatusConfigCard from '../components/CustomerStatusConfigCard';
 import DaypartConfigCard from '../components/DaypartConfigCard';
+import BusinessHoursCard from '../components/BusinessHoursCard';
 import TierDefinitionCard from '../components/TierDefinitionCard';
 import AutoCampaignsCard from '../components/AutoCampaignsCard';
 import WelcomeBonusCard from '../components/WelcomeBonusCard';
@@ -278,6 +279,9 @@ const SettingsPage = () => {
             {/* Additive: editable time-of-day periods (replaces hard-coded breakfast/lunch/dinner). */}
             <div id="settings-dayparts" className="scroll-mt-24"><DaypartConfigCard /></div>
 
+            {/* Additive: weekly schedule + French public holidays + annual closures. */}
+            <div id="settings-hours" className="scroll-mt-24"><BusinessHoursCard /></div>
+
             {/* Additive: custom tier thresholds + big-spender rule. */}
             <div id="settings-tiers" className="scroll-mt-24"><TierDefinitionCard /></div>
 
@@ -302,6 +306,7 @@ function SettingsNavigator() {
     { id: 'settings-geo',      label: '📍 Géolocalisation' },
     { id: 'settings-status',   label: '👥 Statut des clients' },
     { id: 'settings-dayparts', label: '⏰ Périodes de la journée' },
+    { id: 'settings-hours',    label: '📅 Horaires & jours fériés' },
     { id: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
     { id: 'settings-welcome',  label: '🎁 Message de bienvenue' },
     { id: 'settings-auto',     label: '🤖 Campagnes automatiques' },
