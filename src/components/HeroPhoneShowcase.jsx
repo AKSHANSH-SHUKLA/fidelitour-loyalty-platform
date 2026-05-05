@@ -28,28 +28,12 @@ import { C } from './PageShell';
  * in LandingPage.jsx for rollback safety).
  */
 
-const SCENE_DURATION = 6000;
-
-const SCENES = [
-  { id: 'analytics',     label: 'Analytics' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'wallet',        label: 'Wallet card' },
-  { id: 'geolocation',   label: 'Geolocation' },
-  { id: 'ai',            label: 'AI Intelligence' },
-];
-
+/* Hero shows only the Apple Wallet card. The desktop dashboard / analytics /
+ * geolocation are demonstrated on their own further down the page (PC mockups).
+ * The phone stays locked to one purpose: showcasing what lands in the customer's
+ * pocket. Per the v2 spec.
+ */
 const HeroPhoneShowcase = () => {
-  const [scene, setScene] = useState(0);
-
-  // Auto-advance — pauses while document is hidden to save battery on background tabs.
-  useEffect(() => {
-    const tick = () => setScene((s) => (s + 1) % SCENES.length);
-    const id = setInterval(() => {
-      if (!document.hidden) tick();
-    }, SCENE_DURATION);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <div className="relative w-full max-w-[640px] mx-auto" style={{ perspective: '2000px' }}>
       {/* Multi-color glow halo */}
@@ -62,45 +46,19 @@ const HeroPhoneShowcase = () => {
         }}
       />
 
-      {/* Background dashboard echo — desktop view of the same scene */}
-      <DashboardEcho scene={SCENES[scene].id} />
+      {/* Background dashboard echo — kept on the wallet scene so it shows the
+          "what the merchant sees on PC" desktop framing alongside the phone.   */}
+      <DashboardEcho scene="wallet" />
 
-      {/* Foreground phone */}
+      {/* Foreground phone — wallet card only */}
       <div className="relative flex justify-center">
         <PhoneFrame>
-          <AnimatePresence mode="wait">
-            {scene === 0 && <SceneAnalytics key="analytics" />}
-            {scene === 1 && <SceneNotifications key="notifications" />}
-            {scene === 2 && <SceneWalletCard key="wallet" />}
-            {scene === 3 && <SceneGeolocation key="geolocation" />}
-            {scene === 4 && <SceneAIIntelligence key="ai" />}
-          </AnimatePresence>
+          <SceneWalletCard key="wallet" />
         </PhoneFrame>
       </div>
 
-      {/* Scene indicator dots */}
-      <div className="relative mt-6 flex items-center justify-center gap-2">
-        {SCENES.map((s, i) => {
-          const active = i === scene;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setScene(i)}
-              aria-label={'Show scene: ' + s.label}
-              className="transition-all"
-              style={{
-                width: active ? 32 : 8,
-                height: 8,
-                borderRadius: 4,
-                background: active ? C.terracotta : C.hairline,
-              }}
-            />
-          );
-        })}
-      </div>
-      <p className="relative text-center text-xs mt-2 font-semibold uppercase tracking-widest" style={{ color: C.inkMute }}>
-        {SCENES[scene].label}
+      <p className="relative text-center text-xs mt-6 font-bold uppercase tracking-widest" style={{ color: C.terracotta }}>
+        Aperçu Apple Wallet · en temps réel
       </p>
     </div>
   );

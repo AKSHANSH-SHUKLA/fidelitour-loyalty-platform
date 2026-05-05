@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ownerAPI } from '../lib/api';
 import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2, Gift } from 'lucide-react';
 import { C as C_SCAN } from '../components/PageShell';
+import { useBranch } from '../contexts/BranchContext';
 
 const BRANCH_STORAGE_KEY = 'fidelitour_scan_branch_id';
 
@@ -17,23 +18,20 @@ const ScanPage = () => {
   const [scanResult, setScanResult] = useState(null); // Enhanced post-scan result
   const [redeemLoading, setRedeemLoading] = useState(false);
   const [redeemDone, setRedeemDone] = useState(false);
-  const [branches, setBranches] = useState([]);
-  const [branchId, setBranchId] = useState(() => {
-    try { return localStorage.getItem(BRANCH_STORAGE_KEY) || ''; } catch (e) { return ''; }
-  });
+  // App-wide branch context (item #18). Picking a branch here also reflects on every other page.
+  const { branchId: _branchIdRaw, setBranchId: _setBranchIdGlobal, branches: _branchesCtx, setBranches: _setBranchesCtx } = useBranch();
+  const branches = _branchesCtx;
+  const branchId = _branchIdRaw || '';
+  const setBranchId = (id) => _setBranchIdGlobal(id || null);
 
   useEffect(() => {
     (async () => {
       try {
         const r = await ownerAPI.getBranches();
-        setBranches(r.data || []);
+        _setBranchesCtx(r.data || []);
       } catch (e) { /* no branches, plan doesn't support — fine */ }
     })();
   }, []);
-
-  useEffect(() => {
-    try { localStorage.setItem(BRANCH_STORAGE_KEY, branchId || ''); } catch (e) {}
-  }, [branchId]);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);

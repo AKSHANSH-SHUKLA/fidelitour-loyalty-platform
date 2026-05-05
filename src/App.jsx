@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { BranchProvider } from './contexts/BranchContext';
 
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -56,7 +57,8 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <BranchProvider>
+       <Router>
         <Routes>
           <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
@@ -146,7 +148,8 @@ function App() {
             <Route path="ai" element={<AdminAIAssistantPage />} />
           </Route>
         </Routes>
-      </Router>
+       </Router>
+      </BranchProvider>
     </AuthProvider>
   );
 }

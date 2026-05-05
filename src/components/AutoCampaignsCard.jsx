@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
 import { Cake, BellOff, Play, Save, Eye, Coffee, Smartphone, Send } from 'lucide-react';
 import { C as C_PS } from './PageShell';
+import PushNotificationPreviewModal from './PushNotificationPreviewModal';
 
 /**
  * Drop-in card for SettingsPage: configure auto-generated messages for
@@ -28,12 +29,20 @@ const AutoCampaignsCard = () => {
   const [savedAt, setSavedAt] = useState(null);
   const [running, setRunning] = useState(null);   // 'birthdays' | 'inactive' | null
   const [previews, setPreviews] = useState(null);
+  // PushNotificationPreviewModal state — confirm-before-send for every auto run
+  const [confirmFor, setConfirmFor] = useState(null);  // { which, count, title, body }
+  const [businessName, setBusinessName] = useState('Votre commerce');
 
   const load = async () => {
     try {
       const res = await api.get('/owner/auto-campaigns/config');
       setCfg(res.data);
     } catch (e) { console.error('auto-campaigns load failed', e); }
+    // Get business name for the preview modal
+    try {
+      const settingsRes = await api.get('/owner/settings');
+      setBusinessName(settingsRes.data?.name || 'Votre commerce');
+    } catch (_e) { /* ignore */ }
   };
   useEffect(() => { load(); }, []);
 
@@ -63,16 +72,40 @@ const AutoCampaignsCard = () => {
     } finally { setRunning(null); }
   };
 
+  // Step 1 — open the preview/confirmation modal with the proposed message + recipient count.
+  // Step 2 — when the owner clicks "Send" inside the modal, sendConfirmed() actually fires the run.
   const sendNow = async (which) => {
-    if (!window.confirm(`Really send ${which} messages now? This is a real send.`)) return;
     setRunning(which);
     try {
-      const res = await api.post(ENDPOINTS[which]);
-      alert(`${res.data.sent} message${res.data.sent === 1 ? '' : 's'} sent.`);
+      // Re-run as dry to get fresh recipient count + the canonical templated message
+      const res = await api.post(ENDPOINTS[which], null, { params: { dry_run: true } });
+      const samples = res.data?.samples || res.data?.previews || [];
+      const firstSample = samples[0] || {};
+      const count = res.data?.would_send ?? res.data?.count ?? samples.length;
+      // Pull the title/body from the first sample so the owner sees the real templated text
+      const title = firstSample.title || (which === 'birthdays' ? '🎂 Joyeux anniversaire !' : which === 'inactive' ? '👋 Vous nous manquez' : 'Plus qu\'une visite !');
+      const body = firstSample.body || firstSample.message || '';
+      setConfirmFor({ which, count, title, body });
+    } catch (e) {
+      alert('Échec de la préparation : ' + (e?.response?.data?.detail || e.message));
+    } finally { setRunning(null); }
+  };
+
+  // Owner clicked Send inside the modal — fire the real auto-run for real this time.
+  const sendConfirmed = async ({ title, body }) => {
+    if (!confirmFor) return;
+    const which = confirmFor.which;
+    setRunning(which);
+    try {
+      const res = await api.post(ENDPOINTS[which], { title, body });
+      alert(`✓ ${res.data.sent || 0} message${(res.data.sent || 0) === 1 ? '' : 's'} envoyé${(res.data.sent || 0) === 1 ? '' : 's'}.`);
       setPreviews(null);
     } catch (e) {
-      alert('Send failed: ' + (e?.response?.data?.detail || e.message));
-    } finally { setRunning(null); }
+      alert('Échec de l\'envoi : ' + (e?.response?.data?.detail || e.message));
+    } finally {
+      setRunning(null);
+      setConfirmFor(null);
+    }
   };
 
   return (
@@ -301,6 +334,25 @@ const TwilioTestBench = () => {
             : <>⚠ {last.error || 'Failed'}{last.hint ? ' — ' + last.hint : ''}</>}
         </div>
       )}
+
+      {/* Confirm-before-send modal (item #5 + #6) */}
+      <PushNotificationPreviewModal
+        open={!!confirmFor}
+        onClose={() => setConfirmFor(null)}
+        onConfirm={sendConfirmed}
+        businessName={businessName}
+        primaryColor={C_PS.terracotta}
+        recipientCount={confirmFor?.count ?? 0}
+        trigger={
+          confirmFor?.which === 'birthdays' ? 'Anniversaires automatiques'
+          : confirmFor?.which === 'inactive' ? 'Relance des clients endormis'
+          : confirmFor?.which === 'almost_there' ? 'Plus qu\'une visite — récompense'
+          : 'Campagne automatique'
+        }
+        defaultTitle={confirmFor?.title || ''}
+        defaultBody={confirmFor?.body || ''}
+        editable={true}
+      />
     </div>
   );
 };

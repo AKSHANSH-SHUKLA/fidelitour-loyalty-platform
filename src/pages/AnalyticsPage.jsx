@@ -16,6 +16,7 @@ import TierBadge from '../components/TierBadge';
 import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
 import VisitsOverTimeChart from '../components/VisitsOverTimeChart';
 import LoadingDistraction from '../components/LoadingDistraction';
+import { useBranch } from '../contexts/BranchContext';
 import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 import CustomerStatusKPI from '../components/CustomerStatusKPI';
 
@@ -322,8 +323,12 @@ const AnalyticsPage = () => {
   const [reviewAnalytics, setReviewAnalytics] = useState(null);
 
   // Branch selector — drives every API call below
-  const [branches, setBranches] = useState([]);
-  const [branchId, setBranchId] = useState(''); // '' means "All branches"
+  // App-wide branch context (item #18) — picking a branch on dashboard filters every page.
+  const { branchId: branchIdRaw, setBranchId: setBranchIdGlobal, branches: branchesCtx, setBranches: setBranchesCtx } = useBranch();
+  const branchId = branchIdRaw || '';
+  const setBranchId = (id) => setBranchIdGlobal(id || null);
+  const branches = branchesCtx;
+  const setBranches = setBranchesCtx;
 
   const [recoveryInactiveDays, setRecoveryInactiveDays] = useState(30);
   const [recoveryWindowDays, setRecoveryWindowDays] = useState(30);

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import TierBadge from '../components/TierBadge';
+import { useBranch } from '../contexts/BranchContext';
 import LeafletFranceMap from '../components/LeafletFranceMap';
 
 // --------------------- Quadrant helpers ---------------------
@@ -189,8 +190,12 @@ export default function CustomerMapPage() {
   const [minAmountPaid, setMinAmountPaid] = useState('');
   const [search, setSearch] = useState('');
   // Branch selector
-  const [branches, setBranches] = useState([]);
-  const [branchId, setBranchId] = useState('');               // '' = all branches
+  // App-wide branch context (item #18)
+  const { branchId: _branchIdRaw, setBranchId: _setBranchIdGlobal, branches: _branchesCtx, setBranches: _setBranchesCtx } = useBranch();
+  const branches = _branchesCtx;
+  const setBranches = _setBranchesCtx;
+  const branchId = _branchIdRaw || '';
+  const setBranchId = (id) => _setBranchIdGlobal(id || null);
   // Full details modal — set to a customer object to open
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 

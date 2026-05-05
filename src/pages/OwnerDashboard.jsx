@@ -11,6 +11,7 @@ import {
 import TierBadge from '../components/TierBadge';
 import { PageHeader, StatCard, Section, C } from '../components/PageShell';
 import LoadingDistraction from '../components/LoadingDistraction';
+import { useBranch } from '../contexts/BranchContext';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
@@ -18,8 +19,8 @@ const OwnerDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [branches, setBranches] = useState([]);
-  const [selectedBranch, setSelectedBranch] = useState(null);
+  // Shared app-wide branch state (item #18) — picking a branch here filters every page.
+  const { branchId: selectedBranch, setBranchId: setSelectedBranch, branches, setBranches } = useBranch();
   const [cardsFilled, setCardsFilled] = useState(null);
   const [recovered, setRecovered] = useState(null);
   const [topSpender, setTopSpender] = useState(null);
