@@ -337,6 +337,8 @@ const AnalyticsPage = () => {
   // Custom threshold for "Inactive customers" KPI. Default 30 days — owner can change it.
   const [inactiveThreshold, setInactiveThreshold] = useState(30);
   const [inactiveDraft, setInactiveDraft] = useState('30');
+  // Time-range for the "About to lose" KPI — owner picks any window.
+  const [aboutToLoseRange, setAboutToLoseRange] = useState({ min: 14, max: 29 });
   // Period preset for the whole page — 7/30/90 days or "all time". Applied everywhere a window makes sense.
   const [periodDays, setPeriodDays] = useState(30);
   // Free-typing buffer for the custom-period input. Decoupled from periodDays so
@@ -842,53 +844,13 @@ const AnalyticsPage = () => {
           boxShadow: '0 6px 18px -10px #B85C3855',
         }}
       >
-        <div className="relative flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#B85C38' }}>
-              Retention health
-            </h3>
-            <p className="text-xs" style={{ color: '#7B3F00' }}>
-              First-time signups today, inactive customers (your own threshold), at-risk customers about to churn, and card completions today. Click any card to see the customer list.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Inactive ≥</label>
-            <div className="flex gap-1">
-              {[7, 14, 21, 30, 60, 90].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => { setInactiveThreshold(d); setInactiveDraft(String(d)); }}
-                  className={`text-xs px-2 py-1 rounded-md transition ${
-                    inactiveThreshold === d
-                      ? 'bg-[#B85C38] text-white'
-                      : 'bg-[#F5F4F0] text-[#57534E] hover:bg-[#E7E5E4]'
-                  }`}
-                >
-                  {d}d
-                </button>
-              ))}
-            </div>
-            <input
-              type="number"
-              inputMode="numeric"
-              min="1"
-              max="730"
-              value={inactiveDraft}
-              onChange={(e) => setInactiveDraft(e.target.value)}
-              onBlur={commitInactiveDraft}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  commitInactiveDraft();
-                  e.currentTarget.blur();
-                }
-              }}
-              className="w-16 text-xs px-2 py-1 border border-[#E7E5E4] rounded-md"
-              title="Type a custom inactivity threshold and press Enter"
-            />
-            <span className="text-xs text-[#8B8680]">days</span>
-          </div>
+        <div className="relative">
+          <h3 className="text-lg font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#B85C38' }}>
+            Retention health
+          </h3>
+          <p className="text-xs" style={{ color: '#7B3F00' }}>
+            First-time signups today, inactive customers (your own threshold), at-risk customers about to churn, and card completions today. Click any card to see the customer list.
+          </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KPICard
@@ -903,40 +865,90 @@ const AnalyticsPage = () => {
             presetName="Bienvenue chez {business_name}, {first_name} !"
             presetContent="Merci d'avoir rejoint {business_name}. Pour votre 2e visite, une attention spéciale vous attend."
           />
-          <KPICard
-            icon={AlertCircle}
-            title={`Inactive ≥ ${inactiveThreshold}d`}
-            value={inactiveCount.toLocaleString()}
-            sublabel={`${inactivePct}% of base · click to view & win back`}
-            accent="#B85C38"
-            onClick={() =>
-              drillCustomers(
-                `Inactive ≥ ${inactiveThreshold} days`,
-                { inactive_days_min: inactiveThreshold }
-              )
-            }
-            segment={{ type: 'inactive_days', value: inactiveThreshold }}
-            openComposer={openComposer}
-            presetName="On vous a manqué, {first_name}"
-            presetContent={`Ça fait plus de ${inactiveThreshold} jours… une offre flash vous attend chez {business_name}.`}
-          />
-          <KPICard
-            icon={Clock}
-            title="About to lose (14–29d)"
-            value={aboutToLoseCount.toLocaleString()}
-            sublabel={`${aboutToLosePct}% of base · at risk of churning`}
-            accent="#E3A869"
-            onClick={() =>
-              drillCustomers('About to lose (14–29 days since last visit)', {
-                inactive_days_min: 14,
-                inactive_days_max: 29,
-              })
-            }
-            segment={{ type: 'inactive_days', value: 14 }}
-            openComposer={openComposer}
-            presetName="Un petit rappel, {first_name}"
-            presetContent="Ça fait quelques semaines… {business_name} vous attend avec une surprise."
-          />
+          {/* Inactive card with its OWN time-period chip selector */}
+          <div className="relative">
+            <KPICard
+              icon={AlertCircle}
+              title={`Inactive ≥ ${inactiveThreshold}d`}
+              value={inactiveCount.toLocaleString()}
+              sublabel={`${inactivePct}% of base · click to view & win back`}
+              accent="#B85C38"
+              onClick={() =>
+                drillCustomers(
+                  `Inactive ≥ ${inactiveThreshold} days`,
+                  { inactive_days_min: inactiveThreshold }
+                )
+              }
+              segment={{ type: 'inactive_days', value: inactiveThreshold }}
+              openComposer={openComposer}
+              presetName="On vous a manqué, {first_name}"
+              presetContent={`Ça fait plus de ${inactiveThreshold} jours… une offre flash vous attend chez {business_name}.`}
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#7B3F00]">Seuil :</span>
+              {[7, 14, 21, 30, 60, 90].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setInactiveThreshold(d); setInactiveDraft(String(d)); }}
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold transition ${
+                    inactiveThreshold === d
+                      ? 'bg-[#B85C38] text-white'
+                      : 'bg-white text-[#57534E] border border-[#E7E5E4] hover:border-[#B85C38]'
+                  }`}
+                >
+                  {d}j
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* About-to-lose card with its OWN time-period range selector */}
+          <div className="relative">
+            <KPICard
+              icon={Clock}
+              title={`About to lose (${aboutToLoseRange.min}–${aboutToLoseRange.max}d)`}
+              value={aboutToLoseCount.toLocaleString()}
+              sublabel={`${aboutToLosePct}% of base · at risk of churning`}
+              accent="#E3A869"
+              onClick={() =>
+                drillCustomers(`About to lose (${aboutToLoseRange.min}–${aboutToLoseRange.max} days since last visit)`, {
+                  inactive_days_min: aboutToLoseRange.min,
+                  inactive_days_max: aboutToLoseRange.max,
+                })
+              }
+              segment={{ type: 'inactive_days', value: aboutToLoseRange.min }}
+              openComposer={openComposer}
+              presetName="Un petit rappel, {first_name}"
+              presetContent="Ça fait quelques semaines… {business_name} vous attend avec une surprise."
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#7B3F00]">Plage :</span>
+              {[
+                { min: 7,  max: 13, label: '7–13j' },
+                { min: 14, max: 29, label: '14–29j' },
+                { min: 30, max: 59, label: '30–59j' },
+                { min: 60, max: 89, label: '60–89j' },
+                { min: 14, max: 89, label: '14–89j' },
+              ].map((r, i) => {
+                const active = aboutToLoseRange.min === r.min && aboutToLoseRange.max === r.max;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setAboutToLoseRange({ min: r.min, max: r.max }); }}
+                    className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold transition ${
+                      active
+                        ? 'bg-[#E3A869] text-white'
+                        : 'bg-white text-[#57534E] border border-[#E7E5E4] hover:border-[#E3A869]'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <KPICard
             icon={CreditCard}
             title="Cards completed today"

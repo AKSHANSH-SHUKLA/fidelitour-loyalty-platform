@@ -8,7 +8,7 @@
  * the dropdown, all currently-shown alerts are marked read.
  */
 import React, { useEffect, useState, useRef } from 'react';
-import { Bell, AlertTriangle, TrendingDown, TrendingUp, Sparkles, X } from 'lucide-react';
+import { Bell, AlertTriangle, TrendingDown, TrendingUp, Sparkles, X, Building2 } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 
 const STORAGE_KEY = 'ft_read_alerts_v1';
@@ -40,6 +40,9 @@ const NotificationBell = () => {
   const [readIds, setReadIds] = useState(loadReadIds);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Account / franchise headline data — business name + list of all stores
+  const [accountName, setAccountName] = useState('');
+  const [stores, setStores] = useState([]);
   const wrapperRef = useRef(null);
 
   // Fetch alerts on mount + every 5 minutes while page is open
@@ -56,6 +59,22 @@ const NotificationBell = () => {
     load();
     const id = setInterval(load, 5 * 60 * 1000);
     return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  // Account info — load once. Tenant name + branches for the dropdown header.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const t = await ownerAPI.getTenant();
+        if (!cancelled) setAccountName(t.data?.name || 'Mon compte');
+      } catch (_e) { /* silent */ }
+      try {
+        const b = await ownerAPI.getBranches();
+        if (!cancelled) setStores(Array.isArray(b.data) ? b.data : []);
+      } catch (_e) { /* silent */ }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Click-outside to close
@@ -109,23 +128,58 @@ const NotificationBell = () => {
           className="absolute right-0 mt-2 w-[380px] rounded-2xl bg-white border shadow-2xl z-50 overflow-hidden"
           style={{ borderColor: '#EFE9E0' }}
         >
-          <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: '#EFE9E0' }}>
-            <div>
-              <p className="text-sm font-bold" style={{ color: '#1C1917', fontFamily: 'Cormorant Garamond' }}>
-                Résumé intelligent
-              </p>
-              <p className="text-[10px]" style={{ color: '#8B8680' }}>
-                Toutes vos boutiques · mis à jour toutes les 5 min
-              </p>
+          {/* Account headline — the franchise/business name + every store under it */}
+          <div
+            className="px-4 py-3 border-b relative overflow-hidden"
+            style={{
+              borderColor: '#EFE9E0',
+              background: 'linear-gradient(135deg, #1C1917 0%, #2A1C2E 100%)',
+              color: 'white',
+            }}
+          >
+            <div className="flex items-start justify-between gap-2 relative">
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-bold uppercase tracking-widest opacity-70">Compte</p>
+                <p className="text-base font-bold leading-tight truncate"
+                   style={{ fontFamily: 'Cormorant Garamond' }}>
+                  {accountName || 'Mon compte'}
+                </p>
+                {stores.length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {stores.slice(0, 6).map((s) => (
+                      <span
+                        key={s.id}
+                        className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: 'rgba(227,168,105,0.18)', color: '#FFD7A8', border: '1px solid rgba(227,168,105,0.35)' }}
+                      >
+                        <Building2 size={9} /> {s.name}
+                      </span>
+                    ))}
+                    {stores.length > 6 && (
+                      <span className="text-[9px] opacity-70 self-center">+{stores.length - 6} autres</span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[10px] opacity-70 mt-1">Boutique unique · résumé toutes boutiques</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center shrink-0"
+                aria-label="Close"
+              >
+                <X size={14} style={{ color: 'white' }} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="w-7 h-7 rounded-full hover:bg-[#FAF8F4] flex items-center justify-center"
-              aria-label="Close"
-            >
-              <X size={14} style={{ color: '#57534E' }} />
-            </button>
+          </div>
+          <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: '#EFE9E0', background: '#FDFBF7' }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B8680' }}>
+              Résumé intelligent · toutes les boutiques
+            </p>
+            <p className="text-[9px]" style={{ color: '#A8A29E' }}>
+              MAJ 5 min
+            </p>
           </div>
           <div className="max-h-[420px] overflow-y-auto">
             {loading && alerts.length === 0 ? (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api, { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
+import LoadingDistraction from '../components/LoadingDistraction';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CustomerStatusConfigCard from '../components/CustomerStatusConfigCard';
 import DaypartConfigCard from '../components/DaypartConfigCard';
@@ -96,11 +97,8 @@ const SettingsPage = () => {
 
     if (loading) {
         return (
-          <div className="flex items-center justify-center py-32">
-            <div className="flex items-center gap-3 text-sm font-medium" style={{ color: C_PS.inkMute }}>
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C_PS.ochre }} />
-              Loading settings…
-            </div>
+          <div className="py-12 px-4">
+            <LoadingDistraction title="Chargement des réglages" message="On charge votre configuration…" />
           </div>
         );
     }
@@ -257,12 +255,6 @@ const SettingsPage = () => {
                     </div>
                 </div>
 
-                {/* Geolocalisation — owner-editable. Radius / cooldown / on-off all owner-controlled. */}
-                <div id="settings-geo" className="scroll-mt-24">
-                  <OwnerGeoCard initial={geoConfig} />
-                </div>
-
-
                 {/* Save Button */}
                 <button
                     type="submit"
@@ -273,6 +265,12 @@ const SettingsPage = () => {
                     {saving ? 'Saving...' : 'Save Settings'}
                 </button>
             </form>
+
+            {/* Geolocalisation — owner-editable, has its own save button. Lives OUTSIDE the
+                main form so its slider/enter-key events don't trigger the outer form submit. */}
+            <div id="settings-geo" className="scroll-mt-24">
+              <OwnerGeoCard initial={geoConfig} />
+            </div>
 
             {/* Additive: configurable Active/Inactive customer definition. */}
             <div id="settings-status" className="scroll-mt-24"><CustomerStatusConfigCard /></div>

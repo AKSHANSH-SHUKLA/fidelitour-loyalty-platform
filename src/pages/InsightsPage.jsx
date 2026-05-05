@@ -6,6 +6,7 @@ import {
   Sparkles, Wand2,
 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
+import LoadingDistraction from '../components/LoadingDistraction';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend,
@@ -194,7 +195,11 @@ export default function InsightsPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-[#57534E]">Loading insights…</div>;
+    return (
+      <div className="py-12 px-4">
+        <LoadingDistraction title="Chargement des insights" message="On compile vos alertes et recommandations…" />
+      </div>
+    );
   }
 
   const alertToneBg = {

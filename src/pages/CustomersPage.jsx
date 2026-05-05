@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api, { ownerAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
 import { PageHeader, C as C_PS } from '../components/PageShell';
+import LoadingDistraction from '../components/LoadingDistraction';
 
 // Pre-built segments that power one-click targeting. Server-side fields map to
 // the extended GET /api/owner/customers filters.
@@ -348,11 +349,8 @@ export default function CustomersPage() {
 
   if (loading) {
     return (
-      <div
-        className="p-8"
-        style={{ backgroundColor: '#FDFBF7' }}
-      >
-        <p style={{ color: '#57534E' }}>Loading customers...</p>
+      <div className="py-12 px-4">
+        <LoadingDistraction title="Chargement des clients" message="On agrège votre base clients…" />
       </div>
     );
   }

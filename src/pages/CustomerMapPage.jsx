@@ -9,6 +9,7 @@ import {
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import TierBadge from '../components/TierBadge';
 import { useBranch } from '../contexts/BranchContext';
+import LoadingDistraction from './../components/LoadingDistraction';
 import LeafletFranceMap from '../components/LeafletFranceMap';
 
 // --------------------- Quadrant helpers ---------------------
@@ -376,11 +377,8 @@ export default function CustomerMapPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="flex items-center gap-3 text-sm font-medium" style={{ color: C_PS.inkMute }}>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C_PS.ochre }} />
-          Loading customer map…
-        </div>
+      <div className="py-12 px-4">
+        <LoadingDistraction title="Chargement de la carte clients" message="On localise vos clients par département…" />
       </div>
     );
   }

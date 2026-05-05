@@ -23,10 +23,15 @@ import { C as C_PS } from './PageShell';
  */
 const PRESETS = [
   { unit: 'days',   count: 7,   label: 'Last 7 days' },
+  { unit: 'days',   count: 14,  label: 'Last 14 days' },
   { unit: 'days',   count: 30,  label: 'Last 30 days' },
-  { unit: 'days',   count: 90,  label: 'Last 90 days' },
+  { unit: 'weeks',  count: 4,   label: 'Last 4 weeks' },
+  { unit: 'weeks',  count: 12,  label: 'Last 12 weeks' },
+  { unit: 'weeks',  count: 26,  label: 'Last 26 weeks' },
+  { unit: 'months', count: 3,   label: 'Last 3 months' },
   { unit: 'months', count: 6,   label: 'Last 6 months' },
   { unit: 'months', count: 12,  label: 'Last 12 months' },
+  { unit: 'years',  count: 1,   label: 'Last year' },
   { unit: 'years',  count: 2,   label: 'Last 2 years' },
 ];
 
