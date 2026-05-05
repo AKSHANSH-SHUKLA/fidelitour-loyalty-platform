@@ -149,11 +149,18 @@ const OwnerDashboard = () => {
       visits
     }));
 
-  // New customers by week
+  // New customers by week.
+  // Backend keys are "Week 1" (oldest, 11 weeks ago) → "Week 12" (newest, current week).
+  // Sort numerically so the X-axis reads left=oldest → right=newest, regardless of dict iteration order.
   const newByWeek = metrics.new_customers_by_week || {};
   const newCustomersData = Object.entries(newByWeek)
-    .map(([week, count]) => ({ week, count }))
-    .reverse();
+    .map(([week, count]) => ({
+      week,
+      weekNum: parseInt(String(week).replace(/[^0-9]/g, ''), 10) || 0,
+      count,
+    }))
+    .sort((a, b) => a.weekNum - b.weekNum)
+    .map(({ week, count }) => ({ week, count }));
 
   // Tier distribution pie
   const tierPieData = [
