@@ -694,120 +694,137 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
-      {/* Row 1 — canonical KPIs. Each card is click-to-drill. */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard
-          icon={Users}
-          title="Total Customers"
-          value={totalCustomers.toLocaleString()}
-          sublabel={`${newThisWeek} new this week${branchId ? ' · this branch' : ''} · click to view`}
-          accent="#B85C38"
-          onClick={() => drillCustomers('All customers', {})}
-          segment={{ type: 'all' }}
-          openComposer={openComposer}
-          presetName="Un message pour toi, {first_name}"
-          presetContent="Merci de faire partie de la famille {business_name} ! Une surprise vous attend lors de votre prochain passage."
-        />
-        <KPICard
-          icon={Activity}
-          title="Total Visits"
-          value={totalVisits.toLocaleString()}
-          sublabel="All time · click to view top visitors"
-          accent="#4A5D23"
-          onClick={() => drillCustomers('Customers with ≥ 1 visit', { min_visits: 1 })}
-          segment={{ type: 'max_visits_n', n: 20 }}
-          openComposer={openComposer}
-          presetName="Merci pour vos {visits} visites 🙏"
-          presetContent="Vos {visits} visites vous rendent VIP, {first_name}. Une attention spéciale vous attend chez {business_name}."
-        />
-        <KPICard
-          icon={TrendingUp}
-          title="Repeat Rate"
-          value={`${repeatRate.toFixed(1)}%`}
-          sublabel={`${activeCustomers} active (30d) · click to view repeat customers`}
-          accent="#E3A869"
-          onClick={() => drillCustomers('Repeat customers (≥ 2 visits)', { min_visits: 2 })}
-          segment={{ type: 'inactive_days', value: 30 }}
-          openComposer={openComposer}
-          presetName="On vous a manqué, {first_name}"
-          presetContent="Ça fait un moment… Revenez cette semaine chez {business_name} pour une offre spéciale."
-        />
-        <KPICard
-          icon={Smartphone}
-          title="Wallet Passes"
-          value={walletPasses.toLocaleString()}
-          sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% of customers · click to view`}
-          accent="#7B3F00"
-          onClick={() => drillCustomers('Wallet pass holders', { has_wallet_pass: true })}
-          segment={{ type: 'all' }}
-          openComposer={openComposer}
-          presetName="Ajoutez votre carte au wallet"
-          presetContent="{first_name}, gardez {business_name} à portée de main. Ajoutez votre carte à Apple/Google Wallet."
-        />
-      </section>
+      {/* ─── ROW 1 — LIFETIME TOTALS (no time filter) ─── */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Vue d'ensemble — depuis le début
+          </h3>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Totaux historiques</span>
+        </div>
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KPICard
+            icon={Users}
+            title="Total Customers"
+            value={totalCustomers.toLocaleString()}
+            sublabel={`Cliquez pour voir la liste${branchId ? ' (cette boutique)' : ''}`}
+            accent="#B85C38"
+            onClick={() => drillCustomers('All customers', {})}
+            segment={{ type: 'all' }}
+            openComposer={openComposer}
+            presetName="Un message pour toi, {first_name}"
+            presetContent="Merci de faire partie de la famille {business_name} ! Une surprise vous attend lors de votre prochain passage."
+          />
+          <KPICard
+            icon={Activity}
+            title="Total Visits"
+            value={totalVisits.toLocaleString()}
+            sublabel="Toutes les visites · cliquez pour le top"
+            accent="#4A5D23"
+            onClick={() => drillCustomers('Customers with ≥ 1 visit', { min_visits: 1 })}
+            segment={{ type: 'max_visits_n', n: 20 }}
+            openComposer={openComposer}
+            presetName="Merci pour vos {visits} visites 🙏"
+            presetContent="Vos {visits} visites vous rendent VIP, {first_name}. Une attention spéciale vous attend chez {business_name}."
+          />
+          <KPICard
+            icon={TrendingUp}
+            title="Repeat Rate"
+            value={`${repeatRate.toFixed(1)}%`}
+            sublabel="Clients revenus au moins 2 fois"
+            accent="#E3A869"
+            onClick={() => drillCustomers('Repeat customers (≥ 2 visits)', { min_visits: 2 })}
+            segment={{ type: 'inactive_days', value: 30 }}
+            openComposer={openComposer}
+            presetName="On vous a manqué, {first_name}"
+            presetContent="Ça fait un moment… Revenez cette semaine chez {business_name} pour une offre spéciale."
+          />
+          <KPICard
+            icon={Smartphone}
+            title="Wallet Passes"
+            value={walletPasses.toLocaleString()}
+            sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% des clients · cliquez`}
+            accent="#7B3F00"
+            onClick={() => drillCustomers('Wallet pass holders', { has_wallet_pass: true })}
+            segment={{ type: 'all' }}
+            openComposer={openComposer}
+            presetName="Ajoutez votre carte au wallet"
+            presetContent="{first_name}, gardez {business_name} à portée de main. Ajoutez votre carte à Apple/Google Wallet."
+          />
+        </section>
+      </div>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard
-          icon={CreditCard}
-          title="Cards Filled"
-          value={cardsFilledTotal.toLocaleString()}
-          sublabel={`${cardsFilledThisMonth} this month · click to view`}
-          accent="#4A5D23"
-          onClick={() => drillCustomers('Customers who filled at least one card', { cards_filled: true })}
-          segment={{ type: 'tier', value: 'gold' }}
-          openComposer={openComposer}
-          presetName="Bravo {first_name} — vous êtes {tier} !"
-          presetContent="Vous avez rempli votre carte. Une récompense exclusive {business_name} vous attend."
-        />
-        <KPICard
-          icon={Gift}
-          title="Recovered Customers"
-          value={(recovered?.count ?? summary?.recovered_count ?? 0).toLocaleString()}
-          sublabel={`${recovered?.percentage ?? summary?.recovered_pct ?? 0}% of total · click to view`}
-          onClick={() =>
-            setDrill({
-              title: 'Recovered Customers',
-              rows: recovered?.customers || [],
-              columns: [
-                { key: 'name', label: 'Customer' },
-                { key: 'email', label: 'Email' },
-                { key: 'tier', label: 'Tier', render: (v) => <TierBadge tier={v} /> },
-                { key: 'last_inactive_date', label: 'Gap started', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
-                { key: 'returned_date', label: 'Returned', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
-              ],
-            })
-          }
-          accent="#B85C38"
-          segment={{ type: 'recovered', inactive_days: recoveryInactiveDays, window_days: recoveryWindowDays }}
-          openComposer={openComposer}
-          presetName="Heureux de vous revoir, {first_name} !"
-          presetContent="Pour votre retour chez {business_name}, un petit bonus vous attend. {points_to_next_reward} points vous séparent de votre récompense."
-        />
-        <KPICard
-          icon={Award}
-          title="Active Customers"
-          value={activeCustomers.toLocaleString()}
-          sublabel="Visited in last 30 days · click to view"
-          accent="#E3A869"
-          onClick={() => drillCustomers('Active customers (visited in last 30 days)', { active_30d: true })}
-          segment={{ type: 'tier', value: 'gold' }}
-          openComposer={openComposer}
-          presetName="Nos meilleurs clients ont droit à…"
-          presetContent="{first_name}, parce que vous êtes {tier}, voici un avantage exclusif chez {business_name}."
-        />
-        <KPICard
-          icon={Calendar}
-          title="New This Week"
-          value={newThisWeek.toLocaleString()}
-          sublabel="Joined in last 7 days · click to view"
-          accent="#5B8DEF"
-          onClick={() => drillCustomers('New customers (last 7 days)', { created_within_days: 7 })}
-          segment={{ type: 'one_visit_only' }}
-          openComposer={openComposer}
-          presetName="Bienvenue chez {business_name}, {first_name} !"
-          presetContent="Pour votre 2e visite, une surprise vous attend. Il te reste {points_to_next_reward} points pour ta 1re récompense."
-        />
-      </section>
+      {/* ─── ROW 2 — TODAY / THIS-WEEK / THIS-MONTH (windowed) ─── */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Activité récente
+          </h3>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Cette semaine / ce mois</span>
+        </div>
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KPICard
+            icon={Calendar}
+            title="Nouveaux cette semaine"
+            value={newThisWeek.toLocaleString()}
+            sublabel="Inscrits sur les 7 derniers jours"
+            accent="#5B8DEF"
+            onClick={() => drillCustomers('Nouveaux clients (7 derniers jours)', { created_within_days: 7 })}
+            segment={{ type: 'one_visit_only' }}
+            openComposer={openComposer}
+            presetName="Bienvenue chez {business_name}, {first_name} !"
+            presetContent="Pour votre 2e visite, une surprise vous attend. Il vous reste {points_to_next_reward} points pour votre 1re récompense."
+          />
+          <KPICard
+            icon={Award}
+            title="Clients actifs"
+            value={activeCustomers.toLocaleString()}
+            sublabel="Venus dans les 30 derniers jours"
+            accent="#E3A869"
+            onClick={() => drillCustomers('Clients actifs (30 derniers jours)', { active_30d: true })}
+            segment={{ type: 'tier', value: 'gold' }}
+            openComposer={openComposer}
+            presetName="Nos meilleurs clients ont droit à…"
+            presetContent="{first_name}, parce que vous êtes {tier}, voici un avantage exclusif chez {business_name}."
+          />
+          <KPICard
+            icon={CreditCard}
+            title="Cartes complétées"
+            value={cardsFilledTotal.toLocaleString()}
+            sublabel={`${cardsFilledThisMonth} ce mois-ci · cliquez`}
+            accent="#4A5D23"
+            onClick={() => drillCustomers('Clients ayant rempli au moins une carte', { cards_filled: true })}
+            segment={{ type: 'tier', value: 'gold' }}
+            openComposer={openComposer}
+            presetName="Bravo {first_name} — vous êtes {tier} !"
+            presetContent="Vous avez rempli votre carte. Une récompense exclusive {business_name} vous attend."
+          />
+          <KPICard
+            icon={Gift}
+            title="Clients récupérés"
+            value={(recovered?.count ?? summary?.recovered_count ?? 0).toLocaleString()}
+            sublabel={`${recovered?.percentage ?? summary?.recovered_pct ?? 0}% de votre base · cliquez`}
+            onClick={() =>
+              setDrill({
+                title: 'Clients récupérés',
+                rows: recovered?.customers || [],
+                columns: [
+                  { key: 'name', label: 'Customer' },
+                  { key: 'email', label: 'Email' },
+                  { key: 'tier', label: 'Tier', render: (v) => <TierBadge tier={v} /> },
+                  { key: 'last_inactive_date', label: 'Gap started', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                  { key: 'returned_date', label: 'Returned', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                ],
+              })
+            }
+            accent="#B85C38"
+            segment={{ type: 'recovered', inactive_days: recoveryInactiveDays, window_days: recoveryWindowDays }}
+            openComposer={openComposer}
+            presetName="Heureux de vous revoir, {first_name} !"
+            presetContent="Pour votre retour chez {business_name}, un petit bonus vous attend. {points_to_next_reward} points vous séparent de votre récompense."
+          />
+        </section>
+      </div>
 
       {/* Row 1b — Retention health: first-time today, inactive (custom), about-to-lose, cards filled today */}
       <section className="bg-white border border-[#E7E5E4] rounded-xl p-4 space-y-3">

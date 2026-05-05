@@ -619,11 +619,9 @@ export default function CampaignsPage() {
                 <div className="flex flex-wrap gap-2">
                   {[
                     // Only the channels FidéliTour actually delivers on today.
-                    // Social channels (FB/IG/TikTok) and SMS are not yet wired
-                    // to a publishing pipeline, so we don't pretend to support
-                    // them in the composer.
+                    // EMAIL channel hidden — re-enable by uncommenting the line below.
                     { key: 'push', label: 'Wallet Push' },
-                    { key: 'email', label: 'Email' },
+                    // { key: 'email', label: 'Email' },
                     { key: 'other', label: 'Other' },
                   ].map((s) => (
                     <button
@@ -1144,11 +1142,9 @@ export default function CampaignsPage() {
                 <div className="flex flex-wrap gap-2">
                   {[
                     // Only the channels FidéliTour actually delivers on today.
-                    // Social channels (FB/IG/TikTok) and SMS are not yet wired
-                    // to a publishing pipeline, so we don't pretend to support
-                    // them in the composer.
+                    // EMAIL channel hidden — re-enable by uncommenting the line below.
                     { key: 'push', label: 'Wallet Push' },
-                    { key: 'email', label: 'Email' },
+                    // { key: 'email', label: 'Email' },
                     { key: 'other', label: 'Other' },
                   ].map((s) => (
                     <button

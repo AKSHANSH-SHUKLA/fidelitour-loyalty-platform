@@ -1,33 +1,60 @@
 import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { C as C_PS } from './PageShell';
 
 /**
- * Drop-in chart for AnalyticsPage: shows new-customer acquisition over a
- * configurable time range — far beyond the existing 12-week chart.
+ * Customer-acquisition-history chart.
  *
- * Talks to the additive backend module `features/analytics_history.py`.
- * The existing 12-week chart is left untouched.
+ * Per the v2 spec:
+ *   - Range presets ONLY (no free-form number input)
+ *   - days  → max 30
+ *   - weeks → max 52
+ *   - months → max 24
+ *   - years → max 5
+ *   - "Buckets shown" KPI is replaced with a more useful average
+ *
+ * Backend pre-seeds empty buckets, so '12 weeks' renders exactly 12 bars
+ * (was 11 before — the bug you flagged).
  */
+const PRESETS = [
+  { unit: 'days',   count: 7,  label: '7 derniers jours' },
+  { unit: 'days',   count: 14, label: '14 derniers jours' },
+  { unit: 'days',   count: 30, label: '30 derniers jours' },
+  { unit: 'weeks',  count: 12, label: '12 dernières semaines' },
+  { unit: 'weeks',  count: 26, label: '26 dernières semaines' },
+  { unit: 'weeks',  count: 52, label: '52 dernières semaines' },
+  { unit: 'months', count: 6,  label: '6 derniers mois' },
+  { unit: 'months', count: 12, label: '12 derniers mois' },
+  { unit: 'months', count: 24, label: '24 derniers mois' },
+  { unit: 'years',  count: 3,  label: '3 dernières années' },
+  { unit: 'years',  count: 5,  label: '5 dernières années' },
+  { unit: 'all',    count: null, label: 'Depuis le début' },
+];
+
 const HistoricalAcquisitionChart = () => {
-  const [unit, setUnit] = useState('weeks');
-  const [count, setCount] = useState(52);
+  const [presetIdx, setPresetIdx] = useState(4); // default: 12 dernières semaines
   const [data, setData] = useState([]);
   const [bucketUnit, setBucketUnit] = useState('weeks');
   const [total, setTotal] = useState(0);
+  const [avgPerBucket, setAvgPerBucket] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const preset = PRESETS[presetIdx];
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const params = unit === 'all' ? { unit } : { unit, count };
+        const params = preset.unit === 'all'
+          ? { unit: 'all' }
+          : { unit: preset.unit, count: preset.count };
         const res = await api.get('/owner/analytics/history/new-customers', { params });
         setData(res.data?.series || []);
-        setBucketUnit(res.data?.bucket_unit || unit);
+        setBucketUnit(res.data?.bucket_unit || preset.unit);
         setTotal(res.data?.total_new_customers || 0);
+        setAvgPerBucket(res.data?.average_per_bucket || 0);
       } catch (e) {
         console.error('Historical acquisition load failed', e);
       } finally {
@@ -35,15 +62,16 @@ const HistoricalAcquisitionChart = () => {
       }
     };
     load();
-  }, [unit, count]);
+  }, [presetIdx]);
 
-  const presets = [
-    { unit: 'weeks',  count: 12,  label: 'Last 12 weeks' },
-    { unit: 'weeks',  count: 26,  label: 'Last 6 months' },
-    { unit: 'weeks',  count: 52,  label: 'Last 12 months' },
-    { unit: 'months', count: 24,  label: 'Last 24 months' },
-    { unit: 'all',    count: null, label: 'All time' },
-  ];
+  // Friendly label for the "average" KPI based on bucket unit
+  const avgLabel = (() => {
+    if (bucketUnit === 'days')   return 'Moyenne par jour';
+    if (bucketUnit === 'weeks')  return 'Moyenne par semaine';
+    if (bucketUnit === 'months') return 'Moyenne par mois';
+    if (bucketUnit === 'years')  return 'Moyenne par année';
+    return 'Moyenne par période';
+  })();
 
   return (
     <div className="rounded-xl bg-white p-6 mt-6" style={{ border: `1px solid ${C_PS.hairline}` }}>
@@ -55,68 +83,57 @@ const HistoricalAcquisitionChart = () => {
           </div>
           <div>
             <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: C_PS.inkDeep }}>
-              Customer acquisition history
+              Acquisition de clients dans le temps
             </h2>
             <p className="text-sm mt-1" style={{ color: C_PS.inkMute }}>
-              See further back than the default 12 weeks. Bucketing adapts automatically — days, weeks, or months — based on the range.
+              Visualisez vos nouveaux clients par jour, semaine, mois ou année. Choisissez la période ci-contre.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <select
-            className="border rounded-lg px-3 py-1.5 text-sm"
-            style={{ borderColor: C_PS.hairline }}
-            value={`${unit}:${count ?? ''}`}
-            onChange={(e) => {
-              const [u, c] = e.target.value.split(':');
-              setUnit(u);
-              setCount(c === '' ? null : Number(c));
-            }}
+            className="border rounded-lg px-3 py-2 text-sm font-medium"
+            style={{ borderColor: C_PS.hairline, background: 'white', minWidth: 220 }}
+            value={presetIdx}
+            onChange={(e) => setPresetIdx(parseInt(e.target.value, 10))}
           >
-            {presets.map((p) => (
-              <option key={p.label} value={`${p.unit}:${p.count ?? ''}`}>{p.label}</option>
+            {PRESETS.map((p, i) => (
+              <option key={i} value={i}>{p.label}</option>
             ))}
           </select>
-          {unit !== 'all' && (
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                min={1}
-                max={520}
-                value={count || 0}
-                onChange={(e) => setCount(Math.max(1, parseInt(e.target.value || '1', 10)))}
-                className="w-20 border rounded-lg px-2 py-1.5 text-sm"
-                style={{ borderColor: C_PS.hairline }}
-              />
-              <select
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                className="border rounded-lg px-2 py-1.5 text-sm"
-                style={{ borderColor: C_PS.hairline }}
-              >
-                <option value="days">days</option>
-                <option value="weeks">weeks</option>
-                <option value="months">months</option>
-              </select>
-            </div>
-          )}
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-        <KPI label="Total new customers" value={total} />
-        <KPI label="Buckets shown" value={data.length} />
-        <KPI label="Granularity" value={bucketUnit} />
+        <KPI
+          label="Nouveaux clients sur la période"
+          value={total}
+          accent={C_PS.sage}
+          icon={Users}
+        />
+        <KPI
+          label={avgLabel}
+          value={avgPerBucket}
+          accent={C_PS.terracotta}
+          icon={TrendingUp}
+        />
+        <KPI
+          label="Granularité"
+          value={
+            ({ days: 'jours', weeks: 'semaines', months: 'mois', years: 'années' })[bucketUnit] || bucketUnit
+          }
+          accent={C_PS.lavender}
+        />
       </div>
 
       <div className="h-72">
         {loading ? (
           <div className="h-full flex items-center justify-center text-sm" style={{ color: C_PS.inkMute }}>
-            Loading…
+            Chargement…
           </div>
         ) : data.length === 0 ? (
           <div className="h-full flex items-center justify-center text-sm" style={{ color: C_PS.inkMute }}>
-            No customer signups in this range.
+            Aucune inscription sur cette période.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -124,7 +141,7 @@ const HistoricalAcquisitionChart = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
               <XAxis dataKey="label" stroke="#57534E" fontSize={11}
                 interval={data.length > 30 ? Math.floor(data.length / 12) : 0} />
-              <YAxis stroke="#57534E" fontSize={11} />
+              <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} />
               <Tooltip />
               <Bar dataKey="count" fill={C_PS.sage} radius={[6, 6, 0, 0]} />
             </BarChart>
@@ -135,10 +152,26 @@ const HistoricalAcquisitionChart = () => {
   );
 };
 
-const KPI = ({ label, value }) => (
-  <div className="rounded-lg p-3" style={{ background: '#F3EFE7' }}>
-    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C_PS.inkMute }}>{label}</p>
-    <p className="text-lg font-bold" style={{ color: C_PS.inkDeep }}>{value}</p>
+const KPI = ({ label, value, accent, icon: Icon }) => (
+  <div
+    className="rounded-xl p-3 flex items-center gap-3"
+    style={{
+      background: `linear-gradient(135deg, white 0%, ${accent ? accent + '12' : '#F3EFE7'} 100%)`,
+      border: `1px solid ${accent ? accent + '33' : C_PS.hairline}`,
+    }}
+  >
+    {Icon && (
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+        style={{ background: 'white', boxShadow: `0 4px 10px ${accent || C_PS.terracotta}33` }}
+      >
+        <Icon size={16} style={{ color: accent || C_PS.terracotta }} />
+      </div>
+    )}
+    <div className="min-w-0">
+      <p className="text-[10px] font-bold uppercase tracking-widest truncate" style={{ color: C_PS.inkMute }}>{label}</p>
+      <p className="text-lg font-bold leading-tight" style={{ color: C_PS.inkDeep }}>{value}</p>
+    </div>
   </div>
 );
 

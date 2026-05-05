@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ownerAPI } from '../lib/api';
+import api, { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CustomerStatusConfigCard from '../components/CustomerStatusConfigCard';
@@ -254,49 +254,9 @@ const SettingsPage = () => {
                     </div>
                 </div>
 
-                {/* Geolocalisation — read-only view. Only the super-admin can change this. */}
-                <div className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-[#1C1917] flex items-center justify-center text-[#E3A869]">
-                            <MapPin className="w-5 h-5" />
-                        </div>
-                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">Geolocalisation</h2>
-                    </div>
-                    <p className="text-sm text-[#57534E] max-w-2xl mb-4">
-                        When a customer with your loyalty card walks into your radius, <b>they</b> receive a push notification on their phone — a personalised offer that pulls them through your door.
-                        You don't get pinged; the customer does. Managed by the FidéliTour admin team — contact us to adjust.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
-                        <div className={`p-4 rounded-lg border ${geoConfig.geo_enabled ? 'bg-[#e8f3e5] border-[#4A5D23]/30' : 'bg-[#F3EFE7] border-[#E7E5E4]'}`}>
-                            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: geoConfig.geo_enabled ? '#2d5016' : '#57534E' }}>
-                                Status
-                            </p>
-                            <p className="text-lg font-bold" style={{ color: geoConfig.geo_enabled ? '#2d5016' : '#8B8680' }}>
-                                {geoConfig.geo_enabled ? '✓ Enabled' : '— Disabled'}
-                            </p>
-                        </div>
-                        <div className={`p-4 rounded-lg border ${geoConfig.vip_geo_only ? 'bg-[#FEF9E7] border-[#E3A869]/40' : 'bg-[#F3EFE7] border-[#E7E5E4]'}`}>
-                            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#7B3F00]">Audience</p>
-                            <p className="text-lg font-bold text-[#7B3F00]">
-                                {geoConfig.vip_geo_only
-                                    ? '🎯 VIP tier only'
-                                    : (geoConfig.geo_enabled ? 'All customers' : '—')}
-                            </p>
-                        </div>
-                        <div className="p-4 rounded-lg border bg-[#F3EFE7] border-[#E7E5E4]">
-                            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57534E]">Push radius</p>
-                            <p className="text-lg font-bold text-[#1C1917]">
-                                {geoConfig.geo_radius_meters ? `${geoConfig.geo_radius_meters} m` : '—'}
-                            </p>
-                        </div>
-                        <div className="p-4 rounded-lg border bg-[#F3EFE7] border-[#E7E5E4]">
-                            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57534E]">Cooldown</p>
-                            <p className="text-lg font-bold text-[#1C1917]">
-                                {geoConfig.geo_cooldown_days != null ? `${geoConfig.geo_cooldown_days} day(s)` : '—'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                {/* Geolocalisation — owner-editable. Radius / cooldown / on-off all owner-controlled. */}
+                <OwnerGeoCard initial={geoConfig} />
+
 
                 {/* Save Button */}
                 <button
@@ -323,5 +283,153 @@ const SettingsPage = () => {
         </div>
     );
 };
+
+/* ──────────────────────────────────────────────────────────────────
+ * OwnerGeoCard — owner-editable geolocalisation settings
+ *
+ * The owner controls:
+ *   - geo_enabled (on/off)
+ *   - geo_radius_meters (50-2000 m)
+ *   - geo_cooldown_days (1-30 days)
+ *
+ * Audience-scope (vip_geo_only) stays admin-only and is shown read-only here.
+ * ────────────────────────────────────────────────────────────────── */
+function OwnerGeoCard({ initial }) {
+  const [cfg, setCfg] = React.useState(initial || {});
+  const [saving, setSaving] = React.useState(false);
+  const [savedAt, setSavedAt] = React.useState(null);
+  const [err, setErr] = React.useState(null);
+
+  React.useEffect(() => { setCfg(initial || {}); }, [initial]);
+
+  const save = async () => {
+    setSaving(true);
+    setErr(null);
+    try {
+      const res = await api.put('/owner/settings/geo', {
+        geo_enabled: !!cfg.geo_enabled,
+        geo_radius_meters: parseInt(cfg.geo_radius_meters, 10) || 500,
+        geo_cooldown_days: parseInt(cfg.geo_cooldown_days, 10) || 1,
+      });
+      setCfg(res.data || cfg);
+      setSavedAt(new Date());
+    } catch (e) {
+      setErr(e?.response?.data?.detail || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-[#1C1917] flex items-center justify-center text-[#E3A869]">
+          <MapPin className="w-5 h-5" />
+        </div>
+        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">Geolocalisation</h2>
+      </div>
+      <p className="text-sm text-[#57534E] max-w-2xl mb-6">
+        Quand un client équipé de votre carte de fidélité passe dans votre rayon, <b>il</b> reçoit
+        une notification push avec une offre personnalisée. Configurez le rayon et la fréquence
+        ci-dessous pour adapter la stratégie à votre commerce.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-6">
+        {/* Enable / Disable */}
+        <label className="p-4 rounded-lg border border-[#E7E5E4] flex items-center justify-between cursor-pointer hover:bg-[#FAF8F4]">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57534E]">Statut</p>
+            <p className="text-base font-bold" style={{ color: cfg.geo_enabled ? '#2d5016' : '#8B8680' }}>
+              {cfg.geo_enabled ? '✓ Activé' : '— Désactivé'}
+            </p>
+          </div>
+          <input
+            type="checkbox"
+            className="w-5 h-5"
+            checked={!!cfg.geo_enabled}
+            onChange={(e) => setCfg({ ...cfg, geo_enabled: e.target.checked })}
+          />
+        </label>
+
+        {/* Audience — read-only (admin-only) */}
+        <div className="p-4 rounded-lg border border-[#E7E5E4] bg-[#F3EFE7]">
+          <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#7B3F00]">Audience</p>
+          <p className="text-base font-bold text-[#7B3F00]">
+            {cfg.vip_geo_only ? '🎯 VIP uniquement' : (cfg.geo_enabled ? 'Tous les clients' : '—')}
+          </p>
+          <p className="text-[10px] text-[#8B8680] mt-1">
+            Réglage géré par notre équipe — contactez-nous pour ajuster.
+          </p>
+        </div>
+
+        {/* Radius slider */}
+        <div className="p-4 rounded-lg border border-[#E7E5E4] md:col-span-2">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#57534E]">Rayon de notification</p>
+            <span className="text-base font-bold text-[#B85C38]">{cfg.geo_radius_meters || 500} m</span>
+          </div>
+          <input
+            type="range"
+            min={50}
+            max={2000}
+            step={50}
+            value={cfg.geo_radius_meters || 500}
+            disabled={!cfg.geo_enabled}
+            onChange={(e) => setCfg({ ...cfg, geo_radius_meters: parseInt(e.target.value, 10) })}
+            className="w-full accent-[#B85C38]"
+          />
+          <div className="flex justify-between text-[10px] text-[#8B8680] mt-1">
+            <span>50 m (très proche)</span>
+            <span>2 km (large quartier)</span>
+          </div>
+        </div>
+
+        {/* Cooldown slider */}
+        <div className="p-4 rounded-lg border border-[#E7E5E4] md:col-span-2">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#57534E]">
+              Délai entre deux notifications (par client)
+            </p>
+            <span className="text-base font-bold text-[#B85C38]">
+              {cfg.geo_cooldown_days || 1} jour{(cfg.geo_cooldown_days || 1) > 1 ? 's' : ''}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={30}
+            step={1}
+            value={cfg.geo_cooldown_days || 1}
+            disabled={!cfg.geo_enabled}
+            onChange={(e) => setCfg({ ...cfg, geo_cooldown_days: parseInt(e.target.value, 10) })}
+            className="w-full accent-[#B85C38]"
+          />
+          <div className="flex justify-between text-[10px] text-[#8B8680] mt-1">
+            <span>1 jour (intensif)</span>
+            <span>30 jours (parcimonieux)</span>
+          </div>
+        </div>
+      </div>
+
+      {err && <p className="text-sm text-red-600 mb-3">{err}</p>}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-3 rounded-xl text-white font-bold bg-[#B85C38] hover:bg-[#9C4E2F] disabled:opacity-50 transition-all shadow-md"
+        >
+          <Save className="w-4 h-4" />
+          {saving ? 'Enregistrement…' : 'Enregistrer la géolocalisation'}
+        </button>
+        {savedAt && (
+          <span className="text-xs text-[#4A5D23]">
+            ✓ Enregistré à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default SettingsPage;

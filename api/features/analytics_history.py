@@ -40,47 +40,76 @@ def _bucket_label(dt: datetime, unit: str) -> str:
         return f"{iso_year}-W{iso_week:02d}"
     if unit == "months":
         return dt.strftime("%Y-%m")
+    if unit == "years":
+        return dt.strftime("%Y")
     return dt.strftime("%Y-%m-%d")
+
+
+def _seed_buckets(now: datetime, unit: str, count: int) -> "list[str]":
+    """Pre-build the full list of bucket labels covering the last `count` units up to `now`.
+
+    This fixes the bug where '12 weeks selected' would only show 11 buckets because
+    ISO-week boundaries don't align with 'now - 12 weeks'. Now we always emit exactly
+    `count` buckets so the chart shows what the user asked for.
+    """
+    labels: list[str] = []
+    if unit == "days":
+        for i in range(count - 1, -1, -1):
+            labels.append((now - timedelta(days=i)).strftime("%Y-%m-%d"))
+    elif unit == "weeks":
+        # Walk back `count - 1` whole weeks from the current ISO week
+        for i in range(count - 1, -1, -1):
+            d = now - timedelta(weeks=i)
+            iso_year, iso_week, _ = d.isocalendar()
+            labels.append(f"{iso_year}-W{iso_week:02d}")
+    elif unit == "months":
+        # Walk back `count - 1` calendar months
+        y, m = now.year, now.month
+        months_seq = []
+        for _ in range(count):
+            months_seq.append((y, m))
+            m -= 1
+            if m == 0:
+                m = 12
+                y -= 1
+        for (yy, mm) in reversed(months_seq):
+            labels.append(f"{yy}-{mm:02d}")
+    elif unit == "years":
+        for i in range(count - 1, -1, -1):
+            labels.append(f"{now.year - i}")
+    return labels
 
 
 @router.get("/api/owner/analytics/history/new-customers")
 def new_customers_history(
-    unit: str = "weeks",        # days | weeks | months | all
+    unit: str = "weeks",        # days | weeks | months | years | all
     count: Optional[int] = None,  # how many units back; ignored if unit='all'
     token_data=Depends(require_role(["business_owner", "manager"])),
 ):
-    if unit not in ("days", "weeks", "months", "all"):
-        raise HTTPException(status_code=400, detail="unit must be one of days|weeks|months|all")
+    if unit not in ("days", "weeks", "months", "years", "all"):
+        raise HTTPException(status_code=400, detail="unit must be one of days|weeks|months|years|all")
+
+    # Enforce per-unit caps
+    UNIT_CAPS = {"days": 30, "weeks": 52, "months": 24, "years": 5}
+    UNIT_DEFAULTS = {"days": 30, "weeks": 12, "months": 12, "years": 5}
+    if unit != "all":
+        n = count if count and count > 0 else UNIT_DEFAULTS[unit]
+        n = min(n, UNIT_CAPS[unit])
+    else:
+        n = 0
 
     tid = token_data.tenant_id
     now = datetime.now(timezone.utc)
 
     # Build the time window
     cutoff = None
+    bucket_unit = unit
     if unit == "all":
-        # First customer ever for this tenant
         first = _db.customers.find_one({"tenant_id": tid}, sort=[("created_at", 1)])
         if first and first.get("created_at"):
             cutoff = first["created_at"]
         else:
             cutoff = now - timedelta(days=1)
-    else:
-        n = count if count and count > 0 else 12
-        if unit == "days":
-            cutoff = now - timedelta(days=n)
-        elif unit == "weeks":
-            cutoff = now - timedelta(weeks=n)
-        elif unit == "months":
-            cutoff = now - timedelta(days=n * 31)
-
-    customers = list(_db.customers.find({
-        "tenant_id": tid,
-        "created_at": {"$gte": cutoff},
-    }).sort("created_at", 1))
-
-    bucket_unit = "weeks" if unit == "all" else unit
-    if unit == "all":
-        # Choose granularity based on date span
         days_span = (now - cutoff).days
         if days_span > 365 * 2:
             bucket_unit = "months"
@@ -88,8 +117,27 @@ def new_customers_history(
             bucket_unit = "weeks"
         else:
             bucket_unit = "days"
+    else:
+        if unit == "days":
+            cutoff = now - timedelta(days=n)
+        elif unit == "weeks":
+            cutoff = now - timedelta(weeks=n)
+        elif unit == "months":
+            cutoff = now - timedelta(days=n * 31)
+        elif unit == "years":
+            cutoff = now - timedelta(days=n * 365)
+
+    customers = list(_db.customers.find({
+        "tenant_id": tid,
+        "created_at": {"$gte": cutoff},
+    }).sort("created_at", 1))
 
     bucket_counts: dict[str, int] = {}
+    # Pre-seed empty buckets for the full requested range so chart shows N buckets, not just the non-zero ones
+    if unit != "all":
+        for label in _seed_buckets(now, unit, n):
+            bucket_counts[label] = 0
+
     for c in customers:
         ts = c.get("created_at")
         if not ts:
@@ -98,13 +146,19 @@ def new_customers_history(
         bucket_counts[key] = bucket_counts.get(key, 0) + 1
 
     series = [{"label": k, "count": v} for k, v in sorted(bucket_counts.items())]
+    total_new = len(customers)
+    avg_per_bucket = round(total_new / max(len(series), 1), 1)
+
     return {
         "unit_requested": unit,
         "bucket_unit": bucket_unit,
         "from": cutoff.isoformat(),
         "to": now.isoformat(),
-        "total_new_customers": len(customers),
+        "total_new_customers": total_new,
         "series": series,
+        "average_per_bucket": avg_per_bucket,
+        "buckets_count": len(series),
+        "max_count_for_unit": UNIT_CAPS.get(unit),
     }
 
 

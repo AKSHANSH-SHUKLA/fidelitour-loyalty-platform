@@ -1850,6 +1850,39 @@ def save_card_template_admin(
 
     return payload
 
+@app.put("/api/owner/settings/geo")
+def update_owner_geo_settings(
+    req: Dict[str, Any],
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Owner-controlled subset of geo settings.
+    Owners can adjust radius / cooldown / on-off for their own tenant.
+    `vip_geo_only` stays admin-only — owners can't escalate audience scope.
+    """
+    update_data: Dict[str, Any] = {}
+    if "geo_enabled" in req:
+        update_data["geo_enabled"] = bool(req["geo_enabled"])
+    if "geo_radius_meters" in req:
+        try:
+            r = int(req["geo_radius_meters"])
+            update_data["geo_radius_meters"] = max(50, min(r, 2000))
+        except Exception:
+            pass
+    if "geo_cooldown_days" in req:
+        try:
+            c = int(req["geo_cooldown_days"])
+            update_data["geo_cooldown_days"] = max(1, min(c, 30))
+        except Exception:
+            pass
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No editable field provided")
+    db.tenants.update_one({"id": token_data.tenant_id}, {"$set": update_data})
+    tenant = db.tenants.find_one({"id": token_data.tenant_id})
+    if tenant:
+        tenant.pop("_id", None)
+    return tenant or {}
+
+
 @app.put("/api/admin/tenants/{tenant_id}/geo")
 def update_geo_settings(
     tenant_id: str,
