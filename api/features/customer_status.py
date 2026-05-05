@@ -24,6 +24,9 @@ _db = None
 # Defaults match the existing server.py "inactive 30d" thresholds
 DEFAULT_ACTIVE_DAYS = 30
 DEFAULT_DORMANT_DAYS = 90
+DEFAULT_ABOUT_TO_LOSE_DAYS = 21        # Active but drifting → "about to lose"
+DEFAULT_LOYAL_VISITS_PER_MONTH = 4     # ≥ 4 visits/mo = "loyal"
+DEFAULT_REGULAR_VISITS_PER_MONTH = 2   # ≥ 2 visits/mo (and < loyal) = "regular"
 
 
 def init(db):
@@ -40,6 +43,10 @@ class StatusConfig(BaseModel):
     active_within_days: int = DEFAULT_ACTIVE_DAYS       # visited within N days = active
     dormant_after_days: int = DEFAULT_DORMANT_DAYS      # last visit older than N days = dormant
     minimum_visits_for_active: int = 1                  # need at least N total visits to count as active
+    # NEW: about-to-lose threshold + frequency-based loyalty buckets
+    about_to_lose_days: int = DEFAULT_ABOUT_TO_LOSE_DAYS
+    loyal_visits_per_month: int = DEFAULT_LOYAL_VISITS_PER_MONTH
+    regular_visits_per_month: int = DEFAULT_REGULAR_VISITS_PER_MONTH
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 import { PageHeader, StatCard, Section, C } from '../components/PageShell';
+import LoadingDistraction from '../components/LoadingDistraction';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
@@ -109,11 +110,8 @@ const OwnerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="flex items-center gap-3" style={{ color: C.inkMute }}>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.ochre }} />
-          <span className="text-sm font-medium">Loading your dashboard…</span>
-        </div>
+      <div className="py-12 px-4">
+        <LoadingDistraction />
       </div>
     );
   }
@@ -311,9 +309,41 @@ const OwnerDashboard = () => {
         {recovered && (
           <StatCard label="Recovered"          value={`${recovered.count}`}             sublabel={`${recovered.percentage}% came back after a quiet period`} icon={TrendingUp} color={C.teal} />
         )}
-        {topSpender && (
-          <StatCard label="Top Spender"        value={topSpender.name}                  sublabel={`€${topSpender.total_amount_paid} · ${topSpender.total_visits} visits`} icon={Users} color={C.terracotta} />
-        )}
+        <SpotlightCard
+          slides={[
+            topSpender && {
+              label: 'Top Spender',
+              value: topSpender.name,
+              sublabel: `€${topSpender.total_amount_paid} · ${topSpender.total_visits} visits`,
+              icon: Users, color: C.terracotta,
+            },
+            summary?.top_visitor && {
+              label: 'Most Loyal',
+              value: summary.top_visitor.name,
+              sublabel: `${summary.top_visitor.visits} visits · ${summary.top_visitor.tier}`,
+              icon: Activity, color: C.sage,
+            },
+            summary?.birthdays_this_month_count > 0 && {
+              label: 'Birthdays this month',
+              value: summary.birthdays_this_month_count,
+              sublabel: 'Auto-greeting will fire on the day',
+              icon: Award, color: C.rose,
+            },
+            summary?.about_to_lose_count > 0 && {
+              label: 'About to lose',
+              value: summary.about_to_lose_count,
+              sublabel: 'Customers drifting from their rhythm',
+              icon: TrendingUp, color: C.ochre,
+            },
+            cardsFilled?.cards_filled_this_month > 0 && {
+              label: 'Cards filled this month',
+              value: cardsFilled.cards_filled_this_month,
+              sublabel: `${cardsFilled.total_cards_filled || 0} all time`,
+              icon: Gift, color: C.lavender,
+            },
+          ].filter(Boolean)}
+        />
+
         {summary?.total_reviews > 0 && (
           <StatCard label="Avg Rating"
                     value={summary.average_rating != null ? `${summary.average_rating}/10` : '—'}
@@ -870,5 +900,55 @@ const OwnerDashboard = () => {
     </div>
   );
 };
+
+/* ──────────────────────────────────────────────────────────────────
+ * SpotlightCard — auto-rotating "highlight tile"
+ *
+ * Cycles through 3-5 mini-stats every 5 seconds. Each slide uses the
+ * standard StatCard look so the row stays visually aligned. Manual dots
+ * below let the owner pause/jump.
+ *
+ * If only one slide is provided, no rotation, no dots.
+ * ────────────────────────────────────────────────────────────────── */
+function SpotlightCard({ slides = [] }) {
+  const [idx, setIdx] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
+
+  React.useEffect(() => {
+    if (paused || slides.length <= 1) return undefined;
+    const id = setInterval(() => setIdx((i) => (i + 1) % slides.length), 5000);
+    return () => clearInterval(id);
+  }, [paused, slides.length]);
+
+  if (slides.length === 0) return null;
+
+  const s = slides[idx];
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <StatCard label={s.label} value={s.value} sublabel={s.sublabel} icon={s.icon} color={s.color} />
+      {slides.length > 1 && (
+        <div className="absolute bottom-2 right-3 flex items-center gap-1.5">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setIdx(i)}
+              className="w-1.5 h-1.5 rounded-full transition-all"
+              style={{
+                background: i === idx ? s.color : '#E7E5E4',
+                width: i === idx ? 16 : 6,
+              }}
+              aria-label={`Show slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default OwnerDashboard;

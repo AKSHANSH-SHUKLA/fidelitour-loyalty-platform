@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
+import LoadingDistraction from '../components/LoadingDistraction';
 import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 import CustomerStatusKPI from '../components/CustomerStatusKPI';
 
@@ -589,11 +590,11 @@ const AnalyticsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="flex items-center gap-3 text-sm font-medium" style={{ color: C_PS.inkMute }}>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: C_PS.ochre }} />
-          Loading analytics…
-        </div>
+      <div className="py-12 px-4">
+        <LoadingDistraction
+          title="Chargement des analytics"
+          message="On agrège vos visites, vos clients et vos tendances…"
+        />
       </div>
     );
   }

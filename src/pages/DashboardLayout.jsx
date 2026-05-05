@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import NotificationBell from '../components/NotificationBell';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
@@ -213,6 +214,12 @@ const DashboardLayout = () => {
       </aside>
 
       <main className="relative z-10 flex-1 overflow-auto">
+        {/* Floating bell — only for owners; staff/admin have separate views */}
+        {role === 'business_owner' && (
+          <div className="absolute top-4 right-6 z-20">
+            <NotificationBell />
+          </div>
+        )}
         <div className="px-6 py-8 lg:px-10 lg:py-10 max-w-[1600px] mx-auto">
           <Outlet />
         </div>

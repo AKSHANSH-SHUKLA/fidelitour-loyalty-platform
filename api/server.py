@@ -4837,6 +4837,52 @@ def get_smart_alerts(token_data: TokenData = Depends(require_role(["business_own
 
 
 # --- Feature 4: Time-of-day / weekday segmentation -----------
+DEFAULT_DAYPARTS = [
+    {"name": "Breakfast", "raw": "breakfast", "start": 6,  "end": 11},
+    {"name": "Lunch",     "raw": "lunch",     "start": 11, "end": 14},
+    {"name": "Afternoon", "raw": "afternoon", "start": 14, "end": 18},
+    {"name": "Dinner",    "raw": "dinner",    "start": 18, "end": 22},
+    {"name": "Late night","raw": "late_night","start": 22, "end": 30},  # wraps past midnight
+]
+
+
+def _resolve_dayparts(tenant_id: str) -> list:
+    """Pull the tenant's custom dayparts; fall back to defaults if not configured.
+    Stored as a list of {name, start (0-23), end (0-30, can wrap)} on the tenant doc.
+    """
+    tenant = db.tenants.find_one({"id": tenant_id}) or {}
+    dp = tenant.get("daypart_segments")
+    if not isinstance(dp, list) or not dp:
+        return DEFAULT_DAYPARTS
+    cleaned = []
+    for d in dp:
+        try:
+            cleaned.append({
+                "name": str(d.get("name") or "Period"),
+                "raw": str(d.get("raw") or d.get("name") or "period").lower().replace(" ", "_"),
+                "start": max(0, min(int(d.get("start", 0)), 23)),
+                "end":   max(0, min(int(d.get("end",   24)), 30)),
+            })
+        except Exception:
+            continue
+    return cleaned or DEFAULT_DAYPARTS
+
+
+@app.put("/api/owner/settings/dayparts")
+def update_dayparts(req: Dict[str, Any], token_data: TokenData = Depends(require_role(["business_owner"]))):
+    """Owner-controlled segmentation hours. Pass {"dayparts": [...]} to overwrite."""
+    parts = req.get("dayparts")
+    if not isinstance(parts, list):
+        raise HTTPException(status_code=400, detail="dayparts must be a list")
+    db.tenants.update_one({"id": token_data.tenant_id}, {"$set": {"daypart_segments": parts}})
+    return {"dayparts": _resolve_dayparts(token_data.tenant_id)}
+
+
+@app.get("/api/owner/settings/dayparts")
+def get_dayparts(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    return {"dayparts": _resolve_dayparts(token_data.tenant_id)}
+
+
 @app.get("/api/owner/analytics/time-segmentation")
 def get_time_segmentation(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
     """Break down visits by hour-of-day and weekday — identify lunch crowd, weekend regulars."""
@@ -4845,7 +4891,8 @@ def get_time_segmentation(token_data: TokenData = Depends(require_role(["busines
 
     hour_buckets = {i: 0 for i in range(24)}
     weekday_buckets = {i: 0 for i in range(7)}  # Mon=0 .. Sun=6
-    daypart_buckets = {"breakfast": 0, "lunch": 0, "afternoon": 0, "dinner": 0, "late_night": 0}
+    dayparts = _resolve_dayparts(tid)
+    daypart_buckets = {d["raw"]: 0 for d in dayparts}
 
     for v in visits:
         vt = v.get("visit_time") or v.get("created_at")
@@ -4855,16 +4902,13 @@ def get_time_segmentation(token_data: TokenData = Depends(require_role(["busines
         wd = vt.weekday()
         hour_buckets[h] += 1
         weekday_buckets[wd] += 1
-        if 6 <= h < 11:
-            daypart_buckets["breakfast"] += 1
-        elif 11 <= h < 14:
-            daypart_buckets["lunch"] += 1
-        elif 14 <= h < 18:
-            daypart_buckets["afternoon"] += 1
-        elif 18 <= h < 22:
-            daypart_buckets["dinner"] += 1
-        else:
-            daypart_buckets["late_night"] += 1
+        # Match against owner-configured dayparts (supports wrap-past-midnight)
+        for d in dayparts:
+            start, end = d["start"], d["end"]
+            in_range = (start <= h < end) if end <= 24 else (h >= start or h < (end - 24))
+            if in_range:
+                daypart_buckets[d["raw"]] += 1
+                break
 
     weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     return {
@@ -4873,8 +4917,8 @@ def get_time_segmentation(token_data: TokenData = Depends(require_role(["busines
             {"day": weekday_names[i], "visits": weekday_buckets[i]} for i in range(7)
         ],
         "daypart_breakdown": [
-            {"name": k.replace("_", " ").title(), "visits": v, "raw": k}
-            for k, v in daypart_buckets.items()
+            {"name": d["name"], "visits": daypart_buckets.get(d["raw"], 0), "raw": d["raw"], "start": d["start"], "end": d["end"]}
+            for d in dayparts
         ],
         "weekend_visits": weekday_buckets[5] + weekday_buckets[6],
         "weekday_visits": sum(weekday_buckets[i] for i in range(5)),

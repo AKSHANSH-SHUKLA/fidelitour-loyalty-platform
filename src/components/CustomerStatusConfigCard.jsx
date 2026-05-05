@@ -18,6 +18,9 @@ const CustomerStatusConfigCard = () => {
     active_within_days: 30,
     dormant_after_days: 90,
     minimum_visits_for_active: 1,
+    about_to_lose_days: 21,
+    loyal_visits_per_month: 4,
+    regular_visits_per_month: 2,
   });
   const [counts, setCounts] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -31,6 +34,9 @@ const CustomerStatusConfigCard = () => {
           active_within_days: res.data.config.active_within_days ?? 30,
           dormant_after_days: res.data.config.dormant_after_days ?? 90,
           minimum_visits_for_active: res.data.config.minimum_visits_for_active ?? 1,
+          about_to_lose_days: res.data.config.about_to_lose_days ?? 21,
+          loyal_visits_per_month: res.data.config.loyal_visits_per_month ?? 4,
+          regular_visits_per_month: res.data.config.regular_visits_per_month ?? 2,
         });
       }
       if (res.data?.counts) setCounts(res.data.counts);
@@ -81,6 +87,13 @@ const CustomerStatusConfigCard = () => {
           help="A customer who's visited at least this recently is considered Active."
         />
         <Field
+          label="About to lose if silent for"
+          suffix="days"
+          value={cfg.about_to_lose_days}
+          onChange={(v) => setCfg({ ...cfg, about_to_lose_days: v })}
+          help="Active but drifting — flagged for re-engagement before they go fully inactive."
+        />
+        <Field
           label="Dormant if no visit for"
           suffix="days"
           value={cfg.dormant_after_days}
@@ -93,6 +106,20 @@ const CustomerStatusConfigCard = () => {
           value={cfg.minimum_visits_for_active}
           onChange={(v) => setCfg({ ...cfg, minimum_visits_for_active: v })}
           help="A customer with fewer total visits than this never reaches Active."
+        />
+        <Field
+          label="Loyal — visits/month ≥"
+          suffix="visits/mo"
+          value={cfg.loyal_visits_per_month}
+          onChange={(v) => setCfg({ ...cfg, loyal_visits_per_month: v })}
+          help="Customers visiting at least this often are flagged as Loyal."
+        />
+        <Field
+          label="Regular — visits/month ≥"
+          suffix="visits/mo"
+          value={cfg.regular_visits_per_month}
+          onChange={(v) => setCfg({ ...cfg, regular_visits_per_month: v })}
+          help="Below Loyal but above this — flagged as Regular."
         />
       </div>
 

@@ -3,6 +3,7 @@ import api, { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CustomerStatusConfigCard from '../components/CustomerStatusConfigCard';
+import DaypartConfigCard from '../components/DaypartConfigCard';
 import TierDefinitionCard from '../components/TierDefinitionCard';
 import AutoCampaignsCard from '../components/AutoCampaignsCard';
 import WelcomeBonusCard from '../components/WelcomeBonusCard';
@@ -271,6 +272,9 @@ const SettingsPage = () => {
 
             {/* Additive: configurable Active/Inactive customer definition. */}
             <CustomerStatusConfigCard />
+
+            {/* Additive: editable time-of-day periods (replaces hard-coded breakfast/lunch/dinner). */}
+            <DaypartConfigCard />
 
             {/* Additive: custom tier thresholds + big-spender rule. */}
             <TierDefinitionCard />
