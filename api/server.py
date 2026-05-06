@@ -2241,6 +2241,10 @@ def list_customers(
     cards_filled: Optional[bool] = Query(None),
     has_birthday_this_month: Optional[bool] = Query(None),
     redeemed_reward: Optional[bool] = Query(None),  # True → has redeemed at least once
+    # Wallet-card state filters (mutually exclusive with each other but combinable with any other filter)
+    wallet_state: Optional[str] = Query(None),       # 'active' | 'deleted' | 'never_added'
+    # Loyalty rate buckets (driven by customer_status_config visits-per-month)
+    loyalty_bucket: Optional[str] = Query(None),     # 'loyal' | 'regular'
     # Pre-built time-of-day segments. Resolves against db.visits timestamps.
     # "lunch"    → majority of visits between 11:00 and 14:30
     # "evening"  → majority of visits between 17:00 and 22:00
@@ -2318,6 +2322,18 @@ def list_customers(
         query["pass_issued"] = True
     elif has_wallet_pass is False:
         query["pass_issued"] = {"$ne": True}
+    # Wallet-card state — mutually exclusive 3-bucket split:
+    #   active       → pass_issued True  AND  card_deleted_at unset
+    #   deleted      → card_deleted_at set (regardless of pass_issued)
+    #   never_added  → pass_issued NOT True  AND  card_deleted_at unset
+    if wallet_state == 'active':
+        query["pass_issued"] = True
+        query["card_deleted_at"] = {"$exists": False}
+    elif wallet_state == 'deleted':
+        query["card_deleted_at"] = {"$exists": True, "$ne": None}
+    elif wallet_state == 'never_added':
+        query["pass_issued"] = {"$ne": True}
+        query["card_deleted_at"] = {"$exists": False}
     if active_30d is True:
         query["last_visit_date"] = {"$gte": datetime.now(timezone.utc) - timedelta(days=30)}
     if created_within_days is not None and created_within_days > 0:
@@ -2342,6 +2358,29 @@ def list_customers(
         visits_per_stamp = tpl.get("visits_per_stamp", 1)
         needed = max(reward_threshold * visits_per_stamp, 1)
         customers = [c for c in customers if c.get("visits", 0) >= needed]
+
+    # Loyalty-bucket filter — visits-per-month rate vs configured thresholds.
+    # Loyal: rate >= loyal_visits_per_month
+    # Regular: regular_visits_per_month <= rate < loyal_visits_per_month
+    if loyalty_bucket in ('loyal', 'regular'):
+        try:
+            sc = db.customer_status_config.find_one({"tenant_id": token_data.tenant_id}) or {}
+        except Exception:
+            sc = {}
+        loyal_min = int(sc.get("loyal_visits_per_month") or 4)
+        regular_min = int(sc.get("regular_visits_per_month") or 2)
+        now_utc = datetime.now(timezone.utc)
+        def _vpm(c):
+            ca = c.get("created_at")
+            visits = int(c.get("visits") or 0)
+            if not ca or visits <= 0:
+                return 0.0
+            days_since = max((now_utc - ca).days, 1)
+            return visits * 30.0 / days_since
+        if loyalty_bucket == 'loyal':
+            customers = [c for c in customers if _vpm(c) >= loyal_min]
+        else:
+            customers = [c for c in customers if regular_min <= _vpm(c) < loyal_min]
 
     # Average ticket floor — for spotting "big basket" customers regardless of
     # visit count. Computed from (total_amount_paid / visits).
@@ -3596,17 +3635,51 @@ def delete_wallet_card(barcode_id: str):
     cust = db.customers.find_one({"barcode_id": barcode_id})
     if not cust:
         raise HTTPException(status_code=404, detail="Card not found")
+    now = datetime.now(timezone.utc)
+    # 1) Flip pass_issued back so dashboard 'Active wallet passes' is accurate
+    # 2) Stamp card_deleted_at so we can surface 'Deleted cards' as its own KPI
+    db.customers.update_one(
+        {"id": cust["id"]},
+        {"$set": {
+            "pass_issued": False,
+            "card_deleted_at": now,
+        }},
+    )
+    # Persist the prefs row too — keeps backwards compatibility with anything
+    # that reads card_prefs.deleted
     db.card_prefs.update_one(
         {"customer_id": cust["id"]},
         {"$set": {
             "customer_id": cust["id"],
             "tenant_id": cust["tenant_id"],
             "deleted": True,
-            "deleted_at": datetime.now(timezone.utc)
+            "deleted_at": now,
         }},
         upsert=True
     )
+    # Clean up any web-push subscriptions so we never push to a deleted device
+    try:
+        db.push_subscriptions.delete_many({
+            "tenant_id": cust["tenant_id"],
+            "customer_id": cust["id"],
+        })
+    except Exception:
+        pass
     return {"status": "ok", "message": "Card removed from wallet"}
+
+
+@app.post("/api/card/{barcode_id}/wallet-readded")
+def mark_wallet_readded(barcode_id: str):
+    """Customer re-added the card after a previous delete. Clears card_deleted_at
+    and flips pass_issued back to True so the wallet-state KPIs reflect reality."""
+    cust = db.customers.find_one({"barcode_id": barcode_id})
+    if not cust:
+        raise HTTPException(status_code=404, detail="Card not found")
+    db.customers.update_one(
+        {"id": cust["id"]},
+        {"$set": {"pass_issued": True}, "$unset": {"card_deleted_at": ""}},
+    )
+    return {"status": "ok"}
 
 
 # ========================
@@ -4324,6 +4397,46 @@ def get_analytics_summary(
     # VIP count (new top tier)
     vip_count = sum(1 for c in customers if (c.get("tier") or "").lower() == "vip")
 
+    # ─── Wallet-card states (item: distinguish Active / Deleted / Never-added) ───
+    wallet_active_count = sum(
+        1 for c in customers
+        if c.get("pass_issued") and not c.get("card_deleted_at")
+    )
+    wallet_deleted_count = sum(
+        1 for c in customers
+        if c.get("card_deleted_at")
+    )
+    wallet_never_added_count = sum(
+        1 for c in customers
+        if not c.get("pass_issued") and not c.get("card_deleted_at")
+    )
+
+    # ─── Loyalty buckets — Loyal / Regular based on visits-per-month rate ───
+    # Pull thresholds from customer_status_config (with sensible defaults).
+    try:
+        sc = db.customer_status_config.find_one({"tenant_id": t_id}) or {}
+    except Exception:
+        sc = {}
+    loyal_min = int(sc.get("loyal_visits_per_month") or 4)
+    regular_min = int(sc.get("regular_visits_per_month") or 2)
+
+    def _visits_per_month(c):
+        ca = c.get("created_at")
+        visits = int(c.get("visits") or 0)
+        if not ca or visits <= 0:
+            return 0.0
+        days_since_signup = max((now - ca).days, 1)
+        return visits * 30.0 / days_since_signup
+
+    loyal_count = 0
+    regular_count = 0
+    for c in customers:
+        rate = _visits_per_month(c)
+        if rate >= loyal_min:
+            loyal_count += 1
+        elif rate >= regular_min:
+            regular_count += 1
+
     # --- Reviews roll-up — headline numbers for KPI tiles ---
     review_q = {"tenant_id": t_id}
     if branch_id:
@@ -4370,6 +4483,15 @@ def get_analytics_summary(
         "rewards_redeemed_total": rewards_total,
         "birthdays_this_month_count": birthdays_this_month_count,
         "vip_count": vip_count,
+        # Wallet-card state KPIs (3 mutually-exclusive buckets that sum to total_customers)
+        "wallet_active_count": wallet_active_count,
+        "wallet_deleted_count": wallet_deleted_count,
+        "wallet_never_added_count": wallet_never_added_count,
+        # Loyalty rate buckets (driven by customer_status_config)
+        "loyal_count": loyal_count,
+        "regular_count": regular_count,
+        "loyal_threshold": loyal_min,
+        "regular_threshold": regular_min,
         # Reviews — headline KPIs for the Dashboard/Analytics tiles
         "total_reviews": total_reviews,
         "average_rating": avg_rating,                       # /10, null if no reviews yet

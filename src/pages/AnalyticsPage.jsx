@@ -1063,45 +1063,10 @@ const AnalyticsPage = () => {
         </div>
       </section>
 
-      {/* Row 2 — visits by day + new customers by week */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard
-          title="Visits over the last 30 days"
-          hint="Daily visits recorded by staff scans."
-          segment={{ type: 'inactive_days', value: 14 }}
-          openComposer={openComposer}
-          presetName="Revenez nous voir, {first_name}"
-          presetContent="Ça fait 2 semaines… une offre flash vous attend chez {business_name}."
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={visitsByDay}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis dataKey="date" stroke="#57534E" tick={{ fontSize: 10 }} />
-              <YAxis stroke="#57534E" />
-              <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#B85C38" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard
-          title="New customers by week"
-          hint="Weekly registrations over the last 12 weeks."
-          segment={{ type: 'one_visit_only' }}
-          openComposer={openComposer}
-          presetName="Bienvenue {first_name}"
-          presetContent="Merci d'avoir rejoint {business_name}. Pour votre 2e visite, une offre de bienvenue vous attend."
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={newCustomersByWeek}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis dataKey="week" stroke="#57534E" tick={{ fontSize: 10 }} />
-              <YAxis stroke="#57534E" />
-              <Tooltip />
-              <Bar dataKey="count" fill="#4A5D23" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+      {/* Row 2 — visits over time + new customers, BOTH with day/week/month/year selectors */}
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <VisitsOverTimeChart />
+        <HistoricalAcquisitionChart />
       </section>
 
       {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
@@ -1687,13 +1652,10 @@ const AnalyticsPage = () => {
         />
       )}
 
-      {/* Additive: extended customer-acquisition history with configurable range. */}
-      <HistoricalAcquisitionChart />
-
-      {/* Additive: visits-over-time with day/week/month/year selector (item #14). */}
-      <VisitsOverTimeChart />
-
-      {/* Additive: visits-by-day with campaign send markers (clickable for details). */}
+      {/* Visits-by-day with campaign send markers (clickable for details).
+          The two range-selectable charts (acquisition history + visits over
+          time) are now placed up top inside the main analytics grid — no
+          longer duplicated here. */}
       <VisitsWithCampaignsChart />
     </div>
   );

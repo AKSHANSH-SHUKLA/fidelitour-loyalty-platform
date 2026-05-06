@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ownerAPI } from '../lib/api';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -6,7 +7,8 @@ import {
 } from 'recharts';
 import {
   Users, TrendingUp, Repeat, Award, DollarSign, Clock,
-  ArrowUpRight, ArrowDownRight, UserPlus, Activity, AlertCircle, CheckCircle2, Gift, AlertTriangle, Star
+  ArrowUpRight, ArrowDownRight, UserPlus, Activity, AlertCircle, CheckCircle2, Gift, AlertTriangle, Star,
+  Smartphone, CreditCard, Trash2,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
 import { PageHeader, StatCard, Section, C } from '../components/PageShell';
@@ -18,6 +20,7 @@ import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
 const OwnerDashboard = () => {
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState(null);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -307,12 +310,50 @@ const OwnerDashboard = () => {
 
       {/* KPI grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <StatCard label="Total Customers"      value={totalCustomers.toLocaleString()} sublabel="Enrolled loyalty members"    icon={Users}      color={C.sky} />
+        <StatCard label="Total Customers"      value={totalCustomers.toLocaleString()} sublabel="Enrolled loyalty members"    icon={Users}      color={C.sky}
+                  onClick={() => navigate('/dashboard/customers')} />
         <StatCard label="Total Visits"         value={totalVisits.toLocaleString()}    sublabel="All-time recorded visits"    icon={Activity}   color={C.sage} />
         <StatCard label="Repeat Rate"          value={repeatRate}                       sublabel="Customers who returned"      icon={Repeat}     color={C.ochre} />
-        <StatCard label="Gold Members"         value={goldCustomers}                    sublabel={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of customers`} icon={Award} color={C.amber} />
+        <StatCard label="Gold Members"         value={goldCustomers}                    sublabel={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of customers`} icon={Award} color={C.amber}
+                  onClick={() => navigate('/dashboard/customers?tier=gold')} />
+        {summary?.loyal_count != null && (
+          <StatCard label="Loyal Customers"
+                    value={summary.loyal_count}
+                    sublabel={`${summary.loyal_threshold ?? 4}+ visits/month — your most reliable regulars`}
+                    icon={Award} color={C.terracotta}
+                    onClick={() => navigate('/dashboard/customers?loyalty_bucket=loyal')} />
+        )}
+        {summary?.regular_count != null && (
+          <StatCard label="Regular Customers"
+                    value={summary.regular_count}
+                    sublabel={`${summary.regular_threshold ?? 2}–${(summary.loyal_threshold ?? 4)-1} visits/month`}
+                    icon={Repeat} color={C.rose}
+                    onClick={() => navigate('/dashboard/customers?loyalty_bucket=regular')} />
+        )}
         <StatCard label="Avg Visits / Cust."   value={avgVisitsPerCustomer}             sublabel="Higher = stronger loyalty"   icon={TrendingUp} color={C.lavender} />
-        <StatCard label="New This Month"       value={newThisMonth}                     sublabel="Joined in the last 4 weeks"  icon={UserPlus}   color={C.teal} />
+        <StatCard label="New This Month"       value={newThisMonth}                     sublabel="Joined in the last 4 weeks"  icon={UserPlus}   color={C.teal}
+                  onClick={() => navigate('/dashboard/customers?created_within_days=30')} />
+        {summary?.wallet_active_count != null && (
+          <StatCard label="Active Cards"
+                    value={summary.wallet_active_count}
+                    sublabel="In Apple/Google Wallet right now"
+                    icon={Smartphone} color={C.sage}
+                    onClick={() => navigate('/dashboard/customers?wallet_state=active')} />
+        )}
+        {summary?.wallet_never_added_count != null && (
+          <StatCard label="Never Added (Inactive)"
+                    value={summary.wallet_never_added_count}
+                    sublabel="Joined but card not yet in wallet"
+                    icon={CreditCard} color={C.ochre}
+                    onClick={() => navigate('/dashboard/customers?wallet_state=never_added')} />
+        )}
+        {summary?.wallet_deleted_count != null && (
+          <StatCard label="Deleted Cards"
+                    value={summary.wallet_deleted_count}
+                    sublabel="Customer removed the card from their wallet"
+                    icon={Trash2} color={C.coral}
+                    onClick={() => navigate('/dashboard/customers?wallet_state=deleted')} />
+        )}
         {cardsFilled && (
           <StatCard label="Cards Filled"       value={cardsFilled.total_cards_filled || 0} sublabel="Complete rewards cycles earned" icon={Gift} color={C.sage} />
         )}
