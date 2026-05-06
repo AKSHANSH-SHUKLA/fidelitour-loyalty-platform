@@ -18,8 +18,15 @@ import { Calendar } from 'lucide-react';
  */
 const UNIT_DAYS = { day: 1, week: 7, month: 30, year: 365 };
 const UNIT_LABEL = { day: 'jours', week: 'semaines', month: 'mois', year: 'années' };
+// Sensible per-unit caps. Time-windows wider than these stop being decision-grade
+// for a small-business loyalty programme, so we just clamp the input.
+const UNIT_MAX = { day: 30, week: 12, month: 24, year: 5 };
 
 const toDays = (value, unit) => Math.max(1, Math.round((Number(value) || 1) * (UNIT_DAYS[unit] || 1)));
+const clampToUnit = (value, unit) => {
+  const max = UNIT_MAX[unit] ?? 999;
+  return Math.max(1, Math.min(max, Math.round(Number(value) || 1)));
+};
 
 const PeriodPicker = ({
   value: initialValue = 30,
@@ -36,7 +43,7 @@ const PeriodPicker = ({
   useEffect(() => { setDraft(String(val)); }, [val]);
 
   const commit = (v, u) => {
-    const n = Math.max(1, Math.min(999, Math.round(Number(v) || 1)));
+    const n = clampToUnit(v, u);
     setVal(n);
     setDraft(String(n));
     onChange?.(toDays(n, u), { value: n, unit: u });
@@ -63,7 +70,7 @@ const PeriodPicker = ({
       <input
         type="number"
         min="1"
-        max="999"
+        max={UNIT_MAX[unit]}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => commit(draft, unit)}
@@ -72,12 +79,20 @@ const PeriodPicker = ({
         }}
         className={`${compact ? 'w-10 text-[11px]' : 'w-12 text-xs'} font-bold outline-none text-center rounded-md`}
         style={{ color: fgColor, background: inputBg }}
+        title={`Max ${UNIT_MAX[unit]} ${UNIT_LABEL[unit]}`}
       />
       <select
         value={unit}
-        onChange={(e) => { setUnit(e.target.value); commit(draft, e.target.value); }}
+        onChange={(e) => {
+          // When switching unit, re-clamp the current value to the new unit's cap
+          // so picking "year" after typing 30 doesn't silently keep an absurd window.
+          const nextUnit = e.target.value;
+          setUnit(nextUnit);
+          commit(draft, nextUnit);
+        }}
         className={`${compact ? 'text-[10px]' : 'text-xs'} font-semibold bg-transparent outline-none cursor-pointer`}
         style={{ color: fgColor }}
+        title={`Max ${UNIT_MAX[unit]} ${UNIT_LABEL[unit]}`}
       >
         <option value="day"   style={{ color: '#1C1917', background: optionBg }}>{UNIT_LABEL.day}</option>
         <option value="week"  style={{ color: '#1C1917', background: optionBg }}>{UNIT_LABEL.week}</option>
@@ -89,4 +104,4 @@ const PeriodPicker = ({
 };
 
 export default PeriodPicker;
-export { toDays as periodToDays, UNIT_DAYS, UNIT_LABEL };
+export { toDays as periodToDays, UNIT_DAYS, UNIT_LABEL, UNIT_MAX };

@@ -51,9 +51,10 @@ else:
     client = pymongo.MongoClient(tz_aware=True)
     db = client.fidelitour_db
 
-# SendGrid email config
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
-SENDGRID_FROM_EMAIL = os.environ.get("SENDGRID_FROM_EMAIL", "noreply@fidelitour.com")
+# Email channel REMOVED — kept as empty constants so any leftover reference
+# compiles. send_email_to_customer() is now a no-op shim. See line ~237.
+SENDGRID_API_KEY = ""
+SENDGRID_FROM_EMAIL = "noreply@fidelitour.com"
 
 # ============================================================
 # France-wide postal code → (lat, lng, department_name) mapping
@@ -235,29 +236,15 @@ def render_template(content: str, customer: dict, tenant: dict = None) -> str:
 
 
 def send_email_to_customer(to_email: str, from_name: str, subject: str, body_html: str) -> bool:
-    """Best-effort SendGrid dispatch. Returns True on successful send or on missing
-    SendGrid config (treat as mock-delivered for dashboards). Returns False only on
-    an actual network error during send.
     """
-    if not to_email:
-        return False
-    if not SENDGRID_API_KEY:
-        return True  # mock delivery
-    try:
-        import sendgrid
-        from sendgrid.helpers.mail import Mail, Email, To
-        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
-        message = Mail(
-            from_email=Email(SENDGRID_FROM_EMAIL, from_name),
-            to_emails=To(to_email),
-            subject=subject,
-            html_content=body_html,
-        )
-        sg.send(message)
-        return True
-    except Exception as e:
-        print(f"send_email_to_customer error to {to_email}: {e}")
-        return False
+    EMAIL CHANNEL DISABLED — FidéliTour now uses web push + SMS only.
+
+    Kept as a no-op shim so existing call-sites compile. Always returns False so
+    the caller falls through to push/SMS instead. Do NOT re-enable: the client
+    asked to remove the email feature end-to-end. If you re-introduce email,
+    add a feature flag and a deliberate consent flow.
+    """
+    return False
 
 
 _URL_RE = re.compile(
