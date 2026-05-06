@@ -12,6 +12,8 @@ import TierBadge from '../components/TierBadge';
 import { PageHeader, StatCard, Section, C } from '../components/PageShell';
 import LoadingDistraction from '../components/LoadingDistraction';
 import { useBranch } from '../contexts/BranchContext';
+import VisitsOverTimeChart from '../components/VisitsOverTimeChart';
+import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
@@ -496,68 +498,13 @@ const OwnerDashboard = () => {
         </div>
       )}
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Visits Over Time */}
-        <div className="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-sm">
-          <h2 className="text-xl font-bold mb-6" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
-            Visits Over Time (Last 30 Days)
-          </h2>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={visitChartData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-                <CartesianGrid stroke="#F3EFE7" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: '#57534E', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  label={{ value: 'Date', position: 'insideBottomRight', offset: -5, fill: '#8B8680', fontSize: 11 }}
-                />
-                <YAxis
-                  tick={{ fill: '#57534E', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  label={{ value: 'Visits', angle: -90, position: 'insideLeft', fill: '#8B8680', fontSize: 11 }}
-                />
-                <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #E7E5E4', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontFamily: 'Manrope' }}
-                />
-                <Line type="monotone" dataKey="visits" stroke="#B85C38" strokeWidth={2.5} dot={{ r: 2, fill: '#B85C38' }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* Charts Row — both charts now have day/week/month/year selectors built in */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Visits over time, with day/week/month/year selector */}
+        <VisitsOverTimeChart />
 
-        {/* New Customers by Week */}
-        <div className="bg-white p-6 rounded-2xl border border-[#E7E5E4] shadow-sm">
-          <h2 className="text-xl font-bold mb-6" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
-            New Customers by Week
-          </h2>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={newCustomersData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-                <CartesianGrid stroke="#F3EFE7" vertical={false} />
-                <XAxis
-                  dataKey="week"
-                  tick={{ fill: '#57534E', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: '#57534E', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  label={{ value: 'New Signups', angle: -90, position: 'insideLeft', fill: '#8B8680', fontSize: 11 }}
-                />
-                <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #E7E5E4', fontFamily: 'Manrope' }}
-                />
-                <Bar dataKey="count" fill="#2D7D9A" radius={[6, 6, 0, 0]} name="New Customers" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        {/* New customer acquisition history, with day/week/month/year selector */}
+        <HistoricalAcquisitionChart />
       </div>
 
       {/* Top Customers with ranking tabs */}
