@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map, Clock, Gift, Calendar, TrendingDown, Zap, Megaphone } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map, Clock, Gift, Calendar, TrendingDown, Zap, Megaphone, Smartphone, CreditCard, Trash2, Repeat } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api, { ownerAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
 import { PageHeader, C as C_PS } from '../components/PageShell';
@@ -26,12 +26,30 @@ const QUICK_SEGMENTS = [
   { key: 'redeemed',     label: 'Has redeemed reward',  icon: Gift,       serverParams: { redeemed_reward: true } },
 ];
 
+// URL param → human-readable banner label + icon. Drives the "filter active"
+// pill at the top of the page when a tile from the dashboard navigated here
+// with ?wallet_state=active (etc.).
+const URL_FILTER_LABELS = {
+  wallet_state: {
+    active:       { label: 'Active wallet cards',           icon: Smartphone, color: '#6FA89C' },
+    deleted:      { label: 'Cards deleted by customer',     icon: Trash2,     color: '#F08C7A' },
+    never_added:  { label: 'Customers without wallet card', icon: CreditCard, color: '#E3A869' },
+  },
+  loyalty_bucket: {
+    loyal:        { label: 'Loyal customers',               icon: Award,      color: '#B85C38' },
+    regular:      { label: 'Regular customers',             icon: Repeat,     color: '#D77FA0' },
+  },
+};
+
 export default function CustomersPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [allCustomers, setAllCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // The "filter pill" we show at the top when arriving via a Dashboard tile
+  const [urlFilterPill, setUrlFilterPill] = useState(null);   // { label, icon, color, clear }
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,9 +84,61 @@ export default function CustomersPage() {
   // so the pill label and behaviour stay in sync with whatever the owner saved.
   const [bigSpenderDef, setBigSpenderDef] = useState(null);
 
-  // Fetch customers + saved segments on mount
+  // Read URL search params and convert them to server-side filter params.
+  // Used when the user arrives via a Dashboard tile (e.g. "Active Cards" →
+  // /dashboard/customers?wallet_state=active).
+  const readUrlFilters = () => {
+    const out = {};
+    let pill = null;
+    const ws = searchParams.get('wallet_state');
+    if (ws && URL_FILTER_LABELS.wallet_state[ws]) {
+      out.wallet_state = ws;
+      pill = { ...URL_FILTER_LABELS.wallet_state[ws], clear: () => clearUrlFilter('wallet_state') };
+    }
+    const lb = searchParams.get('loyalty_bucket');
+    if (lb && URL_FILTER_LABELS.loyalty_bucket[lb]) {
+      out.loyalty_bucket = lb;
+      pill = pill || { ...URL_FILTER_LABELS.loyalty_bucket[lb], clear: () => clearUrlFilter('loyalty_bucket') };
+    }
+    const tier = searchParams.get('tier');
+    if (tier) {
+      out.tier = tier;
+      pill = pill || {
+        label: `Tier · ${tier.charAt(0).toUpperCase() + tier.slice(1)}`,
+        icon: Award, color: '#B85C38',
+        clear: () => clearUrlFilter('tier'),
+      };
+    }
+    const cwd = searchParams.get('created_within_days');
+    if (cwd) {
+      out.created_within_days = parseInt(cwd, 10);
+      pill = pill || {
+        label: `Joined in last ${cwd} days`,
+        icon: Calendar, color: '#5B8DEF',
+        clear: () => clearUrlFilter('created_within_days'),
+      };
+    }
+    return { params: out, pill };
+  };
+
+  const clearUrlFilter = (key) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete(key);
+    setSearchParams(next, { replace: true });
+    // The effect below picks up the change and re-fetches.
+  };
+
+  // Re-run on EVERY change to the URL search string so dashboard navigations
+  // refresh the filter without a hard reload.
   useEffect(() => {
-    fetchCustomers();
+    const { params, pill } = readUrlFilters();
+    setUrlFilterPill(pill);
+    fetchCustomers(params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // One-shot loaders (saved segments + big-spender def) — only on mount.
+  useEffect(() => {
     (async () => {
       try {
         const r = await ownerAPI.listSavedSegments();
@@ -392,6 +462,44 @@ export default function CustomersPage() {
           </div>
         }
       />
+
+      {/* URL filter pill — visible when the user arrived from a dashboard tile */}
+      {urlFilterPill && (() => {
+        const Icon = urlFilterPill.icon || Filter;
+        return (
+          <div
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2"
+            style={{
+              background: `linear-gradient(135deg, white 0%, ${urlFilterPill.color}12 100%)`,
+              borderColor: urlFilterPill.color + '55',
+              boxShadow: `0 6px 18px -10px ${urlFilterPill.color}77`,
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                   style={{ background: urlFilterPill.color, color: 'white' }}>
+                <Icon size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: urlFilterPill.color }}>
+                  Filter applied
+                </p>
+                <p className="text-sm font-bold" style={{ color: '#1C1917' }}>
+                  {urlFilterPill.label} · {filteredCustomers.length} customer{filteredCustomers.length === 1 ? '' : 's'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => urlFilterPill.clear && urlFilterPill.clear()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition hover:bg-white"
+              style={{ background: 'white', border: `1px solid ${urlFilterPill.color}55`, color: urlFilterPill.color }}
+            >
+              <X size={12} /> Clear filter
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Search Bar */}
       <div className="mb-6">
