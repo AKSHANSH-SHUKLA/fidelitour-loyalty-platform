@@ -80,6 +80,12 @@ export const ownerAPI = {
   // Single-metric endpoint — drives per-tile period pickers on dashboard/analytics.
   // params: { metric, days, branch_id? }
   getAnalyticsMetric: (params) => api.get('/owner/analytics/metric', { params }),
+  // Customer cleanup (item 31) — soft-delete + restore + trash view
+  purgeInactiveCustomers: (data) => api.post('/owner/customers/purge-inactive', data),
+  restoreCustomer: (customerId) => api.post(`/owner/customers/${customerId}/restore`),
+  getCustomerTrash: () => api.get('/owner/customers/trash'),
+  // AI campaign analyzer (item 23) — returns 3 plain-English bullets
+  aiAnalyzeCampaign: (campaignId) => api.post(`/owner/campaigns/${campaignId}/ai-analyze`),
   getCustomerMap: (params) => api.post('/owner/customers/map', null, { params }),
   sendCampaignToGroup: (data) => api.post('/owner/campaigns/send-to-group', data),
   getCampaignTracking: (id) => api.get('/owner/campaigns/' + id + '/tracking'),

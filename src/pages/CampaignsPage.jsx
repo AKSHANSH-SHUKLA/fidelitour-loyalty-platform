@@ -21,6 +21,21 @@ export default function CampaignsPage() {
   const [viewingTrackingId, setViewingTrackingId] = useState(null);
   const [trackingData, setTrackingData] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
+  // Item 23 — AI analyzer state (per-campaign).
+  const [aiAnalysis, setAiAnalysis] = useState({});      // { [campaignId]: { bullets, used_ai, model } }
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState({}); // { [campaignId]: boolean }
+
+  const runAiAnalysis = async (campaignId) => {
+    setAiAnalysisLoading((m) => ({ ...m, [campaignId]: true }));
+    try {
+      const r = await ownerAPI.aiAnalyzeCampaign(campaignId);
+      setAiAnalysis((m) => ({ ...m, [campaignId]: r.data }));
+    } catch (e) {
+      setAiAnalysis((m) => ({ ...m, [campaignId]: { bullets: ['Analysis failed: ' + (e?.response?.data?.detail || e.message)], used_ai: false } }));
+    } finally {
+      setAiAnalysisLoading((m) => ({ ...m, [campaignId]: false }));
+    }
+  };
 
   // --- Scheduling state (composer modal) ---
   const [sendMode, setSendMode] = useState('now'); // 'now' | 'schedule'
@@ -1003,6 +1018,89 @@ export default function CampaignsPage() {
                             : 0}%
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Item 22 — revenue + lift roll-up. Visible only when the campaign has been sent. */}
+                  {campaign.status === 'sent' && campaign.performance && (
+                    <div className="mb-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg" style={{ background: 'linear-gradient(135deg, #4A5D2315 0%, #4A5D2305 100%)', border: '1px solid #4A5D2333' }}>
+                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#4A5D23' }}>€ generated</p>
+                        <p className="text-xl font-bold mt-0.5" style={{ color: '#1C1917', fontFamily: 'Cormorant Garamond' }}>
+                          €{(campaign.performance.revenue_attributed || 0).toLocaleString()}
+                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: '#8B8680' }}>
+                          {campaign.performance.attributed_visits} visites × €{campaign.performance.avg_ticket} avg
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg" style={{ background: 'linear-gradient(135deg, #B85C3815 0%, #B85C3805 100%)', border: '1px solid #B85C3833' }}>
+                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#B85C38' }}>Incremental visits</p>
+                        <p className="text-xl font-bold mt-0.5" style={{ color: '#1C1917', fontFamily: 'Cormorant Garamond' }}>
+                          {campaign.performance.lift_visits >= 0 ? '+' : ''}{campaign.performance.lift_visits}
+                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: '#8B8680' }}>
+                          vs {campaign.performance.baseline_visits} avant l'envoi
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg" style={{ background: 'linear-gradient(135deg, #E3A86915 0%, #E3A86905 100%)', border: '1px solid #E3A86933' }}>
+                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#7B3F00' }}>Lift</p>
+                        <p className="text-xl font-bold mt-0.5" style={{ color: '#1C1917', fontFamily: 'Cormorant Garamond' }}>
+                          {campaign.performance.lift_pct === null
+                            ? 'Net new'
+                            : `${campaign.performance.lift_pct >= 0 ? '+' : ''}${campaign.performance.lift_pct}%`}
+                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: '#8B8680' }}>
+                          incremental vs baseline
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Item 23 — AI analyzer. Single button toggles a 3-bullet recap from Gemini (free tier) or a heuristic fallback. */}
+                  {campaign.status === 'sent' && (
+                    <div className="mb-4">
+                      {!aiAnalysis[campaign.id] ? (
+                        <button
+                          onClick={() => runAiAnalysis(campaign.id)}
+                          disabled={!!aiAnalysisLoading[campaign.id]}
+                          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition font-semibold"
+                          style={{
+                            background: aiAnalysisLoading[campaign.id] ? '#E7E5E4' : 'linear-gradient(135deg, #8B7DC9 0%, #B85C38 100%)',
+                            color: 'white',
+                            opacity: aiAnalysisLoading[campaign.id] ? 0.7 : 1,
+                          }}
+                        >
+                          <Zap size={13} />
+                          {aiAnalysisLoading[campaign.id] ? 'Analyse en cours…' : 'Pourquoi ça a marché ? (IA)'}
+                        </button>
+                      ) : (
+                        <div
+                          className="rounded-xl p-4"
+                          style={{ background: 'linear-gradient(135deg, #8B7DC910 0%, #B85C3805 100%)', border: '1px solid #8B7DC944' }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#5E527C' }}>
+                              <Zap size={12} /> Analyse IA · {aiAnalysis[campaign.id].used_ai ? aiAnalysis[campaign.id].model : 'heuristique'}
+                            </p>
+                            <button
+                              onClick={() => runAiAnalysis(campaign.id)}
+                              className="text-[10px] underline"
+                              style={{ color: '#5E527C' }}
+                              disabled={!!aiAnalysisLoading[campaign.id]}
+                            >
+                              {aiAnalysisLoading[campaign.id] ? '…' : 'Refaire'}
+                            </button>
+                          </div>
+                          <ul className="space-y-1.5">
+                            {(aiAnalysis[campaign.id].bullets || []).map((b, i) => (
+                              <li key={i} className="text-sm flex gap-2" style={{ color: '#1C1917' }}>
+                                <span style={{ color: '#8B7DC9', fontWeight: 700 }}>•</span>
+                                <span>{b}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
 

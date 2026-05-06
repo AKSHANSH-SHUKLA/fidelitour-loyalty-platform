@@ -44,6 +44,7 @@ const SETTINGS_SECTIONS = [
   { anchor: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
   { anchor: 'settings-welcome',  label: '🎁 Message de bienvenue' },
   { anchor: 'settings-auto',     label: '🤖 Campagnes automatiques' },
+  { anchor: 'settings-cleanup',  label: '🧹 Nettoyer clients inactifs' },
 ];
 
 const SettingsNavLink = ({ icon: Icon, currentPath, role }) => {

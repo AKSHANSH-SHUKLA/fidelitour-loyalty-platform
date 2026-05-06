@@ -56,6 +56,12 @@ else:
 SENDGRID_API_KEY = ""
 SENDGRID_FROM_EMAIL = "noreply@fidelitour.com"
 
+# Item 23 — AI campaign analyzer. Uses Google Gemini's free tier by default.
+# Set GEMINI_API_KEY in Vercel; if missing, the endpoint returns a graceful
+# heuristic-based fallback instead of failing.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
+
 # ============================================================
 # France-wide postal code → (lat, lng, department_name) mapping
 # Keyed by 2-digit department prefix. Covers all 96 metropolitan departments.
@@ -2427,12 +2433,82 @@ def list_customers(
         c.pop("_id", None)
     return customers
 
+def _campaign_performance_rollup(t_id: str, c: Dict[str, Any]) -> Dict[str, Any]:
+    """Item 22 — compute revenue + lift attributable to a single campaign.
+
+    Logic in plain English:
+      • attributed_visits = visits we already credited to this campaign in the
+        15-day post-send window (already maintained on the doc).
+      • avg_ticket        = tenant-wide average basket from total_amount_paid /
+        total_visits across all customers.
+      • revenue_attributed = attributed_visits × avg_ticket.
+      • baseline_visits   = visits these same recipients made in the 15 days
+        BEFORE the campaign was sent. That's the "what would have happened
+        anyway" floor.
+      • lift_visits       = attributed_visits - baseline_visits. Negative means
+        the campaign didn't move the needle.
+      • lift_pct          = lift_visits / baseline_visits.
+    """
+    out = {
+        "attributed_visits": int(c.get("visits_from_campaign") or 0),
+        "baseline_visits": 0,
+        "lift_visits": 0,
+        "lift_pct": 0,
+        "revenue_attributed": 0,
+        "avg_ticket": 0,
+    }
+
+    # Tenant-wide avg ticket — quick aggregate, fine to compute on every list call.
+    try:
+        agg = list(db.customers.aggregate([
+            {"$match": {"tenant_id": t_id, "deleted_at": {"$exists": False}}},
+            {"$group": {
+                "_id": None,
+                "total_paid": {"$sum": {"$ifNull": ["$total_amount_paid", 0]}},
+                "total_visits": {"$sum": {"$ifNull": ["$visits", 0]}},
+            }},
+        ]))
+        if agg and agg[0].get("total_visits"):
+            out["avg_ticket"] = round(float(agg[0]["total_paid"]) / float(agg[0]["total_visits"]), 2)
+    except Exception:
+        pass
+
+    out["revenue_attributed"] = round(out["attributed_visits"] * out["avg_ticket"], 2)
+
+    # Baseline: visits by the same recipients in the 15 days BEFORE sent_at.
+    sent_at = c.get("sent_at")
+    recipient_ids = c.get("recipient_ids") or []
+    if sent_at and recipient_ids:
+        try:
+            window_start = sent_at - timedelta(days=15)
+            baseline = db.visits.count_documents({
+                "tenant_id": t_id,
+                "customer_id": {"$in": recipient_ids},
+                "visit_time": {"$gte": window_start, "$lt": sent_at},
+            })
+            out["baseline_visits"] = int(baseline)
+        except Exception:
+            pass
+
+    out["lift_visits"] = out["attributed_visits"] - out["baseline_visits"]
+    if out["baseline_visits"] > 0:
+        out["lift_pct"] = round(out["lift_visits"] / out["baseline_visits"] * 100, 1)
+    elif out["attributed_visits"] > 0:
+        # No prior visits but post-send activity → flag as net-new traffic
+        out["lift_pct"] = None  # frontend renders as "net new"
+
+    return out
+
+
 @app.get("/api/owner/campaigns")
 def list_campaigns(token_data: TokenData = Depends(require_role(["business_owner"]))):
-    """List campaigns for tenant"""
-    campaigns = list(db.campaigns.find({"tenant_id": token_data.tenant_id}))
+    """List campaigns for tenant — each row gets a performance roll-up
+    (attributed visits, baseline, lift, revenue) for item 22 cards."""
+    t_id = token_data.tenant_id
+    campaigns = list(db.campaigns.find({"tenant_id": t_id}))
     for c in campaigns:
         c.pop("_id", None)
+        c["performance"] = _campaign_performance_rollup(t_id, c)
     return campaigns
 
 @app.post("/api/owner/campaigns")
@@ -3089,8 +3165,12 @@ def _branch_customer_filter(tenant_id: str, branch_id: Optional[str]) -> dict:
     """Build a customer-collection MongoDB filter that respects 'visited at
     least once at this branch' semantics. Falls back to plain tenant filter
     when no branch is selected.
+
+    ALWAYS excludes soft-deleted customers (those with `deleted_at` set by the
+    purge tool). Use `_branch_customer_filter_with_trash` if you need to see
+    them (the trash view).
     """
-    base = {"tenant_id": tenant_id}
+    base = {"tenant_id": tenant_id, "deleted_at": {"$exists": False}}
     if not branch_id:
         return base
     ids = _customer_ids_who_visited_branch(tenant_id, branch_id)
@@ -3099,6 +3179,125 @@ def _branch_customer_filter(tenant_id: str, branch_id: Optional[str]) -> dict:
         # (so endpoints return empty lists rather than the whole tenant).
         return {**base, "id": {"$in": []}}
     return {**base, "id": {"$in": ids}}
+
+
+# ════════════════════════════════════════════════════════════════════
+# Owner-side customer cleanup — soft-delete inactive customers,
+# restore from trash, hard-purge after a 30-day grace period.
+# Item 31. Two-step confirm enforced on the frontend.
+# ════════════════════════════════════════════════════════════════════
+
+class PurgeInactiveRequest(BaseModel):
+    days: int = 365            # threshold (days since last visit)
+    dry_run: bool = True       # if True, only return what *would* be purged
+    branch_id: Optional[str] = None
+    include_never_visited: bool = False  # also include customers who never scanned
+
+
+@app.post("/api/owner/customers/purge-inactive")
+def purge_inactive_customers(
+    req: PurgeInactiveRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Soft-delete customers inactive for at least `days`.
+
+    SOFT delete — sets `deleted_at` + `delete_reason`, hides them from every
+    analytics + customer-list endpoint, but keeps the row so it can be restored
+    within 30 days. After 30 days a separate cleanup hard-deletes them.
+
+    Pass dry_run=true first to preview the count, then dry_run=false to commit.
+    """
+    t_id = token_data.tenant_id
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=max(int(req.days), 1))
+
+    # Build the match: tenant + (optional branch) + inactive
+    match: Dict[str, Any] = {
+        "tenant_id": t_id,
+        "deleted_at": {"$exists": False},  # don't double-delete
+    }
+    if req.branch_id:
+        ids_at_branch = _customer_ids_who_visited_branch(t_id, req.branch_id)
+        if not ids_at_branch:
+            return {"would_delete": 0, "deleted": 0, "candidates": []}
+        match["id"] = {"$in": ids_at_branch}
+
+    # Inactive = last_visit_date older than cutoff. Optionally also include
+    # never-visited (no last_visit_date and created_at older than cutoff).
+    if req.include_never_visited:
+        match["$or"] = [
+            {"last_visit_date": {"$lt": cutoff}},
+            {"$and": [
+                {"last_visit_date": {"$exists": False}},
+                {"created_at": {"$lt": cutoff}},
+            ]},
+            {"$and": [
+                {"last_visit_date": None},
+                {"created_at": {"$lt": cutoff}},
+            ]},
+        ]
+    else:
+        match["last_visit_date"] = {"$lt": cutoff}
+
+    candidates = list(db.customers.find(
+        match,
+        {"id": 1, "name": 1, "phone": 1, "email": 1, "tier": 1,
+         "visits": 1, "last_visit_date": 1, "_id": 0}
+    ).limit(500))
+
+    if req.dry_run:
+        return {
+            "would_delete": db.customers.count_documents(match),
+            "deleted": 0,
+            "candidates": candidates,
+            "cutoff_date": cutoff.isoformat(),
+            "grace_period_days": 30,
+        }
+
+    # Commit the soft delete
+    result = db.customers.update_many(
+        match,
+        {"$set": {
+            "deleted_at": now,
+            "delete_reason": f"Inactive ≥ {req.days}d (purged by owner)",
+            "delete_grace_until": now + timedelta(days=30),
+        }},
+    )
+    return {
+        "would_delete": 0,
+        "deleted": result.modified_count,
+        "grace_period_days": 30,
+        "restorable_until": (now + timedelta(days=30)).isoformat(),
+    }
+
+
+@app.post("/api/owner/customers/{customer_id}/restore")
+def restore_customer(
+    customer_id: str,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Undo a soft-delete. Allowed any time within the 30-day grace window."""
+    res = db.customers.update_one(
+        {"id": customer_id, "tenant_id": token_data.tenant_id},
+        {"$unset": {"deleted_at": "", "delete_reason": "", "delete_grace_until": ""}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return {"restored": True, "id": customer_id}
+
+
+@app.get("/api/owner/customers/trash")
+def list_trashed_customers(
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """List soft-deleted customers still within the 30-day grace window."""
+    rows = list(db.customers.find(
+        {"tenant_id": token_data.tenant_id, "deleted_at": {"$exists": True}},
+        {"_id": 0, "id": 1, "name": 1, "phone": 1, "email": 1, "tier": 1,
+         "visits": 1, "last_visit_date": 1, "deleted_at": 1, "delete_reason": 1,
+         "delete_grace_until": 1},
+    ))
+    return {"trash": rows, "count": len(rows)}
 
 
 def _ensure_branch_assignments(tid: str) -> None:
@@ -3883,6 +4082,165 @@ def send_campaign_to_group(
         })
 
     return campaign.model_dump()
+
+
+# ════════════════════════════════════════════════════════════════════
+# Item 23 — AI campaign analyzer. POST /api/owner/campaigns/{id}/ai-analyze
+# Sends campaign body + audience descriptors + result rows to a free LLM
+# (Gemini Flash by default) and returns 3 plain-English bullets.
+# ════════════════════════════════════════════════════════════════════
+
+def _audience_descriptor(t_id: str, recipient_ids: list) -> Dict[str, Any]:
+    """One-shot audience profile: tier mix, age band, top day-of-week, weekend share."""
+    if not recipient_ids:
+        return {"size": 0, "summary": "no recipients on this campaign"}
+    custs = list(db.customers.find(
+        {"tenant_id": t_id, "id": {"$in": recipient_ids}},
+        {"_id": 0, "tier": 1, "visits": 1, "total_amount_paid": 1, "last_visit_date": 1}
+    ))
+    if not custs:
+        return {"size": 0, "summary": "recipients not found"}
+    n = len(custs)
+    tier_counts: Dict[str, int] = {}
+    for c in custs:
+        t = (c.get("tier") or "bronze").lower()
+        tier_counts[t] = tier_counts.get(t, 0) + 1
+    dominant_tier = max(tier_counts.items(), key=lambda x: x[1])[0] if tier_counts else "bronze"
+    avg_visits = round(sum(c.get("visits", 0) for c in custs) / max(n, 1), 1)
+    avg_paid = round(sum(c.get("total_amount_paid", 0) for c in custs) / max(n, 1), 2)
+    return {
+        "size": n,
+        "dominant_tier": dominant_tier,
+        "tier_mix": tier_counts,
+        "avg_visits_per_customer": avg_visits,
+        "avg_lifetime_spend": avg_paid,
+        "summary": (
+            f"{n} customers, mostly {dominant_tier} tier, "
+            f"average {avg_visits} visits and €{avg_paid:.2f} lifetime spend"
+        ),
+    }
+
+
+def _heuristic_campaign_recap(campaign: Dict[str, Any], audience: Dict[str, Any], perf: Dict[str, Any]) -> list:
+    """Local fallback when no LLM key is set. Generates 3 sane bullets so the
+    endpoint always returns something useful."""
+    bullets = []
+    sent_hour = None
+    if campaign.get("sent_at"):
+        try:
+            sent_hour = campaign["sent_at"].hour
+        except Exception:
+            pass
+
+    # Bullet 1 — open rate / lift
+    op = perf.get("lift_pct")
+    if op is None:
+        bullets.append("Net-new traffic — these recipients had no prior visits in the previous 15 days, so every attributed visit is incremental.")
+    elif op >= 30:
+        bullets.append(f"Strong lift of {op}% over the 15-day baseline. The combination of audience and timing worked.")
+    elif op >= 0:
+        bullets.append(f"Modest lift of {op}%. Some impact, but the campaign isn't yet outpacing baseline traffic.")
+    else:
+        bullets.append(f"Negative lift ({op}%). These recipients visited LESS in the post-send window than they did before — try a different angle.")
+
+    # Bullet 2 — audience fit
+    dom = audience.get("dominant_tier", "bronze")
+    if dom in ("gold", "vip"):
+        bullets.append("Audience skews toward your top tiers — these customers respond to exclusivity, not discounts. Keep messaging premium.")
+    elif dom == "silver":
+        bullets.append("Silver-heavy audience — they're already engaged. A small push (free item, double points) usually moves them up to Gold.")
+    else:
+        bullets.append("Bronze-heavy audience — these are early-stage customers. Welcome-style offers and 'get to your first reward' nudges convert best.")
+
+    # Bullet 3 — timing
+    if sent_hour is not None:
+        if sent_hour < 11:
+            bullets.append("Sent before 11am — fine for breakfast spots, weak for cafés / restaurants whose customers decide where to go closer to noon.")
+        elif sent_hour >= 18:
+            bullets.append("Evening send — good visibility but most customers can't act until tomorrow. Test sending at 11am for same-day impact.")
+        else:
+            bullets.append("Mid-day send is solid for hospitality. If lift is low, the message itself (offer + clarity) is the next thing to test.")
+    else:
+        bullets.append("No send time recorded. Consistently sending at the same hour (e.g. 11am Friday) lets you measure whether timing or content drives results.")
+    return bullets
+
+
+def _call_gemini(prompt: str) -> Optional[list]:
+    """Hit Gemini's free tier. Returns 3 bullets parsed from the response, or None on any failure."""
+    if not GEMINI_API_KEY:
+        return None
+    try:
+        import requests as _rq
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 400},
+        }
+        r = _rq.post(url, json=payload, timeout=15)
+        r.raise_for_status()
+        data = r.json()
+        text = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        if not text:
+            return None
+        # Parse bullet points: strip leading "-", "•", "*", numbered prefixes
+        lines = [
+            re.sub(r"^[\s\-\*•]+|^\d+[\.\)]\s*", "", ln).strip()
+            for ln in text.splitlines() if ln.strip()
+        ]
+        bullets = [ln for ln in lines if len(ln) > 12][:3]
+        return bullets if bullets else None
+    except Exception as e:
+        print(f"_call_gemini error: {e}")
+        return None
+
+
+@app.post("/api/owner/campaigns/{campaign_id}/ai-analyze")
+def ai_analyze_campaign(
+    campaign_id: str,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Item 23 — return 3 plain-English bullets explaining why a campaign
+    performed how it did. Uses Gemini free tier when GEMINI_API_KEY is set,
+    otherwise falls back to a deterministic heuristic so the endpoint always
+    works for testing."""
+    t_id = token_data.tenant_id
+    c = db.campaigns.find_one({"id": campaign_id, "tenant_id": t_id})
+    if not c:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    c.pop("_id", None)
+
+    perf = _campaign_performance_rollup(t_id, c)
+    audience = _audience_descriptor(t_id, c.get("recipient_ids") or [])
+
+    prompt = (
+        "You are a marketing analyst for a small French hospitality loyalty programme. "
+        "Read the campaign details and explain in 3 short bullets WHY it landed or missed, "
+        "and what to try next time. Be concrete, not generic. Reply with ONLY 3 bullet lines, "
+        "each starting with '- '. No preamble, no closing.\n\n"
+        f"Campaign name: {c.get('name','(no name)')}\n"
+        f"Body: {c.get('content') or '(empty)'}\n"
+        f"Sent at: {c.get('sent_at')}\n"
+        f"Channel: {c.get('source','push')}\n"
+        f"Audience: {audience.get('summary')}\n"
+        f"Result: {perf['attributed_visits']} attributed visits, "
+        f"{perf['baseline_visits']} baseline visits, "
+        f"lift {perf['lift_pct']}% , revenue €{perf['revenue_attributed']}.\n"
+    )
+
+    bullets = _call_gemini(prompt)
+    used_ai = bool(bullets)
+    if not bullets:
+        bullets = _heuristic_campaign_recap(c, audience, perf)
+
+    return {
+        "campaign_id": campaign_id,
+        "bullets": bullets[:3],
+        "performance": perf,
+        "audience": audience,
+        "used_ai": used_ai,
+        "model": GEMINI_MODEL if used_ai else "heuristic",
+    }
+
 
 @app.get("/api/owner/campaigns/{campaign_id}/tracking")
 def get_campaign_tracking(

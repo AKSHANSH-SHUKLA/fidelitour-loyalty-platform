@@ -113,18 +113,41 @@ const NotificationBell = () => {
 
   return (
     <div ref={wrapperRef} className="relative">
+      {/* Soft pulsing halo on unread — only when there's something to look at,
+          otherwise the bell sits quiet so it doesn't fight for attention. */}
+      {unreadCount > 0 && (
+        <style>{`
+          @keyframes ftBellPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(184,92,56,0.55), 0 4px 14px -4px rgba(184,92,56,0.55); }
+            50%      { box-shadow: 0 0 0 6px rgba(184,92,56,0.10), 0 4px 14px -4px rgba(184,92,56,0.55); }
+          }
+        `}</style>
+      )}
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : handleOpen())}
-        className="relative w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-[#FAF8F4]"
-        style={{ border: '1px solid #EFE9E0' }}
-        aria-label="Notifications"
+        className="relative w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-105"
+        style={{
+          background: 'linear-gradient(135deg, #B85C38 0%, #E3A869 100%)',
+          border: '2px solid rgba(255,255,255,0.85)',
+          boxShadow: unreadCount > 0
+            ? '0 4px 14px -4px rgba(184,92,56,0.55)'
+            : '0 2px 8px -2px rgba(184,92,56,0.35)',
+          animation: unreadCount > 0 ? 'ftBellPulse 2.4s ease-in-out infinite' : 'none',
+        }}
+        aria-label={`Notifications — ${unreadCount} unread`}
+        title={unreadCount > 0 ? `${unreadCount} alerte(s) non lue(s) · toutes les boutiques` : 'Aucune alerte · toutes les boutiques'}
       >
-        <Bell size={18} style={{ color: '#1C1917' }} />
+        <Bell size={18} style={{ color: 'white' }} fill="white" strokeWidth={2.2} />
         {unreadCount > 0 && (
           <span
-            className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-            style={{ background: 'linear-gradient(135deg, #B85C38, #D77FA0)', boxShadow: '0 2px 6px rgba(184,92,56,0.55)' }}
+            className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center"
+            style={{
+              background: '#FFFFFF',
+              color: '#B85C38',
+              border: '1.5px solid #B85C38',
+              boxShadow: '0 2px 4px rgba(184,92,56,0.4)',
+            }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -183,7 +206,7 @@ const NotificationBell = () => {
           </div>
           <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: '#EFE9E0', background: '#FDFBF7' }}>
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B8680' }}>
-              Résumé intelligent · toutes les boutiques
+              Résumé intelligent · toutes mes boutiques
             </p>
             <p className="text-[9px]" style={{ color: '#A8A29E' }}>
               MAJ 5 min
@@ -217,17 +240,22 @@ const NotificationBell = () => {
                       <Icon size={16} style={{ color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      {/* Branch badge on TOP of the alert title — the owner instantly sees which store this alert is about */}
+                      {/* Branch badge on TOP of the alert title — the owner instantly sees which store this alert is about.
+                          For tenant-wide alerts ("Toutes les boutiques"), use a distinct chip + tooltip so it's clear
+                          this is a network-wide signal, not a single-store one. */}
                       {a.branch_name && (
                         <span
                           className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1.5"
                           style={{
-                            background: a.scope === 'tenant' ? '#1C19170D' : `${color}1A`,
-                            color: a.scope === 'tenant' ? '#3D2820' : color,
-                            border: `1px solid ${a.scope === 'tenant' ? '#1C191722' : color + '33'}`,
+                            background: a.scope === 'tenant' ? '#FCE3DC' : `${color}1A`,
+                            color: a.scope === 'tenant' ? '#9C4427' : color,
+                            border: `1px solid ${a.scope === 'tenant' ? '#B85C3855' : color + '33'}`,
                           }}
+                          title={a.scope === 'tenant'
+                            ? "Réseau entier — alerte qui couvre toutes vos boutiques"
+                            : `Boutique : ${a.branch_name}`}
                         >
-                          <Building2 size={9} /> {a.branch_name}
+                          <Building2 size={9} /> {a.scope === 'tenant' ? 'Toutes mes boutiques' : a.branch_name}
                         </span>
                       )}
                       <p className="text-sm font-bold leading-tight" style={{ color: '#1C1917' }}>
