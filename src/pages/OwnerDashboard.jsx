@@ -271,41 +271,6 @@ const OwnerDashboard = () => {
         title="Welcome back"
         description="A live view of your loyalty programme — customers, visits, tiers, and what's working this week."
         role="business_owner"
-        actions={
-          branches.length > 1 ? (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedBranch(null)}
-                className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all"
-                style={{
-                  background: selectedBranch === null
-                    ? `linear-gradient(135deg, ${C.ochre}, ${C.terracotta})`
-                    : 'white',
-                  color: selectedBranch === null ? 'white' : C.inkSoft,
-                  border: `1px solid ${selectedBranch === null ? 'transparent' : C.hairline}`,
-                }}
-              >
-                All branches
-              </button>
-              {branches.map(branch => (
-                <button
-                  key={branch.id}
-                  onClick={() => setSelectedBranch(branch.id)}
-                  className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all"
-                  style={{
-                    background: selectedBranch === branch.id
-                      ? `linear-gradient(135deg, ${C.ochre}, ${C.terracotta})`
-                      : 'white',
-                    color: selectedBranch === branch.id ? 'white' : C.inkSoft,
-                    border: `1px solid ${selectedBranch === branch.id ? 'transparent' : C.hairline}`,
-                  }}
-                >
-                  {branch.name}
-                </button>
-              ))}
-            </div>
-          ) : null
-        }
       />
 
       {/* KPI grid */}

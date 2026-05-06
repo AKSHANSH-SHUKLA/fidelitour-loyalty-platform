@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import LoadingDistraction from '../components/LoadingDistraction';
+import { useBranch } from '../contexts/BranchContext';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend,
@@ -46,6 +47,7 @@ const StatPill = ({ label, value, hint, tone = 'default' }) => {
 };
 
 export default function InsightsPage() {
+  const { branchId } = useBranch();
   const [alerts, setAlerts] = useState([]);
   const [churn, setChurn] = useState(null);
   const [ltv, setLtv] = useState(null);
@@ -123,21 +125,24 @@ export default function InsightsPage() {
 
   const loadAll = async () => {
     setLoading(true);
+    // Branch-aware params — picking a branch on the global selector refilters
+    // every insight panel that supports branch filtering.
+    const bp = branchId ? { branch_id: branchId } : undefined;
     const results = await Promise.allSettled([
-      ownerAPI.getAlerts(),
-      ownerAPI.getChurn(),
-      ownerAPI.getLTV(),
-      ownerAPI.getTimeSegmentation(),
-      ownerAPI.getCityBreakdown(),
-      ownerAPI.getActiveCards(),
+      ownerAPI.getAlerts(bp),
+      ownerAPI.getChurn(bp),
+      ownerAPI.getLTV(bp),
+      ownerAPI.getTimeSegmentation(bp),
+      ownerAPI.getCityBreakdown(bp),
+      ownerAPI.getActiveCards(bp),
       ownerAPI.getMonthlyReport(),
-      ownerAPI.getReactivationTemplates(),
+      ownerAPI.getReactivationTemplates(bp),
       ownerAPI.listTeam(),
       ownerAPI.getTenant(),
       // New proactive panels
-      ownerAPI.getProactiveAlerts(),
-      ownerAPI.getAiSuggestions(),
-      ownerAPI.getLtvBreakdown(),
+      ownerAPI.getProactiveAlerts(bp),
+      ownerAPI.getAiSuggestions(bp),
+      ownerAPI.getLtvBreakdown(bp),
     ]);
     const [a, ch, l, t, c, ac, mr, rt, tm, tenant, pa, ai, lb] = results;
     if (a.status === 'fulfilled') setAlerts(a.value.data.alerts || []);
@@ -158,7 +163,8 @@ export default function InsightsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { loadAll(); }, []);
+  // Re-fetch when the user picks a different branch on the global selector.
+  useEffect(() => { loadAll(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [branchId]);
 
   const saveSenderName = async () => {
     setSenderNameSaving(true);

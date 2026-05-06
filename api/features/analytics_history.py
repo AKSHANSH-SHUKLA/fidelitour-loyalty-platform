@@ -248,6 +248,7 @@ def visits_history(
 @router.get("/api/owner/analytics/history/visits-with-campaigns")
 def visits_with_campaigns(
     days: int = 30,
+    branch_id: Optional[str] = None,
     token_data=Depends(require_role(["business_owner", "manager"])),
 ):
     """Powers the visits-by-day chart with campaign send markers overlaid.
@@ -269,10 +270,10 @@ def visits_with_campaigns(
         d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
         buckets[d] = 0
 
-    visits = list(_db.visits.find({
-        "tenant_id": tid,
-        "visit_time": {"$gte": cutoff},
-    }))
+    visit_filter = {"tenant_id": tid, "visit_time": {"$gte": cutoff}}
+    if branch_id:
+        visit_filter["branch_id"] = branch_id
+    visits = list(_db.visits.find(visit_filter))
     for v in visits:
         ts = v.get("visit_time")
         if not ts:

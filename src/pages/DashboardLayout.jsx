@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import NotificationBell from '../components/NotificationBell';
+import BranchSelectorBar from '../components/BranchSelectorBar';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
@@ -221,6 +222,10 @@ const DashboardLayout = () => {
           </div>
         )}
         <div className="px-6 py-8 lg:px-10 lg:py-10 max-w-[1600px] mx-auto">
+          {/* Global branch selector — visible on EVERY dashboard page so the
+              owner can pick once and have all pages filter automatically.
+              Hides itself if the tenant only has one branch. */}
+          {role === 'business_owner' && <BranchSelectorBar />}
           <Outlet />
         </div>
       </main>

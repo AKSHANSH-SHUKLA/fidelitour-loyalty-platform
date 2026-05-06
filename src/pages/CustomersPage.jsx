@@ -5,6 +5,7 @@ import api, { ownerAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import LoadingDistraction from '../components/LoadingDistraction';
+import { useBranch } from '../contexts/BranchContext';
 
 // Pre-built segments that power one-click targeting. Server-side fields map to
 // the extended GET /api/owner/customers filters.
@@ -44,6 +45,7 @@ const URL_FILTER_LABELS = {
 export default function CustomersPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { branchId } = useBranch();
   const [allCustomers, setAllCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,11 @@ export default function CustomersPage() {
   const fetchCustomers = async (serverParams = {}) => {
     try {
       setLoading(true);
-      const res = await ownerAPI.getCustomers(serverParams);
+      // Inject the global branch filter — picking a branch on the layout bar
+      // automatically filters the customer list across the platform.
+      const params = { ...serverParams };
+      if (branchId && !params.branch_id) params.branch_id = branchId;
+      const res = await ownerAPI.getCustomers(params);
       setAllCustomers(res.data || []);
     } catch (err) {
       setError(err.message);
@@ -128,14 +134,14 @@ export default function CustomersPage() {
     // The effect below picks up the change and re-fetches.
   };
 
-  // Re-run on EVERY change to the URL search string so dashboard navigations
-  // refresh the filter without a hard reload.
+  // Re-run on EVERY change to the URL search string OR the global branch
+  // selector — both drive what the customer list filters down to.
   useEffect(() => {
     const { params, pill } = readUrlFilters();
     setUrlFilterPill(pill);
     fetchCustomers(params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, branchId]);
 
   // One-shot loaders (saved segments + big-spender def) — only on mount.
   useEffect(() => {

@@ -3,6 +3,7 @@ import api from '../lib/api';
 import { TrendingUp, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { C as C_PS } from './PageShell';
+import { useBranch } from '../contexts/BranchContext';
 
 /**
  * Customer-acquisition-history chart.
@@ -40,6 +41,8 @@ const HistoricalAcquisitionChart = () => {
   const [total, setTotal] = useState(0);
   const [avgPerBucket, setAvgPerBucket] = useState(0);
   const [loading, setLoading] = useState(true);
+  // App-wide branch filter — picking a branch on the layout bar refilters this chart too.
+  const { branchId } = useBranch();
 
   const preset = PRESETS[presetIdx];
 
@@ -50,6 +53,7 @@ const HistoricalAcquisitionChart = () => {
         const params = preset.unit === 'all'
           ? { unit: 'all' }
           : { unit: preset.unit, count: preset.count };
+        if (branchId) params.branch_id = branchId;
         const res = await api.get('/owner/analytics/history/new-customers', { params });
         setData(res.data?.series || []);
         setBucketUnit(res.data?.bucket_unit || preset.unit);
@@ -62,7 +66,7 @@ const HistoricalAcquisitionChart = () => {
       }
     };
     load();
-  }, [presetIdx]);
+  }, [presetIdx, branchId]);
 
   // Friendly label for the "average" KPI based on bucket unit
   const avgLabel = (() => {

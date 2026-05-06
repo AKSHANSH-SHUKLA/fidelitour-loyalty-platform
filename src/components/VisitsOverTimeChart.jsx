@@ -9,6 +9,7 @@ import api from '../lib/api';
 import { Activity, Users, Repeat } from 'lucide-react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { C as C_PS } from './PageShell';
+import { useBranch } from '../contexts/BranchContext';
 
 const PRESETS = [
   { unit: 'days',   count: 7,  label: '7 derniers jours' },
@@ -32,6 +33,7 @@ const VisitsOverTimeChart = () => {
   const [total, setTotal] = useState(0);
   const [avgPerBucket, setAvgPerBucket] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { branchId } = useBranch();
 
   const preset = PRESETS[presetIdx];
 
@@ -42,6 +44,7 @@ const VisitsOverTimeChart = () => {
         const params = preset.unit === 'all'
           ? { unit: 'all' }
           : { unit: preset.unit, count: preset.count };
+        if (branchId) params.branch_id = branchId;
         const res = await api.get('/owner/analytics/history/visits', { params });
         setData(res.data?.series || []);
         setBucketUnit(res.data?.bucket_unit || preset.unit);
@@ -54,7 +57,7 @@ const VisitsOverTimeChart = () => {
       }
     };
     load();
-  }, [presetIdx]);
+  }, [presetIdx, branchId]);
 
   const avgLabel = (() => {
     if (bucketUnit === 'days')   return 'Visites par jour';

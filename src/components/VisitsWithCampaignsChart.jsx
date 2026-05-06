@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { C as C_PS } from './PageShell';
 import TimeRangeSelector from './TimeRangeSelector';
+import { useBranch } from '../contexts/BranchContext';
 
 /**
  * Visits-by-day chart with campaign send markers overlaid.
@@ -39,12 +40,15 @@ const VisitsWithCampaignsChart = () => {
   const [campaignTrackingLoading, setCampaignTrackingLoading] = useState(false);
 
   const days = TimeRangeSelector.toDays(range) ?? 30;
+  const { branchId } = useBranch();
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await api.get('/owner/analytics/history/visits-with-campaigns', { params: { days } });
+        const params = { days };
+        if (branchId) params.branch_id = branchId;
+        const res = await api.get('/owner/analytics/history/visits-with-campaigns', { params });
         setData(res.data || { visit_series: [], campaign_markers: [] });
       } catch (e) {
         console.error('visits-with-campaigns load failed', e);
@@ -53,7 +57,7 @@ const VisitsWithCampaignsChart = () => {
       }
     };
     load();
-  }, [days]);
+  }, [days, branchId]);
 
   // Merge visits + campaign markers into a single dataset Recharts can render.
   // Each row has both a `visits` bar value and (if a campaign was sent that day)
