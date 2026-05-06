@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import api, { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
 import LoadingDistraction from '../components/LoadingDistraction';
@@ -11,6 +12,24 @@ import AutoCampaignsCard from '../components/AutoCampaignsCard';
 import WelcomeBonusCard from '../components/WelcomeBonusCard';
 
 const SettingsPage = () => {
+    const location = useLocation();
+    // Smooth-scroll to a section when arriving via the sidebar dropdown.
+    // Works on first navigation AND on hash changes within the same page.
+    // Uses a small delay so the section's content is mounted before we scroll.
+    useEffect(() => {
+        if (!location.hash) return;
+        const id = location.hash.replace('#', '');
+        const tryScroll = (attempt = 0) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+            if (attempt < 8) setTimeout(() => tryScroll(attempt + 1), 120);
+        };
+        tryScroll();
+    }, [location.hash, location.pathname]);
+
     const [settings, setSettings] = useState({
         name: '',
         address: '',

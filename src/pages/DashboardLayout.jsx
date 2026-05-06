@@ -5,7 +5,7 @@ import BranchSelectorBar from '../components/BranchSelectorBar';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
-  Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History
+  Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History, ChevronDown
 } from 'lucide-react';
 import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
 
@@ -24,6 +24,108 @@ import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
 const isNavActive = (currentPath, target) => {
   if (target === '/dashboard' || target === '/admin') return currentPath === target;
   return currentPath === target || currentPath.startsWith(target + '/');
+};
+
+/* ─── Expandable sidebar Settings entry ───────────────────────────────
+ * Click "Settings" → expand a dropdown of section anchors. Picking any
+ * item navigates straight to /dashboard/settings#settings-{anchor},
+ * which the Settings page scroll-aligns automatically.
+ *
+ * Clicking the parent again collapses the submenu. Auto-opens when the
+ * user is already on /dashboard/settings.
+ * ─────────────────────────────────────────────────────────────────── */
+const SETTINGS_SECTIONS = [
+  { anchor: 'settings-profile',  label: '🏪 Profil de l\'entreprise' },
+  { anchor: 'settings-join',     label: '🔗 Lien d\'inscription' },
+  { anchor: 'settings-geo',      label: '📍 Géolocalisation' },
+  { anchor: 'settings-status',   label: '👥 Statut des clients' },
+  { anchor: 'settings-dayparts', label: '⏰ Périodes de la journée' },
+  { anchor: 'settings-hours',    label: '📅 Horaires & jours fériés' },
+  { anchor: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
+  { anchor: 'settings-welcome',  label: '🎁 Message de bienvenue' },
+  { anchor: 'settings-auto',     label: '🤖 Campagnes automatiques' },
+];
+
+const SettingsNavLink = ({ icon: Icon, currentPath, role }) => {
+  const active = isNavActive(currentPath, '/dashboard/settings');
+  const theme = themeForRole(role);
+  const [open, setOpen] = React.useState(active);
+  // If the user lands ON the settings page later, auto-expand for them.
+  React.useEffect(() => { if (active) setOpen(true); }, [active]);
+
+  const toggle = (e) => {
+    // A bare click on the row toggles the dropdown only — does NOT navigate.
+    // The user can still hit the small "↗" pill to jump to the top of the page.
+    e.preventDefault();
+    setOpen((v) => !v);
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full relative group flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all"
+        style={{
+          color: active ? C.inkDeep : C.inkMute,
+          background: active ? 'rgba(255,255,255,0.6)' : 'transparent',
+          boxShadow: active ? '0 1px 2px rgba(28,25,23,0.04)' : 'none',
+        }}
+      >
+        {active && (
+          <span
+            aria-hidden="true"
+            className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
+            style={{ background: `linear-gradient(180deg, ${theme.from}, ${theme.to})` }}
+          />
+        )}
+        <span
+          className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
+          style={{
+            background: active
+              ? `linear-gradient(135deg, ${theme.from}1A, ${theme.to}1A)`
+              : 'transparent',
+            color: active ? theme.from : C.inkMute,
+            border: active ? `1px solid ${theme.from}33` : '1px solid transparent',
+          }}
+        >
+          <Icon className="w-[18px] h-[18px]" />
+        </span>
+        <span className="truncate flex-1 text-left">Settings</span>
+        <span
+          aria-hidden="true"
+          className="transition-transform shrink-0"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronDown size={14} />
+        </span>
+      </button>
+
+      {open && (
+        <div className="ml-9 mt-1 mb-2 pl-2 space-y-0.5"
+             style={{ borderLeft: `1.5px solid ${theme.from}55` }}>
+          {/* Top-level link to the bare settings page */}
+          <Link
+            to="/dashboard/settings"
+            className="block px-2.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-colors hover:bg-white/70"
+            style={{ color: theme.from }}
+          >
+            ↗ Open Settings page
+          </Link>
+          {SETTINGS_SECTIONS.map((s) => (
+            <Link
+              key={s.anchor}
+              to={`/dashboard/settings#${s.anchor}`}
+              className="block px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors hover:bg-white/70"
+              style={{ color: C.inkSoft }}
+            >
+              {s.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const NavLink = ({ to, icon: Icon, label, currentPath, role }) => {
@@ -159,7 +261,8 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label="Campaigns"     currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label="AI Assistant"  currentPath={currentPath} role={role} />
               <NavLink to="/dashboard/history"       icon={History}      label="History"       currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/settings"      icon={Settings2}    label="Settings"      currentPath={currentPath} role={role} />
+              {/* Settings is expandable — click → dropdown of section anchors */}
+              <SettingsNavLink icon={Settings2} currentPath={currentPath} role={role} />
               <SignOutNavItem onClick={logout} />
             </>
           )}
