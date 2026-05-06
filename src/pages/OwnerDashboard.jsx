@@ -16,8 +16,29 @@ import LoadingDistraction from '../components/LoadingDistraction';
 import { useBranch } from '../contexts/BranchContext';
 import VisitsOverTimeChart from '../components/VisitsOverTimeChart';
 import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
+import ColorfulKpiTile from '../components/ColorfulKpiTile';
+import useTileMetric from '../hooks/useTileMetric';
+import { BadgeCheck, RefreshCcw, UserPlus2, Calendar } from 'lucide-react';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
+
+// Live metric tile — same pattern as Analytics: hook + colorful tile + period picker.
+const LiveMetricTile = ({ icon, title, accent, metric, branchId, initial, sublabel, onClick }) => {
+  const { value, loading, days, period, setPeriod } = useTileMetric({ metric, branchId, initial });
+  return (
+    <ColorfulKpiTile
+      icon={icon}
+      title={title}
+      accent={accent}
+      value={(value ?? 0).toLocaleString()}
+      sublabel={typeof sublabel === 'function' ? sublabel(days, value) : sublabel}
+      loading={loading}
+      onClick={onClick ? () => onClick(days, value) : undefined}
+      period={period}
+      onPeriodChange={setPeriod}
+    />
+  );
+};
 
 const OwnerDashboard = () => {
   const navigate = useNavigate();
@@ -273,99 +294,197 @@ const OwnerDashboard = () => {
         role="business_owner"
       />
 
-      {/* KPI grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <StatCard label="Total Customers"      value={totalCustomers.toLocaleString()} sublabel="Enrolled loyalty members"    icon={Users}      color={C.sky}
-                  onClick={() => navigate('/dashboard/customers')} />
-        <StatCard label="Total Visits"         value={totalVisits.toLocaleString()}    sublabel="All-time recorded visits"    icon={Activity}   color={C.sage} />
-        <StatCard label="Repeat Rate"          value={repeatRate}                       sublabel="Customers who returned"      icon={Repeat}     color={C.ochre} />
-        <StatCard label="Gold Members"         value={goldCustomers}                    sublabel={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of customers`} icon={Award} color={C.amber}
-                  onClick={() => navigate('/dashboard/customers?tier=gold')} />
-        {summary?.loyal_count != null && (
-          <StatCard label="Loyal Customers"
-                    value={summary.loyal_count}
-                    sublabel={`${summary.loyal_threshold ?? 4}+ visits/month — your most reliable regulars`}
-                    icon={Award} color={C.terracotta}
-                    onClick={() => navigate('/dashboard/customers?loyalty_bucket=loyal')} />
-        )}
-        {summary?.regular_count != null && (
-          <StatCard label="Regular Customers"
-                    value={summary.regular_count}
-                    sublabel={`${summary.regular_threshold ?? 2}–${(summary.loyal_threshold ?? 4)-1} visits/month`}
-                    icon={Repeat} color={C.rose}
-                    onClick={() => navigate('/dashboard/customers?loyalty_bucket=regular')} />
-        )}
-        <StatCard label="Avg Visits / Cust."   value={avgVisitsPerCustomer}             sublabel="Higher = stronger loyalty"   icon={TrendingUp} color={C.lavender} />
-        <StatCard label="New This Month"       value={newThisMonth}                     sublabel="Joined in the last 4 weeks"  icon={UserPlus}   color={C.teal}
-                  onClick={() => navigate('/dashboard/customers?created_within_days=30')} />
-        {summary?.wallet_active_count != null && (
-          <StatCard label="Active Cards"
-                    value={summary.wallet_active_count}
-                    sublabel="In Apple/Google Wallet right now"
-                    icon={Smartphone} color={C.sage}
-                    onClick={() => navigate('/dashboard/customers?wallet_state=active')} />
-        )}
-        {summary?.wallet_never_added_count != null && (
-          <StatCard label="Never Added (Inactive)"
-                    value={summary.wallet_never_added_count}
-                    sublabel="Joined but card not yet in wallet"
-                    icon={CreditCard} color={C.ochre}
-                    onClick={() => navigate('/dashboard/customers?wallet_state=never_added')} />
-        )}
-        {summary?.wallet_deleted_count != null && (
-          <StatCard label="Deleted Cards"
-                    value={summary.wallet_deleted_count}
-                    sublabel="Customer removed the card from their wallet"
-                    icon={Trash2} color={C.coral}
-                    onClick={() => navigate('/dashboard/customers?wallet_state=deleted')} />
-        )}
-        {cardsFilled && (
-          <StatCard label="Cards Filled"       value={cardsFilled.total_cards_filled || 0} sublabel="Complete rewards cycles earned" icon={Gift} color={C.sage} />
-        )}
-        {recovered && (
-          <StatCard label="Recovered"          value={`${recovered.count}`}             sublabel={`${recovered.percentage}% came back after a quiet period`} icon={TrendingUp} color={C.teal} />
-        )}
-        <SpotlightCard
-          slides={[
-            topSpender && {
-              label: 'Top Spender',
-              value: topSpender.name,
-              sublabel: `€${topSpender.total_amount_paid} · ${topSpender.total_visits} visits`,
-              icon: Users, color: C.terracotta,
-            },
-            summary?.top_visitor && {
-              label: 'Most Loyal',
-              value: summary.top_visitor.name,
-              sublabel: `${summary.top_visitor.visits} visits · ${summary.top_visitor.tier}`,
-              icon: Activity, color: C.sage,
-            },
-            summary?.birthdays_this_month_count > 0 && {
-              label: 'Birthdays this month',
-              value: summary.birthdays_this_month_count,
-              sublabel: 'Auto-greeting will fire on the day',
-              icon: Award, color: C.rose,
-            },
-            summary?.about_to_lose_count > 0 && {
-              label: 'About to lose',
-              value: summary.about_to_lose_count,
-              sublabel: 'Customers drifting from their rhythm',
-              icon: TrendingUp, color: C.ochre,
-            },
-            cardsFilled?.cards_filled_this_month > 0 && {
-              label: 'Cards filled this month',
-              value: cardsFilled.cards_filled_this_month,
-              sublabel: `${cardsFilled.total_cards_filled || 0} all time`,
-              icon: Gift, color: C.lavender,
-            },
-          ].filter(Boolean)}
-        />
+      {/* ═════════════════════════════════════════════════════════════════
+          LIFETIME ROWS — first two rows, no period picker.
+          ═════════════════════════════════════════════════════════════════ */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: C.inkDeep }}>
+            Vue d'ensemble — depuis le début
+          </h3>
+          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.inkMute }}>
+            Totaux lifetime
+          </span>
+        </div>
+        {/* Lifetime row 1 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <ColorfulKpiTile
+            icon={Users} title="Total Customers" accent={C.sky}
+            value={totalCustomers.toLocaleString()}
+            sublabel="Enrolled loyalty members"
+            onClick={() => navigate('/dashboard/customers')}
+          />
+          <ColorfulKpiTile
+            icon={Activity} title="Total Visits" accent={C.sage}
+            value={totalVisits.toLocaleString()}
+            sublabel="All-time recorded visits"
+          />
+          <ColorfulKpiTile
+            icon={Repeat} title="Repeat Rate" accent={C.ochre}
+            value={repeatRate}
+            sublabel="Customers who returned"
+          />
+          <ColorfulKpiTile
+            icon={Award} title="Gold Members" accent={C.amber}
+            value={goldCustomers.toLocaleString()}
+            sublabel={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of customers`}
+            onClick={() => navigate('/dashboard/customers?tier=gold')}
+          />
+        </div>
+        {/* Lifetime row 2 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          {summary?.wallet_active_count != null && (
+            <ColorfulKpiTile
+              icon={BadgeCheck} title="Active Cards" accent={C.teal}
+              value={summary.wallet_active_count.toLocaleString()}
+              sublabel="In Apple/Google Wallet right now"
+              onClick={() => navigate('/dashboard/customers?wallet_state=active')}
+            />
+          )}
+          {summary?.wallet_never_added_count != null && (
+            <ColorfulKpiTile
+              icon={CreditCard} title="Never Added" accent={C.ochre}
+              value={summary.wallet_never_added_count.toLocaleString()}
+              sublabel="Joined but card not in wallet"
+              onClick={() => navigate('/dashboard/customers?wallet_state=never_added')}
+            />
+          )}
+          {summary?.wallet_deleted_count != null && (
+            <ColorfulKpiTile
+              icon={Trash2} title="Deleted Cards" accent={C.coral}
+              value={summary.wallet_deleted_count.toLocaleString()}
+              sublabel="Customer removed the card"
+              onClick={() => navigate('/dashboard/customers?wallet_state=deleted')}
+            />
+          )}
+          <ColorfulKpiTile
+            icon={TrendingUp} title="Avg Visits / Customer" accent={C.lavender}
+            value={avgVisitsPerCustomer}
+            sublabel="Higher = stronger loyalty"
+          />
+        </div>
+      </div>
 
-        {summary?.total_reviews > 0 && (
-          <StatCard label="Avg Rating"
-                    value={summary.average_rating != null ? `${summary.average_rating}/10` : '—'}
-                    sublabel={`${summary.total_reviews} review${summary.total_reviews === 1 ? '' : 's'} · ${summary.negative_review_rate_pct}% negative`}
-                    icon={Star} color={C.amber} />
-        )}
+      {/* ═════════════════════════════════════════════════════════════════
+          TIME-WINDOWED ROWS — each tile has its own period picker.
+          ═════════════════════════════════════════════════════════════════ */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: C.inkDeep }}>
+            Activité dans la période choisie
+          </h3>
+          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.inkMute }}>
+            Filtre temps par tuile
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <LiveMetricTile
+            icon={UserPlus2} title="Nouveaux clients" accent={C.sky}
+            metric="new_customers" branchId={selectedBranch}
+            initial={{ value: 7, unit: 'day' }}
+            sublabel={(d) => `Inscrits sur les ${d} derniers jours`}
+            onClick={(d) => navigate(`/dashboard/customers?created_within_days=${d}`)}
+          />
+          <LiveMetricTile
+            icon={Award} title="Clients actifs" accent={C.amber}
+            metric="active_customers" branchId={selectedBranch}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Visite dans les ${d} derniers jours`}
+            onClick={(d) => navigate(`/dashboard/customers?active_within_days=${d}`)}
+          />
+          <LiveMetricTile
+            icon={AlertCircle} title="Inactifs" accent={C.terracotta}
+            metric="inactive_customers" branchId={selectedBranch}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Pas vus depuis ${d} jours`}
+            onClick={(d) => navigate(`/dashboard/customers?inactive_days_min=${d}`)}
+          />
+          <LiveMetricTile
+            icon={Clock} title="Sur le point de partir" accent={C.ochre}
+            metric="about_to_lose" branchId={selectedBranch}
+            initial={{ value: 14, unit: 'day' }}
+            sublabel={(d) => `Silencieux ${d}–${d * 2}j`}
+            onClick={(d) => navigate(`/dashboard/customers?inactive_days_min=${d}&inactive_days_max=${d*2}`)}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          <LiveMetricTile
+            icon={CreditCard} title="Cartes complétées" accent={C.sage}
+            metric="cards_filled" branchId={selectedBranch}
+            initial={{ value: 1, unit: 'month' }}
+            sublabel={(d) => `Récompenses débloquées · ${d}j`}
+          />
+          <LiveMetricTile
+            icon={RefreshCcw} title="Clients récupérés" accent={C.teal}
+            metric="recovered" branchId={selectedBranch}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Revenus après ${d}j de silence`}
+          />
+          <LiveMetricTile
+            icon={Gift} title="Récompenses utilisées" accent={C.lavender}
+            metric="rewards_redeemed" branchId={selectedBranch}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Sur ${d} derniers jours`}
+          />
+          <LiveMetricTile
+            icon={Award} title="Loyal" accent={C.terracotta}
+            metric="loyal_customers" branchId={selectedBranch}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `≥ seuil "Loyal" sur ${d}j`}
+            onClick={() => navigate('/dashboard/customers?loyalty_bucket=loyal')}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          <LiveMetricTile
+            icon={Repeat} title="Réguliers" accent={C.rose}
+            metric="regular_customers" branchId={selectedBranch}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `≥ seuil "Régulier" sur ${d}j`}
+            onClick={() => navigate('/dashboard/customers?loyalty_bucket=regular')}
+          />
+          <LiveMetricTile
+            icon={Activity} title="Visites totales" accent={C.sage}
+            metric="total_visits" branchId={selectedBranch}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Visites sur ${d}j`}
+          />
+          <SpotlightCard
+            slides={[
+              topSpender && {
+                label: 'Top Spender',
+                value: topSpender.name,
+                sublabel: `€${topSpender.total_amount_paid} · ${topSpender.total_visits} visits`,
+                icon: Users, color: C.terracotta,
+              },
+              summary?.top_visitor && {
+                label: 'Most Loyal',
+                value: summary.top_visitor.name,
+                sublabel: `${summary.top_visitor.visits} visits · ${summary.top_visitor.tier}`,
+                icon: Activity, color: C.sage,
+              },
+              summary?.birthdays_this_month_count > 0 && {
+                label: 'Birthdays this month',
+                value: summary.birthdays_this_month_count,
+                sublabel: 'Auto-greeting will fire on the day',
+                icon: Award, color: C.rose,
+              },
+            ].filter(Boolean)}
+          />
+          {summary?.total_reviews > 0 ? (
+            <ColorfulKpiTile
+              icon={Star} title="Avg Rating" accent={C.amber}
+              value={summary.average_rating != null ? `${summary.average_rating}/10` : '—'}
+              sublabel={`${summary.total_reviews} review${summary.total_reviews === 1 ? '' : 's'} · ${summary.negative_review_rate_pct}% negative`}
+            />
+          ) : (
+            <ColorfulKpiTile
+              icon={Calendar} title="Anniversaires ce mois" accent={C.rose}
+              value={(summary?.birthdays_this_month_count ?? 0).toLocaleString()}
+              sublabel="Mois en cours"
+              onClick={() => navigate('/dashboard/customers?has_birthday_this_month=true')}
+            />
+          )}
+        </div>
       </div>
 
       {/* Multi-store franchise panel — visible only when the tenant has 2+

@@ -19,6 +19,9 @@ import LoadingDistraction from '../components/LoadingDistraction';
 import { useBranch } from '../contexts/BranchContext';
 import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 import CustomerStatusKPI from '../components/CustomerStatusKPI';
+import ColorfulKpiTile from '../components/ColorfulKpiTile';
+import useTileMetric from '../hooks/useTileMetric';
+import { Trash2, UserPlus2, RefreshCcw, Repeat as RepeatIcon, BadgeCheck } from 'lucide-react';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#7B3F00' };
 const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
@@ -46,6 +49,52 @@ const SendCampaignButton = ({ label = 'Send campaign', onClick, compact = false,
     {label}
   </button>
 );
+
+// ------------------------------------------------------------------
+// LiveMetricTile — fetches its number from /owner/analytics/metric,
+// owns its own period picker, and re-fetches on change.
+// ------------------------------------------------------------------
+const LiveMetricTile = ({
+  icon, title, accent,
+  metric, branchId,
+  initial = { value: 30, unit: 'day' },
+  sublabel,
+  onDrill,
+  disablePicker = false,
+}) => {
+  const { value, loading, days, period, setPeriod } = useTileMetric({ metric, branchId, initial });
+  return (
+    <ColorfulKpiTile
+      icon={icon}
+      title={title}
+      accent={accent}
+      value={(value ?? 0).toLocaleString()}
+      sublabel={typeof sublabel === 'function' ? sublabel(days, value) : sublabel}
+      loading={loading}
+      onClick={onDrill ? () => onDrill(days, value) : undefined}
+      period={disablePicker ? null : period}
+      onPeriodChange={disablePicker ? undefined : setPeriod}
+    />
+  );
+};
+
+// Static variant — value comes from page state, no network, no picker.
+const StaticMetricTile = ({ icon, title, accent, value, sublabel, onDrill }) => (
+  <ColorfulKpiTile
+    icon={icon}
+    title={title}
+    accent={accent}
+    value={(value ?? 0).toLocaleString()}
+    sublabel={typeof sublabel === 'function' ? sublabel(0, value) : sublabel}
+    onClick={onDrill ? () => onDrill(0, value) : undefined}
+  />
+);
+
+// Router — picks live vs. static, so callers stay clean.
+const MetricTile = ({ staticValue, ...rest }) =>
+  staticValue != null
+    ? <StaticMetricTile {...rest} value={staticValue} />
+    : <LiveMetricTile {...rest} />;
 
 // ------------------------------------------------------------------
 // KPI card with optional Send Campaign CTA in top-right corner.
@@ -639,7 +688,13 @@ const AnalyticsPage = () => {
       {/* Configurable customer-status KPIs — live, uses the definition from Settings */}
       <CustomerStatusKPI />
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      {/* Header bar — branch is global (BranchSelectorBar). Period is now per-tile.
+          We only keep the "Nouvelle campagne" CTA + a tiny info chip explaining tiles. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs flex items-center gap-2 text-[#7B3F00] bg-[#FDF8F0] border border-[#E3A86955] rounded-full px-3 py-1.5">
+          <span className="font-bold uppercase tracking-wider">Astuce</span>
+          <span>Les 2 premières lignes sont des chiffres lifetime. Les lignes suivantes ont leur propre filtre de période — choisissez jours / semaines / mois / années.</span>
+        </div>
         <div className="flex items-center gap-3 flex-wrap">
           {branches.length > 0 && (
             <div className="flex items-center gap-2 bg-white border border-[#E7E5E4] rounded-xl px-3 py-2">
@@ -657,43 +712,6 @@ const AnalyticsPage = () => {
               </select>
             </div>
           )}
-          <div className="flex items-center gap-1 bg-white border border-[#E7E5E4] rounded-xl px-2 py-1.5">
-            <Calendar size={14} className="text-[#B85C38] mx-1" />
-            <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider mr-1">Period</label>
-            {[7, 30, 90].map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => { setPeriodDays(d); setPeriodDraft(String(d)); }}
-                className={`text-xs px-2 py-1 rounded-md transition ${
-                  periodDays === d
-                    ? 'bg-[#B85C38] text-white'
-                    : 'text-[#57534E] hover:bg-[#F5F4F0]'
-                }`}
-              >
-                {d}d
-              </button>
-            ))}
-            <input
-              type="number"
-              inputMode="numeric"
-              min="1"
-              max="730"
-              value={periodDraft}
-              onChange={(e) => setPeriodDraft(e.target.value)}
-              onBlur={commitPeriodDraft}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  commitPeriodDraft();
-                  e.currentTarget.blur();
-                }
-              }}
-              className="w-16 text-xs px-2 py-1 border border-[#E7E5E4] rounded-md ml-1"
-              placeholder="days"
-              title="Type a custom number of days and press Enter"
-            />
-          </div>
           <button
             onClick={() => openComposer({ type: 'all' }, 'Message à toute ma base', 'Bonjour {first_name}, une nouveauté à partager chez {business_name}…')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#B85C38] text-white rounded-xl hover:bg-[#9C4E2F] font-medium"
@@ -703,117 +721,147 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
-      {/* ─── ROW 1 — LIFETIME TOTALS (no time filter) ─── */}
+      {/* ═════════════════════════════════════════════════════════════════
+          LIFETIME ROWS — time-proof tiles (no period picker).
+          The first 2 rows give an at-a-glance, all-time picture.
+          ═════════════════════════════════════════════════════════════════ */}
       <div>
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Vue d'ensemble — depuis le début
           </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Totaux historiques</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Totaux lifetime · pas de filtre temps</span>
         </div>
+        {/* Lifetime row 1 — base totals */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KPICard
+          <ColorfulKpiTile
             icon={Users}
             title="Total Customers"
             value={totalCustomers.toLocaleString()}
-            sublabel={`Cliquez pour voir la liste${branchId ? ' (cette boutique)' : ''}`}
+            sublabel={`Toute la base · cliquez pour la liste${branchId ? ' (cette boutique)' : ''}`}
             accent="#B85C38"
             onClick={() => drillCustomers('All customers', {})}
-            segment={{ type: 'all' }}
-            openComposer={openComposer}
-            presetName="Un message pour toi, {first_name}"
-            presetContent="Merci de faire partie de la famille {business_name} ! Une surprise vous attend lors de votre prochain passage."
+            topRight={<SendCampaignButton compact label="Send" onClick={() => openComposer({ type: 'all' }, 'Un message pour toi, {first_name}', 'Merci de faire partie de la famille {business_name} ! Une surprise vous attend lors de votre prochain passage.')} />}
           />
-          <KPICard
+          <ColorfulKpiTile
             icon={Activity}
             title="Total Visits"
             value={totalVisits.toLocaleString()}
-            sublabel="Toutes les visites · cliquez pour le top"
+            sublabel="Toutes les visites enregistrées"
             accent="#4A5D23"
             onClick={() => drillCustomers('Customers with ≥ 1 visit', { min_visits: 1 })}
-            segment={{ type: 'max_visits_n', n: 20 }}
-            openComposer={openComposer}
-            presetName="Merci pour vos {visits} visites 🙏"
-            presetContent="Vos {visits} visites vous rendent VIP, {first_name}. Une attention spéciale vous attend chez {business_name}."
           />
-          <KPICard
+          <ColorfulKpiTile
             icon={TrendingUp}
             title="Repeat Rate"
             value={`${repeatRate.toFixed(1)}%`}
             sublabel="Clients revenus au moins 2 fois"
             accent="#E3A869"
             onClick={() => drillCustomers('Repeat customers (≥ 2 visits)', { min_visits: 2 })}
-            segment={{ type: 'inactive_days', value: 30 }}
-            openComposer={openComposer}
-            presetName="On vous a manqué, {first_name}"
-            presetContent="Ça fait un moment… Revenez cette semaine chez {business_name} pour une offre spéciale."
           />
-          <KPICard
+          <ColorfulKpiTile
             icon={Smartphone}
             title="Wallet Passes"
             value={walletPasses.toLocaleString()}
-            sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% des clients · cliquez`}
+            sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% des clients`}
             accent="#7B3F00"
             onClick={() => drillCustomers('Wallet pass holders', { has_wallet_pass: true })}
-            segment={{ type: 'all' }}
-            openComposer={openComposer}
-            presetName="Ajoutez votre carte au wallet"
-            presetContent="{first_name}, gardez {business_name} à portée de main. Ajoutez votre carte à Apple/Google Wallet."
+          />
+        </section>
+
+        {/* Lifetime row 2 — wallet-card states + VIP + birthdays */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          <ColorfulKpiTile
+            icon={BadgeCheck}
+            title="Active Cards"
+            value={(summary?.wallet_active_count ?? 0).toLocaleString()}
+            sublabel="Dans Apple/Google Wallet"
+            accent="#3C9D9B"
+            onClick={() => drillCustomers('Active wallet cards', { wallet_state: 'active' })}
+          />
+          <ColorfulKpiTile
+            icon={CreditCard}
+            title="Never Added"
+            value={(summary?.wallet_never_added_count ?? 0).toLocaleString()}
+            sublabel="Inscrits, mais carte non ajoutée"
+            accent="#D4A574"
+            onClick={() => drillCustomers('Never added to wallet', { wallet_state: 'never_added' })}
+          />
+          <ColorfulKpiTile
+            icon={Trash2}
+            title="Deleted Cards"
+            value={(summary?.wallet_deleted_count ?? 0).toLocaleString()}
+            sublabel="Carte retirée du wallet"
+            accent="#E8917C"
+            onClick={() => drillCustomers('Deleted wallet cards', { wallet_state: 'deleted' })}
+          />
+          <ColorfulKpiTile
+            icon={Award}
+            title="VIP Customers"
+            value={vipCount.toLocaleString()}
+            sublabel="Top tier — 40+ visites ou panier €60+"
+            accent="#7B3F00"
+            onClick={() => drillCustomers('VIP customers', { tier: 'vip' })}
           />
         </section>
       </div>
 
-      {/* ─── ROW 2 — TODAY / THIS-WEEK / THIS-MONTH (windowed) ─── */}
+      {/* ═════════════════════════════════════════════════════════════════
+          TIME-WINDOWED ROWS — each tile owns its own period picker.
+          ═════════════════════════════════════════════════════════════════ */}
       <div>
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Activité récente
+            Activité dans la période choisie
           </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Cette semaine / ce mois</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Chaque tuile a son propre filtre temps</span>
         </div>
+
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KPICard
-            icon={Calendar}
-            title="Nouveaux cette semaine"
-            value={newThisWeek.toLocaleString()}
-            sublabel="Inscrits sur les 7 derniers jours"
-            accent="#5B8DEF"
-            onClick={() => drillCustomers('Nouveaux clients (7 derniers jours)', { created_within_days: 7 })}
-            segment={{ type: 'one_visit_only' }}
-            openComposer={openComposer}
-            presetName="Bienvenue chez {business_name}, {first_name} !"
-            presetContent="Pour votre 2e visite, une surprise vous attend. Il vous reste {points_to_next_reward} points pour votre 1re récompense."
+          <MetricTile
+            icon={UserPlus2} title="Nouveaux clients" accent="#5B8DEF"
+            metric="new_customers" branchId={branchId}
+            initial={{ value: 7, unit: 'day' }}
+            sublabel={(d) => `Inscrits sur les ${d} derniers jours`}
+            onDrill={(d) => drillCustomers(`Nouveaux clients (${d}j)`, { created_within_days: d })}
           />
-          <KPICard
-            icon={Award}
-            title="Clients actifs"
-            value={activeCustomers.toLocaleString()}
-            sublabel="Venus dans les 30 derniers jours"
-            accent="#E3A869"
-            onClick={() => drillCustomers('Clients actifs (30 derniers jours)', { active_30d: true })}
-            segment={{ type: 'tier', value: 'gold' }}
-            openComposer={openComposer}
-            presetName="Nos meilleurs clients ont droit à…"
-            presetContent="{first_name}, parce que vous êtes {tier}, voici un avantage exclusif chez {business_name}."
+          <MetricTile
+            icon={Award} title="Clients actifs" accent="#E3A869"
+            metric="active_customers" branchId={branchId}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Visite dans les ${d} derniers jours`}
+            onDrill={(d) => drillCustomers(`Clients actifs (${d}j)`, { active_within_days: d })}
           />
-          <KPICard
-            icon={CreditCard}
-            title="Cartes complétées"
-            value={cardsFilledTotal.toLocaleString()}
-            sublabel={`${cardsFilledThisMonth} ce mois-ci · cliquez`}
-            accent="#4A5D23"
-            onClick={() => drillCustomers('Clients ayant rempli au moins une carte', { cards_filled: true })}
-            segment={{ type: 'tier', value: 'gold' }}
-            openComposer={openComposer}
-            presetName="Bravo {first_name} — vous êtes {tier} !"
-            presetContent="Vous avez rempli votre carte. Une récompense exclusive {business_name} vous attend."
+          <MetricTile
+            icon={AlertCircle} title="Inactifs" accent="#B85C38"
+            metric="inactive_customers" branchId={branchId}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Pas vus depuis ${d} jours · à reconquérir`}
+            onDrill={(d) => drillCustomers(`Inactifs ≥ ${d}j`, { inactive_days_min: d })}
           />
-          <KPICard
-            icon={Gift}
-            title="Clients récupérés"
-            value={(recovered?.count ?? summary?.recovered_count ?? 0).toLocaleString()}
-            sublabel={`${recovered?.percentage ?? summary?.recovered_pct ?? 0}% de votre base · cliquez`}
-            onClick={() =>
+          <MetricTile
+            icon={Clock} title="Sur le point de partir" accent="#D4A574"
+            metric="about_to_lose" branchId={branchId}
+            initial={{ value: 14, unit: 'day' }}
+            sublabel={(d) => `Silencieux depuis ${d}–${d * 2} jours`}
+            onDrill={(d) => drillCustomers(`Sur le point de partir (${d}–${d * 2}j)`, { inactive_days_min: d, inactive_days_max: d * 2 })}
+          />
+        </section>
+
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          <MetricTile
+            icon={CreditCard} title="Cartes complétées" accent="#4A5D23"
+            metric="cards_filled" branchId={branchId}
+            initial={{ value: 1, unit: 'month' }}
+            sublabel={(d) => `Récompenses débloquées · ${d}j`}
+            onDrill={() => drillCustomers('Clients ayant rempli une carte', { cards_filled: true })}
+          />
+          <MetricTile
+            icon={RefreshCcw} title="Clients récupérés" accent="#B85C38"
+            metric="recovered" branchId={branchId}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Revenus après ${d}j de silence`}
+            onDrill={() =>
               setDrill({
                 title: 'Clients récupérés',
                 rows: recovered?.customers || [],
@@ -826,174 +874,17 @@ const AnalyticsPage = () => {
                 ],
               })
             }
-            accent="#B85C38"
-            segment={{ type: 'recovered', inactive_days: recoveryInactiveDays, window_days: recoveryWindowDays }}
-            openComposer={openComposer}
-            presetName="Heureux de vous revoir, {first_name} !"
-            presetContent="Pour votre retour chez {business_name}, un petit bonus vous attend. {points_to_next_reward} points vous séparent de votre récompense."
           />
-        </section>
-      </div>
-
-      {/* Row 1b — Retention health: first-time today, inactive (custom), about-to-lose, cards filled today */}
-      <section
-        className="rounded-xl p-5 space-y-3 relative overflow-hidden"
-        style={{
-          background: `radial-gradient(circle at 100% 0%, #FCE3DC 0%, transparent 50%), radial-gradient(circle at 0% 100%, #FBE0E8 0%, transparent 60%), white`,
-          border: '1px solid #B85C3833',
-          boxShadow: '0 6px 18px -10px #B85C3855',
-        }}
-      >
-        <div className="relative">
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#B85C38' }}>
-            Retention health
-          </h3>
-          <p className="text-xs" style={{ color: '#7B3F00' }}>
-            First-time signups today, inactive customers (your own threshold), at-risk customers about to churn, and card completions today. Click any card to see the customer list.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KPICard
-            icon={Users}
-            title="First-time cards today"
-            value={newToday.toLocaleString()}
-            sublabel="Signed up today · click to view"
-            accent="#4A5D23"
-            onClick={() => drillCustomers('First-time cards today', { created_within_days: 1 })}
-            segment={{ type: 'one_visit_only' }}
-            openComposer={openComposer}
-            presetName="Bienvenue chez {business_name}, {first_name} !"
-            presetContent="Merci d'avoir rejoint {business_name}. Pour votre 2e visite, une attention spéciale vous attend."
-          />
-          {/* Inactive card with its OWN time-period chip selector */}
-          <div className="relative">
-            <KPICard
-              icon={AlertCircle}
-              title={`Inactive ≥ ${inactiveThreshold}d`}
-              value={inactiveCount.toLocaleString()}
-              sublabel={`${inactivePct}% of base · click to view & win back`}
-              accent="#B85C38"
-              onClick={() =>
-                drillCustomers(
-                  `Inactive ≥ ${inactiveThreshold} days`,
-                  { inactive_days_min: inactiveThreshold }
-                )
-              }
-              segment={{ type: 'inactive_days', value: inactiveThreshold }}
-              openComposer={openComposer}
-              presetName="On vous a manqué, {first_name}"
-              presetContent={`Ça fait plus de ${inactiveThreshold} jours… une offre flash vous attend chez {business_name}.`}
-            />
-            <div className="mt-2 flex flex-wrap items-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#7B3F00]">Seuil :</span>
-              {[7, 14, 21, 30, 60, 90].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setInactiveThreshold(d); setInactiveDraft(String(d)); }}
-                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold transition ${
-                    inactiveThreshold === d
-                      ? 'bg-[#B85C38] text-white'
-                      : 'bg-white text-[#57534E] border border-[#E7E5E4] hover:border-[#B85C38]'
-                  }`}
-                >
-                  {d}j
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* About-to-lose card with its OWN time-period range selector */}
-          <div className="relative">
-            <KPICard
-              icon={Clock}
-              title={`About to lose (${aboutToLoseRange.min}–${aboutToLoseRange.max}d)`}
-              value={aboutToLoseCount.toLocaleString()}
-              sublabel={`${aboutToLosePct}% of base · at risk of churning`}
-              accent="#E3A869"
-              onClick={() =>
-                drillCustomers(`About to lose (${aboutToLoseRange.min}–${aboutToLoseRange.max} days since last visit)`, {
-                  inactive_days_min: aboutToLoseRange.min,
-                  inactive_days_max: aboutToLoseRange.max,
-                })
-              }
-              segment={{ type: 'inactive_days', value: aboutToLoseRange.min }}
-              openComposer={openComposer}
-              presetName="Un petit rappel, {first_name}"
-              presetContent="Ça fait quelques semaines… {business_name} vous attend avec une surprise."
-            />
-            <div className="mt-2 flex flex-wrap items-center gap-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#7B3F00]">Plage :</span>
-              {[
-                { min: 7,  max: 13, label: '7–13j' },
-                { min: 14, max: 29, label: '14–29j' },
-                { min: 30, max: 59, label: '30–59j' },
-                { min: 60, max: 89, label: '60–89j' },
-                { min: 14, max: 89, label: '14–89j' },
-              ].map((r, i) => {
-                const active = aboutToLoseRange.min === r.min && aboutToLoseRange.max === r.max;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setAboutToLoseRange({ min: r.min, max: r.max }); }}
-                    className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold transition ${
-                      active
-                        ? 'bg-[#E3A869] text-white'
-                        : 'bg-white text-[#57534E] border border-[#E7E5E4] hover:border-[#E3A869]'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <KPICard
-            icon={CreditCard}
-            title="Cards completed today"
-            value={cardsFilledToday.toLocaleString()}
-            sublabel="Card completions recorded today"
-            accent="#7B3F00"
-            onClick={() => drillCustomers('Customers with at least one completed card', { cards_filled: true })}
-            segment={{ type: 'tier', value: 'gold' }}
-            openComposer={openComposer}
-            presetName="Bravo {first_name} — récompense débloquée !"
-            presetContent="Vous venez de remplir votre carte chez {business_name}. Votre récompense vous attend."
-          />
-        </div>
-      </section>
-
-      {/* Row 1c — Rewards & celebrations: redemptions + birthdays + VIPs */}
-      <section
-        className="rounded-xl p-5 space-y-3 relative overflow-hidden"
-        style={{
-          background: `radial-gradient(circle at 100% 0%, #FDF1DC 0%, transparent 55%), radial-gradient(circle at 0% 100%, #FEF9E7 0%, transparent 60%), white`,
-          border: '1px solid #E3A86955',
-          boxShadow: '0 6px 18px -10px #E3A86955',
-        }}
-      >
-        <div className="relative">
-          <h3 className="text-lg font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#7B3F00' }}>
-            Rewards & celebrations
-          </h3>
-          <p className="text-xs" style={{ color: '#7B3F00' }}>
-            Real-time redemption counts (staff-logged), birthdays coming up this month, and your new VIP tier.
-            Click any card to drill into the customer list.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KPICard
-            icon={Gift}
-            title="Rewards redeemed today"
-            value={rewardsRedeemedToday.toLocaleString()}
-            sublabel={`${rewardsRedeemedMonth} this month · click to view history`}
-            accent="#4A5D23"
-            onClick={async () => {
+          <MetricTile
+            icon={Gift} title="Récompenses utilisées" accent="#9B7FB8"
+            metric="rewards_redeemed" branchId={branchId}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Récompenses sur ${d} jours`}
+            onDrill={async (d) => {
               try {
-                const res = await ownerAPI.listRedeemedRewards(params({ days: 30 }));
+                const res = await ownerAPI.listRedeemedRewards({ ...(branchId ? { branch_id: branchId } : {}), days: d });
                 setDrill({
-                  title: 'Rewards redeemed (last 30 days)',
+                  title: `Récompenses utilisées (${d}j)`,
                   rows: res.data?.redemptions || [],
                   columns: [
                     { key: 'customer_name', label: 'Customer' },
@@ -1003,65 +894,52 @@ const AnalyticsPage = () => {
                     { key: 'redeemed_at', label: 'Redeemed', render: (v) => v ? new Date(v).toLocaleString() : '—' },
                   ],
                 });
-              } catch (e) { alert('Failed to load redemptions: ' + (e?.response?.data?.detail || e.message)); }
-            }}
-            segment={{ type: 'all' }}
-            openComposer={openComposer}
-            presetName="Merci d'être fidèle, {first_name}"
-            presetContent="Un grand merci pour votre fidélité chez {business_name}. Un petit bonus vous attend à votre prochaine visite."
-          />
-          <KPICard
-            icon={Calendar}
-            title="Birthdays this month"
-            value={birthdaysThisMonth.toLocaleString()}
-            sublabel="Customers celebrating · click to view & message them"
-            accent="#E3A869"
-            onClick={() => drillCustomers('Birthdays this month', { has_birthday_this_month: true })}
-            segment={{ type: 'birthday_month', value: new Date().toISOString().slice(5, 7) }}
-            openComposer={openComposer}
-            presetName="Joyeux anniversaire, {first_name} ! 🎂"
-            presetContent="Toute l'équipe {business_name} vous souhaite un joyeux anniversaire. Venez le fêter avec nous — une surprise vous attend !"
-          />
-          <KPICard
-            icon={Award}
-            title="VIP customers"
-            value={vipCount.toLocaleString()}
-            sublabel={`Top tier — 40+ visits or avg €60+ ticket`}
-            accent="#7B3F00"
-            onClick={() => drillCustomers('VIP customers', { tier: 'vip' })}
-            segment={{ type: 'tier', value: 'vip' }}
-            openComposer={openComposer}
-            presetName="Pour nos VIPs, {first_name}"
-            presetContent="En tant que membre VIP de {business_name}, un avantage exclusif vous attend lors de votre prochaine visite."
-          />
-          <KPICard
-            icon={Gift}
-            title="Rewards redeemed (month)"
-            value={rewardsRedeemedMonth.toLocaleString()}
-            sublabel="Total redemptions this calendar month"
-            accent="#B85C38"
-            onClick={async () => {
-              try {
-                const res = await ownerAPI.listRedeemedRewards(params({ days: 31 }));
-                setDrill({
-                  title: 'Rewards redeemed — this month',
-                  rows: res.data?.redemptions || [],
-                  columns: [
-                    { key: 'customer_name', label: 'Customer' },
-                    { key: 'reward_name', label: 'Reward' },
-                    { key: 'branch_id', label: 'Branch' },
-                    { key: 'redeemed_at', label: 'Redeemed', render: (v) => v ? new Date(v).toLocaleString() : '—' },
-                  ],
-                });
               } catch (e) { alert('Failed: ' + (e?.response?.data?.detail || e.message)); }
             }}
-            segment={{ type: 'all' }}
-            openComposer={openComposer}
-            presetName="Merci d'avoir utilisé votre récompense"
-            presetContent="Nous espérons que votre récompense vous a plu ! Votre prochaine carte est déjà lancée chez {business_name}."
           />
-        </div>
-      </section>
+          <MetricTile
+            icon={Calendar} title="Premières visites" accent="#3C9D9B"
+            metric="first_time_today" branchId={branchId}
+            initial={{ value: 1, unit: 'day' }}
+            sublabel={(d) => `Inscrits sur les ${d} derniers jours`}
+            onDrill={(d) => drillCustomers(`Premières inscriptions (${d}j)`, { created_within_days: d })}
+          />
+        </section>
+
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          <MetricTile
+            icon={Trophy} title="Loyal" accent="#7B3F00"
+            metric="loyal_customers" branchId={branchId}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `≥ seuil "Loyal" sur ${d}j`}
+            onDrill={() => drillCustomers('Loyal customers', { loyalty_bucket: 'loyal' })}
+          />
+          <MetricTile
+            icon={RepeatIcon} title="Réguliers" accent="#E8917C"
+            metric="regular_customers" branchId={branchId}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `≥ seuil "Régulier" sur ${d}j`}
+            onDrill={() => drillCustomers('Regular customers', { loyalty_bucket: 'regular' })}
+          />
+          <MetricTile
+            icon={Activity} title="Visites totales" accent="#4A5D23"
+            metric="total_visits" branchId={branchId}
+            initial={{ value: 30, unit: 'day' }}
+            sublabel={(d) => `Visites enregistrées sur ${d}j`}
+            onDrill={(d) => drillCustomers(`Customers visited last ${d}d`, { active_within_days: d })}
+          />
+          <MetricTile
+            icon={Calendar} title="Anniversaires ce mois" accent="#E3A869"
+            metric="birthdays_this_month_static"
+            branchId={branchId}
+            staticValue={birthdaysThisMonth}
+            initial={{ value: 1, unit: 'month' }}
+            sublabel={() => 'Mois en cours · pas filtrable'}
+            disablePicker
+            onDrill={() => drillCustomers('Birthdays this month', { has_birthday_this_month: true })}
+          />
+        </section>
+      </div>
 
       {/* Row 2 — visits over time + new customers, BOTH with day/week/month/year selectors */}
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">

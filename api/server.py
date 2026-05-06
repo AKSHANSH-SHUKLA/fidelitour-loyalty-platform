@@ -4500,6 +4500,157 @@ def get_analytics_summary(
         "reviews_last_30d": reviews_last_30,
     }
 
+
+@app.get("/api/owner/analytics/metric")
+def get_analytics_single_metric(
+    metric: str = Query(..., description="One of: new_customers, active_customers, inactive_customers, about_to_lose, cards_filled, recovered, rewards_redeemed, first_time_today, loyal_customers, regular_customers"),
+    days: int = Query(30, ge=1, le=3650, description="Window size in days (interpreted relative to 'now' for most metrics)"),
+    branch_id: Optional[str] = Query(None),
+    token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
+):
+    """
+    Single-metric endpoint for the new per-tile period pickers.
+
+    Each tile on the dashboard / analytics page can pick its own window
+    (X days/weeks/months/years). Rather than re-computing the entire
+    analytics summary for every tile, we serve just one number here.
+
+    All metrics scope to the tenant + (optional) branch.
+    """
+    t_id = token_data.tenant_id
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=int(days))
+
+    # Customer + visit scoping (branch-aware via the existing helpers)
+    cust_q = _branch_customer_filter(t_id, branch_id)
+    visit_q = {"tenant_id": t_id}
+    if branch_id:
+        visit_q["branch_id"] = branch_id
+
+    metric = (metric or "").strip().lower()
+    value = 0
+    extra: Dict[str, Any] = {}
+
+    if metric == "new_customers":
+        # Customers created within the window
+        value = db.customers.count_documents({**cust_q, "created_at": {"$gte": cutoff}})
+
+    elif metric == "active_customers":
+        # Customers whose last_visit_date is within the window
+        value = db.customers.count_documents({**cust_q, "last_visit_date": {"$gte": cutoff}})
+
+    elif metric == "inactive_customers":
+        # Customers who exist, have visited at least once, last visit older than window
+        value = db.customers.count_documents({
+            **cust_q,
+            "last_visit_date": {"$lt": cutoff, "$ne": None},
+        })
+
+    elif metric == "about_to_lose":
+        # Last visit between (days*2 → days) ago — i.e. 1× to 2× window since last visit.
+        # If days=14, "about to lose" = 14..28 days silent. Tunable simply via window.
+        outer = now - timedelta(days=int(days) * 2)
+        value = db.customers.count_documents({
+            **cust_q,
+            "last_visit_date": {"$lt": cutoff, "$gte": outer},
+        })
+        extra = {"window_min_days": int(days), "window_max_days": int(days) * 2}
+
+    elif metric == "first_time_today":
+        # Customers created since (now - days)
+        value = db.customers.count_documents({**cust_q, "created_at": {"$gte": cutoff}})
+
+    elif metric == "cards_filled":
+        # Visits in window divided by visits-per-card. Cheap aggregate.
+        tpl = db.card_templates.find_one({"tenant_id": t_id}) or {}
+        reward_threshold = int(tpl.get("reward_threshold_stamps", 10) or 10)
+        visits_per_stamp = int(tpl.get("visits_per_stamp", 1) or 1)
+        visits_needed = max(reward_threshold * visits_per_stamp, 1)
+        try:
+            visits_in_window = db.visits.count_documents({**visit_q, "visit_time": {"$gte": cutoff}})
+        except Exception:
+            visits_in_window = 0
+        value = visits_in_window // visits_needed
+        extra = {"visits_in_window": visits_in_window, "visits_per_card": visits_needed}
+
+    elif metric == "recovered":
+        # Customers who returned in window after being silent for at least the same window.
+        recent_returns_match = dict(visit_q, visit_time={"$gte": cutoff})
+        recent_ids = [
+            row["_id"] for row in db.visits.aggregate([
+                {"$match": recent_returns_match},
+                {"$group": {"_id": "$customer_id"}},
+            ])
+        ]
+        if recent_ids:
+            silent_cutoff = now - timedelta(days=max(int(days), 30))
+            value = db.customers.count_documents({
+                **cust_q,
+                "id": {"$in": recent_ids},
+                "last_visit_date": {"$lt": silent_cutoff},
+            })
+        else:
+            value = 0
+
+    elif metric == "rewards_redeemed":
+        reward_q = {"tenant_id": t_id}
+        if branch_id:
+            reward_q["branch_id"] = branch_id
+        try:
+            value = db.rewards_redeemed.count_documents({**reward_q, "redeemed_at": {"$gte": cutoff}})
+        except Exception:
+            value = 0
+
+    elif metric in ("loyal_customers", "regular_customers"):
+        # Visits-per-month rate computed over the chosen window. We compute the
+        # rate for every customer based on visits in `days` and project to /month.
+        try:
+            sc = db.customer_status_config.find_one({"tenant_id": t_id}) or {}
+        except Exception:
+            sc = {}
+        loyal_min = int(sc.get("loyal_visits_per_month") or 4)
+        regular_min = int(sc.get("regular_visits_per_month") or 2)
+
+        # Aggregate visits in the window per customer
+        rows = list(db.visits.aggregate([
+            {"$match": {**visit_q, "visit_time": {"$gte": cutoff}}},
+            {"$group": {"_id": "$customer_id", "n": {"$sum": 1}}},
+        ]))
+        # Multiplier to scale window-visits to a per-month rate.
+        scale = 30.0 / max(int(days), 1)
+        loyal = 0
+        regular = 0
+        for r in rows:
+            rate = (int(r.get("n") or 0)) * scale
+            if rate >= loyal_min:
+                loyal += 1
+            elif rate >= regular_min:
+                regular += 1
+        value = loyal if metric == "loyal_customers" else regular
+        extra = {
+            "loyal_threshold_visits_per_month": loyal_min,
+            "regular_threshold_visits_per_month": regular_min,
+            "window_days": int(days),
+        }
+
+    elif metric == "total_visits":
+        # Visit count in the window — useful for a "visits last N days" tile.
+        try:
+            value = db.visits.count_documents({**visit_q, "visit_time": {"$gte": cutoff}})
+        except Exception:
+            value = 0
+
+    elif metric == "total_customers":
+        # Net customer base inside window (created on/before now-cutoff is irrelevant —
+        # this metric returns the cumulative count). Time-proof view.
+        value = db.customers.count_documents(cust_q)
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown metric: {metric}")
+
+    return {"metric": metric, "value": int(value), "days": int(days), **extra}
+
+
 @app.post("/api/owner/branches")
 def create_branch(
     req: Dict[str, Any],
