@@ -64,6 +64,36 @@ const VisitsOverTimeChart = () => {
     return 'Visites par période';
   })();
 
+  // Smart label formatting for the X-axis — shortens long bucket labels so they
+  // don't pile up on top of each other.
+  const formatTick = (raw) => {
+    if (!raw) return '';
+    const s = String(raw);
+    if (bucketUnit === 'weeks') {
+      // "2026-W12" → "W12"
+      const m = s.match(/W(\d+)$/i);
+      return m ? `W${m[1]}` : s;
+    }
+    if (bucketUnit === 'months') {
+      // "2026-05" → "May" (no year, since the period header already shows the range)
+      const [y, mm] = s.split('-');
+      const idx = parseInt(mm, 10) - 1;
+      const names = ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
+      return names[idx] || s;
+    }
+    if (bucketUnit === 'days') {
+      // "2026-05-12" → "05/12"
+      const [, mm, dd] = s.split('-');
+      return mm && dd ? `${dd}/${mm}` : s;
+    }
+    if (bucketUnit === 'years') return s;
+    return s;
+  };
+
+  // How many ticks to show. Recharts' `interval` skips every Nth bar's LABEL
+  // (the bars themselves still render). Aim for max 12 visible labels.
+  const tickInterval = data.length <= 12 ? 0 : Math.ceil(data.length / 12) - 1;
+
   // Total unique visitors across the range (sum of bucket-level uniques is approximate, but useful)
   const uniqueVisitorsTotal = data.reduce((s, b) => s + (b.unique_visitors || 0), 0);
 
@@ -115,13 +145,24 @@ const VisitsOverTimeChart = () => {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data}>
+            <ComposedChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis dataKey="label" stroke="#57534E" fontSize={11}
-                interval={data.length > 30 ? Math.floor(data.length / 12) : 0} />
-              <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} />
-              <Tooltip />
-              <Legend />
+              <XAxis
+                dataKey="label"
+                stroke="#57534E"
+                fontSize={10}
+                interval={tickInterval}
+                tickFormatter={formatTick}
+                angle={-35}
+                textAnchor="end"
+                height={50}
+                tick={{ dy: 4 }}
+              />
+              <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} width={36} />
+              <Tooltip
+                labelFormatter={(label) => label}
+              />
+              <Legend wrapperStyle={{ paddingTop: 10 }} />
               <Bar  name="Visites totales"  dataKey="count"            fill={C_PS.terracotta} radius={[6, 6, 0, 0]} />
               <Line name="Clients uniques"  dataKey="unique_visitors"  stroke={C_PS.sage}     strokeWidth={2.5} dot={{ r: 3 }} />
             </ComposedChart>

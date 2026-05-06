@@ -73,6 +73,28 @@ const HistoricalAcquisitionChart = () => {
     return 'Moyenne par période';
   })();
 
+  // Compact X-axis labels — full ISO labels overlap when there are 26+ buckets.
+  const formatTick = (raw) => {
+    if (!raw) return '';
+    const s = String(raw);
+    if (bucketUnit === 'weeks') {
+      const m = s.match(/W(\d+)$/i);
+      return m ? `W${m[1]}` : s;
+    }
+    if (bucketUnit === 'months') {
+      const [, mm] = s.split('-');
+      const idx = parseInt(mm, 10) - 1;
+      const names = ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
+      return names[idx] || s;
+    }
+    if (bucketUnit === 'days') {
+      const [, mm, dd] = s.split('-');
+      return mm && dd ? `${dd}/${mm}` : s;
+    }
+    return s;
+  };
+  const tickInterval = data.length <= 12 ? 0 : Math.ceil(data.length / 12) - 1;
+
   return (
     <div className="rounded-xl bg-white p-6 mt-6" style={{ border: `1px solid ${C_PS.hairline}` }}>
       <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
@@ -137,11 +159,20 @@ const HistoricalAcquisitionChart = () => {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
+            <BarChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis dataKey="label" stroke="#57534E" fontSize={11}
-                interval={data.length > 30 ? Math.floor(data.length / 12) : 0} />
-              <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} />
+              <XAxis
+                dataKey="label"
+                stroke="#57534E"
+                fontSize={10}
+                interval={tickInterval}
+                tickFormatter={formatTick}
+                angle={-35}
+                textAnchor="end"
+                height={50}
+                tick={{ dy: 4 }}
+              />
+              <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} width={36} />
               <Tooltip />
               <Bar dataKey="count" fill={C_PS.sage} radius={[6, 6, 0, 0]} />
             </BarChart>
