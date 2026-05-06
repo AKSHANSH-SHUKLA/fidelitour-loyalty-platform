@@ -2291,7 +2291,18 @@ def list_customers(
     elif source:
         query["acquisition_source"] = source
     if branch_id:
-        query["branch_id"] = branch_id
+        # Multi-store: a customer "belongs to" a branch if they've ever visited
+        # there — not just because their first scan happened there.
+        ids_at_branch = _customer_ids_who_visited_branch(token_data.tenant_id, branch_id)
+        if ids_at_branch:
+            existing_ids = query.get("id")
+            if isinstance(existing_ids, dict) and "$in" in existing_ids:
+                # Intersect with any pre-existing id filter
+                query["id"] = {"$in": [i for i in existing_ids["$in"] if i in set(ids_at_branch)]}
+            else:
+                query["id"] = {"$in": ids_at_branch}
+        else:
+            query["id"] = {"$in": []}     # no visits at this branch yet → empty list
     # Birthday in the current calendar month (owner-facing celebration segment)
     if has_birthday_this_month is True:
         query["birthday"] = {"$regex": f"^{datetime.now(timezone.utc).strftime('%m')}"}
@@ -3023,6 +3034,47 @@ def send_card_notification(
         "title": req.title,
     }
 
+def _customer_ids_who_visited_branch(tenant_id: str, branch_id: str) -> List[str]:
+    """Returns every customer_id who has at least one visit at `branch_id`.
+
+    This is the multi-store sharing primitive: a salon with 3 branches has ONE
+    customer record per person (tenant-wide), but each branch wants to see
+    'their' customers. A customer is 'a customer of branch B' if they've
+    EVER visited branch B — not just because they happened to first scan there.
+
+    Used by analytics endpoints / customer-list / map / alerts when filtering
+    by a specific branch.
+    """
+    if not branch_id:
+        return []
+    cursor = db.visits.find(
+        {"tenant_id": tenant_id, "branch_id": branch_id},
+        {"customer_id": 1, "_id": 0},
+    )
+    seen = set()
+    for v in cursor:
+        cid = v.get("customer_id")
+        if cid:
+            seen.add(cid)
+    return list(seen)
+
+
+def _branch_customer_filter(tenant_id: str, branch_id: Optional[str]) -> dict:
+    """Build a customer-collection MongoDB filter that respects 'visited at
+    least once at this branch' semantics. Falls back to plain tenant filter
+    when no branch is selected.
+    """
+    base = {"tenant_id": tenant_id}
+    if not branch_id:
+        return base
+    ids = _customer_ids_who_visited_branch(tenant_id, branch_id)
+    if not ids:
+        # No visits yet at this branch → return a filter that matches nothing
+        # (so endpoints return empty lists rather than the whole tenant).
+        return {**base, "id": {"$in": []}}
+    return {**base, "id": {"$in": ids}}
+
+
 def _ensure_branch_assignments(tid: str) -> None:
     """Make sure every customer and visit for this tenant has a valid `branch_id`.
 
@@ -3127,12 +3179,13 @@ def owner_analytics(
     # the "By branch" filter shows real, non-overlapping slices instead of 0.
     _ensure_branch_assignments(t_id)
 
-    # Branch-aware base filter. When branch_id is provided, scope customers
-    # and visits to that branch.
-    customer_filter = {"tenant_id": t_id}
+    # Branch-aware base filter. When branch_id is provided:
+    #  - VISITS scope to that branch (one visit = one branch)
+    #  - CUSTOMERS scope to "anyone who has ever visited that branch"
+    #    (visit-derived membership rather than fixed home_branch).
+    customer_filter = _branch_customer_filter(t_id, branch_id)
     visit_filter = {"tenant_id": t_id}
     if branch_id:
-        customer_filter["branch_id"] = branch_id
         visit_filter["branch_id"] = branch_id
 
     # --- Pull customers once (needed for repeat_rate, tiers, wallet count) ---
@@ -3574,9 +3627,7 @@ def get_customers_map(
     # Backfill branch assignments on the first call — idempotent.
     _ensure_branch_assignments(token_data.tenant_id)
 
-    q = {"tenant_id": token_data.tenant_id}
-    if branch_id:
-        q["branch_id"] = branch_id
+    q = _branch_customer_filter(token_data.tenant_id, branch_id)
     customers = list(db.customers.find(q))
     result = []
 
@@ -3929,9 +3980,7 @@ def get_highest_paying_customers(
     branch_id: Optional[str] = Query(None),
 ):
     """Return ALL tenant customers so the dashboard can sort by max/min spent/visits client-side."""
-    q = {"tenant_id": token_data.tenant_id}
-    if branch_id:
-        q["branch_id"] = branch_id
+    q = _branch_customer_filter(token_data.tenant_id, branch_id)
     customers = list(
         db.customers.find(q).sort("total_amount_paid", -1)
     )
@@ -3966,10 +4015,9 @@ def get_cards_filled_analytics(
         visits_per_stamp = card_template.get("visits_per_stamp", 1)
     visits_needed = max(reward_threshold * visits_per_stamp, 1)
 
-    cust_q = {"tenant_id": t_id}
+    cust_q = _branch_customer_filter(t_id, branch_id)
     visit_q = {"tenant_id": t_id}
     if branch_id:
-        cust_q["branch_id"] = branch_id
         visit_q["branch_id"] = branch_id
 
     customers = list(db.customers.find(
@@ -4025,10 +4073,9 @@ def get_recovered_customers(
     inactive_threshold_seconds = inactive_days * 86400
     window_start = now - timedelta(days=window_days)
 
-    cust_q = {"tenant_id": t_id}
+    cust_q = _branch_customer_filter(t_id, branch_id)
     visit_q = {"tenant_id": t_id}
     if branch_id:
-        cust_q["branch_id"] = branch_id
         visit_q["branch_id"] = branch_id
 
     customers = list(db.customers.find(cust_q))
@@ -4094,12 +4141,10 @@ def get_acquisition_sources(
     budget. Pass `days` > 0 to scope to a window (the dashboard uses 30 for
     its trend snapshot).
     """
-    q = {"tenant_id": token_data.tenant_id}
+    q = _branch_customer_filter(token_data.tenant_id, branch_id)
     if days and days > 0:
         period_start = datetime.now(timezone.utc) - timedelta(days=days)
         q["created_at"] = {"$gte": period_start}
-    if branch_id:
-        q["branch_id"] = branch_id
     customers = list(db.customers.find(q))
 
     # Five real channels customers actually arrive through.
@@ -4158,10 +4203,9 @@ def get_analytics_summary(
     # Make sure a branch filter actually has data (backfill orphan customers once).
     _ensure_branch_assignments(t_id)
 
-    cust_q = {"tenant_id": t_id}
+    cust_q = _branch_customer_filter(t_id, branch_id)
     visit_q = {"tenant_id": t_id}
     if branch_id:
-        cust_q["branch_id"] = branch_id
         visit_q["branch_id"] = branch_id
 
     customers = list(db.customers.find(cust_q))
@@ -5106,9 +5150,7 @@ def get_ltv_breakdown(
     monthly spend × 12, scaled by tier-specific retention multipliers
     derived from observed repeat rates. It's directional, not actuarial.
     """
-    q = {"tenant_id": token_data.tenant_id}
-    if branch_id:
-        q["branch_id"] = branch_id
+    q = _branch_customer_filter(token_data.tenant_id, branch_id)
     customers = list(db.customers.find(q))
 
     if not customers:
@@ -5234,9 +5276,7 @@ def get_proactive_alerts(
     p30 = now - timedelta(days=30)
     p60 = now - timedelta(days=60)
 
-    cust_q = {"tenant_id": tid}
-    if branch_id:
-        cust_q["branch_id"] = branch_id
+    cust_q = _branch_customer_filter(tid, branch_id)
     customers = list(db.customers.find(cust_q))
     total = len(customers)
     if total == 0:
@@ -5462,9 +5502,7 @@ def get_ai_suggestions(
     tid = token_data.tenant_id
     now = datetime.now(timezone.utc)
 
-    cust_q = {"tenant_id": tid}
-    if branch_id:
-        cust_q["branch_id"] = branch_id
+    cust_q = _branch_customer_filter(tid, branch_id)
     customers = list(db.customers.find(cust_q))
 
     suggestions = []
