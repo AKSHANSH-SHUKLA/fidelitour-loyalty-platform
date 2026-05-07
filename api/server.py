@@ -2249,7 +2249,11 @@ def admin_ai_query(req: AIQueryRequest, token_data: TokenData = Depends(require_
 # ========================
 
 @app.get("/api/owner/tenant")
-def get_tenant(token_data: TokenData = Depends(require_role(["business_owner"]))):
+def get_tenant(token_data: TokenData = Depends(require_role(["business_owner", "manager", "staff"]))):
+    """Return the tenant doc for whoever is authenticated. Available to all
+    in-tenant roles so the sidebar can show "you are managing/working at X"
+    — no more confusion when an owner has multiple tenants or a staff is
+    in the wrong account."""
     t = db.tenants.find_one({"id": token_data.tenant_id})
     if t:
         t.pop("_id", None)

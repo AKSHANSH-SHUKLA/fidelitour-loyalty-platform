@@ -3,9 +3,11 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import NotificationBell from '../components/NotificationBell';
 import BranchSelectorBar from '../components/BranchSelectorBar';
 import { useAuth } from '../contexts/AuthContext';
+import { ownerAPI } from '../lib/api';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
-  Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History, ChevronDown
+  Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History, ChevronDown,
+  Building2
 } from 'lucide-react';
 import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
 
@@ -206,6 +208,19 @@ const DashboardLayout = () => {
   const role = user?.role || 'default';
   const theme = themeForRole(role);
 
+  // Fetch tenant identity once — shown in the sidebar so the user always
+  // knows which business account they're acting as. Prevents the "wait,
+  // why isn't this scan working" tenant-mismatch confusion.
+  const [tenantInfo, setTenantInfo] = React.useState(null);
+  React.useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    ownerAPI.getTenant?.()
+      .then((r) => { if (alive) setTenantInfo(r.data || null); })
+      .catch(() => { /* silent — keep header generic */ });
+    return () => { alive = false; };
+  }, [user?.email]);
+
   return (
     <div
       className="relative flex min-h-screen font-['Manrope']"
@@ -244,6 +259,33 @@ const DashboardLayout = () => {
               </p>
             </div>
           </Link>
+
+          {/* Tenant identity badge — shows the BUSINESS the current user is
+              acting on. Critical for owners with multiple tenants and for
+              staff who need to know whether they're in the right shop's
+              account. */}
+          {tenantInfo && (
+            <div
+              className="mt-3 px-2.5 py-2 rounded-lg flex items-start gap-2"
+              style={{ background: `${theme.from}10`, border: `1px solid ${theme.from}33` }}
+              title={`Compte : ${tenantInfo.name || 'Sans nom'} · slug: ${tenantInfo.slug || '—'}`}
+            >
+              <Building2 size={13} className="mt-0.5 shrink-0" style={{ color: theme.from }} />
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: theme.from, opacity: 0.8 }}>
+                  Compte
+                </p>
+                <p className="text-[12px] font-bold truncate" style={{ color: C.inkDeep }}>
+                  {tenantInfo.name || 'Sans nom'}
+                </p>
+                {tenantInfo.slug && (
+                  <p className="text-[9px] font-mono truncate" style={{ color: C.inkMute }}>
+                    /join/{tenantInfo.slug}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="px-4">

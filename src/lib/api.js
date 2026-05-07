@@ -86,6 +86,9 @@ export const ownerAPI = {
   getCustomerTrash: () => api.get('/owner/customers/trash'),
   // AI campaign analyzer (item 23) — returns 3 plain-English bullets
   aiAnalyzeCampaign: (campaignId) => api.post(`/owner/campaigns/${campaignId}/ai-analyze`),
+  // Tenant identity — works for owner, manager, staff. Used by the sidebar
+  // tenant badge so the user always knows which account they're in.
+  getTenant: () => api.get('/owner/tenant'),
   // Team password reset — returns the new plaintext password ONCE so the owner can share it.
   resetTeamPassword: (email, newPassword) =>
     api.post(`/owner/team/${encodeURIComponent(email)}/reset-password`, {
