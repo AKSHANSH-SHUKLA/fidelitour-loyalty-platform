@@ -380,8 +380,8 @@ const LandingPage = () => {
             <Link to="/login" className="font-medium text-sm hover:text-[#B85C38] transition-colors">Connexion</Link>
             <Link to="/register"
                   className="text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  style={{ background: `linear-gradient(135deg, ${C.inkDeep} 0%, ${C.inkSoft} 100%)` }}>
-              Démarrer
+                  style={{ background: `linear-gradient(135deg, ${C.terracotta} 0%, ${C.rose} 100%)` }}>
+              S'inscrire
             </Link>
           </div>
         </div>
