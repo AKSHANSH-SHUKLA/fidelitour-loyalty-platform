@@ -2762,15 +2762,22 @@ def scan_visit(
         # Be diagnostic: distinguish "barcode doesn't exist anywhere" vs
         # "barcode exists but in a different tenant" so the staff knows
         # whether they're scanning a fake code or whether they're logged
-        # into the wrong account.
+        # into the wrong account. Show both tenant slugs so the user can
+        # see the mismatch at a glance.
         elsewhere = db.customers.find_one({"barcode_id": req.barcode_id})
         if elsewhere:
+            other_t = db.tenants.find_one({"id": elsewhere.get("tenant_id")}) or {}
+            this_t = db.tenants.find_one({"id": token_data.tenant_id}) or {}
             raise HTTPException(
                 status_code=404,
                 detail=(
-                    f"Cette carte appartient à un autre commerce — pas à votre compte. "
-                    f"Vérifiez que vous êtes connecté avec le bon compte staff "
-                    f"(barcode {req.barcode_id})."
+                    f"❌ Tenant mismatch. "
+                    f"Cette carte ({req.barcode_id}) appartient à : "
+                    f"\"{other_t.get('name', '?')}\" (slug: {other_t.get('slug', '?')}). "
+                    f"Vous êtes connecté à : \"{this_t.get('name', '?')}\" "
+                    f"(slug: {this_t.get('slug', '?')}). "
+                    f"Le client doit s'inscrire via VOTRE lien (Settings → Lien d'inscription) "
+                    f"pour que vous puissiez scanner sa carte."
                 ),
             )
         raise HTTPException(
