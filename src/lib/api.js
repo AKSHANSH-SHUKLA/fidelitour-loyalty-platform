@@ -5,6 +5,30 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Belt-and-braces auth: even though the backend sets an httpOnly cookie on
+// login, some browsers / extensions / cross-tab edge cases drop the cookie on
+// POST requests. We ALSO stash the JWT in localStorage and attach it as a
+// Bearer header on every request. The backend now accepts either path.
+const TOKEN_KEY = 'fidelitour_access_token';
+
+export const setAuthToken = (token) => {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch (_e) { /* private mode etc — silent */ }
+};
+
+api.interceptors.request.use((config) => {
+  try {
+    const t = localStorage.getItem(TOKEN_KEY);
+    if (t) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${t}`;
+    }
+  } catch (_e) { /* ignore */ }
+  return config;
+});
+
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),

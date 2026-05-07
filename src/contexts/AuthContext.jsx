@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI } from '../lib/api';
+import { authAPI, setAuthToken } from '../lib/api';
 
 const AuthContext = createContext(null);
 
@@ -24,6 +24,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (data) => {
     const res = await authAPI.login(data);
+    // Stash the JWT in localStorage so axios interceptor can send it as a
+    // Bearer header on every subsequent request — covers the case where
+    // the cookie path / SameSite drops the cookie on cross-page POSTs.
+    if (res.data?.access_token) setAuthToken(res.data.access_token);
     await checkAuth();
     return res.data;
   };
@@ -33,8 +37,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await authAPI.logout();
-    setUser(null);
+    try { await authAPI.logout(); } finally {
+      setAuthToken(null);
+      setUser(null);
+    }
   };
 
   return (

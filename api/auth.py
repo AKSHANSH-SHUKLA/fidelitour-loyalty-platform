@@ -26,9 +26,27 @@ def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
     return encoded_jwt
 
 async def get_current_user_data(request: Request) -> TokenData:
+    # Try cookie first (browser-based auth), then Authorization: Bearer header
+    # (mobile / API clients). This makes the auth path more forgiving when
+    # the browser refuses to send the cookie on a JSON POST.
     token = request.cookies.get("access_token")
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    if not token:
+        # Verbose diagnostic so the staff workspace can show us EXACTLY what's
+        # missing on a failed scan. Lists which cookies / headers came through.
+        cookie_keys = list(request.cookies.keys())
+        has_auth_hdr = bool(request.headers.get("authorization") or request.headers.get("Authorization"))
+        raise HTTPException(
+            status_code=401,
+            detail=(
+                "Not authenticated — no access_token cookie or Authorization header. "
+                f"cookies_received={cookie_keys} · auth_header_present={has_auth_hdr} · "
+                f"path={request.url.path}"
+            ),
+        )
     try:
         if token.startswith("Bearer "):
             token = token[7:]
@@ -37,10 +55,10 @@ async def get_current_user_data(request: Request) -> TokenData:
         role: str = payload.get("role")
         tenant_id: str = payload.get("tenant_id")
         if email is None:
-            raise HTTPException(status_code=401, detail="Invalid auth credentials")
+            raise HTTPException(status_code=401, detail="Invalid auth credentials (no sub claim)")
         return TokenData(email=email, role=role, tenant_id=tenant_id)
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except jwt.PyJWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid or expired token: {str(e)[:80]}")
 
 def require_role(roles: list[str]):
     async def role_checker(token_data: TokenData = Depends(get_current_user_data)):
