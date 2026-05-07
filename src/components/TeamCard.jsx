@@ -1,7 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { Users, UserPlus, Trash2, Shield } from 'lucide-react';
+import { Users, UserPlus, Trash2, Shield, Copy, KeyRound, X } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import { C } from './PageShell';
+
+/**
+ * CredentialsCard — small panel that shows freshly-issued staff credentials
+ * with copy buttons. Shown for ~2 minutes after creation / reset, then
+ * dismissed. The plaintext password is NEVER stored on the server beyond
+ * the hash, so the owner has to grab it now or reset again.
+ */
+const CredentialsCard = ({ creds, onDismiss }) => {
+  if (!creds) return null;
+  const loginUrl = `${window.location.origin}/login`;
+  const copy = (txt) => {
+    try { navigator.clipboard.writeText(txt); } catch { /* ignore */ }
+  };
+  return (
+    <div
+      className="rounded-xl p-4 relative"
+      style={{ background: '#FCE3DC', border: '1px solid #B85C3855' }}
+    >
+      <button
+        onClick={onDismiss}
+        className="absolute top-2 right-2 w-6 h-6 rounded-full hover:bg-white/40"
+        aria-label="Dismiss"
+      >
+        <X size={12} className="mx-auto" style={{ color: '#9C4427' }} />
+      </button>
+      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#9C4427' }}>
+        🔐 Identifiants prêts — partagez-les avec votre collaborateur
+      </p>
+      <div className="space-y-1.5 font-mono text-sm">
+        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8B8680' }}>URL</span>
+          <span className="flex-1 truncate" style={{ color: '#1C1917' }}>{loginUrl}</span>
+          <button onClick={() => copy(loginUrl)} className="text-xs px-2 py-1 rounded" style={{ background: '#FCE3DC', color: '#9C4427' }}>
+            <Copy size={11} className="inline -mt-0.5" /> Copier
+          </button>
+        </div>
+        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8B8680' }}>Email</span>
+          <span className="flex-1 truncate" style={{ color: '#1C1917' }}>{creds.email}</span>
+          <button onClick={() => copy(creds.email)} className="text-xs px-2 py-1 rounded" style={{ background: '#FCE3DC', color: '#9C4427' }}>
+            <Copy size={11} className="inline -mt-0.5" /> Copier
+          </button>
+        </div>
+        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8B8680' }}>Mot de passe</span>
+          <span className="flex-1 truncate font-bold" style={{ color: '#1C1917' }}>{creds.password}</span>
+          <button onClick={() => copy(creds.password)} className="text-xs px-2 py-1 rounded" style={{ background: '#FCE3DC', color: '#9C4427' }}>
+            <Copy size={11} className="inline -mt-0.5" /> Copier
+          </button>
+        </div>
+      </div>
+      <button
+        onClick={() => copy(`Connexion FidéliTour\n${loginUrl}\nEmail : ${creds.email}\nMot de passe : ${creds.password}`)}
+        className="mt-3 w-full text-sm font-semibold text-white py-2 rounded-lg"
+        style={{ background: '#B85C38' }}
+      >
+        📋 Tout copier — pour WhatsApp / SMS
+      </button>
+      <p className="text-[10px] mt-2 text-center" style={{ color: '#9C4427' }}>
+        Ce mot de passe ne sera plus affiché après fermeture. Si oublié, utilisez "Réinitialiser" sur la ligne du membre.
+      </p>
+    </div>
+  );
+};
 
 /**
  * TeamCard — Settings card for owner-side staff management.
@@ -23,6 +87,10 @@ const TeamCard = ({ id }) => {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  // After create / reset, hold the plaintext password in memory ONLY in this
+  // session, so the owner can copy + share. Cleared on dismiss or page reload.
+  const [issuedCreds, setIssuedCreds] = useState(null);  // { email, password }
+  const [resettingFor, setResettingFor] = useState('');  // email currently being reset
 
   const load = async () => {
     setLoading(true);
@@ -51,13 +119,30 @@ const TeamCard = ({ id }) => {
     setAdding(true);
     try {
       await ownerAPI.addTeamMember(form);
-      setSuccess(`${form.email} ajouté avec le rôle ${form.role}.`);
+      // Stash the plaintext creds for sharing — cleared on dismiss.
+      setIssuedCreds({ email: form.email, password: form.password });
+      setSuccess(`${form.email} ajouté · partagez les identifiants ci-dessous.`);
       setForm({ email: '', password: '', role: 'staff' });
       load();
     } catch (e) {
       setError(e?.response?.data?.detail || e.message || 'Échec de l\'ajout');
     } finally {
       setAdding(false);
+    }
+  };
+
+  const resetPassword = async (email) => {
+    if (!confirm(`Générer un nouveau mot de passe pour ${email} ?\n\nLe précédent ne fonctionnera plus.`)) return;
+    setResettingFor(email);
+    setError('');
+    try {
+      const r = await ownerAPI.resetTeamPassword(email);  // server-generated
+      setIssuedCreds({ email: r.data.email, password: r.data.new_password });
+      setSuccess(`Nouveau mot de passe généré pour ${email}.`);
+    } catch (e) {
+      setError(e?.response?.data?.detail || e.message || 'Échec de la réinitialisation');
+    } finally {
+      setResettingFor('');
     }
   };
 
@@ -148,6 +233,9 @@ const TeamCard = ({ id }) => {
         </p>
       )}
 
+      {/* Credentials panel — shown after a successful create or reset. */}
+      <CredentialsCard creds={issuedCreds} onDismiss={() => setIssuedCreds(null)} />
+
       {/* Existing team */}
       <div className="rounded-xl p-4" style={{ background: '#FAF8F4', border: `1px solid ${C.hairline}` }}>
         <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.inkMute }}>
@@ -174,13 +262,25 @@ const TeamCard = ({ id }) => {
                     Rôle : <b>{m.role}</b>
                   </p>
                 </div>
-                <button
-                  onClick={() => remove(m.email)}
-                  className="text-xs px-2.5 py-1 rounded-md transition"
-                  style={{ background: '#FCEBEB', color: '#791F1F' }}
-                >
-                  <Trash2 size={11} className="inline -mt-0.5" /> Retirer
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => resetPassword(m.email)}
+                    disabled={resettingFor === m.email}
+                    className="text-xs px-2.5 py-1 rounded-md transition disabled:opacity-50"
+                    style={{ background: '#FEF3C7', color: '#854F0B' }}
+                    title="Générer un nouveau mot de passe (l'ancien sera révoqué)"
+                  >
+                    <KeyRound size={11} className="inline -mt-0.5" />{' '}
+                    {resettingFor === m.email ? 'Réinit…' : 'Réinitialiser'}
+                  </button>
+                  <button
+                    onClick={() => remove(m.email)}
+                    className="text-xs px-2.5 py-1 rounded-md transition"
+                    style={{ background: '#FCEBEB', color: '#791F1F' }}
+                  >
+                    <Trash2 size={11} className="inline -mt-0.5" /> Retirer
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

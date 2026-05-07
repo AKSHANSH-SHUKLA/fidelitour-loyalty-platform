@@ -86,6 +86,11 @@ export const ownerAPI = {
   getCustomerTrash: () => api.get('/owner/customers/trash'),
   // AI campaign analyzer (item 23) — returns 3 plain-English bullets
   aiAnalyzeCampaign: (campaignId) => api.post(`/owner/campaigns/${campaignId}/ai-analyze`),
+  // Team password reset — returns the new plaintext password ONCE so the owner can share it.
+  resetTeamPassword: (email, newPassword) =>
+    api.post(`/owner/team/${encodeURIComponent(email)}/reset-password`, {
+      new_password: newPassword || null,
+    }),
   getCustomerMap: (params) => api.post('/owner/customers/map', null, { params }),
   sendCampaignToGroup: (data) => api.post('/owner/campaigns/send-to-group', data),
   getCampaignTracking: (id) => api.get('/owner/campaigns/' + id + '/tracking'),

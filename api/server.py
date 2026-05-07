@@ -5878,6 +5878,47 @@ def remove_team_member(
     return {"status": "ok"}
 
 
+class ResetTeamPasswordRequest(BaseModel):
+    new_password: Optional[str] = None  # if missing, server generates one
+
+
+@app.post("/api/owner/team/{email}/reset-password")
+def reset_team_member_password(
+    email: str,
+    req: ResetTeamPasswordRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Owner-side password reset for a manager/staff account in the same tenant.
+    The owner can either supply a new password or let the server generate one;
+    in both cases the plaintext is returned ONCE so the owner can share it.
+
+    Plaintext is never stored — only the hash. There is no way to recover
+    the previous password; this endpoint always sets a new one.
+    """
+    user = db.users.find_one({
+        "email": email,
+        "tenant_id": token_data.tenant_id,
+        "role": {"$in": ["manager", "staff"]},
+    })
+    if not user:
+        raise HTTPException(status_code=404, detail="Team member not found")
+
+    new_pw = (req.new_password or "").strip()
+    if not new_pw:
+        # Generate a memorable-but-strong default: 3 random uppercase letters + 4 digits.
+        import secrets, string
+        new_pw = "".join(secrets.choice(string.ascii_uppercase) for _ in range(3)) \
+              + str(secrets.randbelow(9000) + 1000)
+    if len(new_pw) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    db.users.update_one(
+        {"email": email, "tenant_id": token_data.tenant_id},
+        {"$set": {"hashed_password": hash_password(new_pw)}},
+    )
+    return {"status": "ok", "email": email, "new_password": new_pw}
+
+
 # ============================================================
 # Lifetime Value (LTV) — per-cohort + per-tier breakdown
 # ============================================================
