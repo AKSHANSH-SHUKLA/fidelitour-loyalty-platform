@@ -206,7 +206,7 @@ const NotificationBell = () => {
           </div>
           <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: '#EFE9E0', background: '#FDFBF7' }}>
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B8680' }}>
-              Résumé intelligent · toutes mes boutiques
+              Alertes par boutique
             </p>
             <p className="text-[9px]" style={{ color: '#A8A29E' }}>
               MAJ 5 min
@@ -240,22 +240,18 @@ const NotificationBell = () => {
                       <Icon size={16} style={{ color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      {/* Branch badge on TOP of the alert title — the owner instantly sees which store this alert is about.
-                          For tenant-wide alerts ("Toutes les boutiques"), use a distinct chip + tooltip so it's clear
-                          this is a network-wide signal, not a single-store one. */}
+                      {/* Branch badge — every alert is now per-shop. */}
                       {a.branch_name && (
                         <span
                           className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1.5"
                           style={{
-                            background: a.scope === 'tenant' ? '#FCE3DC' : `${color}1A`,
-                            color: a.scope === 'tenant' ? '#9C4427' : color,
-                            border: `1px solid ${a.scope === 'tenant' ? '#B85C3855' : color + '33'}`,
+                            background: `${color}1A`,
+                            color: color,
+                            border: `1px solid ${color}33`,
                           }}
-                          title={a.scope === 'tenant'
-                            ? "Réseau entier — alerte qui couvre toutes vos boutiques"
-                            : `Boutique : ${a.branch_name}`}
+                          title={`Boutique : ${a.branch_name}`}
                         >
-                          <Building2 size={9} /> {a.scope === 'tenant' ? 'Toutes mes boutiques' : a.branch_name}
+                          <Building2 size={9} /> {a.branch_name}
                         </span>
                       )}
                       <p className="text-sm font-bold leading-tight" style={{ color: '#1C1917' }}>

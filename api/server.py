@@ -56,9 +56,15 @@ else:
 SENDGRID_API_KEY = ""
 SENDGRID_FROM_EMAIL = "noreply@fidelitour.com"
 
-# Item 23 — AI campaign analyzer. Uses Google Gemini's free tier by default.
-# Set GEMINI_API_KEY in Vercel; if missing, the endpoint returns a graceful
-# heuristic-based fallback instead of failing.
+# Item 23 — AI campaign analyzer. Pluggable: first key found wins.
+#   GROQ_API_KEY       → Llama 3 / Llama 3.1 / Mixtral via Groq (super fast, free)
+#   OPENROUTER_API_KEY → many free models (Llama 3, Hermes, etc.)
+#   GEMINI_API_KEY     → Google Gemini Flash (1500 req/day free, no card)
+# If none are set, the endpoint serves a deterministic heuristic so testing works.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 
@@ -4165,33 +4171,109 @@ def _heuristic_campaign_recap(campaign: Dict[str, Any], audience: Dict[str, Any]
     return bullets
 
 
+def _parse_bullets(text: str) -> list:
+    """Strip bullet prefixes / numbering and return up to 3 lines."""
+    if not text:
+        return []
+    lines = [
+        re.sub(r"^[\s\-\*•]+|^\d+[\.\)]\s*", "", ln).strip()
+        for ln in text.splitlines() if ln.strip()
+    ]
+    return [ln for ln in lines if len(ln) > 12][:3]
+
+
+def _call_groq(prompt: str) -> Optional[list]:
+    """Groq free tier — extremely fast Llama inference, OpenAI-compatible API."""
+    if not GROQ_API_KEY:
+        return None
+    try:
+        import requests as _rq
+        r = _rq.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "max_tokens": 400,
+            },
+            timeout=15,
+        )
+        r.raise_for_status()
+        text = r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        bullets = _parse_bullets(text)
+        return bullets if bullets else None
+    except Exception as e:
+        print(f"_call_groq error: {e}")
+        return None
+
+
+def _call_openrouter(prompt: str) -> Optional[list]:
+    """OpenRouter — gives access to many free models with one key."""
+    if not OPENROUTER_API_KEY:
+        return None
+    try:
+        import requests as _rq
+        r = _rq.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://fidelitour.com",
+                "X-Title": "FidéliTour",
+            },
+            json={
+                "model": OPENROUTER_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "max_tokens": 400,
+            },
+            timeout=20,
+        )
+        r.raise_for_status()
+        text = r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        bullets = _parse_bullets(text)
+        return bullets if bullets else None
+    except Exception as e:
+        print(f"_call_openrouter error: {e}")
+        return None
+
+
 def _call_gemini(prompt: str) -> Optional[list]:
-    """Hit Gemini's free tier. Returns 3 bullets parsed from the response, or None on any failure."""
+    """Google Gemini free tier."""
     if not GEMINI_API_KEY:
         return None
     try:
         import requests as _rq
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 400},
-        }
-        r = _rq.post(url, json=payload, timeout=15)
+        r = _rq.post(
+            url,
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.3, "maxOutputTokens": 400},
+            },
+            timeout=15,
+        )
         r.raise_for_status()
-        data = r.json()
-        text = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        if not text:
-            return None
-        # Parse bullet points: strip leading "-", "•", "*", numbered prefixes
-        lines = [
-            re.sub(r"^[\s\-\*•]+|^\d+[\.\)]\s*", "", ln).strip()
-            for ln in text.splitlines() if ln.strip()
-        ]
-        bullets = [ln for ln in lines if len(ln) > 12][:3]
+        text = (r.json().get("candidates") or [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        bullets = _parse_bullets(text)
         return bullets if bullets else None
     except Exception as e:
         print(f"_call_gemini error: {e}")
         return None
+
+
+def _call_llm(prompt: str) -> tuple:
+    """Try every configured provider in order. Returns (bullets, provider_label)."""
+    for fn, label in (
+        (_call_groq, f"groq/{GROQ_MODEL}"),
+        (_call_openrouter, f"openrouter/{OPENROUTER_MODEL}"),
+        (_call_gemini, f"gemini/{GEMINI_MODEL}"),
+    ):
+        bullets = fn(prompt)
+        if bullets:
+            return bullets, label
+    return None, None
 
 
 @app.post("/api/owner/campaigns/{campaign_id}/ai-analyze")
@@ -4227,7 +4309,7 @@ def ai_analyze_campaign(
         f"lift {perf['lift_pct']}% , revenue €{perf['revenue_attributed']}.\n"
     )
 
-    bullets = _call_gemini(prompt)
+    bullets, provider_label = _call_llm(prompt)
     used_ai = bool(bullets)
     if not bullets:
         bullets = _heuristic_campaign_recap(c, audience, perf)
@@ -4238,7 +4320,7 @@ def ai_analyze_campaign(
         "performance": perf,
         "audience": audience,
         "used_ai": used_ai,
-        "model": GEMINI_MODEL if used_ai else "heuristic",
+        "model": provider_label or "heuristic",
     }
 
 
@@ -6031,37 +6113,25 @@ def get_proactive_alerts(
 def get_proactive_alerts_multi_store(
     token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
 ):
-    """Multi-store alerts wrapper. For each branch under the tenant, call the
-    same alert engine as get_proactive_alerts() and tag each result with
-    `branch_id` and `branch_name`. Also returns a tenant-wide ('all branches')
-    section. The Notification Bell renders this so the owner instantly sees
-    which store each alert refers to.
+    """Per-shop alerts wrapper. For each branch under the tenant, calls the
+    alert engine and tags each result with `branch_id` and `branch_name`.
+
+    DESIGN CHANGE (user request): the previous "Toutes mes boutiques" /
+    tenant-wide pass is removed. Every alert is now scoped to a specific
+    branch. For 0–1-branch tenants we still run a single per-branch pass on
+    that one branch (or a synthesised one) so single-shop owners aren't left
+    with an empty bell.
     """
     tid = token_data.tenant_id
     branches = list(db.branches.find({"tenant_id": tid})) if 'branches' in db.list_collection_names() else []
-    # Fall back to tenant.branches list if no branches collection
     if not branches:
         tenant = db.tenants.find_one({"id": tid}) or {}
         branches = tenant.get("branches") or []
 
     alerts_combined: list = []
 
-    # 1) Tenant-wide ("all branches") pass — always run, useful for accounts with one branch
-    try:
-        tenant_alerts = get_proactive_alerts(token_data=token_data, branch_id=None)
-        for a in tenant_alerts.get("alerts") or []:
-            alerts_combined.append({
-                **a,
-                "id": f"tenant__{a.get('id')}",
-                "branch_id": None,
-                "branch_name": "Toutes les boutiques",
-                "scope": "tenant",
-            })
-    except Exception:
-        pass
-
-    # 2) Per-branch passes — only meaningful when there are 2+ branches
-    if len(branches) >= 2:
+    # Per-shop passes ONLY. No tenant-wide bucket.
+    if branches:
         for b in branches:
             bid = b.get("id")
             bname = b.get("name") or "Boutique"
@@ -6079,13 +6149,28 @@ def get_proactive_alerts_multi_store(
                     })
             except Exception:
                 continue
+    else:
+        # Zero-branch tenant edge case: run alerts unscoped and label them
+        # with the tenant's display name so the bell still says something
+        # meaningful, but treat the result as a single-shop bucket.
+        try:
+            tenant_alerts = get_proactive_alerts(token_data=token_data, branch_id=None)
+            tenant = db.tenants.find_one({"id": tid}) or {}
+            label = tenant.get("name") or "Ma boutique"
+            for a in tenant_alerts.get("alerts") or []:
+                alerts_combined.append({
+                    **a,
+                    "id": f"shop__{a.get('id')}",
+                    "branch_id": None,
+                    "branch_name": label,
+                    "scope": "branch",
+                })
+        except Exception:
+            pass
 
-    # Sort: tenant-wide first, then by severity
+    # Sort by severity only — there is no tenant scope anymore.
     severity_order = {"critical": 0, "warning": 1, "win": 2, "info": 3}
-    alerts_combined.sort(key=lambda a: (
-        0 if a.get("scope") == "tenant" else 1,
-        severity_order.get(a.get("severity"), 99),
-    ))
+    alerts_combined.sort(key=lambda a: severity_order.get(a.get("severity"), 99))
 
     counts = {"critical": 0, "warning": 0, "info": 0, "win": 0}
     for a in alerts_combined:
@@ -6094,7 +6179,7 @@ def get_proactive_alerts_multi_store(
     return {
         "alerts": alerts_combined,
         "counts_by_severity": counts,
-        "branches_covered": len(branches) if len(branches) >= 2 else 1,
+        "branches_covered": max(len(branches), 1),
     }
 
 
