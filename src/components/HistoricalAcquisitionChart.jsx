@@ -77,25 +77,57 @@ const HistoricalAcquisitionChart = () => {
     return 'Moyenne par période';
   })();
 
-  // Compact X-axis labels — full ISO labels overlap when there are 26+ buckets.
+  // Convert an ISO week label like "2026-W18" → the Monday-of-that-week JS Date.
+  // Owner-friendly labels like "5 Mai" instead of cryptic "W18" / "W46".
+  const isoWeekToMonday = (s) => {
+    const m = String(s).match(/^(\d{4})-W(\d+)$/);
+    if (!m) return null;
+    const year = parseInt(m[1], 10);
+    const week = parseInt(m[2], 10);
+    // Per ISO 8601, week 1 is the week containing January 4.
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const jan4Dow = jan4.getUTCDay() || 7; // Sun(0) → 7
+    const week1Mon = new Date(jan4);
+    week1Mon.setUTCDate(jan4.getUTCDate() - jan4Dow + 1);
+    const target = new Date(week1Mon);
+    target.setUTCDate(week1Mon.getUTCDate() + (week - 1) * 7);
+    return target;
+  };
+
+  const FR_MONTHS_SHORT = ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+  // Human-readable X-axis labels.
+  // Weeks now show the week's Monday (e.g. "5 Mai") — way clearer for non-tech
+  // owners and the labels naturally sort even across year boundaries.
   const formatTick = (raw) => {
     if (!raw) return '';
     const s = String(raw);
     if (bucketUnit === 'weeks') {
-      const m = s.match(/W(\d+)$/i);
-      return m ? `W${m[1]}` : s;
+      const d = isoWeekToMonday(s);
+      if (d) return `${d.getUTCDate()} ${FR_MONTHS_SHORT[d.getUTCMonth()]}`;
+      return s;
     }
     if (bucketUnit === 'months') {
       const [, mm] = s.split('-');
       const idx = parseInt(mm, 10) - 1;
-      const names = ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
-      return names[idx] || s;
+      return FR_MONTHS_SHORT[idx] || s;
     }
     if (bucketUnit === 'days') {
       const [, mm, dd] = s.split('-');
       return mm && dd ? `${dd}/${mm}` : s;
     }
     return s;
+  };
+
+  // Tooltip label — when hovering a week bar, show the full Monday→Sunday range
+  // so the owner immediately sees which days the bar covers.
+  const formatTooltipLabel = (raw) => {
+    if (bucketUnit !== 'weeks') return formatTick(raw);
+    const d = isoWeekToMonday(raw);
+    if (!d) return raw;
+    const end = new Date(d);
+    end.setUTCDate(d.getUTCDate() + 6);
+    return `Semaine du ${d.getUTCDate()} ${FR_MONTHS_SHORT[d.getUTCMonth()]} au ${end.getUTCDate()} ${FR_MONTHS_SHORT[end.getUTCMonth()]}`;
   };
   const tickInterval = data.length <= 12 ? 0 : Math.ceil(data.length / 12) - 1;
 
@@ -177,7 +209,7 @@ const HistoricalAcquisitionChart = () => {
                 tick={{ dy: 4 }}
               />
               <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} width={36} />
-              <Tooltip />
+              <Tooltip labelFormatter={formatTooltipLabel} />
               <Bar dataKey="count" fill={C_PS.sage} radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

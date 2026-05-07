@@ -67,30 +67,52 @@ const VisitsOverTimeChart = () => {
     return 'Visites par période';
   })();
 
-  // Smart label formatting for the X-axis — shortens long bucket labels so they
-  // don't pile up on top of each other.
+  // Convert "2026-W18" → Monday-of-week JS Date.
+  const isoWeekToMonday = (s) => {
+    const m = String(s).match(/^(\d{4})-W(\d+)$/);
+    if (!m) return null;
+    const year = parseInt(m[1], 10);
+    const week = parseInt(m[2], 10);
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const jan4Dow = jan4.getUTCDay() || 7;
+    const week1Mon = new Date(jan4);
+    week1Mon.setUTCDate(jan4.getUTCDate() - jan4Dow + 1);
+    const target = new Date(week1Mon);
+    target.setUTCDate(week1Mon.getUTCDate() + (week - 1) * 7);
+    return target;
+  };
+  const FR_MONTHS_SHORT = ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+  // Human-readable labels — weeks show the Monday date so the owner doesn't
+  // have to mentally translate "W18" into a month/day range.
   const formatTick = (raw) => {
     if (!raw) return '';
     const s = String(raw);
     if (bucketUnit === 'weeks') {
-      // "2026-W12" → "W12"
-      const m = s.match(/W(\d+)$/i);
-      return m ? `W${m[1]}` : s;
+      const d = isoWeekToMonday(s);
+      if (d) return `${d.getUTCDate()} ${FR_MONTHS_SHORT[d.getUTCMonth()]}`;
+      return s;
     }
     if (bucketUnit === 'months') {
-      // "2026-05" → "May" (no year, since the period header already shows the range)
-      const [y, mm] = s.split('-');
+      const [, mm] = s.split('-');
       const idx = parseInt(mm, 10) - 1;
-      const names = ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
-      return names[idx] || s;
+      return FR_MONTHS_SHORT[idx] || s;
     }
     if (bucketUnit === 'days') {
-      // "2026-05-12" → "05/12"
       const [, mm, dd] = s.split('-');
       return mm && dd ? `${dd}/${mm}` : s;
     }
     if (bucketUnit === 'years') return s;
     return s;
+  };
+
+  const formatTooltipLabel = (raw) => {
+    if (bucketUnit !== 'weeks') return formatTick(raw);
+    const d = isoWeekToMonday(raw);
+    if (!d) return raw;
+    const end = new Date(d);
+    end.setUTCDate(d.getUTCDate() + 6);
+    return `Semaine du ${d.getUTCDate()} ${FR_MONTHS_SHORT[d.getUTCMonth()]} au ${end.getUTCDate()} ${FR_MONTHS_SHORT[end.getUTCMonth()]}`;
   };
 
   // How many ticks to show. Recharts' `interval` skips every Nth bar's LABEL
@@ -162,9 +184,7 @@ const VisitsOverTimeChart = () => {
                 tick={{ dy: 4 }}
               />
               <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} width={36} />
-              <Tooltip
-                labelFormatter={(label) => label}
-              />
+              <Tooltip labelFormatter={formatTooltipLabel} />
               <Legend wrapperStyle={{ paddingTop: 10 }} />
               <Bar  name="Visites totales"  dataKey="count"            fill={C_PS.terracotta} radius={[6, 6, 0, 0]} />
               <Line name="Clients uniques"  dataKey="unique_visitors"  stroke={C_PS.sage}     strokeWidth={2.5} dot={{ r: 3 }} />
