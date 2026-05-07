@@ -1484,31 +1484,76 @@ def reset_and_reseed():
 # ========================
 
 @app.post("/api/auth/register")
-def register(user: UserCreate):
-    existing = db.users.find_one({"email": user.email})
+def register(payload: Dict[str, Any]):
+    """Self-serve registration for a business owner (or customer).
+
+    Accepts the standard email/password/role plus OPTIONAL business fields:
+      - business_name : displayed everywhere ("Café Lumière", etc.)
+      - sector        : café, restaurant, pizzeria, spa, gym, autre…
+      - phone         : business phone, used by SMS and Twilio test bench
+      - postal_code   : populates the geo helpers + city autodetect
+      - owner_name    : free-form display name for the owner
+
+    All optional — if the client sends just email + password it still works
+    (with a slug-derived tenant name) so the old simple form keeps working.
+    """
+    email = (payload.get("email") or "").strip().lower()
+    password = payload.get("password") or ""
+    role = (payload.get("role") or "business_owner").strip()
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+
+    existing = db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Only customers and business_owners can self-register.
-    # Manager/staff accounts must be created by the business owner via /api/owner/team.
-    if user.role not in ("customer", "business_owner"):
+    if role not in ("customer", "business_owner"):
         raise HTTPException(status_code=403, detail="This role cannot self-register")
 
     tenant_id = None
-    if user.role == "business_owner":
+    if role == "business_owner":
         tenant_id = str(uuid.uuid4())
-        slug = user.email.split("@")[0].lower().replace(".", "-")
-        t = Tenant(id=tenant_id, slug=slug, name=slug, plan="basic")
-        db.tenants.insert_one(t.model_dump())
+
+        # Business display name + slug. Prefer the business_name the form sends;
+        # fall back to the email local-part so old clients keep working.
+        biz_name = (payload.get("business_name") or "").strip()
+        if not biz_name:
+            biz_name = email.split("@")[0].replace(".", " ").replace("-", " ").title()
+        # URL-safe slug from the chosen name
+        raw_slug = re.sub(r"[^a-z0-9]+", "-", biz_name.lower()).strip("-") or "shop"
+        # Avoid slug collision with existing tenants
+        slug = raw_slug
+        n = 2
+        while db.tenants.find_one({"slug": slug}):
+            slug = f"{raw_slug}-{n}"
+            n += 1
+
+        t = Tenant(
+            id=tenant_id,
+            slug=slug,
+            name=biz_name,
+            plan="basic",
+            sector=(payload.get("sector") or None),
+            phone=(payload.get("phone") or ""),
+            address="",
+        )
+        tenant_doc = t.model_dump()
+        # Stamp postal_code + owner_name as extras so they're easy to surface in Settings
+        if payload.get("postal_code"):
+            tenant_doc["postal_code"] = payload["postal_code"]
+        if payload.get("owner_name"):
+            tenant_doc["owner_name"] = payload["owner_name"]
+        db.tenants.insert_one(tenant_doc)
 
     new_user = UserInDB(
-        email=user.email,
-        role=user.role,
+        email=email,
+        role=role,
         tenant_id=tenant_id,
-        hashed_password=hash_password(user.password)
+        hashed_password=hash_password(password),
     )
     db.users.insert_one(new_user.model_dump())
-    return {"message": "Success"}
+    return {"message": "Success", "tenant_id": tenant_id}
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest, response: Response):
