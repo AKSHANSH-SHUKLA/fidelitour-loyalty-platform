@@ -37,17 +37,24 @@ const LoginPage = () => {
             <input required type="email" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1 text-[#57534E]">Password</label>
+            <label className="block text-sm font-medium mb-1 text-[#57534E]">Mot de passe</label>
             <input required type="password" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
           </div>
           <button type="submit" className="w-full bg-[#B85C38] text-white py-3 rounded-full font-medium hover:bg-[#9C4E2F] transition-colors mt-6">
-            Sign In
+            Se connecter
           </button>
         </form>
-        
-        <p className="text-center mt-6 text-[#57534E] text-sm">
-          Don't have an account? <Link to="/register" className="text-[#B85C38] font-medium hover:underline">Start free trial</Link>
-        </p>
+
+        <div className="mt-6 pt-6 border-t border-[#E7E5E4] text-center">
+          <p className="text-[#57534E] text-sm mb-2">Pas encore de compte ?</p>
+          <Link
+            to="/register"
+            className="inline-flex items-center justify-center gap-2 w-full text-white px-5 py-3 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5"
+            style={{ background: 'linear-gradient(135deg, #B85C38 0%, #E8917C 100%)', boxShadow: '0 6px 18px -6px rgba(184,92,56,0.55)' }}
+          >
+            ✨ S'inscrire — essai gratuit 30 jours
+          </Link>
+        </div>
       </div>
     </div>
   );

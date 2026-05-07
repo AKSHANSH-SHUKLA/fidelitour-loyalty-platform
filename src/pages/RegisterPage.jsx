@@ -35,16 +35,16 @@ const RegisterPage = () => {
             <input required type="email" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1 text-[#57534E]">Password</label>
+            <label className="block text-sm font-medium mb-1 text-[#57534E]">Mot de passe</label>
             <input required type="password" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
           </div>
           <button type="submit" className="w-full bg-[#B85C38] text-white py-3 rounded-full font-medium hover:bg-[#9C4E2F] transition-colors mt-6">
-            Create Account
+            Créer mon compte
           </button>
         </form>
-        
+
         <p className="text-center mt-6 text-[#57534E] text-sm">
-          Already have an account? <Link to="/login" className="text-[#B85C38] font-medium hover:underline">Log in</Link>
+          Vous avez déjà un compte ? <Link to="/login" className="text-[#B85C38] font-medium hover:underline">Se connecter</Link>
         </p>
       </div>
     </div>
