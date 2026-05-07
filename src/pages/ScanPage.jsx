@@ -59,8 +59,10 @@ const ScanPage = () => {
   useEffect(() => {
     if ('BarcodeDetector' in window) {
       try {
+        // qr_code FIRST — that's what the wallet card actually displays.
+        // Keep 1D formats so old POS laser scanners and stickers still work.
         detectorRef.current = new window.BarcodeDetector({
-          formats: ['code_128', 'ean_13', 'ean_8', 'code_39', 'upca'],
+          formats: ['qr_code', 'code_128', 'ean_13', 'ean_8', 'code_39', 'upca'],
         });
       } catch (error) {
         console.warn('BarcodeDetector not fully supported:', error);
@@ -409,7 +411,7 @@ const ScanPage = () => {
                   disabled={loading}
                 />
               </div>
-              <p className="text-xs text-[#57534E] mt-2">Scan with a 2D barcode scanner or manually type the ID printed on the pass.</p>
+              <p className="text-xs text-[#57534E] mt-2">Scannez le QR code de la carte du client (ou tapez l'ID FT-XXXXXXXX manuellement).</p>
             </div>
 
             <div>
