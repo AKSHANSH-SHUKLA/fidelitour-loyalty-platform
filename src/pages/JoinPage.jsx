@@ -94,9 +94,6 @@ const JoinPage = () => {
               <QRCodeSVG value={success.barcode_id} size={200} />
             </div>
             <p className="font-mono bg-gray-100 p-2 rounded">{success.barcode_id}</p>
-            <div className="bg-[#E3A869]/20 text-[#1C1917] p-3 rounded-lg text-sm">
-              Wallet passes are in simulation mode.
-            </div>
             <div className="space-y-3">
               <Link
                 to={`/card/${success.barcode_id}`}
@@ -104,8 +101,10 @@ const JoinPage = () => {
               >
                 Ouvrir ma carte de fidélité →
               </Link>
-              <button className="w-full bg-black text-white py-3 rounded-xl font-medium">Add to Apple Wallet</button>
-              <button className="w-full bg-[#1C1917] text-white py-3 rounded-xl font-medium">Add to Google Wallet</button>
+              <p className="text-xs text-center text-[#8B8680] pt-2">
+                Une fois la carte ouverte, vous pouvez la partager, l'épingler à
+                votre écran d'accueil, ou l'imprimer.
+              </p>
             </div>
           </div>
         ) : (

@@ -427,7 +427,11 @@ const ScanPage = () => {
                   disabled={loading}
                 />
               </div>
-              <p className="text-xs text-[#57534E] mt-2">Points update automatically based on the amount paid — you can override if needed.</p>
+              <p className="text-xs text-[#57534E] mt-2">{
+                pointsMode === 'per_euro'
+                  ? 'Points calculés automatiquement (montant × taux). Vous pouvez les modifier ci-dessous.'
+                  : 'Le montant ne change pas les points dans ce mode (forfait par visite). Le commerçant peut le changer dans Réglages.'
+              }</p>
             </div>
 
             <div>

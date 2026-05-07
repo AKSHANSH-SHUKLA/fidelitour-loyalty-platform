@@ -2755,7 +2755,24 @@ def scan_visit(
     """Scan visit - record timestamp and update customer"""
     cust = db.customers.find_one({"tenant_id": token_data.tenant_id, "barcode_id": req.barcode_id})
     if not cust:
-        raise HTTPException(status_code=404, detail="Customer not found")
+        # Be diagnostic: distinguish "barcode doesn't exist anywhere" vs
+        # "barcode exists but in a different tenant" so the staff knows
+        # whether they're scanning a fake code or whether they're logged
+        # into the wrong account.
+        elsewhere = db.customers.find_one({"barcode_id": req.barcode_id})
+        if elsewhere:
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    f"Cette carte appartient à un autre commerce — pas à votre compte. "
+                    f"Vérifiez que vous êtes connecté avec le bon compte staff "
+                    f"(barcode {req.barcode_id})."
+                ),
+            )
+        raise HTTPException(
+            status_code=404,
+            detail=f"Aucun client trouvé avec le code {req.barcode_id}. Vérifiez le code-barres saisi.",
+        )
 
     c_obj = Customer(**cust)
     previous_tier = (c_obj.tier or "bronze").lower()  # snapshot BEFORE update
