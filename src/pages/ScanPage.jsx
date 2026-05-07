@@ -17,6 +17,8 @@ const ScanPage = () => {
   const [pointsMode, setPointsMode] = useState('per_visit');
   const [pointsPerEuro, setPointsPerEuro] = useState(10);
   const [pointsPerVisit, setPointsPerVisit] = useState(10);
+  // Tenant identity — shown as a banner so staff knows which shop they're in.
+  const [tenantInfo, setTenantInfo] = useState(null);
   const [status, setStatus] = useState(null); // { type: 'success' | 'error' | 'info', message: '' }
   const [loading, setLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -47,6 +49,13 @@ const ScanPage = () => {
         if (rate && rate > 0) setPointsPerEuro(rate);
         if (visit && visit > 0) setPointsPerVisit(visit);
       } catch (_e) { /* keep defaults */ }
+    })();
+    // Load tenant identity so the banner can show "you are at X".
+    (async () => {
+      try {
+        const r = await ownerAPI.getTenant();
+        setTenantInfo(r.data || null);
+      } catch (_e) { /* silent */ }
     })();
   }, []);
 
@@ -253,6 +262,19 @@ const ScanPage = () => {
         <p className="relative mt-3 text-base max-w-md mx-auto" style={{ color: C_SCAN.inkMute }}>
           Scan the customer's wallet barcode (or type it in) and enter the transaction amount to log loyalty points.
         </p>
+
+        {/* Tenant identity banner — gives the staff a clear "you are at X" so
+            they immediately notice if they're logged into the wrong account. */}
+        {tenantInfo && (
+          <div
+            className="relative mx-auto mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+            style={{ background: '#FCE3DC', border: '1px solid #B85C3855', color: '#9C4427' }}
+          >
+            <Building2 size={12} />
+            Vous travaillez chez : <b>{tenantInfo.name || 'Sans nom'}</b>
+            <span className="font-mono opacity-70">·  /join/{tenantInfo.slug}</span>
+          </div>
+        )}
       </div>
 
       {branches.length > 0 && (

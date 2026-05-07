@@ -2757,14 +2757,18 @@ def scan_visit(
     token_data: TokenData = Depends(require_role(["business_owner", "manager", "staff"])),
 ):
     """Scan visit - record timestamp and update customer"""
-    cust = db.customers.find_one({"tenant_id": token_data.tenant_id, "barcode_id": req.barcode_id})
+    # Normalise the barcode the staff just typed: trim whitespace and uppercase
+    # the FT-XXXX prefix, so "ft-c7eaa131  " and "FT-C7EAA131" both match.
+    normalized_barcode = (req.barcode_id or "").strip().upper()
+
+    cust = db.customers.find_one({"tenant_id": token_data.tenant_id, "barcode_id": normalized_barcode})
     if not cust:
         # Be diagnostic: distinguish "barcode doesn't exist anywhere" vs
         # "barcode exists but in a different tenant" so the staff knows
         # whether they're scanning a fake code or whether they're logged
         # into the wrong account. Show both tenant slugs so the user can
         # see the mismatch at a glance.
-        elsewhere = db.customers.find_one({"barcode_id": req.barcode_id})
+        elsewhere = db.customers.find_one({"barcode_id": normalized_barcode})
         if elsewhere:
             other_t = db.tenants.find_one({"id": elsewhere.get("tenant_id")}) or {}
             this_t = db.tenants.find_one({"id": token_data.tenant_id}) or {}
@@ -2772,7 +2776,7 @@ def scan_visit(
                 status_code=404,
                 detail=(
                     f"❌ Tenant mismatch. "
-                    f"Cette carte ({req.barcode_id}) appartient à : "
+                    f"Cette carte ({normalized_barcode}) appartient à : "
                     f"\"{other_t.get('name', '?')}\" (slug: {other_t.get('slug', '?')}). "
                     f"Vous êtes connecté à : \"{this_t.get('name', '?')}\" "
                     f"(slug: {this_t.get('slug', '?')}). "
@@ -2782,7 +2786,7 @@ def scan_visit(
             )
         raise HTTPException(
             status_code=404,
-            detail=f"Aucun client trouvé avec le code {req.barcode_id}. Vérifiez le code-barres saisi.",
+            detail=f"Aucun client trouvé avec le code '{normalized_barcode}'. Vérifiez le code-barres saisi (les caractères doivent correspondre exactement).",
         )
 
     c_obj = Customer(**cust)
