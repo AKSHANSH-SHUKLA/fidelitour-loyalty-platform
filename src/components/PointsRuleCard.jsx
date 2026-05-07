@@ -12,6 +12,7 @@ import { C } from './PageShell';
  */
 const PointsRuleCard = ({ id }) => {
   const [tpl, setTpl] = useState(null);
+  const [mode, setMode] = useState('per_visit');  // 'per_visit' | 'per_euro'
   const [rate, setRate] = useState(10);
   const [perVisit, setPerVisit] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,7 @@ const PointsRuleCard = ({ id }) => {
       try {
         const r = await ownerAPI.getCardTemplate();
         setTpl(r.data || {});
+        setMode((r.data?.points_mode || 'per_visit').toLowerCase());
         setRate(Number(r.data?.points_per_euro ?? 10));
         setPerVisit(Number(r.data?.points_per_visit ?? 10));
       } catch (e) {
@@ -41,6 +43,7 @@ const PointsRuleCard = ({ id }) => {
     try {
       const next = {
         ...(tpl || {}),
+        points_mode: mode,
         points_per_euro: Number(rate) || 0,
         points_per_visit: Number(perVisit) || 0,
       };
@@ -89,11 +92,53 @@ const PointsRuleCard = ({ id }) => {
         </div>
       </header>
 
+      {/* Mode toggle — owner picks how points are awarded */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.inkMute }}>
+          Comment attribuer les points ?
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('per_visit')}
+            className="text-left p-3 rounded-xl transition"
+            style={{
+              background: mode === 'per_visit' ? '#FCE3DC' : 'white',
+              border: `2px solid ${mode === 'per_visit' ? C.terracotta : C.hairline}`,
+            }}
+          >
+            <p className="text-sm font-bold" style={{ color: C.inkDeep }}>
+              📌 Forfait par visite
+            </p>
+            <p className="text-xs mt-1" style={{ color: C.inkMute }}>
+              Toujours <b>{perVisit || 0}</b> points par scan, peu importe le montant.
+              Simple et prévisible.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('per_euro')}
+            className="text-left p-3 rounded-xl transition"
+            style={{
+              background: mode === 'per_euro' ? '#FCE3DC' : 'white',
+              border: `2px solid ${mode === 'per_euro' ? C.terracotta : C.hairline}`,
+            }}
+          >
+            <p className="text-sm font-bold" style={{ color: C.inkDeep }}>
+              💶 Selon le montant dépensé
+            </p>
+            <p className="text-xs mt-1" style={{ color: C.inkMute }}>
+              <b>{rate || 0}</b> points par euro. Récompense les gros paniers.
+            </p>
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Points per euro */}
-        <label className="block">
+        <label className={'block ' + (mode === 'per_euro' ? '' : 'opacity-50')}>
           <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.inkMute }}>
-            Points par euro dépensé
+            Points par euro dépensé {mode === 'per_euro' ? '(actif)' : '(inactif)'}
           </span>
           <div className="flex items-center gap-2 mt-1">
             <input
@@ -113,10 +158,10 @@ const PointsRuleCard = ({ id }) => {
           </p>
         </label>
 
-        {/* Points per visit (fallback when no amount entered) */}
-        <label className="block">
+        {/* Points per visit */}
+        <label className={'block ' + (mode === 'per_visit' ? '' : 'opacity-50')}>
           <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.inkMute }}>
-            Points fixes par visite (sans montant)
+            Points par visite {mode === 'per_visit' ? '(actif)' : '(de secours)'}
           </span>
           <div className="flex items-center gap-2 mt-1">
             <input
@@ -130,7 +175,9 @@ const PointsRuleCard = ({ id }) => {
             <span className="text-sm" style={{ color: C.inkMute }}>points / visite</span>
           </div>
           <p className="text-[11px] mt-1.5" style={{ color: C.inkMute }}>
-            Utilisé quand le caissier scanne sans saisir de montant.
+            {mode === 'per_visit'
+              ? 'Mode actif — chaque scan crédite ce nombre de points.'
+              : 'Utilisé quand aucun montant n\'est saisi.'}
           </p>
         </label>
       </div>

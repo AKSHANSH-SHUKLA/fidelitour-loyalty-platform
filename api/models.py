@@ -248,9 +248,13 @@ class CardTemplate(BaseModel):
     stamp_style: str = "hexagon"
     show_meter: bool = True  # alias of show_progress_meter (new name, kept in sync)
     points_per_visit: int = 10
-    # When set (>0), points_per_euro is preferred over points_per_visit on scans
-    # that include amount_paid. Default 10 = "1 € spent → 10 points".
+    # When set (>0), points_per_euro is the rate used in 'per_euro' mode.
+    # Default 10 = "1 € spent → 10 points".
     points_per_euro: float = 10.0
+    # How points are awarded on a scan. The OWNER picks this in Settings.
+    #   'per_visit' → flat points_per_visit per scan (default — independent of amount)
+    #   'per_euro'  → amount_paid × points_per_euro
+    points_mode: str = "per_visit"
     visits_per_stamp: int = 1
     reward_threshold_stamps: int = 10
     reward_description: str = "Un café gratuit"

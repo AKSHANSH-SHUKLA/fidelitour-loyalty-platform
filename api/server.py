@@ -2761,20 +2761,22 @@ def scan_visit(
     previous_tier = (c_obj.tier or "bronze").lower()  # snapshot BEFORE update
 
     # Auto-calculate points if not explicitly passed.
-    # Order of precedence:
-    #   1. req.points if explicitly given (manual override at the till)
-    #   2. amount_paid × points_per_euro from the card_template
-    #   3. flat points_per_visit from the card_template
-    #   4. fallback default of 10
+    # Owner-controlled via card_template.points_mode:
+    #   'per_visit' (default) → flat points_per_visit per scan
+    #   'per_euro'            → amount_paid × points_per_euro
+    # req.points (when provided) is a manual override at the till that wins
+    # over both modes — useful for custom scenarios.
     if req.points is not None:
         points_to_add = int(req.points)
     else:
         card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
-        ppe = card_template.get("points_per_euro")
+        mode = (card_template.get("points_mode") or "per_visit").lower()
+        ppe = float(card_template.get("points_per_euro") or 10)
         ppv = int(card_template.get("points_per_visit", 10) or 10)
-        if ppe and float(req.amount_paid or 0) > 0:
-            points_to_add = int(round(float(ppe) * float(req.amount_paid)))
+        if mode == "per_euro" and float(req.amount_paid or 0) > 0:
+            points_to_add = int(round(ppe * float(req.amount_paid)))
         else:
+            # 'per_visit' (or per_euro with no amount) → flat rate
             points_to_add = ppv
 
     c_obj.points += points_to_add
