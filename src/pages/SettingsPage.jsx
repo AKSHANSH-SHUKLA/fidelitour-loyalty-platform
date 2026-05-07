@@ -11,6 +11,8 @@ import TierDefinitionCard from '../components/TierDefinitionCard';
 import AutoCampaignsCard from '../components/AutoCampaignsCard';
 import WelcomeBonusCard from '../components/WelcomeBonusCard';
 import InactiveCustomerPurgeCard from '../components/InactiveCustomerPurgeCard';
+import PointsRuleCard from '../components/PointsRuleCard';
+import TeamCard from '../components/TeamCard';
 
 const SettingsPage = () => {
     const location = useLocation();
@@ -311,6 +313,12 @@ const SettingsPage = () => {
             {/* Additive: auto messages for birthdays + inactive customers. */}
             <div id="settings-auto" className="scroll-mt-24"><AutoCampaignsCard /></div>
 
+            {/* Configurable points-per-euro rule, used by the Scan page. */}
+            <div id="settings-points" className="scroll-mt-24"><PointsRuleCard /></div>
+
+            {/* Staff & manager accounts scoped to this tenant. */}
+            <div id="settings-team" className="scroll-mt-24"><TeamCard /></div>
+
             {/* Item 31 — owner-side cleanup: soft-delete inactive customers (with restore). */}
             <div id="settings-cleanup" className="scroll-mt-24"><InactiveCustomerPurgeCard /></div>
         </div>
@@ -333,6 +341,8 @@ function SettingsNavigator() {
     { id: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
     { id: 'settings-welcome',  label: '🎁 Message de bienvenue' },
     { id: 'settings-auto',     label: '🤖 Campagnes automatiques' },
+    { id: 'settings-points',   label: '💰 Règle de points' },
+    { id: 'settings-team',     label: '👥 Équipe & accès' },
     { id: 'settings-cleanup',  label: '🧹 Nettoyer clients inactifs' },
   ];
 

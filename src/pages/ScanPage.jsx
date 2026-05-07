@@ -12,6 +12,9 @@ const ScanPage = () => {
   const [amountPaid, setAmountPaid] = useState('');
   const [points, setPoints] = useState('');
   const [pointsManuallyEdited, setPointsManuallyEdited] = useState(false);
+  // Live rate from this tenant's card template — replaces the hardcoded *10.
+  // Falls back to 10 (the legacy default) if the template hasn't been saved yet.
+  const [pointsPerEuro, setPointsPerEuro] = useState(10);
   const [status, setStatus] = useState(null); // { type: 'success' | 'error' | 'info', message: '' }
   const [loading, setLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -30,6 +33,14 @@ const ScanPage = () => {
         const r = await ownerAPI.getBranches();
         _setBranchesCtx(r.data || []);
       } catch (e) { /* no branches, plan doesn't support — fine */ }
+    })();
+    // Load the tenant's points-per-euro rule from the card template.
+    (async () => {
+      try {
+        const t = await ownerAPI.getCardTemplate();
+        const rate = Number(t.data?.points_per_euro);
+        if (rate && rate > 0) setPointsPerEuro(rate);
+      } catch (_e) { /* keep default 10 */ }
     })();
   }, []);
 
@@ -127,7 +138,7 @@ const ScanPage = () => {
     if (!pointsManuallyEdited && value.trim() !== '') {
       const amount = parseFloat(value);
       if (!isNaN(amount) && amount >= 0) {
-        const calculatedPoints = Math.floor(amount * 10); // 10 points per euro
+        const calculatedPoints = Math.floor(amount * pointsPerEuro); // 10 points per euro
         setPoints(calculatedPoints.toString());
       }
     }
@@ -149,7 +160,7 @@ const ScanPage = () => {
     }
 
     // Calculate final points
-    const finalPoints = points.trim() !== '' && pointsManuallyEdited ? parseInt(points) : Math.floor(parsedAmount * 10);
+    const finalPoints = points.trim() !== '' && pointsManuallyEdited ? parseInt(points) : Math.floor(parsedAmount * pointsPerEuro);
 
     setLoading(true);
     setStatus(null);
@@ -351,7 +362,7 @@ const ScanPage = () => {
               </div>
               {amountPaid && parseFloat(amountPaid) > 0 && (
                 <p className="text-[11px] font-semibold" style={{ color: '#4A5D23' }}>
-                  ✓ {Math.floor(parseFloat(amountPaid) * 10)} points seront crédités après le scan
+                  ✓ {Math.floor(parseFloat(amountPaid) * pointsPerEuro)} points seront crédités après le scan
                 </p>
               )}
             </div>
@@ -415,7 +426,7 @@ const ScanPage = () => {
                 className="w-full px-4 py-4 rounded-xl border-2 border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
                 disabled={loading}
               />
-              <p className="text-xs text-[#57534E] mt-2">{points && amountPaid ? `${Math.floor(parseFloat(amountPaid) * 10)} points at 10 per euro` : 'Leave blank to auto-calculate'}</p>
+              <p className="text-xs text-[#57534E] mt-2">{points && amountPaid ? `${Math.floor(parseFloat(amountPaid) * pointsPerEuro)} points (${pointsPerEuro} par euro)` : `Laisser vide pour auto-calculer · ${pointsPerEuro} points par euro`}</p>
             </div>
 
             <button

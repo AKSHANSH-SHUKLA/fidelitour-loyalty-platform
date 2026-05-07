@@ -333,15 +333,51 @@ const MyWalletCardPage = () => {
               />
             )}
 
-            {/* Add-to-wallet buttons */}
-            <div className="grid grid-cols-2 gap-3 mt-5">
-              <button className="bg-black text-white py-3 rounded-xl font-medium text-sm">
-                Add to Apple Wallet
+            {/* Save / share actions — the previous "Add to Apple/Google Wallet"
+                buttons were fake because real .pkpass generation needs a paid
+                Apple Developer cert. Until that's set up, give the customer
+                three actions that actually work today. */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5">
+              <button
+                onClick={async () => {
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({
+                        title: `${tenant?.name || 'FidéliTour'} — ma carte de fidélité`,
+                        text: `Ma carte de fidélité ${tenant?.name || 'FidéliTour'}`,
+                        url: window.location.href,
+                      });
+                    } else {
+                      await navigator.clipboard.writeText(window.location.href);
+                      showToast('Lien copié — collez-le où vous voulez');
+                    }
+                  } catch (_e) { /* user cancelled, ignore */ }
+                }}
+                className="bg-[#1C1917] text-white py-3 rounded-xl font-medium text-sm hover:opacity-90 transition"
+              >
+                📤 Partager / copier
               </button>
-              <button className="bg-[#1C1917] text-white py-3 rounded-xl font-medium text-sm">
-                Add to Google Wallet
+              <button
+                onClick={() => {
+                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                  showToast(isIOS
+                    ? "Touchez le bouton Partager dans Safari, puis 'Sur l'écran d'accueil'."
+                    : "Menu Chrome → 'Ajouter à l'écran d'accueil'.");
+                }}
+                className="bg-[#B85C38] text-white py-3 rounded-xl font-medium text-sm hover:opacity-90 transition"
+              >
+                📱 Sur l'écran d'accueil
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="bg-white text-[#1C1917] py-3 rounded-xl font-medium text-sm border border-[#E7E5E4] hover:bg-[#FAF8F4] transition"
+              >
+                🖨️ Imprimer
               </button>
             </div>
+            <p className="text-[10px] text-[#8B8680] text-center mt-2">
+              💡 La carte fonctionne dans n'importe quel navigateur. Apple Wallet / Google Wallet natifs nécessitent un compte développeur payant — disponibles sur demande.
+            </p>
 
             {/* Push notification preview */}
             <div className="mt-6 bg-white/70 backdrop-blur rounded-xl p-4 border border-[#E7E5E4]">
@@ -717,10 +753,43 @@ const WalletPass = ({ customer, tenant, card, activeOffer, onOpenDetails }) => {
         </button>
       </div>
 
-      {/* Add-to-wallet buttons */}
-      <div className="grid grid-cols-2 gap-3 mt-5">
-        <button className="bg-black text-white py-3 rounded-xl font-medium text-sm">Ajouter à Apple Wallet</button>
-        <button className="bg-[#1C1917] text-white py-3 rounded-xl font-medium text-sm">Ajouter à Google Wallet</button>
+      {/* Save / share actions — see MyWalletCardPage for rationale. */}
+      <div className="grid grid-cols-3 gap-2 mt-5">
+        <button
+          onClick={async (e) => {
+            e.stopPropagation();
+            try {
+              if (navigator.share) {
+                await navigator.share({ title: 'Ma carte de fidélité', url: window.location.href });
+              } else {
+                await navigator.clipboard.writeText(window.location.href);
+                alert('Lien copié.');
+              }
+            } catch (_e) { /* user cancelled */ }
+          }}
+          className="bg-[#1C1917] text-white py-3 rounded-xl font-medium text-sm"
+        >
+          📤 Partager
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            alert(isIOS
+              ? "Touchez le bouton Partager dans Safari, puis 'Sur l'écran d'accueil'."
+              : "Menu Chrome → 'Ajouter à l'écran d'accueil'.");
+          }}
+          className="bg-[#B85C38] text-white py-3 rounded-xl font-medium text-sm"
+        >
+          📱 Accueil
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); window.print(); }}
+          className="bg-white border border-[#E7E5E4] py-3 rounded-xl font-medium text-sm"
+          style={{ color: '#1C1917' }}
+        >
+          🖨️ Imprimer
+        </button>
       </div>
 
       {/* Push notification preview */}

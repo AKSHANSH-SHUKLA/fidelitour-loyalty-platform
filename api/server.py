@@ -2760,16 +2760,22 @@ def scan_visit(
     c_obj = Customer(**cust)
     previous_tier = (c_obj.tier or "bronze").lower()  # snapshot BEFORE update
 
-    # Auto-calculate points if amount_paid provided but points not provided
+    # Auto-calculate points if not explicitly passed.
+    # Order of precedence:
+    #   1. req.points if explicitly given (manual override at the till)
+    #   2. amount_paid × points_per_euro from the card_template
+    #   3. flat points_per_visit from the card_template
+    #   4. fallback default of 10
     if req.points is not None:
-        points_to_add = req.points
+        points_to_add = int(req.points)
     else:
-        # Get card template to get points_per_visit
-        card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id})
-        points_per_visit = 10  # default
-        if card_template:
-            points_per_visit = card_template.get("points_per_visit", 10)
-        points_to_add = points_per_visit
+        card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
+        ppe = card_template.get("points_per_euro")
+        ppv = int(card_template.get("points_per_visit", 10) or 10)
+        if ppe and float(req.amount_paid or 0) > 0:
+            points_to_add = int(round(float(ppe) * float(req.amount_paid)))
+        else:
+            points_to_add = ppv
 
     c_obj.points += points_to_add
     c_obj.visits += 1
