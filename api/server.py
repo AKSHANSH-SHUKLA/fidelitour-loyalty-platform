@@ -3564,8 +3564,12 @@ def owner_analytics(
             "by_weekday_hour": [
                 {"$match": {"visit_time": {"$ne": None}}},
                 {"$project": {
-                    "dow": {"$dayOfWeek": "$visit_time"},  # 1=Sun..7=Sat
-                    "hour": {"$hour": "$visit_time"}
+                    # IMPORTANT: visit_time is stored in UTC, but the heatmap needs
+                    # to read in the *shop's* local time. Hardcoded to Europe/Paris
+                    # since this is a French platform — switch to a per-tenant
+                    # timezone setting if non-FR shops onboard later.
+                    "dow":  {"$dayOfWeek": {"date": "$visit_time", "timezone": "Europe/Paris"}},
+                    "hour": {"$hour":      {"date": "$visit_time", "timezone": "Europe/Paris"}},
                 }},
                 {"$group": {"_id": {"dow": "$dow", "hour": "$hour"}, "count": {"$sum": 1}}}
             ]

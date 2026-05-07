@@ -226,8 +226,25 @@ const ScanPage = () => {
       setPoints('');
       setPointsManuallyEdited(false);
     } catch (error) {
-      console.error(error);
-      const msg = error.response?.data?.detail || 'Customer not found or invalid barcode.';
+      // Verbose diagnostic so we stop guessing what the server actually said.
+      console.error('Scan failed:', error);
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+      const rawBody = (() => {
+        try {
+          if (typeof error.response?.data === 'string') return error.response.data.slice(0, 200);
+          if (error.response?.data) return JSON.stringify(error.response.data).slice(0, 200);
+        } catch (_e) { /* ignore */ }
+        return '';
+      })();
+      let msg;
+      if (detail) {
+        msg = detail;
+      } else if (status) {
+        msg = `Erreur HTTP ${status} — réponse serveur : ${rawBody || '(vide)'}`;
+      } else {
+        msg = `Erreur réseau — ${error.message || 'pas de réponse du serveur'}. Vérifiez la connexion / actualisez la page.`;
+      }
       setStatus({ type: 'error', message: msg });
     } finally {
       setLoading(false);
