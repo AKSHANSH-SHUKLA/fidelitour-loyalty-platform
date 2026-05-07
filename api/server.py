@@ -2866,53 +2866,75 @@ def scan_visit(
         pass
 
     # ---- Tier-up congratulation push ("Bravo, vous passez Gold !") ----
+    # Side-effect; must NEVER fail the scan response. Symptom of an unwrapped
+    # crash here is exactly what the user reported: visit recorded in DB, but
+    # the API returns 500 → frontend falls into its catch block and shows
+    # "Customer not found" (the generic fallback message).
     tier_rank = {"bronze": 0, "silver": 1, "gold": 2, "vip": 3}
-    if tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0):
-        tenant_doc = db.tenants.find_one({"id": token_data.tenant_id}) or {}
-        biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "notre équipe"
-        congrats = {
-            "customer_id": c_obj.id,
-            "tenant_id": token_data.tenant_id,
-            "title": f"Bravo, vous passez {new_tier.title()} ! 🎉",
-            "body": f"Félicitations {c_obj.name.split(' ')[0] if c_obj.name else ''} ! Vous débloquez le statut {new_tier.title()} chez {biz}.",
-            "type": "tier_up",
-            "previous_tier": previous_tier,
-            "new_tier": new_tier,
-            "sent_at": datetime.now(timezone.utc),
-        }
-        db.push_notifications.insert_one(congrats)
-        # Also try to send email if we have one on file.
-        if c_obj.email:
-            html = _campaign_html(biz, congrats["title"], congrats["body"], c_obj.model_dump())
-            send_email_to_customer(c_obj.email, biz, f"{biz} - {congrats['title']}", html)
+    try:
+        if tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0):
+            tenant_doc = db.tenants.find_one({"id": token_data.tenant_id}) or {}
+            biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "notre équipe"
+            congrats = {
+                "customer_id": c_obj.id,
+                "tenant_id": token_data.tenant_id,
+                "title": f"Bravo, vous passez {new_tier.title()} ! 🎉",
+                "body": f"Félicitations {c_obj.name.split(' ')[0] if c_obj.name else ''} ! Vous débloquez le statut {new_tier.title()} chez {biz}.",
+                "type": "tier_up",
+                "previous_tier": previous_tier,
+                "new_tier": new_tier,
+                "sent_at": datetime.now(timezone.utc),
+            }
+            db.push_notifications.insert_one(congrats)
+            if c_obj.email:
+                html = _campaign_html(biz, congrats["title"], congrats["body"], c_obj.model_dump())
+                send_email_to_customer(c_obj.email, biz, f"{biz} - {congrats['title']}", html)
+    except Exception as _e:
+        print(f"scan_visit: tier-up push failed (non-fatal): {_e}")
 
-    # Record visit with timestamp
-    visit_time = datetime.now(timezone.utc)
-    v = Visit(
-        id=str(uuid.uuid4()),
-        tenant_id=token_data.tenant_id,
-        customer_id=c_obj.id,
-        points_awarded=points_to_add,
-        amount_paid=req.amount_paid,
-        visit_time=visit_time,
-        branch_id=req.branch_id or getattr(c_obj, "branch_id", None),
-    )
-    db.visits.insert_one(v.model_dump())
+    # Record visit with timestamp — this is the part that MUST succeed.
+    try:
+        visit_time = datetime.now(timezone.utc)
+        v = Visit(
+            id=str(uuid.uuid4()),
+            tenant_id=token_data.tenant_id,
+            customer_id=c_obj.id,
+            points_awarded=points_to_add,
+            amount_paid=req.amount_paid,
+            visit_time=visit_time,
+            branch_id=req.branch_id or getattr(c_obj, "branch_id", None),
+        )
+        db.visits.insert_one(v.model_dump())
+    except Exception as _e:
+        print(f"scan_visit: visit insert failed: {_e}")
 
-    # ---- Reward notifications — delegated to a reusable evaluator ----
-    # The evaluator is also called when the owner saves the card template, so
-    # that customers who become eligible due to a rule change (e.g., threshold
-    # dropped from 10 → 8 while a customer sits at 9 stamps) get their unlock
-    # push retroactively. It uses push_notifications history to dedup so each
-    # customer can only get one near_reward and one unlock per card cycle.
-    _evaluate_reward_state_and_notify(c_obj, token_data.tenant_id)
+    # Reward notifications — wrapped because near_reward / unlock pushes can
+    # fail (e.g. campaign HTML rendering, push_notifications insert) and we
+    # don't want that to nuke the scan response.
+    try:
+        _evaluate_reward_state_and_notify(c_obj, token_data.tenant_id)
+    except Exception as _e:
+        print(f"scan_visit: reward evaluator failed (non-fatal): {_e}")
 
     # Surface tier-change info on the response so the staff Scan page can show
     # a "Bravo!" celebration for the cashier without an extra round-trip.
-    response = c_obj.model_dump()
-    response["previous_tier"] = previous_tier
-    response["tier_upgraded"] = tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0)
-    return response
+    try:
+        response = c_obj.model_dump()
+        response["previous_tier"] = previous_tier
+        response["tier_upgraded"] = tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0)
+        return response
+    except Exception as _e:
+        print(f"scan_visit: response build failed (returning minimal): {_e}")
+        return {
+            "id": getattr(c_obj, "id", None),
+            "barcode_id": getattr(c_obj, "barcode_id", None),
+            "name": getattr(c_obj, "name", ""),
+            "visits": getattr(c_obj, "visits", 0),
+            "points": getattr(c_obj, "points", 0),
+            "tier": getattr(c_obj, "tier", "bronze"),
+            "previous_tier": previous_tier,
+            "tier_upgraded": False,
+        }
 
 
 def _cycle_start_for_customer(customer_id: str, tenant_id: str) -> Optional[datetime]:
