@@ -3752,7 +3752,24 @@ def join_program(slug: str, req: JoinRequest):
     if not t:
         raise HTTPException(status_code=404, detail="Tenant not found")
     tid = t["id"]
-    existing = db.customers.find_one({"tenant_id": tid, "email": req.email})
+
+    # Dedup logic: a person is "the same customer" only when BOTH email and
+    # phone match an existing record in this tenant. Email-only dedup was too
+    # aggressive (couples sharing an inbox got merged; testing with one email
+    # was impossible). Phone-only would collide for customers using shared
+    # store phones during signup. Requiring both is the right balance.
+    norm_email = (req.email or "").strip().lower()
+    norm_phone = "".join(c for c in (req.phone or "") if c.isdigit())
+    existing = None
+    if norm_email and norm_phone:
+        for cand in db.customers.find({
+            "tenant_id": tid,
+            "email": {"$regex": f"^{re.escape(norm_email)}$", "$options": "i"},
+        }):
+            cand_phone = "".join(c for c in (cand.get("phone") or "") if c.isdigit())
+            if cand_phone == norm_phone:
+                existing = cand
+                break
     if existing:
         # Backfill GPS if newly provided
         if req.latitude is not None and req.longitude is not None:
