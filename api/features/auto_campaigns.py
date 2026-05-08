@@ -23,7 +23,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from auth import require_role
 
@@ -45,18 +45,18 @@ def init(db):
 class AutoCampaignConfig(BaseModel):
     tenant_id: Optional[str] = None
     birthday_enabled: bool = True
+    # Both title and body are now editable — no more hardcoded strings
+    # composed in run_birthdays(). The owner controls everything.
+    birthday_title: str = "Joyeux anniversaire {first_name} ! 🎂"
     birthday_message: str = "Joyeux anniversaire {first_name} ! 🎂 Une boisson est offerte aujourd'hui chez {business_name}."
     birthday_bonus_points: int = 50
     inactive_enabled: bool = True
+    inactive_title: str = "{business_name} — vous nous manquez"
     inactive_message: str = "{first_name}, vous nous manquez chez {business_name}. -10% sur votre prochaine visite — à bientôt !"
-    # If 0, falls back to customer_status_config.dormant_after_days
     inactive_trigger_days: int = 0
-    # Avoid spamming the same person — wait this many days before re-sending
     inactive_cooldown_days: int = 30
-    # Almost-there nudge: triggered when a customer is N visits away from
-    # unlocking the next reward (default 1, configurable). Reads stamp +
-    # threshold info from the existing card_templates collection.
     almost_there_enabled: bool = True
+    almost_there_title: str = "Plus qu'une visite ! 🎁"
     almost_there_message: str = "{first_name}, vous êtes à 1 visite d'une récompense chez {business_name} ! ☕"
     almost_there_visits_left: int = 1
     almost_there_cooldown_days: int = 7
@@ -202,12 +202,59 @@ def put_config(
     return payload
 
 
+# ----------------------------------------------------------------------
+# Pending auto-runs queue
+#
+# Cron jobs (or manual "Prepare" calls from the owner) write a row to
+# `pending_auto_runs` with status='pending'. The owner reviews, edits if
+# wanted, then approves to actually send. Nothing leaves the server
+# without an explicit owner approval.
+# ----------------------------------------------------------------------
+
+def _prepare_run(tenant_id: str, kind: str, title: str, body_template: str,
+                 candidates: list) -> str:
+    """Create a single pending_auto_runs row covering N recipients. Returns
+    the row id. Caller passes already-filtered candidates (cooldowns, dedup,
+    etc. applied)."""
+    if not candidates:
+        return ""
+    recipients = [
+        {
+            "customer_id": c.get("id"),
+            "name": c.get("name") or "",
+            "phone": c.get("phone") or "",
+            "email": c.get("email") or "",
+            "first_name": (c.get("name") or "").split(" ")[0],
+        }
+        for c in candidates
+    ]
+    row_id = str(uuid.uuid4())
+    _db.pending_auto_runs.insert_one({
+        "id": row_id,
+        "tenant_id": tenant_id,
+        "kind": kind,                         # birthday | inactive | almost_there
+        "title": title,
+        "body_template": body_template,
+        "recipients": recipients,
+        "recipient_count": len(recipients),
+        "status": "pending",                   # pending | approved | skipped
+        "prepared_at": datetime.now(timezone.utc),
+    })
+    return row_id
+
+
 # ---------- Run endpoints ----------
 @router.post("/api/owner/auto-campaigns/run-birthdays")
 def run_birthdays(
     dry_run: bool = False,
+    prepare: bool = False,
     token_data=Depends(require_role(["business_owner", "manager"])),
 ):
+    """Find today's birthday customers.
+       prepare=True   → write to pending_auto_runs queue (owner reviews + approves).
+       dry_run=True   → return previews without writing anything.
+       Otherwise      → send immediately (legacy path; cron now uses prepare=True).
+    """
     cfg = _config(token_data.tenant_id)
     if not cfg.birthday_enabled:
         return {"sent": 0, "reason": "disabled"}
@@ -219,10 +266,9 @@ def run_birthdays(
         "birthday": today_mmdd,
     }).limit(2000))
 
-    sent = 0
+    eligible = []
     previews = []
     for c in customers:
-        # de-dupe: skip if already sent a birthday today
         already = _db.auto_campaign_log.find_one({
             "tenant_id": token_data.tenant_id,
             "customer_id": c["id"],
@@ -231,55 +277,61 @@ def run_birthdays(
         })
         if already:
             continue
+        eligible.append(c)
+        ctx = _build_ctx(c, tenant)
+        previews.append({
+            "customer_id": c["id"], "name": c.get("name"),
+            "body": _substitute(cfg.birthday_message, ctx),
+        })
+
+    if dry_run:
+        return {"found": len(customers), "eligible": len(eligible), "dry_run": True, "preview": previews}
+
+    if prepare:
+        # Queue rather than send. Title/body templates carry forward; per-customer
+        # personalisation happens at approve time.
+        title_template = cfg.birthday_title or "🎂 Joyeux anniversaire !"
+        run_id = _prepare_run(token_data.tenant_id, "birthday", title_template, cfg.birthday_message, eligible)
+        return {"prepared": True, "run_id": run_id, "recipient_count": len(eligible)}
+
+    sent = 0
+    for c in eligible:
         ctx = _build_ctx(c, tenant)
         body = _substitute(cfg.birthday_message, ctx)
-        title = f"🎂 {tenant.get('name', '')}".strip()
-        if dry_run:
-            previews.append({"customer_id": c["id"], "name": c.get("name"), "body": body})
-        else:
-            _dispatch_message(token_data.tenant_id, c, "birthday", title, body)
-            if cfg.birthday_bonus_points > 0:
-                _db.customers.update_one({"id": c["id"]}, {"$inc": {"points": cfg.birthday_bonus_points}})
-            sent += 1
-
-    return {
-        "found": len(customers),
-        "sent": sent,
-        "dry_run": dry_run,
-        "preview": previews if dry_run else None,
-    }
+        title = _substitute(cfg.birthday_title, ctx)
+        _dispatch_message(token_data.tenant_id, c, "birthday", title, body)
+        if cfg.birthday_bonus_points > 0:
+            _db.customers.update_one({"id": c["id"]}, {"$inc": {"points": cfg.birthday_bonus_points}})
+        sent += 1
+    return {"found": len(customers), "sent": sent, "dry_run": False}
 
 
 @router.post("/api/owner/auto-campaigns/run-inactive")
 def run_inactive(
     dry_run: bool = False,
+    prepare: bool = False,
     limit: int = 200,
     token_data=Depends(require_role(["business_owner", "manager"])),
 ):
     cfg = _config(token_data.tenant_id)
     if not cfg.inactive_enabled:
         return {"sent": 0, "reason": "disabled"}
-
-    # Resolve trigger days — fall back to status config if not overridden
     trigger_days = cfg.inactive_trigger_days
     if trigger_days <= 0:
         status_cfg = _db.customer_status_config.find_one({"tenant_id": token_data.tenant_id}) or {}
         trigger_days = int(status_cfg.get("dormant_after_days", 90) or 90)
-
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=trigger_days)
     cooldown_cutoff = now - timedelta(days=max(1, cfg.inactive_cooldown_days))
-
     tenant = _db.tenants.find_one({"id": token_data.tenant_id}) or {}
     candidates = list(_db.customers.find({
         "tenant_id": token_data.tenant_id,
         "last_visit_date": {"$lte": cutoff},
-    }).limit(limit * 5))   # over-fetch to allow filtering by cooldown
+    }).limit(limit * 5))
 
-    sent = 0
+    eligible = []
     previews = []
     for c in candidates:
-        # respect cooldown — don't pester same customer repeatedly
         recent_log = _db.auto_campaign_log.find_one({
             "tenant_id": token_data.tenant_id,
             "customer_id": c["id"],
@@ -288,35 +340,37 @@ def run_inactive(
         })
         if recent_log:
             continue
+        eligible.append(c)
         ctx = _build_ctx(c, tenant)
-        body = _substitute(cfg.inactive_message, ctx)
-        title = f"{tenant.get('name', '')}".strip() or "We miss you"
-        if dry_run:
-            previews.append({
-                "customer_id": c["id"], "name": c.get("name"),
-                "days_since_last": (now - c["last_visit_date"]).days if c.get("last_visit_date") else None,
-                "body": body,
-            })
-        else:
-            _dispatch_message(token_data.tenant_id, c, "inactive_rescue", title, body)
-            sent += 1
-        if sent >= limit and not dry_run:
-            break
-        if dry_run and len(previews) >= limit:
+        previews.append({
+            "customer_id": c["id"], "name": c.get("name"),
+            "days_since_last": (now - c["last_visit_date"]).days if c.get("last_visit_date") else None,
+            "body": _substitute(cfg.inactive_message, ctx),
+        })
+        if len(eligible) >= limit:
             break
 
-    return {
-        "trigger_days": trigger_days,
-        "candidates": len(candidates),
-        "sent": sent,
-        "dry_run": dry_run,
-        "preview": previews if dry_run else None,
-    }
+    if dry_run:
+        return {"trigger_days": trigger_days, "eligible": len(eligible), "dry_run": True, "preview": previews}
+
+    if prepare:
+        run_id = _prepare_run(token_data.tenant_id, "inactive_rescue", cfg.inactive_title, cfg.inactive_message, eligible)
+        return {"prepared": True, "run_id": run_id, "recipient_count": len(eligible)}
+
+    sent = 0
+    for c in eligible:
+        ctx = _build_ctx(c, tenant)
+        body = _substitute(cfg.inactive_message, ctx)
+        title = _substitute(cfg.inactive_title, ctx)
+        _dispatch_message(token_data.tenant_id, c, "inactive_rescue", title, body)
+        sent += 1
+    return {"trigger_days": trigger_days, "candidates": len(candidates), "sent": sent, "dry_run": False}
 
 
 @router.post("/api/owner/auto-campaigns/run-almost-there")
 def run_almost_there(
     dry_run: bool = False,
+    prepare: bool = False,
     limit: int = 200,
     token_data=Depends(require_role(["business_owner", "manager"])),
 ):
@@ -338,21 +392,18 @@ def run_almost_there(
     cooldown_cutoff = now - timedelta(days=max(1, cfg.almost_there_cooldown_days))
     tenant = _db.tenants.find_one({"id": token_data.tenant_id}) or {}
 
-    sent = 0
-    previews = []
     candidates = list(_db.customers.find({
         "tenant_id": token_data.tenant_id,
         "visits": {"$gt": 0},
     }).limit(limit * 5))
 
+    eligible = []
+    previews = []
     for c in candidates:
         v = int(c.get("visits", 0) or 0)
-        # Visits remaining inside the current reward cycle. When v % cycle == 0
-        # the customer just hit a reward (no nudge needed); otherwise:
         remaining = cycle - (v % cycle) if (v % cycle) else cycle
         if remaining != target_remaining:
             continue
-        # cooldown
         recent_log = _db.auto_campaign_log.find_one({
             "tenant_id": token_data.tenant_id,
             "customer_id": c["id"],
@@ -361,31 +412,130 @@ def run_almost_there(
         })
         if recent_log:
             continue
+        eligible.append(c)
+        ctx = _build_ctx(c, tenant)
+        ctx["visits_left"] = target_remaining
+        previews.append({
+            "customer_id": c["id"], "name": c.get("name"),
+            "visits": v, "visits_left": target_remaining,
+            "body": _substitute(cfg.almost_there_message, ctx),
+        })
+        if len(eligible) >= limit:
+            break
+
+    if dry_run:
+        return {"cycle_visits": cycle, "eligible": len(eligible), "dry_run": True, "preview": previews}
+
+    if prepare:
+        run_id = _prepare_run(token_data.tenant_id, "almost_there", cfg.almost_there_title, cfg.almost_there_message, eligible)
+        return {"prepared": True, "run_id": run_id, "recipient_count": len(eligible)}
+
+    sent = 0
+    for c in eligible:
         ctx = _build_ctx(c, tenant)
         ctx["visits_left"] = target_remaining
         body = _substitute(cfg.almost_there_message, ctx)
-        title = f"{tenant.get('name', '')}".strip() or "Almost there!"
-        if dry_run:
-            previews.append({
-                "customer_id": c["id"], "name": c.get("name"),
-                "visits": v, "visits_left": target_remaining, "body": body,
-            })
-        else:
-            _dispatch_message(token_data.tenant_id, c, "almost_there", title, body)
-            sent += 1
-        if sent >= limit and not dry_run:
-            break
-        if dry_run and len(previews) >= limit:
-            break
+        title = _substitute(cfg.almost_there_title, ctx)
+        _dispatch_message(token_data.tenant_id, c, "almost_there", title, body)
+        sent += 1
+    return {"cycle_visits": cycle, "candidates_scanned": len(candidates), "sent": sent, "dry_run": False}
 
-    return {
-        "cycle_visits": cycle,
-        "target_visits_left": target_remaining,
-        "candidates_scanned": len(candidates),
-        "sent": sent,
-        "dry_run": dry_run,
-        "preview": previews if dry_run else None,
-    }
+
+# ============================================================
+# Pending auto-runs review queue
+# ============================================================
+@router.get("/api/owner/auto-campaigns/pending")
+def list_pending_auto_runs(
+    token_data=Depends(require_role(["business_owner", "manager"])),
+):
+    """Owner-facing list of auto-campaign batches that have been PREPARED but
+    not yet SENT. Each row shows recipient count, title, body template — the
+    owner reviews and approves to send (or skip to discard).
+    """
+    rows = list(_db.pending_auto_runs.find(
+        {"tenant_id": token_data.tenant_id, "status": "pending"},
+        {"_id": 0},
+    ).sort("prepared_at", -1).limit(100))
+    return {"pending": rows, "count": len(rows)}
+
+
+class EditPendingRunRequest(BaseModel):
+    title: Optional[str] = None
+    body_template: Optional[str] = None
+
+
+@router.put("/api/owner/auto-campaigns/pending/{run_id}")
+def edit_pending_auto_run(
+    run_id: str,
+    req: EditPendingRunRequest,
+    token_data=Depends(require_role(["business_owner"])),
+):
+    """Edit the title and/or body template of a pending run BEFORE approval."""
+    update = {}
+    if req.title is not None: update["title"] = req.title
+    if req.body_template is not None: update["body_template"] = req.body_template
+    if not update:
+        return {"updated": False}
+    res = _db.pending_auto_runs.update_one(
+        {"id": run_id, "tenant_id": token_data.tenant_id, "status": "pending"},
+        {"$set": update},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Pending run not found or already processed")
+    return {"updated": True}
+
+
+@router.post("/api/owner/auto-campaigns/pending/{run_id}/approve")
+def approve_pending_auto_run(
+    run_id: str,
+    token_data=Depends(require_role(["business_owner"])),
+):
+    """Owner clicked Approve. Now actually fire each message in the batch,
+    using the final title + body_template stored on the run."""
+    run = _db.pending_auto_runs.find_one({
+        "id": run_id, "tenant_id": token_data.tenant_id, "status": "pending",
+    })
+    if not run:
+        raise HTTPException(status_code=404, detail="Pending run not found or already processed")
+
+    tenant = _db.tenants.find_one({"id": token_data.tenant_id}) or {}
+    title_tpl = run.get("title", "")
+    body_tpl = run.get("body_template", "")
+    sent = 0
+    for r in run.get("recipients", []):
+        # Re-load the customer at send time so we have fresh points/visits
+        c = _db.customers.find_one({"id": r.get("customer_id"), "tenant_id": token_data.tenant_id})
+        if not c:
+            continue
+        ctx = _build_ctx(c, tenant)
+        title = _substitute(title_tpl, ctx)
+        body = _substitute(body_tpl, ctx)
+        try:
+            _dispatch_message(token_data.tenant_id, c, run.get("kind") or "auto", title, body)
+            sent += 1
+        except Exception as _e:
+            # Best effort — don't let one bad recipient nuke the rest
+            print(f"approve_pending_auto_run dispatch failed for {r.get('customer_id')}: {_e}")
+    _db.pending_auto_runs.update_one(
+        {"id": run_id},
+        {"$set": {"status": "approved", "approved_at": datetime.now(timezone.utc), "sent_count": sent}},
+    )
+    return {"approved": True, "sent": sent, "run_id": run_id}
+
+
+@router.post("/api/owner/auto-campaigns/pending/{run_id}/skip")
+def skip_pending_auto_run(
+    run_id: str,
+    token_data=Depends(require_role(["business_owner"])),
+):
+    """Owner declined this batch — discard without sending."""
+    res = _db.pending_auto_runs.update_one(
+        {"id": run_id, "tenant_id": token_data.tenant_id, "status": "pending"},
+        {"$set": {"status": "skipped", "skipped_at": datetime.now(timezone.utc)}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Pending run not found")
+    return {"skipped": True}
 
 
 @router.post("/api/owner/auto-campaigns/test-sms")

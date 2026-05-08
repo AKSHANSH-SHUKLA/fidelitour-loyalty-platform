@@ -7745,48 +7745,66 @@ def run_daily_triggers(request: Request):
 
     for tenant in tenants:
         tid = tenant["id"]
-        sector = tenant.get("sector") or "restaurant"
-        tpl = REACTIVATION_TEMPLATES_BY_SECTOR.get(sector, {
-            "title": "On vous a manqué ✨",
-            "content": "Revenez cette semaine pour une offre spéciale, {first_name} !"
-        })
+        # Owner-editable templates — fall back to defaults if unset
+        cfg = db.auto_campaign_config.find_one({"tenant_id": tid}) or {}
 
-        # A. Birthday auto-send
-        bday_customers = list(db.customers.find({"tenant_id": tid, "birthday": today_mmdd}))
-        if bday_customers:
-            birthday_body = f"Joyeux anniversaire {{first_name}} 🎂 ! Pour fêter ça, {tenant.get('name') or 'nous'} vous offre une surprise lors de votre prochaine visite."
-            _dispatch_campaign_to_customers(
-                tenant,
-                name="🎂 Joyeux anniversaire {first_name} !",
-                content=birthday_body,
-                customer_list=bday_customers,
-                trigger_type="birthday",
-            )
-            birthday_sent += len(bday_customers)
+        # A. Birthday — PREPARE (owner reviews + approves before send)
+        if cfg.get("birthday_enabled", True):
+            bday_customers = list(db.customers.find({"tenant_id": tid, "birthday": today_mmdd}))
+            if bday_customers:
+                title = cfg.get("birthday_title") or "🎂 Joyeux anniversaire {first_name} !"
+                body = cfg.get("birthday_message") or "Joyeux anniversaire {first_name} ! Une attention vous attend chez {business_name}."
+                db.pending_auto_runs.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "tenant_id": tid,
+                    "kind": "birthday",
+                    "title": title,
+                    "body_template": body,
+                    "recipients": [
+                        {"customer_id": c["id"], "name": c.get("name", ""),
+                         "phone": c.get("phone", ""), "email": c.get("email", ""),
+                         "first_name": (c.get("name") or "").split(" ")[0]}
+                        for c in bday_customers
+                    ],
+                    "recipient_count": len(bday_customers),
+                    "status": "pending",
+                    "prepared_at": now,
+                })
+                birthday_sent += len(bday_customers)
 
-        # B. Inactivity reactivation (cooldown-protected)
-        inactive_customers = list(db.customers.find({
-            "tenant_id": tid,
-            "last_visit_date": {"$lt": cutoff_inactive, "$ne": None},
-        }))
-        # Skip customers we already nudged in last 14 days.
-        already_nudged_ids = set()
-        recent_pushes = db.push_notifications.find({
-            "tenant_id": tid, "type": "reactivation",
-            "sent_at": {"$gte": cooldown_cutoff},
-        })
-        for p in recent_pushes:
-            already_nudged_ids.add(p.get("customer_id"))
-        fresh_inactive = [c for c in inactive_customers if c["id"] not in already_nudged_ids]
-        if fresh_inactive:
-            _dispatch_campaign_to_customers(
-                tenant,
-                name=tpl["title"],
-                content=tpl["content"],
-                customer_list=fresh_inactive,
-                trigger_type="reactivation",
-            )
-            reactivation_sent += len(fresh_inactive)
+        # B. Inactivity reactivation — PREPARE (cooldown-protected)
+        if cfg.get("inactive_enabled", True):
+            inactive_customers = list(db.customers.find({
+                "tenant_id": tid,
+                "last_visit_date": {"$lt": cutoff_inactive, "$ne": None},
+            }))
+            already_nudged_ids = set()
+            for p in db.push_notifications.find({
+                "tenant_id": tid, "type": "reactivation",
+                "sent_at": {"$gte": cooldown_cutoff},
+            }):
+                already_nudged_ids.add(p.get("customer_id"))
+            fresh_inactive = [c for c in inactive_customers if c["id"] not in already_nudged_ids]
+            if fresh_inactive:
+                title = cfg.get("inactive_title") or "{business_name} — vous nous manquez"
+                body = cfg.get("inactive_message") or "{first_name}, ça fait un moment ! Revenez nous voir, une attention vous attend chez {business_name}."
+                db.pending_auto_runs.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "tenant_id": tid,
+                    "kind": "inactive_rescue",
+                    "title": title,
+                    "body_template": body,
+                    "recipients": [
+                        {"customer_id": c["id"], "name": c.get("name", ""),
+                         "phone": c.get("phone", ""), "email": c.get("email", ""),
+                         "first_name": (c.get("name") or "").split(" ")[0]}
+                        for c in fresh_inactive
+                    ],
+                    "recipient_count": len(fresh_inactive),
+                    "status": "pending",
+                    "prepared_at": now,
+                })
+                reactivation_sent += len(fresh_inactive)
 
     # C. Drain scheduled campaigns
     due = list(db.scheduled_campaigns.find({

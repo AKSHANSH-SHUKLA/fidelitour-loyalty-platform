@@ -15,13 +15,16 @@ import PhonePushPreview from './PhonePushPreview';
 const AutoCampaignsCard = () => {
   const [cfg, setCfg] = useState({
     birthday_enabled: true,
+    birthday_title: '',
     birthday_message: '',
     birthday_bonus_points: 50,
     inactive_enabled: true,
+    inactive_title: '',
     inactive_message: '',
     inactive_trigger_days: 0,
     inactive_cooldown_days: 30,
     almost_there_enabled: true,
+    almost_there_title: '',
     almost_there_message: '',
     almost_there_visits_left: 1,
     almost_there_cooldown_days: 7,
@@ -136,7 +139,11 @@ const AutoCampaignsCard = () => {
       >
         <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
           <div className="min-w-0 space-y-3">
-            <Field label="Message template" type="textarea"
+            <Field label="Notification title" type="text"
+              value={cfg.birthday_title}
+              onChange={(v) => setCfg({ ...cfg, birthday_title: v })}
+              hint="Use {first_name} and {business_name} as placeholders." />
+            <Field label="Message body" type="textarea"
               value={cfg.birthday_message}
               onChange={(v) => setCfg({ ...cfg, birthday_message: v })} />
             <Field label="Bonus points to credit" suffix="points" type="number"
@@ -146,7 +153,7 @@ const AutoCampaignsCard = () => {
           </div>
           <PhonePushPreview
             businessName="Your shop"
-            title={"Happy birthday! 🎂"}
+            title={cfg.birthday_title || 'Happy birthday! 🎂'}
             body={cfg.birthday_message || 'Our whole team wishes you a happy birthday. A treat is waiting for you!'}
             primaryColor={C_PS.terracotta}
             width={200}
@@ -165,7 +172,11 @@ const AutoCampaignsCard = () => {
       >
         <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
           <div className="min-w-0 space-y-3">
-            <Field label="Message template" type="textarea"
+            <Field label="Notification title" type="text"
+              value={cfg.inactive_title}
+              onChange={(v) => setCfg({ ...cfg, inactive_title: v })}
+              hint="Placeholders {first_name} and {business_name} work here too." />
+            <Field label="Message body" type="textarea"
               value={cfg.inactive_message}
               onChange={(v) => setCfg({ ...cfg, inactive_message: v })} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -181,7 +192,7 @@ const AutoCampaignsCard = () => {
           </div>
           <PhonePushPreview
             businessName="Your shop"
-            title={"We've missed you!"}
+            title={cfg.inactive_title || "We've missed you!"}
             body={cfg.inactive_message || "It's been a while… Drop back in, a treat is waiting for you."}
             primaryColor={C_PS.terracotta}
             width={200}
@@ -200,7 +211,11 @@ const AutoCampaignsCard = () => {
       >
         <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
           <div className="min-w-0 space-y-3">
-            <Field label="Message template" type="textarea"
+            <Field label="Notification title" type="text"
+              value={cfg.almost_there_title}
+              onChange={(v) => setCfg({ ...cfg, almost_there_title: v })}
+              hint="Use {first_name}, {visits_left} as placeholders." />
+            <Field label="Message body" type="textarea"
               value={cfg.almost_there_message}
               onChange={(v) => setCfg({ ...cfg, almost_there_message: v })} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -216,7 +231,7 @@ const AutoCampaignsCard = () => {
           </div>
           <PhonePushPreview
             businessName="Your shop"
-            title={"Just one more visit! 🎁"}
+            title={cfg.almost_there_title || 'Just one more visit! 🎁'}
             body={cfg.almost_there_message || 'One more visit and you unlock your reward. See you soon!'}
             primaryColor={C_PS.terracotta}
             width={200}

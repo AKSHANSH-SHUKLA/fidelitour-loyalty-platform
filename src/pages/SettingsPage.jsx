@@ -15,6 +15,7 @@ import PointsRuleCard from '../components/PointsRuleCard';
 import TeamCard from '../components/TeamCard';
 import JoinQRPoster from '../components/JoinQRPoster';
 import PhonePushPreview from '../components/PhonePushPreview';
+import PendingAutoRunsCard from '../components/PendingAutoRunsCard';
 
 const SettingsPage = () => {
     const location = useLocation();
@@ -315,6 +316,9 @@ const SettingsPage = () => {
             {/* Additive: welcome message + bonus points on signup. */}
             <div id="settings-welcome" className="scroll-mt-24"><WelcomeBonusCard /></div>
 
+            {/* Review queue — auto-campaigns prepared by the cron, awaiting owner approval. */}
+            <div id="settings-auto-pending" className="scroll-mt-24"><PendingAutoRunsCard /></div>
+
             {/* Additive: auto messages for birthdays + inactive customers. */}
             <div id="settings-auto" className="scroll-mt-24"><AutoCampaignsCard /></div>
 
@@ -345,6 +349,7 @@ function SettingsNavigator() {
     { id: 'settings-hours',    label: '📅 Horaires & jours fériés' },
     { id: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
     { id: 'settings-welcome',  label: '🎁 Message de bienvenue' },
+    { id: 'settings-auto-pending', label: '📥 Auto-campagnes en attente' },
     { id: 'settings-auto',     label: '🤖 Campagnes automatiques' },
     { id: 'settings-points',   label: '💰 Règle de points' },
     { id: 'settings-team',     label: '👥 Équipe & accès' },

@@ -45,6 +45,7 @@ const SETTINGS_SECTIONS = [
   { anchor: 'settings-hours',    label: '📅 Horaires & jours fériés' },
   { anchor: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
   { anchor: 'settings-welcome',  label: '🎁 Message de bienvenue' },
+  { anchor: 'settings-auto-pending', label: '📥 Auto-campagnes en attente' },
   { anchor: 'settings-auto',     label: '🤖 Campagnes automatiques' },
   { anchor: 'settings-points',   label: '💰 Règle de points' },
   { anchor: 'settings-team',     label: '👥 Équipe & accès' },
