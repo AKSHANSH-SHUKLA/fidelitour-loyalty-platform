@@ -3,6 +3,7 @@ import api from '../lib/api';
 import { Cake, BellOff, Play, Save, Eye, Coffee, Smartphone, Send } from 'lucide-react';
 import { C as C_PS } from './PageShell';
 import PushNotificationPreviewModal from './PushNotificationPreviewModal';
+import PhonePushPreview from './PhonePushPreview';
 
 /**
  * Drop-in card for SettingsPage: configure auto-generated messages for
@@ -133,13 +134,25 @@ const AutoCampaignsCard = () => {
         onToggle={(v) => setCfg({ ...cfg, birthday_enabled: v })}
         icon={Cake}
       >
-        <Field label="Message template" type="textarea"
-          value={cfg.birthday_message}
-          onChange={(v) => setCfg({ ...cfg, birthday_message: v })} />
-        <Field label="Bonus points to credit" suffix="points" type="number"
-          value={cfg.birthday_bonus_points}
-          onChange={(v) => setCfg({ ...cfg, birthday_bonus_points: parseInt(v || '0', 10) })}
-          hint="0 = no bonus, just the message." />
+        <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
+          <div className="min-w-0 space-y-3">
+            <Field label="Message template" type="textarea"
+              value={cfg.birthday_message}
+              onChange={(v) => setCfg({ ...cfg, birthday_message: v })} />
+            <Field label="Bonus points to credit" suffix="points" type="number"
+              value={cfg.birthday_bonus_points}
+              onChange={(v) => setCfg({ ...cfg, birthday_bonus_points: parseInt(v || '0', 10) })}
+              hint="0 = no bonus, just the message." />
+          </div>
+          <PhonePushPreview
+            businessName="Votre commerce"
+            title={"Joyeux anniversaire ! 🎂"}
+            body={cfg.birthday_message || 'Toute notre équipe vous souhaite un joyeux anniversaire. Une attention vous attend !'}
+            primaryColor={C_PS.terracotta}
+            width={200}
+            caption="Aperçu — anniversaire"
+          />
+        </div>
         <RunButtons which="birthdays" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.birthday_enabled} />
       </Section>
 
@@ -150,18 +163,30 @@ const AutoCampaignsCard = () => {
         onToggle={(v) => setCfg({ ...cfg, inactive_enabled: v })}
         icon={BellOff}
       >
-        <Field label="Message template" type="textarea"
-          value={cfg.inactive_message}
-          onChange={(v) => setCfg({ ...cfg, inactive_message: v })} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field label="Trigger after silence of" suffix="days" type="number"
-            value={cfg.inactive_trigger_days}
-            onChange={(v) => setCfg({ ...cfg, inactive_trigger_days: parseInt(v || '0', 10) })}
-            hint="0 = use the dormant threshold from your customer-status definition." />
-          <Field label="Cool-down between sends" suffix="days" type="number"
-            value={cfg.inactive_cooldown_days}
-            onChange={(v) => setCfg({ ...cfg, inactive_cooldown_days: parseInt(v || '0', 10) })}
-            hint="Don't message the same person more often than this." />
+        <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
+          <div className="min-w-0 space-y-3">
+            <Field label="Message template" type="textarea"
+              value={cfg.inactive_message}
+              onChange={(v) => setCfg({ ...cfg, inactive_message: v })} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="Trigger after silence of" suffix="days" type="number"
+                value={cfg.inactive_trigger_days}
+                onChange={(v) => setCfg({ ...cfg, inactive_trigger_days: parseInt(v || '0', 10) })}
+                hint="0 = use the dormant threshold from your customer-status definition." />
+              <Field label="Cool-down between sends" suffix="days" type="number"
+                value={cfg.inactive_cooldown_days}
+                onChange={(v) => setCfg({ ...cfg, inactive_cooldown_days: parseInt(v || '0', 10) })}
+                hint="Don't message the same person more often than this." />
+            </div>
+          </div>
+          <PhonePushPreview
+            businessName="Votre commerce"
+            title={"On vous a manqué !"}
+            body={cfg.inactive_message || 'Ça fait un moment… Revenez nous voir, une attention vous attend.'}
+            primaryColor={C_PS.terracotta}
+            width={200}
+            caption="Aperçu — relance inactif"
+          />
         </div>
         <RunButtons which="inactive" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.inactive_enabled} />
       </Section>
@@ -173,18 +198,30 @@ const AutoCampaignsCard = () => {
         onToggle={(v) => setCfg({ ...cfg, almost_there_enabled: v })}
         icon={Coffee}
       >
-        <Field label="Message template" type="textarea"
-          value={cfg.almost_there_message}
-          onChange={(v) => setCfg({ ...cfg, almost_there_message: v })} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field label="Trigger when this many visits remain" suffix="visit(s)" type="number"
-            value={cfg.almost_there_visits_left}
-            onChange={(v) => setCfg({ ...cfg, almost_there_visits_left: parseInt(v || '1', 10) })}
-            hint="1 = 'one more visit and the reward is yours'." />
-          <Field label="Cool-down between sends" suffix="days" type="number"
-            value={cfg.almost_there_cooldown_days}
-            onChange={(v) => setCfg({ ...cfg, almost_there_cooldown_days: parseInt(v || '0', 10) })}
-            hint="Avoid spamming the same person on repeat cycles." />
+        <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
+          <div className="min-w-0 space-y-3">
+            <Field label="Message template" type="textarea"
+              value={cfg.almost_there_message}
+              onChange={(v) => setCfg({ ...cfg, almost_there_message: v })} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="Trigger when this many visits remain" suffix="visit(s)" type="number"
+                value={cfg.almost_there_visits_left}
+                onChange={(v) => setCfg({ ...cfg, almost_there_visits_left: parseInt(v || '1', 10) })}
+                hint="1 = 'one more visit and the reward is yours'." />
+              <Field label="Cool-down between sends" suffix="days" type="number"
+                value={cfg.almost_there_cooldown_days}
+                onChange={(v) => setCfg({ ...cfg, almost_there_cooldown_days: parseInt(v || '0', 10) })}
+                hint="Avoid spamming the same person on repeat cycles." />
+            </div>
+          </div>
+          <PhonePushPreview
+            businessName="Votre commerce"
+            title={"Plus qu'une visite ! 🎁"}
+            body={cfg.almost_there_message || 'Encore une visite et vous débloquez votre récompense. À très vite !'}
+            primaryColor={C_PS.terracotta}
+            width={200}
+            caption="Aperçu — presque récompense"
+          />
         </div>
         <RunButtons which="almost_there" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.almost_there_enabled} />
       </Section>

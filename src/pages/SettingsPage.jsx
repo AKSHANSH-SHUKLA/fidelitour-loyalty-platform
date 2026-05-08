@@ -14,6 +14,7 @@ import InactiveCustomerPurgeCard from '../components/InactiveCustomerPurgeCard';
 import PointsRuleCard from '../components/PointsRuleCard';
 import TeamCard from '../components/TeamCard';
 import JoinQRPoster from '../components/JoinQRPoster';
+import PhonePushPreview from '../components/PhonePushPreview';
 
 const SettingsPage = () => {
     const location = useLocation();
@@ -517,6 +518,31 @@ function OwnerGeoCard({ initial }) {
             <span>1 jour (intensif)</span>
             <span>30 jours (parcimonieux)</span>
           </div>
+        </div>
+      </div>
+
+      {/* Live phone preview — what a customer entering the geofence sees on their lock screen. */}
+      <div className="max-w-2xl mb-6 rounded-xl border p-4 flex flex-col md:flex-row gap-5 items-center"
+           style={{ background: '#FDF8F0', borderColor: '#E3A86955' }}>
+        <PhonePushPreview
+          businessName="Votre commerce"
+          title="📍 Vous êtes juste à côté !"
+          body={`Une attention vous attend si vous passez nous voir. (~${cfg.geo_radius_meters || 500} m, déclenché ${(cfg.geo_cooldown_days || 1) === 1 ? '1 fois par jour' : `tous les ${cfg.geo_cooldown_days} jours`} max)`}
+          primaryColor="#B85C38"
+          width={210}
+          variant="geo"
+          caption="Aperçu — notification de proximité"
+        />
+        <div className="flex-1 text-sm space-y-2" style={{ color: '#7B3F00' }}>
+          <p className="font-bold">Comment ça marche ?</p>
+          <p>
+            Quand un client porteur de votre carte de fidélité (et qui a accepté la géolocalisation)
+            entre dans le rayon que vous avez défini, son téléphone reçoit ce push automatiquement.
+          </p>
+          <p>
+            <b>Le titre et le message s'adaptent</b> automatiquement avec le rayon et le cooldown configurés ci-dessus —
+            le client comprend instantanément la valeur, sans rien faire.
+          </p>
         </div>
       </div>
 

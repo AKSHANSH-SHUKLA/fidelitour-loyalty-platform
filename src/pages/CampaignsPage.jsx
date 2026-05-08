@@ -5,6 +5,7 @@ import api from '../lib/api';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CampaignAudienceBuilder from '../components/CampaignAudienceBuilder';
+import PhonePushPreview from '../components/PhonePushPreview';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
@@ -1215,18 +1216,33 @@ export default function CampaignsPage() {
                     🔗 Add link
                   </button>
                 </div>
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  placeholder="Your campaign message — paste any URL or @handle and it'll auto-link in the email."
-                  rows={5}
-                  className="w-full px-4 py-2 border rounded-lg"
-                  style={{ borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
-                />
-                <p className="text-[10px] mt-1.5" style={{ color: C_PS.inkMute }}>
-                  Pro tip: paste a full <code>https://…</code> URL or an <code>@handle</code> — it becomes a clickable link automatically in the email and push.
-                </p>
+                {/* Editor + live phone preview side-by-side. Owner sees exactly
+                    what the customer's lock-screen notification will look like
+                    while typing. */}
+                <div className="grid md:grid-cols-[1fr_auto] gap-4 items-start">
+                  <div className="min-w-0">
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      placeholder="Your campaign message — paste any URL or @handle and it'll auto-link."
+                      rows={5}
+                      className="w-full px-4 py-2 border rounded-lg"
+                      style={{ borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
+                    />
+                    <p className="text-[10px] mt-1.5" style={{ color: C_PS.inkMute }}>
+                      Pro tip: paste a full <code>https://…</code> URL or an <code>@handle</code> — it becomes a clickable link automatically.
+                    </p>
+                  </div>
+                  <PhonePushPreview
+                    businessName={formData.campaignName || 'Votre commerce'}
+                    title={formData.campaignName || ''}
+                    body={formData.message || ''}
+                    primaryColor={C_PS.terracotta}
+                    width={210}
+                    caption="Aperçu sur le téléphone du client"
+                  />
+                </div>
               </div>
 
               {/* Channel / Source */}
