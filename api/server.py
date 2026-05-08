@@ -2783,6 +2783,9 @@ def scan_visit(
 
 
 def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
+    """MINIMAL fast-path scan — does the essentials inline, defers every
+    optional side effect to a best-effort try/except so a single bad
+    customer record can't 500 the till."""
     # Normalise the barcode the staff just typed: trim whitespace and uppercase
     # the FT-XXXX prefix, so "ft-c7eaa131  " and "FT-C7EAA131" both match.
     normalized_barcode = (req.barcode_id or "").strip().upper()
@@ -2815,60 +2818,76 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
             detail=f"Aucun client trouvé avec le code '{normalized_barcode}'. Vérifiez le code-barres saisi (les caractères doivent correspondre exactement).",
         )
 
-    c_obj = Customer(**cust)
-    previous_tier = (c_obj.tier or "bronze").lower()  # snapshot BEFORE update
+    # Read the customer as a plain dict — DO NOT pass through the pydantic
+    # Customer model here. Older customer records may have None / missing
+    # required fields (birthday, postal_code) which would make Customer(**cust)
+    # raise a ValidationError that escapes everything and nukes the scan.
+    cid = cust.get("id")
+    previous_tier = (cust.get("tier") or "bronze").lower()
+    current_visits = int(cust.get("visits") or 0)
+    current_points = int(cust.get("points") or 0)
+    current_paid = float(cust.get("total_amount_paid") or 0)
 
-    # Auto-calculate points if not explicitly passed.
-    # Owner-controlled via card_template.points_mode:
-    #   'per_visit' (default) → flat points_per_visit per scan
-    #   'per_euro'            → amount_paid × points_per_euro
-    # req.points (when provided) is a manual override at the till that wins
-    # over both modes — useful for custom scenarios.
+    # Compute points to add — owner-controlled via card_template.points_mode.
     if req.points is not None:
         points_to_add = int(req.points)
     else:
-        card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
+        try:
+            card_template = db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
+        except Exception:
+            card_template = {}
         mode = (card_template.get("points_mode") or "per_visit").lower()
         ppe = float(card_template.get("points_per_euro") or 10)
         ppv = int(card_template.get("points_per_visit", 10) or 10)
         if mode == "per_euro" and float(req.amount_paid or 0) > 0:
             points_to_add = int(round(ppe * float(req.amount_paid)))
         else:
-            # 'per_visit' (or per_euro with no amount) → flat rate
             points_to_add = ppv
 
-    c_obj.points += points_to_add
-    c_obj.visits += 1
-    c_obj.total_amount_paid += req.amount_paid
-    c_obj.last_visit_date = datetime.now(timezone.utc)
-
-    # Record which branch is the customer's "home" branch: the first branch
-    # they ever scan at. This way analytics filtered by branch surface the
-    # right customers without needing every scan to be re-labelled.
-    if req.branch_id and not getattr(c_obj, "branch_id", None):
-        c_obj.branch_id = req.branch_id
-
-    # Update tier — VIP (top tier) for 40+ visits OR a consistently big basket.
-    # Avg ticket floor lets a small number of high-spend visits elevate a
-    # customer to VIP without needing 40 visits; otherwise 40+ visits alone
-    # unlocks VIP the way 20+ unlocks Gold.
-    avg_ticket = (c_obj.total_amount_paid / c_obj.visits) if c_obj.visits else 0
-    if c_obj.visits >= 40 or (c_obj.visits >= 10 and avg_ticket >= 60):
-        c_obj.tier = "vip"
-    elif c_obj.visits >= 20:
-        c_obj.tier = "gold"
-    elif c_obj.visits >= 10:
-        c_obj.tier = "silver"
+    new_visits = current_visits + 1
+    new_points = current_points + points_to_add
+    new_paid = current_paid + float(req.amount_paid or 0)
+    avg_ticket = (new_paid / new_visits) if new_visits else 0
+    if new_visits >= 40 or (new_visits >= 10 and avg_ticket >= 60):
+        new_tier = "vip"
+    elif new_visits >= 20:
+        new_tier = "gold"
+    elif new_visits >= 10:
+        new_tier = "silver"
     else:
-        c_obj.tier = "bronze"
-    new_tier = c_obj.tier
+        new_tier = "bronze"
 
-    db.customers.update_one({"id": c_obj.id}, {"$set": c_obj.model_dump()})
+    update_set = {
+        "visits": new_visits,
+        "points": new_points,
+        "total_amount_paid": round(new_paid, 2),
+        "last_visit_date": datetime.now(timezone.utc),
+        "tier": new_tier,
+    }
+    # Stamp home branch on first scan only.
+    if req.branch_id and not cust.get("branch_id"):
+        update_set["branch_id"] = req.branch_id
 
-    # ---- Campaign visit attribution (15-day window) ------------------
-    # For any campaign sent to this customer in the last 15 days that hasn't
-    # already been credited for this customer, bump visits_from_campaign and
-    # remember so we never double-count on repeat scans.
+    # Update customer — must succeed.
+    db.customers.update_one({"id": cid}, {"$set": update_set})
+
+    # Insert visit row — must succeed for analytics.
+    try:
+        visit_doc = {
+            "id": str(uuid.uuid4()),
+            "tenant_id": token_data.tenant_id,
+            "customer_id": cid,
+            "points_awarded": points_to_add,
+            "amount_paid": float(req.amount_paid or 0),
+            "visit_time": datetime.now(timezone.utc),
+            "branch_id": req.branch_id or cust.get("branch_id"),
+        }
+        db.visits.insert_one(visit_doc)
+    except Exception as _e:
+        print(f"scan_visit: visit insert failed (non-fatal): {_e}")
+
+    # ---- ALL OPTIONAL SIDE EFFECTS BELOW — wrapped, never block response ----
+    # Campaign attribution (15-day window)
     try:
         now_utc = datetime.now(timezone.utc)
         window_start = now_utc - timedelta(days=15)
@@ -2876,91 +2895,39 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
             "tenant_id": token_data.tenant_id,
             "status": {"$in": ["sent", "delivered"]},
             "sent_at": {"$gte": window_start, "$lte": now_utc},
-            "recipient_ids": c_obj.id,
-            "attributed_visit_customer_ids": {"$ne": c_obj.id},
+            "recipient_ids": cid,
+            "attributed_visit_customer_ids": {"$ne": cid},
         })
         for camp in attributable:
             db.campaigns.update_one(
                 {"id": camp["id"]},
-                {
-                    "$inc": {"visits_from_campaign": 1},
-                    "$addToSet": {"attributed_visit_customer_ids": c_obj.id},
-                },
+                {"$inc": {"visits_from_campaign": 1},
+                 "$addToSet": {"attributed_visit_customer_ids": cid}},
             )
     except Exception as _e:
-        # Attribution must never block a scan
-        pass
+        print(f"scan_visit: campaign attribution failed (non-fatal): {_e}")
 
-    # ---- Tier-up congratulation push ("Bravo, vous passez Gold !") ----
-    # Side-effect; must NEVER fail the scan response. Symptom of an unwrapped
-    # crash here is exactly what the user reported: visit recorded in DB, but
-    # the API returns 500 → frontend falls into its catch block and shows
-    # "Customer not found" (the generic fallback message).
-    tier_rank = {"bronze": 0, "silver": 1, "gold": 2, "vip": 3}
+    # Reward eval (near_reward / unlock pushes) — non-blocking.
     try:
-        if tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0):
-            tenant_doc = db.tenants.find_one({"id": token_data.tenant_id}) or {}
-            biz = tenant_doc.get("campaign_sender_name") or tenant_doc.get("name") or "notre équipe"
-            congrats = {
-                "customer_id": c_obj.id,
-                "tenant_id": token_data.tenant_id,
-                "title": f"Bravo, vous passez {new_tier.title()} ! 🎉",
-                "body": f"Félicitations {c_obj.name.split(' ')[0] if c_obj.name else ''} ! Vous débloquez le statut {new_tier.title()} chez {biz}.",
-                "type": "tier_up",
-                "previous_tier": previous_tier,
-                "new_tier": new_tier,
-                "sent_at": datetime.now(timezone.utc),
-            }
-            db.push_notifications.insert_one(congrats)
-            if c_obj.email:
-                html = _campaign_html(biz, congrats["title"], congrats["body"], c_obj.model_dump())
-                send_email_to_customer(c_obj.email, biz, f"{biz} - {congrats['title']}", html)
-    except Exception as _e:
-        print(f"scan_visit: tier-up push failed (non-fatal): {_e}")
-
-    # Record visit with timestamp — this is the part that MUST succeed.
-    try:
-        visit_time = datetime.now(timezone.utc)
-        v = Visit(
-            id=str(uuid.uuid4()),
-            tenant_id=token_data.tenant_id,
-            customer_id=c_obj.id,
-            points_awarded=points_to_add,
-            amount_paid=req.amount_paid,
-            visit_time=visit_time,
-            branch_id=req.branch_id or getattr(c_obj, "branch_id", None),
-        )
-        db.visits.insert_one(v.model_dump())
-    except Exception as _e:
-        print(f"scan_visit: visit insert failed: {_e}")
-
-    # Reward notifications — wrapped because near_reward / unlock pushes can
-    # fail (e.g. campaign HTML rendering, push_notifications insert) and we
-    # don't want that to nuke the scan response.
-    try:
-        _evaluate_reward_state_and_notify(c_obj, token_data.tenant_id)
+        _evaluate_reward_state_and_notify({"id": cid}, token_data.tenant_id)
     except Exception as _e:
         print(f"scan_visit: reward evaluator failed (non-fatal): {_e}")
 
-    # Surface tier-change info on the response so the staff Scan page can show
-    # a "Bravo!" celebration for the cashier without an extra round-trip.
-    try:
-        response = c_obj.model_dump()
-        response["previous_tier"] = previous_tier
-        response["tier_upgraded"] = tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0)
-        return response
-    except Exception as _e:
-        print(f"scan_visit: response build failed (returning minimal): {_e}")
-        return {
-            "id": getattr(c_obj, "id", None),
-            "barcode_id": getattr(c_obj, "barcode_id", None),
-            "name": getattr(c_obj, "name", ""),
-            "visits": getattr(c_obj, "visits", 0),
-            "points": getattr(c_obj, "points", 0),
-            "tier": getattr(c_obj, "tier", "bronze"),
-            "previous_tier": previous_tier,
-            "tier_upgraded": False,
-        }
+    # Build success response — tier-up flag for UI celebration.
+    tier_rank = {"bronze": 0, "silver": 1, "gold": 2, "vip": 3}
+    return {
+        "id": cid,
+        "barcode_id": cust.get("barcode_id"),
+        "name": cust.get("name", ""),
+        "email": cust.get("email", ""),
+        "visits": new_visits,
+        "points": new_points,
+        "total_amount_paid": round(new_paid, 2),
+        "tier": new_tier,
+        "previous_tier": previous_tier,
+        "tier_upgraded": tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0),
+        "branch_id": req.branch_id or cust.get("branch_id"),
+    }
 
 
 def _cycle_start_for_customer(customer_id: str, tenant_id: str) -> Optional[datetime]:

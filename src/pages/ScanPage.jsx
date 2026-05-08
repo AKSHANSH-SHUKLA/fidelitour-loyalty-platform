@@ -297,7 +297,7 @@ const ScanPage = () => {
             tell if the page is stale-cached. If you see "build 2026-05-07b"
             on screen, the latest scan-error fix is live. */}
         <div className="text-[10px] mt-2 opacity-50" style={{ color: '#8B8680' }}>
-          build 2026-05-07b · scan diag v2
+          build 2026-05-07c · scan minimal
         </div>
       </div>
 
