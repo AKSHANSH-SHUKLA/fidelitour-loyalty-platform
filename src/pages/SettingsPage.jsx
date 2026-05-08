@@ -13,6 +13,7 @@ import WelcomeBonusCard from '../components/WelcomeBonusCard';
 import InactiveCustomerPurgeCard from '../components/InactiveCustomerPurgeCard';
 import PointsRuleCard from '../components/PointsRuleCard';
 import TeamCard from '../components/TeamCard';
+import JoinQRPoster from '../components/JoinQRPoster';
 
 const SettingsPage = () => {
     const location = useLocation();
@@ -238,6 +239,9 @@ const SettingsPage = () => {
                             </button>
                         </div>
                         <p className="text-xs text-[#57534E]">Customers can scan the QR code or click this link to join your program.</p>
+
+                        {/* Print-ready join poster — owner downloads / prints, places on counter, customer scans. */}
+                        <JoinQRPoster joinUrl={joinUrl} businessName={settings.name || 'Notre boutique'} />
                     </div>
 
                     {/* Per-channel pre-tagged links */}
