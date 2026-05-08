@@ -64,20 +64,44 @@ const ScanPage = () => {
   const detectorRef = useRef(null);
   const detectionLoopRef = useRef(null);
 
-  // Initialize BarcodeDetector
+  // Initialize BarcodeDetector for 1D formats. We DO NOT rely on it for QR
+  // because Chrome on macOS / Windows ships BarcodeDetector without QR
+  // support — the wallet card's QR would never decode. We use jsQR (loaded
+  // from CDN) for QR codes instead, and BarcodeDetector for 1D as a bonus.
   useEffect(() => {
     if ('BarcodeDetector' in window) {
       try {
-        // qr_code FIRST — that's what the wallet card actually displays.
-        // Keep 1D formats so old POS laser scanners and stickers still work.
         detectorRef.current = new window.BarcodeDetector({
-          formats: ['qr_code', 'code_128', 'ean_13', 'ean_8', 'code_39', 'upca'],
+          formats: ['code_128', 'ean_13', 'ean_8', 'code_39', 'upca'],
         });
       } catch (error) {
         console.warn('BarcodeDetector not fully supported:', error);
       }
     }
   }, []);
+
+  // Lazy-load jsQR from cdnjs the first time we open the camera.
+  // jsQR works in every modern browser by reading raw image data from
+  // a canvas — no native API needed.
+  const ensureJsQR = () => new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') return reject(new Error('no window'));
+    if (window.jsQR) return resolve(window.jsQR);
+    const SRC = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    let s = document.querySelector('script[data-jsqr]');
+    if (!s) {
+      s = document.createElement('script');
+      s.src = SRC;
+      s.async = true;
+      s.dataset.jsqr = '1';
+      document.head.appendChild(s);
+    }
+    const t0 = Date.now();
+    (function tick() {
+      if (window.jsQR) return resolve(window.jsQR);
+      if (Date.now() - t0 > 8000) return reject(new Error('jsQR load timeout'));
+      setTimeout(tick, 80);
+    })();
+  });
 
   // Cleanup on unmount
   useEffect(() => {
@@ -98,11 +122,11 @@ const ScanPage = () => {
         setCameraActive(true);
         setStatus(null);
 
-        if (detectorRef.current) {
-          startDetectionLoop();
-        } else {
-          setStatus({ type: 'info', message: 'Camera opened. Scan barcode or enter manually.' });
-        }
+        // Kick off detection. jsQR loads from CDN on first use; we don't
+        // wait for it before showing the preview — the loop checks for
+        // window.jsQR each frame and starts decoding as soon as it's ready.
+        ensureJsQR().catch(() => { /* fall through; BarcodeDetector might still catch 1D */ });
+        startDetectionLoop();
       }
     } catch (error) {
       setStatus({ type: 'error', message: 'Unable to access camera. Please check permissions.' });
@@ -123,22 +147,53 @@ const ScanPage = () => {
   };
 
   const startDetectionLoop = () => {
+    // Hidden canvas for jsQR — re-used across frames so we don't allocate per tick.
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    const onHit = (raw) => {
+      if (!raw) return false;
+      const cleaned = String(raw).trim();
+      if (!cleaned) return false;
+      setBarcode(cleaned);
+      setStatus({ type: 'success', message: 'Code détecté !' });
+      stopCamera();
+      setMode('manual');
+      return true;
+    };
+
     const detect = async () => {
-      if (!videoRef.current || !detectorRef.current || !cameraActive) return;
+      const video = videoRef.current;
+      // Don't check cameraActive — that's a state value captured by closure
+      // and may be stale. Instead rely on stopCamera() cancelling the rAF.
+      if (!video || !streamRef.current) return;
+      const ready = video.readyState >= 2 && video.videoWidth > 0;
 
-      try {
-        const barcodes = await detectorRef.current.detect(videoRef.current);
-
-        if (barcodes.length > 0) {
-          const detectedBarcode = barcodes[0].rawValue;
-          setBarcode(detectedBarcode);
-          setStatus({ type: 'success', message: 'Barcode detected!' });
-          stopCamera();
-          setMode('manual');
-          return;
+      if (ready) {
+        // Try jsQR first — handles QR codes on every browser.
+        if (window.jsQR) {
+          try {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const result = window.jsQR(img.data, img.width, img.height, {
+              inversionAttempts: 'attemptBoth',
+            });
+            if (result?.data && onHit(result.data)) return;
+          } catch (e) {
+            console.debug('jsQR detect error:', e);
+          }
         }
-      } catch (error) {
-        console.debug('Detection error:', error);
+        // Try native BarcodeDetector for 1D formats (Code 128, EAN, etc.).
+        if (detectorRef.current) {
+          try {
+            const barcodes = await detectorRef.current.detect(video);
+            if (barcodes.length > 0 && onHit(barcodes[0].rawValue)) return;
+          } catch (e) {
+            console.debug('BarcodeDetector error:', e);
+          }
+        }
       }
 
       detectionLoopRef.current = requestAnimationFrame(detect);
@@ -297,7 +352,7 @@ const ScanPage = () => {
             tell if the page is stale-cached. If you see "build 2026-05-07b"
             on screen, the latest scan-error fix is live. */}
         <div className="text-[10px] mt-2 opacity-50" style={{ color: '#8B8680' }}>
-          build 2026-05-07c · scan minimal
+          build 2026-05-07d · jsQR camera
         </div>
       </div>
 
