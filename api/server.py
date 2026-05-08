@@ -2756,7 +2756,33 @@ def scan_visit(
     # can of course scan too.
     token_data: TokenData = Depends(require_role(["business_owner", "manager", "staff"])),
 ):
-    """Scan visit - record timestamp and update customer"""
+    """Scan visit — record timestamp and update customer.
+
+    Top-level try/except below: catches any unhandled exception from the
+    scan flow and returns a non-Vercel-boilerplate 500 with the actual
+    error class + message + a short traceback. Without this, a crash here
+    surfaces only as Vercel's generic 'A server error has occurred' which
+    is impossible to debug remotely.
+    """
+    try:
+        return _scan_visit_impl(req, token_data)
+    except HTTPException:
+        # Pre-existing intentional HTTP errors (404 tenant mismatch etc.) pass through.
+        raise
+    except Exception as _e:
+        import traceback as _tb
+        tb_short = "".join(_tb.format_exception(type(_e), _e, _e.__traceback__))[-600:]
+        print(f"scan_visit CRASH:\n{tb_short}")
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"Crash interne du scan: {type(_e).__name__}: {str(_e)[:120]}. "
+                "Détail dans les logs Vercel."
+            ),
+        )
+
+
+def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
     # Normalise the barcode the staff just typed: trim whitespace and uppercase
     # the FT-XXXX prefix, so "ft-c7eaa131  " and "FT-C7EAA131" both match.
     normalized_barcode = (req.barcode_id or "").strip().upper()
