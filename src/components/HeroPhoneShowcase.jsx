@@ -51,10 +51,11 @@ const HeroPhoneShowcase = () => {
     const run = () => {
       setPhase('pc');
       setTabIdx(0);
-      timeouts.push(setTimeout(() => setTabIdx(1), 2000));
-      timeouts.push(setTimeout(() => setTabIdx(2), 4000));
-      timeouts.push(setTimeout(() => setPhase('wallet'), 6000));
-      timeouts.push(setTimeout(run, 12500));
+      timeouts.push(setTimeout(() => setTabIdx(1), 3500));
+      timeouts.push(setTimeout(() => setTabIdx(2), 7000));
+      timeouts.push(setTimeout(() => setPhase('wallet'), 10500));
+      // Hold wallet ~7s, then loop. Total cycle ≈ 18s.
+      timeouts.push(setTimeout(run, 18000));
     };
     run();
     return () => { timeouts.forEach(clearTimeout); };
@@ -205,24 +206,55 @@ const PCDashboardAnalytics = () => (
 const PCDashboardInsights = () => (
   <div>
     <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: C.lavender }}>
-      Insights — recommendations
+      Insights — what to do today
     </p>
-    <div className="space-y-1.5">
+
+    {/* AI-generated insights ribbon — the "headline" recommendation */}
+    <div className="rounded-md p-2.5 mb-2 relative overflow-hidden"
+         style={{ background: `linear-gradient(135deg, ${C.lavender}18, ${C.terracotta}12)`, border: `1px solid ${C.lavender}55` }}>
+      <div className="flex items-start gap-2">
+        <span className="text-[14px] leading-none mt-0.5">✨</span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: C.lavender }}>
+            AI insight · top priority
+          </p>
+          <p className="text-[10px] font-bold mt-0.5" style={{ color: C.inkDeep }}>
+            Win back 12 silent gold-tier customers this week
+          </p>
+          <p className="text-[8px] mt-0.5 leading-snug" style={{ color: C.inkMute }}>
+            They averaged €58/visit before going quiet · projected lift: €700+ if you re-engage now.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* 4 categorized insights */}
+    <div className="grid grid-cols-2 gap-1.5">
       {[
-        { dot: C.terracotta, title: '45 customers at risk of leaving', sub: 'Silent ≥ 14 days · win-back campaign recommended' },
-        { dot: C.sage,       title: '12 birthdays this week',          sub: 'Auto-greeting prepared, awaiting your approval' },
-        { dot: C.lavender,   title: 'Top spender Luc Moreau silent',   sub: '€1,521 spent · last seen 18 days ago' },
-        { dot: C.ochre,      title: 'Mondays are your slowest day',    sub: 'Try a lunch offer to lift mid-week traffic' },
+        { dot: C.terracotta, label: 'Churn risk',     title: '45 customers about to leave', sub: 'Silent ≥ 14 days' },
+        { dot: C.sage,       label: 'Wins',           title: '12 birthdays this week',      sub: 'Greeting ready to approve' },
+        { dot: C.ochre,      label: 'Pattern',        title: 'Mondays are slowest',         sub: '−42% vs. weekend avg' },
+        { dot: C.sky,        label: 'Top customer',   title: 'Luc Moreau silent 18d',       sub: '€1,521 lifetime · personal nudge?' },
       ].map((row, i) => (
-        <div key={i} className="rounded-md bg-white border px-2.5 py-2 flex items-start gap-2"
+        <div key={i} className="rounded-md bg-white border p-1.5"
              style={{ borderColor: C.hairline }}>
-          <span className="w-1.5 h-1.5 rounded-full mt-1 shrink-0" style={{ background: row.dot }} />
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold leading-tight truncate" style={{ color: C.inkDeep }}>{row.title}</p>
-            <p className="text-[8px] leading-tight mt-0.5 truncate" style={{ color: C.inkMute }}>{row.sub}</p>
+          <div className="flex items-center gap-1 mb-0.5">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: row.dot }} />
+            <p className="text-[7.5px] font-bold uppercase tracking-widest" style={{ color: row.dot }}>{row.label}</p>
           </div>
+          <p className="text-[9.5px] font-bold leading-tight" style={{ color: C.inkDeep }}>{row.title}</p>
+          <p className="text-[7.5px] leading-tight mt-0.5" style={{ color: C.inkMute }}>{row.sub}</p>
         </div>
       ))}
+    </div>
+
+    {/* Mini AI recap bar */}
+    <div className="mt-2 rounded-md p-1.5 flex items-center justify-between"
+         style={{ background: C.terracotta + '15', border: `1px solid ${C.terracotta}33` }}>
+      <p className="text-[8px] font-bold" style={{ color: C.terracotta }}>
+        🧠 AI summary: focus on win-back · est. revenue +€820
+      </p>
+      <p className="text-[7.5px]" style={{ color: C.inkMute }}>updated 12 min ago</p>
     </div>
   </div>
 );

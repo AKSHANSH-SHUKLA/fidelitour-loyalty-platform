@@ -5,6 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FidéliTour</title>
+
+    <!-- Single professional font — Inter — used everywhere across the
+         platform (landing page, dashboard, all forms). Replaces the previous
+         mix of Cormorant Garamond + Manrope; the global body rule in
+         index.css overrides any leftover references. Loaded with
+         display=swap so first paint isn't blocked. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    />
+
     <!-- Leaflet — real interactive map tiles for the Customer Map page.
          Loaded via CDN so we don't need an npm dependency. -->
     <link

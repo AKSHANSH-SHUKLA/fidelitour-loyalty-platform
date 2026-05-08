@@ -145,3 +145,47 @@
     animation: none !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * SINGLE PROFESSIONAL FONT — INTER, EVERYWHERE
+ *
+ * The platform previously mixed Cormorant Garamond (serif headings) with
+ * Manrope (body). Per the client's request, the entire app — landing page,
+ * dashboard, every form, every modal — now uses Inter, the de-facto SaaS
+ * dashboard font (Stripe, Linear, Notion-adjacent). One typeface = clean,
+ * professional, no design noise.
+ *
+ * Strategy:
+ *   1. Set Inter on `html` so it cascades to everything.
+ *   2. Override any inline `font-family` set by component files (the
+ *      legacy Cormorant Garamond / Manrope) so we don't have to touch
+ *      hundreds of style props one by one.
+ *   3. Keep `.ft-gradient-text` exempt from the override — it inherits
+ *      Inter naturally and the gradient still works.
+ *   4. The Card Designer's font catalogue (used to design *customer* cards)
+ *      is intentionally NOT affected — that's a feature for the owner to
+ *      pick a font for the loyalty card visual, separate from the chrome.
+ * ───────────────────────────────────────────────────────────────────── */
+html, body, #root {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';   /* Inter's pretty digits + lower-l */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+/* Force-replace the two legacy faces that are written inline across many
+   components. Anything in the app reading these wrappers gets Inter. */
+[style*="Cormorant Garamond"],
+[style*="cormorant garamond"],
+[style*="Manrope"],
+[style*="manrope"] {
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* Make sure dashboard headings still feel "bigger" — Inter at 600/700
+   carries the visual weight that Cormorant Garamond used to provide. */
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
