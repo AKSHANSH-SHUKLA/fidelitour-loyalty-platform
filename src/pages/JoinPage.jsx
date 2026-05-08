@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { publicAPI } from '../lib/api';
 import { QRCodeSVG } from 'qrcode.react';
+import Code128Barcode from '../components/Code128Barcode';
 
 const ALLOWED_SOURCES = ['qr_store', 'instagram', 'facebook', 'tiktok'];
 
@@ -147,8 +148,11 @@ const JoinPage = () => {
           <div className="text-center space-y-6">
             <h2 className="text-2xl font-bold text-[#4A5D23]">Welcome!</h2>
             <p className="text-[#57534E]">Your unique loyalty card is ready.</p>
-            <div className="flex justify-center p-4 bg-white rounded-xl border border-[#E7E5E4]">
-              <QRCodeSVG value={success.barcode_id} size={200} />
+            <div className="p-4 bg-white rounded-xl border border-[#E7E5E4] space-y-3">
+              <div className="flex justify-center">
+                <QRCodeSVG value={success.barcode_id} size={200} level="M" />
+              </div>
+              <Code128Barcode value={success.barcode_id} height={60} barWidth={2.2} fontSize={14} />
             </div>
             <p className="font-mono bg-gray-100 p-2 rounded">{success.barcode_id}</p>
             <div className="space-y-3">
