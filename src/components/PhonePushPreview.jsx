@@ -70,7 +70,7 @@ const PhonePushPreview = ({
           {/* Big clock / date */}
           <div className="text-center mt-3 mb-5">
             <p className="text-[9px] font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>
-              vendredi 8 mai
+              Friday 8 May
             </p>
             <p className="font-bold leading-none mt-1"
                style={{ color: 'white', fontFamily: 'Cormorant Garamond', fontSize: width * 0.21 }}>
@@ -107,15 +107,15 @@ const PhonePushPreview = ({
                 <p className="text-[9px] font-bold leading-tight truncate" style={{ color: '#1C1917' }}>
                   {businessName}
                 </p>
-                <p className="text-[8px] shrink-0" style={{ color: '#57534E' }}>maintenant</p>
+                <p className="text-[8px] shrink-0" style={{ color: '#57534E' }}>now</p>
               </div>
               <p className="text-[10px] font-bold leading-tight mt-0.5" style={{ color: '#1C1917' }}>
-                {title || (variant === 'geo' ? '📍 Vous êtes juste à côté !' : 'Titre de la notification')}
+                {title || (variant === 'geo' ? '📍 You\'re just nearby!' : 'Notification title')}
               </p>
               <p className="text-[9px] mt-0.5 leading-snug" style={{ color: '#57534E' }}>
                 {body || (variant === 'geo'
-                  ? 'Passez nous voir, on a quelque chose pour vous.'
-                  : 'Le message apparaîtra ici…')}
+                  ? 'Drop by — we\'ve got something for you.'
+                  : 'Your message will appear here…')}
               </p>
             </div>
           </div>
@@ -129,7 +129,7 @@ const PhonePushPreview = ({
               <Bell size={9} style={{ color: 'white' }} />
             )}
             <span className="text-[9px] font-medium" style={{ color: 'white' }}>
-              {variant === 'geo' ? 'Notification de proximité' : 'Aperçu live · maj en direct'}
+              {variant === 'geo' ? 'Proximity notification' : 'Live preview · updates as you type'}
             </span>
           </div>
         </div>

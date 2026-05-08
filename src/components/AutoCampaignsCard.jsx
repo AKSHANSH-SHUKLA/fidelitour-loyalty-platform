@@ -145,12 +145,12 @@ const AutoCampaignsCard = () => {
               hint="0 = no bonus, just the message." />
           </div>
           <PhonePushPreview
-            businessName="Votre commerce"
-            title={"Joyeux anniversaire ! 🎂"}
-            body={cfg.birthday_message || 'Toute notre équipe vous souhaite un joyeux anniversaire. Une attention vous attend !'}
+            businessName="Your shop"
+            title={"Happy birthday! 🎂"}
+            body={cfg.birthday_message || 'Our whole team wishes you a happy birthday. A treat is waiting for you!'}
             primaryColor={C_PS.terracotta}
             width={200}
-            caption="Aperçu — anniversaire"
+            caption="Preview — birthday"
           />
         </div>
         <RunButtons which="birthdays" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.birthday_enabled} />
@@ -180,12 +180,12 @@ const AutoCampaignsCard = () => {
             </div>
           </div>
           <PhonePushPreview
-            businessName="Votre commerce"
-            title={"On vous a manqué !"}
-            body={cfg.inactive_message || 'Ça fait un moment… Revenez nous voir, une attention vous attend.'}
+            businessName="Your shop"
+            title={"We've missed you!"}
+            body={cfg.inactive_message || "It's been a while… Drop back in, a treat is waiting for you."}
             primaryColor={C_PS.terracotta}
             width={200}
-            caption="Aperçu — relance inactif"
+            caption="Preview — inactive rescue"
           />
         </div>
         <RunButtons which="inactive" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.inactive_enabled} />
@@ -215,12 +215,12 @@ const AutoCampaignsCard = () => {
             </div>
           </div>
           <PhonePushPreview
-            businessName="Votre commerce"
-            title={"Plus qu'une visite ! 🎁"}
-            body={cfg.almost_there_message || 'Encore une visite et vous débloquez votre récompense. À très vite !'}
+            businessName="Your shop"
+            title={"Just one more visit! 🎁"}
+            body={cfg.almost_there_message || 'One more visit and you unlock your reward. See you soon!'}
             primaryColor={C_PS.terracotta}
             width={200}
-            caption="Aperçu — presque récompense"
+            caption="Preview — almost there"
           />
         </div>
         <RunButtons which="almost_there" running={running} onDry={runDry} onSend={sendNow} disabled={!cfg.almost_there_enabled} />

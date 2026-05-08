@@ -525,23 +525,23 @@ function OwnerGeoCard({ initial }) {
       <div className="max-w-2xl mb-6 rounded-xl border p-4 flex flex-col md:flex-row gap-5 items-center"
            style={{ background: '#FDF8F0', borderColor: '#E3A86955' }}>
         <PhonePushPreview
-          businessName="Votre commerce"
-          title="📍 Vous êtes juste à côté !"
-          body={`Une attention vous attend si vous passez nous voir. (~${cfg.geo_radius_meters || 500} m, déclenché ${(cfg.geo_cooldown_days || 1) === 1 ? '1 fois par jour' : `tous les ${cfg.geo_cooldown_days} jours`} max)`}
+          businessName="Your shop"
+          title="📍 You're just nearby!"
+          body={`A treat is waiting if you stop by. (~${cfg.geo_radius_meters || 500} m, triggered ${(cfg.geo_cooldown_days || 1) === 1 ? 'once a day' : `every ${cfg.geo_cooldown_days} days`} max)`}
           primaryColor="#B85C38"
           width={210}
           variant="geo"
-          caption="Aperçu — notification de proximité"
+          caption="Preview — proximity notification"
         />
         <div className="flex-1 text-sm space-y-2" style={{ color: '#7B3F00' }}>
-          <p className="font-bold">Comment ça marche ?</p>
+          <p className="font-bold">How does it work?</p>
           <p>
-            Quand un client porteur de votre carte de fidélité (et qui a accepté la géolocalisation)
-            entre dans le rayon que vous avez défini, son téléphone reçoit ce push automatiquement.
+            When a customer with your loyalty card (and location permission granted)
+            enters the radius you've set, their phone receives this push automatically.
           </p>
           <p>
-            <b>Le titre et le message s'adaptent</b> automatiquement avec le rayon et le cooldown configurés ci-dessus —
-            le client comprend instantanément la valeur, sans rien faire.
+            <b>The title and message automatically adapt</b> to the radius and cooldown configured above —
+            the customer understands the offer instantly, with zero effort.
           </p>
         </div>
       </div>

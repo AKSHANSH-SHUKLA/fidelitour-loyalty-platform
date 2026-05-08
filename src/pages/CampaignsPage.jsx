@@ -1235,12 +1235,12 @@ export default function CampaignsPage() {
                     </p>
                   </div>
                   <PhonePushPreview
-                    businessName={formData.campaignName || 'Votre commerce'}
+                    businessName={formData.campaignName || 'Your shop'}
                     title={formData.campaignName || ''}
                     body={formData.message || ''}
                     primaryColor={C_PS.terracotta}
                     width={210}
-                    caption="Aperçu sur le téléphone du client"
+                    caption="Preview on customer's phone"
                   />
                 </div>
               </div>
