@@ -28,15 +28,43 @@ import { C } from './PageShell';
  * in LandingPage.jsx for rollback safety).
  */
 
-/* Hero shows only the Apple Wallet card. The desktop dashboard / analytics /
- * geolocation are demonstrated on their own further down the page (PC mockups).
- * The phone stays locked to one purpose: showcasing what lands in the customer's
- * pocket. Per the v2 spec.
+/**
+ * Two-act cinematic loop the client requested:
+ *   ACT 1 (~5s) — PC dashboard centre stage, cycling Analytics → Insights → Settings.
+ *                 Phone is parked off-screen to the right.
+ *   ACT 2 (~5s) — Phone glides in from the right and lands beside the PC,
+ *                 displaying the Apple-Wallet style loyalty card.
+ *   Loop back to ACT 1.
+ *
+ * What it teaches the visitor in 10 seconds:
+ *   "the owner uses the platform like a normal web tool, AND the customer
+ *    gets a wallet pass on their phone — same product, two surfaces."
  */
 const HeroPhoneShowcase = () => {
+  // Phase machine: 'pc' → cycles 3 PC tabs over ~5s → 'wallet' → phone slides in
+  const PC_TABS = ['analytics', 'insights', 'settings'];
+  const [phase, setPhase] = useState('pc');     // 'pc' | 'wallet'
+  const [tabIdx, setTabIdx] = useState(0);
+
+  useEffect(() => {
+    let timeouts = [];
+    const run = () => {
+      // Reset to PC mode, cycle through tabs, then swing in the phone.
+      setPhase('pc');
+      setTabIdx(0);
+      timeouts.push(setTimeout(() => setTabIdx(1), 1700));
+      timeouts.push(setTimeout(() => setTabIdx(2), 3400));
+      timeouts.push(setTimeout(() => setPhase('wallet'), 5100));
+      // Hold on the wallet for 5s, then loop.
+      timeouts.push(setTimeout(run, 11000));
+    };
+    run();
+    return () => { timeouts.forEach(clearTimeout); };
+  }, []);
+
   return (
-    <div className="relative w-full max-w-[640px] mx-auto" style={{ perspective: '2000px' }}>
-      {/* Multi-color glow halo */}
+    <div className="relative w-full max-w-[760px] mx-auto" style={{ perspective: '2000px', minHeight: 540 }}>
+      {/* Multi-color glow halo behind everything */}
       <div
         aria-hidden="true"
         className="absolute -inset-16 rounded-[60px] opacity-40 blur-3xl pointer-events-none"
@@ -46,23 +74,194 @@ const HeroPhoneShowcase = () => {
         }}
       />
 
-      {/* Background dashboard echo — kept on the wallet scene so it shows the
-          "what the merchant sees on PC" desktop framing alongside the phone.   */}
-      <DashboardEcho scene="wallet" />
+      {/* PC slides slightly left when the phone joins — keeps both visible without overlap. */}
+      <motion.div
+        animate={{ x: phase === 'wallet' ? -90 : 0, scale: phase === 'wallet' ? 0.92 : 1 }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10"
+      >
+        <LaptopMockup tab={PC_TABS[tabIdx]} />
+      </motion.div>
 
-      {/* Foreground phone — wallet card only */}
-      <div className="relative flex justify-center">
-        <PhoneFrame>
-          <SceneWalletCard key="wallet" />
-        </PhoneFrame>
-      </div>
+      {/* Phone glides in from off-screen right when phase flips to 'wallet'. */}
+      <AnimatePresence>
+        {phase === 'wallet' && (
+          <motion.div
+            key="phone-in"
+            initial={{ x: 480, y: 30, rotate: 12, opacity: 0 }}
+            animate={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
+            exit={{ x: 480, opacity: 0, rotate: 8, transition: { duration: 0.5 } }}
+            transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute z-20"
+            style={{ top: 30, right: -10 }}
+          >
+            <PhoneFrame>
+              <SceneWalletCard key="wallet" />
+            </PhoneFrame>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <p className="relative text-center text-xs mt-6 font-bold uppercase tracking-widest" style={{ color: C.terracotta }}>
-        Aperçu Apple Wallet · en temps réel
+      {/* Caption swaps with the phase so the viewer always knows what they're looking at. */}
+      <p className="relative text-center text-xs mt-8 font-bold uppercase tracking-widest transition-colors"
+         style={{ color: phase === 'wallet' ? C.terracotta : C.lavender }}>
+        {phase === 'wallet'
+          ? 'Apple Wallet · ce que voit le client'
+          : `Tableau de bord · ${PC_TABS[tabIdx]}`}
       </p>
     </div>
   );
 };
+
+/* ===================================================================== */
+/* LAPTOP MOCKUP — desktop browser frame with a dashboard tab visible.    */
+/* Cycles through analytics / insights / settings with crossfade.         */
+/* ===================================================================== */
+const LaptopMockup = ({ tab }) => (
+  <div
+    className="relative mx-auto"
+    style={{
+      width: 560,
+      maxWidth: '100%',
+      transform: 'perspective(1800px) rotateX(2deg)',
+      transformStyle: 'preserve-3d',
+    }}
+  >
+    {/* Laptop screen body */}
+    <div
+      className="rounded-xl border shadow-2xl overflow-hidden relative"
+      style={{
+        background: '#1C1917',
+        borderColor: '#2A2724',
+        aspectRatio: '16/10',
+      }}
+    >
+      {/* Browser chrome */}
+      <div className="flex items-center gap-1.5 px-3 py-1.5"
+           style={{ background: '#F5F2EC', borderBottom: '1px solid ' + C.hairline }}>
+        <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#FF5F57' }} />
+        <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#FEBC2E' }} />
+        <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#28C840' }} />
+        <span className="ml-3 text-[10px] font-mono px-2 py-0.5 rounded bg-white/70"
+              style={{ color: C.inkMute }}>fidelitour.fr/dashboard/{tab}</span>
+      </div>
+
+      {/* Dashboard content — crossfade across tabs */}
+      <div className="relative" style={{ background: C.cream, minHeight: 280 }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.45 }}
+            className="p-4"
+          >
+            {tab === 'analytics' && <PCDashboardAnalytics />}
+            {tab === 'insights'  && <PCDashboardInsights />}
+            {tab === 'settings'  && <PCDashboardSettings />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+
+    {/* Laptop "base" — subtle dark sliver under the screen */}
+    <div className="mx-auto rounded-b-xl"
+         style={{ width: '78%', height: 10, background: 'linear-gradient(180deg, #2A2724 0%, #1C1917 100%)' }} />
+    <div className="mx-auto rounded-b-2xl shadow-lg"
+         style={{ width: '88%', height: 4, background: '#0F0E0D', marginTop: -2 }} />
+  </div>
+);
+
+/* Tiny dashboard mocks rendered inside the laptop. Visually distinct per tab. */
+const PCDashboardAnalytics = () => (
+  <div>
+    <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: C.terracotta }}>
+      Analytics — vue d'ensemble
+    </p>
+    <div className="grid grid-cols-4 gap-2 mb-3">
+      {[
+        { label: 'Customers', value: '1 247', accent: C.terracotta },
+        { label: 'Visits',    value: '8 902', accent: C.sage },
+        { label: 'Repeat',    value: '92%',   accent: C.ochre },
+        { label: 'Wallet',    value: '76%',   accent: C.lavender },
+      ].map((kpi) => (
+        <div key={kpi.label} className="rounded-md p-2 bg-white border"
+             style={{ borderColor: C.hairline }}>
+          <p className="text-[8px] uppercase tracking-wide" style={{ color: C.inkFaint }}>{kpi.label}</p>
+          <p className="text-base font-bold" style={{ color: C.inkDeep, fontFamily: 'Cormorant Garamond' }}>{kpi.value}</p>
+          <div className="mt-1 h-1 rounded-full" style={{ background: kpi.accent + '33' }}>
+            <div className="h-full rounded-full" style={{ width: '70%', background: kpi.accent }} />
+          </div>
+        </div>
+      ))}
+    </div>
+    {/* Mini bar chart */}
+    <div className="rounded-md bg-white border p-2.5" style={{ borderColor: C.hairline }}>
+      <p className="text-[9px] font-bold mb-1.5" style={{ color: C.inkSoft }}>Visites · 12 dernières semaines</p>
+      <div className="flex items-end gap-1 h-14">
+        {[40,55,38,62,48,72,80,68,85,90,76,92].map((h, i) => (
+          <div key={i} className="flex-1 rounded-sm"
+               style={{ height: h + '%', background: i === 11 ? C.terracotta : C.terracotta + '88' }} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const PCDashboardInsights = () => (
+  <div>
+    <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: C.lavender }}>
+      Insights — recommandations
+    </p>
+    <div className="space-y-1.5">
+      {[
+        { dot: C.terracotta, title: '45 clients risquent de partir', sub: 'Silence ≥ 14 jours · campagne reconquête recommandée' },
+        { dot: C.sage,       title: '12 anniversaires cette semaine', sub: 'Auto-greeting prêt à approuver' },
+        { dot: C.lavender,   title: 'Top spender Luc Moreau silencieux', sub: '€1 521 dépensés · pas vu depuis 18 jours' },
+        { dot: C.ochre,      title: 'Lundis = jour le plus calme', sub: 'Tester une offre déjeuner pour booster' },
+      ].map((row, i) => (
+        <div key={i} className="rounded-md bg-white border px-2.5 py-2 flex items-start gap-2"
+             style={{ borderColor: C.hairline }}>
+          <span className="w-1.5 h-1.5 rounded-full mt-1 shrink-0" style={{ background: row.dot }} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold leading-tight truncate" style={{ color: C.inkDeep }}>{row.title}</p>
+            <p className="text-[8px] leading-tight mt-0.5 truncate" style={{ color: C.inkMute }}>{row.sub}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const PCDashboardSettings = () => (
+  <div>
+    <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: C.sage }}>
+      Settings — programme de fidélité
+    </p>
+    <div className="grid grid-cols-2 gap-2">
+      {[
+        { label: 'Points par euro',        value: '10 pts' },
+        { label: 'Récompense à',           value: '10 visites' },
+        { label: 'Bonus anniversaire',     value: '+50 pts' },
+        { label: 'Géolocalisation',        value: '500 m · 1 j' },
+        { label: 'Statut "actif"',         value: '≤ 30 j' },
+        { label: 'Heures de pointe',       value: '12h–14h' },
+      ].map((row) => (
+        <div key={row.label} className="rounded-md bg-white border p-2"
+             style={{ borderColor: C.hairline }}>
+          <p className="text-[8px] uppercase tracking-wide" style={{ color: C.inkFaint }}>{row.label}</p>
+          <p className="text-[11px] font-bold" style={{ color: C.inkDeep }}>{row.value}</p>
+        </div>
+      ))}
+    </div>
+    <div className="mt-2 rounded-md p-2 flex items-center justify-between"
+         style={{ background: C.terracotta + '15', border: '1px solid ' + C.terracotta + '33' }}>
+      <p className="text-[9px] font-bold" style={{ color: C.terracotta }}>✓ 23 employés · 4 boutiques</p>
+      <p className="text-[8px]" style={{ color: C.inkMute }}>tout opérationnel</p>
+    </div>
+  </div>
+);
 
 /* ===================================================================== */
 /* PHONE FRAME — iPhone-like outline with notch and screen area          */
