@@ -3727,6 +3727,10 @@ class JoinRequest(BaseModel):
     acquisition_source: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    # Multi-touch attribution: every URL ?src=... the visitor landed on
+    # before signing up, in chronological order. Frontend collects via
+    # localStorage and sends the full chain on submit.
+    touchpoints_history: Optional[list] = None
 
 @app.post("/api/join/{slug}")
 def join_program(slug: str, req: JoinRequest):
@@ -3772,7 +3776,29 @@ def join_program(slug: str, req: JoinRequest):
         latitude=req.latitude,
         longitude=req.longitude
     )
-    db.customers.insert_one(c.model_dump())
+    cust_doc = c.model_dump()
+    # Multi-touch attribution: store the full chain of touchpoints (every
+    # ?src= the visitor passed through) plus first-touch + last-touch
+    # convenience fields. This makes "joined via QR but originally found
+    # us on Instagram" reportable.
+    if req.touchpoints_history and isinstance(req.touchpoints_history, list):
+        clean_chain = []
+        seen = set()
+        for tp in req.touchpoints_history:
+            if not isinstance(tp, dict):
+                continue
+            src = (tp.get("source") or "").strip().lower()
+            ts = tp.get("ts")
+            if src and src in ALLOWED_ACQUISITION_SOURCES:
+                key = f"{src}|{ts or ''}"
+                if key not in seen:
+                    seen.add(key)
+                    clean_chain.append({"source": src, "ts": ts})
+        if clean_chain:
+            cust_doc["touchpoints_history"] = clean_chain
+            cust_doc["first_touch_source"] = clean_chain[0]["source"]
+            cust_doc["last_touch_source"] = clean_chain[-1]["source"]
+    db.customers.insert_one(cust_doc)
     return {"barcode_id": barcode_id, "message": "Welcome!"}
 
 # ========================

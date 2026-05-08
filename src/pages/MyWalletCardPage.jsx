@@ -718,15 +718,14 @@ const WalletPass = ({ customer, tenant, card, activeOffer, onOpenDetails }) => {
           </div>
         )}
 
-        {/* QR + 1D barcode side by side. QR works for modern phone-camera
-            scanners; the Code 128 strip below covers old-school 1D laser POS
-            scanners. The cashier picks whichever their device reads. */}
+        {/* QR + 1D barcode stacked. QR is the primary (modern phone cameras);
+            the Code 128 strip below covers old 1D laser POS scanners. */}
         <div className="px-6 pb-5 pt-2">
-          <div className="bg-white rounded-xl p-3 mx-auto max-w-xs space-y-2">
-            <div className="flex items-center justify-center">
-              <QRCodeSVG value={customer.barcode_id} size={120} />
+          <div className="bg-white rounded-xl p-4 mx-auto inline-block">
+            <div className="flex items-center justify-center mb-3">
+              <QRCodeSVG value={customer.barcode_id} size={180} level="M" />
             </div>
-            <Code128Barcode value={customer.barcode_id} height={48} fontSize={11} />
+            <Code128Barcode value={customer.barcode_id} height={56} barWidth={2} fontSize={13} />
           </div>
           <p className="mt-2 font-mono text-xs opacity-90 text-center">{customer.barcode_id}</p>
         </div>

@@ -26,6 +26,39 @@ function resolveSourceFromUrl(searchParams) {
   return ALLOWED_SOURCES.includes(resolved) ? resolved : null;
 }
 
+// Multi-touch attribution. Every time the visitor lands on /join/<slug>
+// with a ?src=... param, append it to a per-tenant list in localStorage.
+// On submit, the full chain travels with the form so the owner can see
+// "joined via QR, but originally found us on Instagram a week earlier."
+const TOUCHPOINTS_KEY = (slug) => `ft_touchpoints_${slug}`;
+
+const loadTouchpoints = (slug) => {
+  try {
+    const raw = localStorage.getItem(TOUCHPOINTS_KEY(slug));
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (_e) { return []; }
+};
+
+const recordTouchpoint = (slug, source) => {
+  if (!source) return;
+  try {
+    const list = loadTouchpoints(slug);
+    // Don't double-record the same source twice in a row (refresh, etc.).
+    const last = list[list.length - 1];
+    if (last && last.source === source) return;
+    list.push({ source, ts: new Date().toISOString() });
+    // Cap at 10 entries — anything older is statistical noise.
+    while (list.length > 10) list.shift();
+    localStorage.setItem(TOUCHPOINTS_KEY(slug), JSON.stringify(list));
+  } catch (_e) { /* private mode etc — silent */ }
+};
+
+const clearTouchpoints = (slug) => {
+  try { localStorage.removeItem(TOUCHPOINTS_KEY(slug)); } catch (_e) { /* ignore */ }
+};
+
 const JoinPage = () => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
@@ -46,6 +79,13 @@ const JoinPage = () => {
   useEffect(() => {
     publicAPI.getJoinInfo(slug).then(res => setTenant(res.data)).catch(console.error);
   }, [slug]);
+
+  // Multi-touch attribution: record this URL's source the moment the page loads,
+  // even if the visitor never submits. So when they finally fill the form a week
+  // later (with maybe a different ?src=...), we still have the original touch.
+  useEffect(() => {
+    if (lockedSource) recordTouchpoint(slug, lockedSource);
+  }, [slug, lockedSource]);
 
   const requestGeolocation = () => {
     if (!('geolocation' in navigator)) {
@@ -71,7 +111,24 @@ const JoinPage = () => {
         payload.latitude = geoCoords.latitude;
         payload.longitude = geoCoords.longitude;
       }
+      // Attach the full touchpoint history. The first item is FIRST-touch
+      // (e.g. Instagram) — preserved even when the customer signs up later
+      // from a different source (e.g. in-store QR). The last item is
+      // LAST-touch (the URL they actually submitted from).
+      const chain = loadTouchpoints(slug);
+      // Belt-and-braces: if the visitor's CURRENT URL has a ?src= we haven't
+      // recorded yet (e.g. they never refreshed), inject it.
+      if (lockedSource && (!chain.length || chain[chain.length - 1].source !== lockedSource)) {
+        chain.push({ source: lockedSource, ts: new Date().toISOString() });
+      }
+      // And if they manually picked a source from the dropdown that disagrees
+      // with what we tracked, record it too — multi-touch with both signals.
+      if (formData.acquisition_source && (!chain.length || chain[chain.length - 1].source !== formData.acquisition_source)) {
+        chain.push({ source: formData.acquisition_source, ts: new Date().toISOString() });
+      }
+      payload.touchpoints_history = chain;
       const res = await publicAPI.joinProgram(slug, payload);
+      clearTouchpoints(slug);  // chain has been persisted server-side, no need to keep it here
       setSuccess(res.data);
     } catch (err) {
       alert('Error joining program');
