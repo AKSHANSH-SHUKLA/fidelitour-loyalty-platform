@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import NotificationBell from '../components/NotificationBell';
 import BranchSelectorBar from '../components/BranchSelectorBar';
+import BillingBanner from '../components/BillingBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { ownerAPI } from '../lib/api';
 import {
@@ -364,6 +365,10 @@ const DashboardLayout = () => {
       </aside>
 
       <main className="relative z-10 flex-1 overflow-auto">
+        {/* Global billing health banner — only renders if there's something to
+            warn about (past-due, canceled, trial ending soon). Otherwise
+            invisible and out of the way. */}
+        {role === 'business_owner' && <BillingBanner />}
         {/* Floating bell — only for owners; staff/admin have separate views */}
         {role === 'business_owner' && (
           <div className="absolute top-4 right-6 z-20">

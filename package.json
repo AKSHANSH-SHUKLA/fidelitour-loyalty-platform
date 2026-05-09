@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup-env": "node scripts/setup-env.mjs",
+    "setup-env:write": "node scripts/setup-env.mjs --write .env.local"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",

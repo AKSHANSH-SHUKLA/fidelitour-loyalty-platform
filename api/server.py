@@ -1591,6 +1591,66 @@ def logout(response: Response):
 # ADMIN ENDPOINTS
 # ========================
 
+@app.get("/api/admin/env-status")
+def admin_env_status(token_data: TokenData = Depends(require_role(["super_admin"]))):
+    """Reports which environment variables are configured and which features
+    will silently no-op without them. Used by the super-admin dashboard to
+    show a "Setup checklist" — way more useful than discovering 6 weeks
+    later that push has been silently broken.
+
+    Never returns the actual key values, only boolean presence flags.
+    """
+    checks = [
+        {
+            "key": "MONGODB_URI", "present": bool(MONGODB_URI),
+            "feature": "Database", "required": True,
+            "consequence": "App won't start at all without this.",
+        },
+        {
+            "key": "JWT_SECRET", "present": bool(os.environ.get("JWT_SECRET", "")),
+            "feature": "Authentication", "required": True,
+            "consequence": "Owners and staff cannot log in.",
+        },
+        {
+            "key": "VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY",
+            "present": bool(os.environ.get("VAPID_PUBLIC_KEY", "")) and bool(os.environ.get("VAPID_PRIVATE_KEY", "")),
+            "feature": "Web Push notifications", "required": False,
+            "consequence": "Push toggles in the wallet card silently fail. Run `npm run setup-env` to generate keys.",
+        },
+        {
+            "key": "CRON_SECRET", "present": bool(CRON_SECRET),
+            "feature": "Daily auto-campaign preparation", "required": False,
+            "consequence": "Cron endpoints are unauthenticated (anyone can trigger them). Set this in Vercel — Vercel Cron passes it automatically.",
+        },
+        {
+            "key": "GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY",
+            "present": bool(GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY),
+            "feature": "AI insights, AI campaign analyzer, voice-to-campaign",
+            "required": False,
+            "consequence": "AI tabs render a 'configure a provider' state. Get a free Groq key at https://console.groq.com/keys.",
+        },
+        {
+            "key": "TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM_NUMBER",
+            "present": bool(os.environ.get("TWILIO_ACCOUNT_SID", "")) and bool(os.environ.get("TWILIO_AUTH_TOKEN", "")) and bool(os.environ.get("TWILIO_FROM_NUMBER", "")),
+            "feature": "SMS campaigns", "required": False,
+            "consequence": "SMS sends are no-op'd silently; campaigns still work over push.",
+        },
+        {
+            "key": "STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET",
+            "present": bool(os.environ.get("STRIPE_SECRET_KEY", "")) and bool(os.environ.get("STRIPE_WEBHOOK_SECRET", "")),
+            "feature": "Subscription billing", "required": False,
+            "consequence": "Tenants cannot subscribe; billing UI is hidden. All tenants are treated as 'active' for now.",
+        },
+    ]
+    overall_ok = all(c["present"] for c in checks if c["required"])
+    return {
+        "overall_ok": overall_ok,
+        "checks": checks,
+        "deployment_id": os.environ.get("VERCEL_DEPLOYMENT_ID", "local"),
+        "region": os.environ.get("VERCEL_REGION", "local"),
+    }
+
+
 @app.get("/api/admin/tenants")
 def get_all_tenants(token_data: TokenData = Depends(require_role(["super_admin"]))):
     tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
@@ -7713,15 +7773,22 @@ def _resolve_segment(tid: str, segment: dict) -> list:
 
 
 # --- 1, 8, 3: Daily trigger cron -----------------------------
+# Vercel Cron sends GET requests; manual triggers (UI button + curl) use POST.
+# Both paths share the same handler below.
+@app.get("/api/cron/daily-triggers")
 @app.post("/api/cron/daily-triggers")
 def run_daily_triggers(request: Request):
     """Cron endpoint (hit daily by Vercel Cron or manually).
     Authenticated via Authorization: Bearer <CRON_SECRET> OR ?secret=... OR X-Cron-Secret header.
-    Does 3 things:
-      A. For each tenant, send birthday offer to customers whose MM-DD == today.
-      B. For each tenant, send sector-specific reactivation to customers inactive >30d
+    Vercel Cron passes the secret via the Authorization header automatically when
+    CRON_SECRET is set as an env var on the project.
+    Does 4 things:
+      A. For each tenant, prepare birthday offers (owner reviews before send).
+      B. For each tenant, prepare reactivation pushes to customers inactive >30d
          (cooldown: don't re-trigger within 14 days).
-      C. Drain scheduled_campaigns where run_at <= now and recurrence handling.
+      C. For each tenant, prepare 'almost there' nudges for customers N visits
+         away from their next reward.
+      D. Drain scheduled_campaigns where run_at <= now and recurrence handling.
     """
     # Auth check (lenient: allow empty secret in dev, require in prod)
     provided = (
@@ -7740,6 +7807,7 @@ def run_daily_triggers(request: Request):
     tenants = list(db.tenants.find({"is_active": {"$ne": False}}))
     birthday_sent = 0
     reactivation_sent = 0
+    almost_there_sent = 0
     scheduled_sent = 0
     tier_up_emitted_count = 0
 
@@ -7806,7 +7874,58 @@ def run_daily_triggers(request: Request):
                 })
                 reactivation_sent += len(fresh_inactive)
 
-    # C. Drain scheduled campaigns
+        # C. Almost there — PREPARE (cooldown-protected; uses card template cycle)
+        if cfg.get("almost_there_enabled", True):
+            tpl = db.card_templates.find_one({"tenant_id": tid}) or {}
+            visits_per_stamp = max(int(tpl.get("visits_per_stamp", 1) or 1), 1)
+            reward_threshold = max(int(tpl.get("reward_threshold_stamps", 10) or 10), 1)
+            cycle = visits_per_stamp * reward_threshold
+            target_remaining = max(1, int(cfg.get("almost_there_visits_left", 1) or 1))
+            at_cooldown_days = max(1, int(cfg.get("almost_there_cooldown_days", 7) or 7))
+            at_cooldown_cutoff = now - timedelta(days=at_cooldown_days)
+
+            already_at_ids = set()
+            for log in db.auto_campaign_log.find({
+                "tenant_id": tid, "kind": "almost_there",
+                "sent_at": {"$gte": at_cooldown_cutoff},
+            }):
+                already_at_ids.add(log.get("customer_id"))
+
+            at_candidates = list(db.customers.find({
+                "tenant_id": tid, "visits": {"$gt": 0},
+            }).limit(2000))
+            at_eligible = []
+            for c in at_candidates:
+                if c["id"] in already_at_ids:
+                    continue
+                v = int(c.get("visits", 0) or 0)
+                remaining = cycle - (v % cycle) if (v % cycle) else cycle
+                if remaining == target_remaining:
+                    at_eligible.append(c)
+
+            if at_eligible:
+                title = cfg.get("almost_there_title") or "Plus qu'une visite ! 🎁"
+                body = cfg.get("almost_there_message") or "{first_name}, vous êtes à 1 visite d'une récompense chez {business_name} ! ☕"
+                db.pending_auto_runs.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "tenant_id": tid,
+                    "kind": "almost_there",
+                    "title": title,
+                    "body_template": body,
+                    "recipients": [
+                        {"customer_id": c["id"], "name": c.get("name", ""),
+                         "phone": c.get("phone", ""), "email": c.get("email", ""),
+                         "first_name": (c.get("name") or "").split(" ")[0],
+                         "visits_left": target_remaining}
+                        for c in at_eligible
+                    ],
+                    "recipient_count": len(at_eligible),
+                    "status": "pending",
+                    "prepared_at": now,
+                })
+                almost_there_sent += len(at_eligible)
+
+    # D. Drain scheduled campaigns
     due = list(db.scheduled_campaigns.find({
         "run_at": {"$lte": now},
         "status": "scheduled",
@@ -7856,10 +7975,12 @@ def run_daily_triggers(request: Request):
     return {
         "status": "ok",
         "ran_at": now.isoformat(),
-        "birthday_sent": birthday_sent,
-        "reactivation_sent": reactivation_sent,
+        "birthday_prepared": birthday_sent,
+        "reactivation_prepared": reactivation_sent,
+        "almost_there_prepared": almost_there_sent,
         "scheduled_sent": scheduled_sent,
         "tier_up_emitted": tier_up_emitted_count,
+        "tenants_processed": len(tenants),
     }
 
 

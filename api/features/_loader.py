@@ -45,6 +45,9 @@ MODULES = [
     # "features.ai_competitive",      # ⚠ disabled — code preserved, route unmounted
     "features.ai_newsletter",
     "features.tier_optimizer",
+    # Billing — Stripe Checkout + Customer Portal + webhook handler.
+    # Boots safely (no-ops) when STRIPE_SECRET_KEY isn't set.
+    "features.billing",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.

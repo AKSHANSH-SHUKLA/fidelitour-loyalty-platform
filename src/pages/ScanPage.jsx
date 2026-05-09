@@ -129,8 +129,91 @@ const ScanPage = () => {
         startDetectionLoop();
       }
     } catch (error) {
-      setStatus({ type: 'error', message: 'Unable to access camera. Please check permissions.' });
+      // Old Android Chrome (<v83), Firefox without permission, or any browser
+      // where the user tapped "Block". We don't dead-end here — the file/photo
+      // upload path below works everywhere with a camera (iOS / Android can
+      // even open the camera live from the file picker via capture="environment").
+      const ua = navigator.userAgent || '';
+      const hint = /Firefox/.test(ua)
+        ? "Firefox : autorisez la caméra dans les paramètres du site, ou utilisez « Importer une photo » ci-dessous."
+        : /Android/.test(ua)
+          ? "Sur Android, vérifiez que cette page a accès à la caméra (icône cadenas → Autorisations)."
+          : "Vérifiez les permissions caméra de votre navigateur.";
+      setStatus({
+        type: 'error',
+        message: `Caméra inaccessible. ${hint} Vous pouvez aussi importer une photo du QR.`,
+      });
       setCameraActive(false);
+    }
+  };
+
+  // Decode a QR/barcode from a still image (file upload or photo picker).
+  // Lives next to startCamera() so it shares the same jsQR loader and the
+  // same onHit handler. Used by the "Importer une photo" button which is
+  // always visible — that's the safety net for old Android Chrome (< v83)
+  // and Firefox installs that refuse getUserMedia.
+  const decodeImageFile = async (file) => {
+    if (!file) return;
+    setStatus({ type: 'info', message: 'Lecture de l\'image…' });
+    try {
+      const jsQR = await ensureJsQR();
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = dataUrl;
+      });
+      // Draw onto a canvas, then run jsQR. Cap dimensions to prevent
+      // multi-megabyte phone shots from blowing up mobile memory.
+      const MAX = 1600;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h);
+      const result = jsQR(data.data, data.width, data.height, { inversionAttempts: 'attemptBoth' });
+      if (result?.data) {
+        const cleaned = String(result.data).trim();
+        if (cleaned) {
+          setBarcode(cleaned);
+          setStatus({ type: 'success', message: 'Code détecté depuis l\'image !' });
+          setMode('manual');
+          return;
+        }
+      }
+      // Fall back to native BarcodeDetector if available — handles 1D Code 128.
+      if ('BarcodeDetector' in window) {
+        try {
+          const det = new window.BarcodeDetector({ formats: ['code_128', 'ean_13', 'qr_code', 'pdf417'] });
+          const found = await det.detect(canvas);
+          if (found?.length && found[0].rawValue) {
+            const cleaned = String(found[0].rawValue).trim();
+            setBarcode(cleaned);
+            setStatus({ type: 'success', message: 'Code détecté depuis l\'image !' });
+            setMode('manual');
+            return;
+          }
+        } catch (_e) { /* ignore */ }
+      }
+      setStatus({
+        type: 'error',
+        message: 'Aucun code détecté. Essayez une photo plus nette ou saisissez le code manuellement.',
+      });
+    } catch (e) {
+      console.debug('decodeImageFile error:', e);
+      setStatus({
+        type: 'error',
+        message: "Impossible de lire l'image. Saisissez le code manuellement.",
+      });
     }
   };
 
@@ -493,6 +576,38 @@ const ScanPage = () => {
                 Arrêter la caméra
               </button>
             )}
+
+            {/* Photo upload fallback — works on EVERY browser. On mobile,
+                capture="environment" pops the rear camera straight from the
+                file picker, even on browsers that block getUserMedia (old
+                Android Chrome, Firefox without permission). On desktop, the
+                staff can pick any photo of the customer's QR. This is the
+                safety net that means scanning always works. */}
+            <div className="rounded-xl border-2 border-dashed p-3"
+                 style={{ borderColor: '#E7E5E4', background: '#FAF8F4' }}>
+              <p className="text-[11px] font-semibold mb-2 text-[#57534E] uppercase tracking-wider">
+                Caméra qui refuse de s'ouvrir ?
+              </p>
+              <label className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg cursor-pointer text-sm font-semibold border-2 transition-colors"
+                     style={{ borderColor: '#4A90E2', color: '#4A90E2', background: 'white' }}>
+                <Camera size={16} />
+                Importer / prendre une photo du QR
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) decodeImageFile(f);
+                    e.target.value = ''; // allow re-picking same file
+                  }}
+                />
+              </label>
+              <p className="text-[10px] text-[#8B8680] mt-2 text-center">
+                Compatible Firefox, anciens Android Chrome, desktops sans webcam.
+              </p>
+            </div>
           </div>
         )}
 

@@ -16,6 +16,7 @@ import TeamCard from '../components/TeamCard';
 import JoinQRPoster from '../components/JoinQRPoster';
 import PhonePushPreview from '../components/PhonePushPreview';
 import PendingAutoRunsCard from '../components/PendingAutoRunsCard';
+import BillingCard from '../components/BillingCard';
 
 const SettingsPage = () => {
     const location = useLocation();
@@ -330,6 +331,9 @@ const SettingsPage = () => {
 
             {/* Item 31 — owner-side cleanup: soft-delete inactive customers (with restore). */}
             <div id="settings-cleanup" className="scroll-mt-24"><InactiveCustomerPurgeCard /></div>
+
+            {/* Subscription billing — Stripe Checkout + Customer Portal. */}
+            <div id="settings-billing" className="scroll-mt-24"><BillingCard /></div>
         </div>
     );
 };
@@ -354,6 +358,7 @@ function SettingsNavigator() {
     { id: 'settings-points',   label: '💰 Règle de points' },
     { id: 'settings-team',     label: '👥 Équipe & accès' },
     { id: 'settings-cleanup',  label: '🧹 Nettoyer clients inactifs' },
+    { id: 'settings-billing',  label: '💳 Abonnement & facturation' },
   ];
 
   const jumpTo = (id) => {

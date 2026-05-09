@@ -5,6 +5,8 @@ import Code128Barcode from '../components/Code128Barcode';
 import { Bell, RefreshCw, Trash2, Gift, Sparkles, ChevronRight, Store, MapPin, Phone, Globe, CheckCircle2, XCircle, Clock, ChevronDown, X } from 'lucide-react';
 import api, { publicAPI } from '../lib/api';
 import { ensureSubscribed, unsubscribe as unsubscribePush, isSupported as isPushSupported } from '../lib/webpush';
+import InstallPwaPrompt from '../components/InstallPwaPrompt';
+import GeoConsentCard from '../components/GeoConsentCard';
 import TierBadge from '../components/TierBadge';
 import { AuchanPreview, DEFAULT_LAYOUT as AUCHAN_DEFAULT } from '../components/AuchanCard';
 
@@ -125,6 +127,10 @@ const MyWalletCardPage = () => {
   const [tab, setTab] = useState('offers'); // offers | news | program
   const [toast, setToast] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // Forces the InstallPwaPrompt to ignore the "dismissed recently" memory.
+  // We flip this on when the user tries to enable push on iOS without having
+  // installed the PWA first — the install flow is the actual fix.
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
   // Rate-your-visit state
   const [reviewRating, setReviewRating] = useState(8);
   const [reviewText, setReviewText] = useState('');
@@ -158,6 +164,28 @@ const MyWalletCardPage = () => {
     if (!tenantSlug || !barcodeId) return;
     ensureSubscribed(tenantSlug, barcodeId).catch(() => { /* silent */ });
   }, [data?.prefs?.push_enabled, data?.tenant?.slug, barcodeId]);
+
+  // iOS standalone-mode auto-prompt:
+  //
+  // On iOS Safari, web push is only allowed once the page has been added to
+  // the home screen as a standalone PWA. As soon as the user opens the card
+  // FROM the home screen, we auto-prompt for notification permission so they
+  // don't have to dig into settings. Permission.request returns 'default' on
+  // older iOS where it's still unsupported — we just silently no-op.
+  useEffect(() => {
+    if (!data?.tenant?.slug || !barcodeId) return;
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    if (!isStandalone) return;
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'default') return; // already decided
+    const t = setTimeout(() => {
+      // Tiny delay so the prompt doesn't compete with first paint.
+      ensureSubscribed(data.tenant.slug, barcodeId).catch(() => { /* silent */ });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [data?.tenant?.slug, barcodeId]);
 
   // Real-time proximity push: when the wallet card page opens AND the user has
   // already granted geolocation, ping the backend with the current GPS. If the
@@ -212,7 +240,21 @@ const MyWalletCardPage = () => {
         const tenantSlug = data?.tenant?.slug;
         if (newVal) {
           if (!isPushSupported()) {
-            showToast("Ce navigateur ne supporte pas les notifications push.");
+            // Special-case iOS Safari before iOS 16.4: push isn't supported
+            // there at all, but adding the card to home screen UNLOCKS it.
+            // Even on newer iOS, push only works in standalone mode, so the
+            // friendly action is to walk the user through "Add to Home Screen".
+            const ua = navigator.userAgent || '';
+            const isIos = /iPhone|iPad|iPod/.test(ua);
+            const isStandalone =
+              window.matchMedia('(display-mode: standalone)').matches ||
+              window.navigator.standalone === true;
+            if (isIos && !isStandalone) {
+              showToast("Ajoutez d'abord la carte à votre écran d'accueil pour activer les notifications.");
+              setShowInstallHelp(true);
+            } else {
+              showToast("Ce navigateur ne supporte pas les notifications push.");
+            }
           } else {
             const result = await ensureSubscribed(tenantSlug, barcodeId);
             if (result.ok) {
@@ -379,6 +421,33 @@ const MyWalletCardPage = () => {
             <p className="text-[10px] text-[#8B8680] text-center mt-2">
               💡 La carte fonctionne dans n'importe quel navigateur. Apple Wallet / Google Wallet natifs nécessitent un compte développeur payant — disponibles sur demande.
             </p>
+
+            {/* PWA install prompt — quietly invites the customer to install
+                this card to their home screen. On iOS this is the only way to
+                receive push notifications, so the prompt becomes a hard
+                prerequisite for the Bell toggle below. */}
+            <InstallPwaPrompt
+              context="card"
+              force={showInstallHelp}
+              onInstalled={() => {
+                // After install, retry push subscription so iOS picks it up
+                // immediately on next launch.
+                if (data?.tenant?.slug && barcodeId) {
+                  ensureSubscribed(data.tenant.slug, barcodeId).catch(() => {});
+                }
+                setShowInstallHelp(false);
+              }}
+            />
+
+            {/* Geolocation consent — explicit pre-prompt with a clear "why".
+                Renders only if the customer hasn't already granted location.
+                After grant, we silently update prefs.geo_enabled = true so the
+                proximity-push backend can address them. */}
+            <GeoConsentCard
+              customerId={customer.id}
+              tenantSlug={tenant.slug}
+              barcodeId={barcodeId}
+            />
 
             {/* Push notification preview */}
             <div className="mt-6 bg-white/70 backdrop-blur rounded-xl p-4 border border-[#E7E5E4]">
