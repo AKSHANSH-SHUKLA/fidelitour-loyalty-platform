@@ -147,44 +147,37 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────
- * SINGLE PROFESSIONAL FONT — INTER, EVERYWHERE
+ * TYPOGRAPHY — SCOPED, NOT GLOBAL
  *
- * The platform previously mixed Cormorant Garamond (serif headings) with
- * Manrope (body). Per the client's request, the entire app — landing page,
- * dashboard, every form, every modal — now uses Inter, the de-facto SaaS
- * dashboard font (Stripe, Linear, Notion-adjacent). One typeface = clean,
- * professional, no design noise.
+ * Earlier we hard-forced Inter on every surface. The client now wants the
+ * business account (dashboard) to keep its original look: Cormorant Garamond
+ * serif headings + Manrope sans body. So we revert the global override and
+ * instead apply Inter only where the components themselves opt in (the
+ * landing page, the wallet card surface, and InstallPwaPrompt / GeoConsent /
+ * Billing widgets — they all use Tailwind defaults which fall back to Inter
+ * via this stylesheet).
  *
- * Strategy:
- *   1. Set Inter on `html` so it cascades to everything.
- *   2. Override any inline `font-family` set by component files (the
- *      legacy Cormorant Garamond / Manrope) so we don't have to touch
- *      hundreds of style props one by one.
- *   3. Keep `.ft-gradient-text` exempt from the override — it inherits
- *      Inter naturally and the gradient still works.
- *   4. The Card Designer's font catalogue (used to design *customer* cards)
- *      is intentionally NOT affected — that's a feature for the owner to
- *      pick a font for the loyalty card visual, separate from the chrome.
+ * Cascade in practice:
+ *   - html/body/#root sit on Inter as the BASE font (no !important).
+ *   - DashboardLayout.jsx wraps every authenticated page with
+ *     className="font-['Manrope']", so Manrope wins inside the dashboard.
+ *   - Inline style={{ fontFamily: 'Cormorant Garamond' }} on dashboard
+ *     headings wins over Manrope, restoring the serif headings.
+ *   - The wallet card and landing page have no Manrope wrapper, so they
+ *     stay on Inter via the body default.
+ *   - .ft-gradient-text is unaffected — it carries its own gradient layer.
+ *   - Card Designer's font catalogue is explicitly preserved (the owner
+ *     picks a font for the *customer* card visual, not the chrome).
  * ───────────────────────────────────────────────────────────────────── */
 html, body, #root {
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';   /* Inter's pretty digits + lower-l */
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  letter-spacing: -0.005em;
 }
 
-/* Force-replace the two legacy faces that are written inline across many
-   components. Anything in the app reading these wrappers gets Inter. */
-[style*="Cormorant Garamond"],
-[style*="cormorant garamond"],
-[style*="Manrope"],
-[style*="manrope"] {
-  font-family: 'Inter', system-ui, sans-serif !important;
-}
-
-/* Make sure dashboard headings still feel "bigger" — Inter at 600/700
-   carries the visual weight that Cormorant Garamond used to provide. */
+/* Heading defaults still apply — but only when the component hasn't picked
+   its own font-family inline. Dashboard's Cormorant Garamond inline styles
+   override these freely. */
 h1, h2, h3, h4 {
   font-weight: 600;
   letter-spacing: -0.015em;
