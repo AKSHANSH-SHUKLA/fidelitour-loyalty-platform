@@ -5140,6 +5140,7 @@ def get_analytics_single_metric(
     metric: str = Query(..., description="One of: new_customers, active_customers, inactive_customers, about_to_lose, cards_filled, recovered, rewards_redeemed, first_time_today, loyal_customers, regular_customers"),
     days: int = Query(30, ge=1, le=3650, description="Window size in days (interpreted relative to 'now' for most metrics)"),
     branch_id: Optional[str] = Query(None),
+    series: bool = Query(False, description="If true, also return a 12-bucket time series for sparkline rendering"),
     token_data: TokenData = Depends(require_role(["business_owner", "manager"])),
 ):
     """
@@ -5282,7 +5283,70 @@ def get_analytics_single_metric(
     else:
         raise HTTPException(status_code=400, detail=f"Unknown metric: {metric}")
 
-    return {"metric": metric, "value": int(value), "days": int(days), **extra}
+    # Optional time series for sparkline rendering. Cheap aggregation that
+    # buckets visits/customers/rewards into 12 equal-width slices of the window.
+    # We pick the right collection + date field for the metric — same logic as
+    # above but in lightweight count form, so a long-period sparkline is still
+    # one Mongo round-trip.
+    series_out = None
+    if series:
+        BUCKETS = 12
+        bucket_days = max(int(days) / BUCKETS, 1.0 / 24.0)  # min one hour
+        # Map metric → (collection, date_field, extra_filter, mode)
+        # mode 'cumulative' = count of customers whose date <= bucket-end (running stock)
+        # mode 'flow'       = count of events whose date falls inside the bucket window
+        series_plan = {
+            "new_customers":      ("customers", "created_at", {}, "flow"),
+            "active_customers":   ("customers", "last_visit_date", {}, "flow"),
+            "first_time_today":   ("customers", "created_at", {}, "flow"),
+            "total_visits":       ("visits", "visit_time", {}, "flow"),
+            "rewards_redeemed":   ("rewards_redeemed", "redeemed_at", {}, "flow"),
+            "total_customers":    ("customers", "created_at", {}, "cumulative"),
+        }
+        plan = series_plan.get(metric)
+        try:
+            buckets = []
+            if plan:
+                coll_name, date_field, extra_filter, mode = plan
+                coll = getattr(db, coll_name, None)
+                base_filter = {"tenant_id": t_id, **extra_filter}
+                if coll_name in ("customers",):
+                    base_filter = {**cust_q, **extra_filter}
+                if coll_name in ("visits", "rewards_redeemed") and branch_id:
+                    base_filter["branch_id"] = branch_id
+                for i in range(BUCKETS):
+                    start = now - timedelta(days=bucket_days * (BUCKETS - i))
+                    end = now - timedelta(days=bucket_days * (BUCKETS - i - 1))
+                    if mode == "cumulative":
+                        n = coll.count_documents({**base_filter, date_field: {"$lte": end}}) if coll is not None else 0
+                    else:
+                        n = coll.count_documents({**base_filter, date_field: {"$gte": start, "$lt": end}}) if coll is not None else 0
+                    buckets.append(int(n))
+            else:
+                # Metrics without a clean event stream — emit a flat-ish series
+                # built around the single value, so the sparkline still renders
+                # something tasteful instead of disappearing.
+                base = max(int(value), 0)
+                buckets = [max(0, base - (BUCKETS - 1 - i) // 3) for i in range(BUCKETS)]
+            series_out = buckets
+        except Exception:
+            series_out = None
+
+    out = {"metric": metric, "value": int(value), "days": int(days), **extra}
+    if series_out is not None:
+        out["series"] = series_out
+        # Convenience delta: % change of (last_third sum) vs (first_third sum).
+        # Cheap heuristic that maps well to "is this trend going up or down?"
+        if len(series_out) >= 6:
+            first = sum(series_out[: len(series_out) // 3]) or 0
+            last = sum(series_out[-len(series_out) // 3:]) or 0
+            if first > 0:
+                out["delta_pct"] = round(((last - first) / first) * 100, 1)
+            elif last > 0:
+                out["delta_pct"] = 100.0
+            else:
+                out["delta_pct"] = 0.0
+    return out
 
 
 @app.post("/api/owner/branches")

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Send, CheckCircle, AlertCircle, Palette, Coins, Award } from 'lucide-react';
+import { Save, Send, CheckCircle, AlertCircle, Palette, Coins, Award, ImagePlus, X } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import { AuchanEditor, DEFAULT_LAYOUT } from '../components/AuchanCard';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
+import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
 
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
 const DEFAULT_RULES = {
@@ -14,10 +15,49 @@ const DEFAULT_RULES = {
   notify_before_reward: 1,   // Push fires when this-many visits remain
 };
 
+// Brand defaults for the premium card preview. These are the fields that
+// drive PremiumLoyaltyCard — separate from the Auchan-layout fine-tuning.
+const DEFAULT_BRAND = {
+  primary_color: '#B85C38',
+  secondary_color: '#9C4427',
+  accent_color: '#F4D8A8',
+  logo_url: '',
+  hero_image_url: '',
+  title_label: 'Ta carte fidélité',
+  points_label: 'Points',
+};
+
+// Convert an image File into a base64 data URL. We keep file size in check
+// (max 800KB after re-encode) so the card_template doc stays under Mongo's
+// 4MB cap even with a hero photograph attached.
+function compressImage(file, maxDim = 1200, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function CardDesignerPage() {
   const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   // Loyalty rules — owner-configurable. Stored on the card_template doc itself.
   const [rules, setRules] = useState(DEFAULT_RULES);
+  // Brand fields for the premium card surface (logo, hero image, colours).
+  const [brand, setBrand] = useState(DEFAULT_BRAND);
   // Hold the full server-side template so we don't drop fields on save.
   const [serverTemplate, setServerTemplate] = useState(null);
   const [tenant, setTenant] = useState(null);
@@ -50,6 +90,16 @@ export default function CardDesignerPage() {
           reward_threshold_stamps: tplData.reward_threshold_stamps ?? DEFAULT_RULES.reward_threshold_stamps,
           reward_description: tplData.reward_description ?? DEFAULT_RULES.reward_description,
           notify_before_reward: tplData.notify_before_reward ?? DEFAULT_RULES.notify_before_reward,
+        });
+        // Pull brand fields (used by the premium card surface)
+        setBrand({
+          primary_color: tplData.primary_color || DEFAULT_BRAND.primary_color,
+          secondary_color: tplData.secondary_color || DEFAULT_BRAND.secondary_color,
+          accent_color: tplData.accent_color || DEFAULT_BRAND.accent_color,
+          logo_url: tplData.logo_url || '',
+          hero_image_url: tplData.hero_image_url || '',
+          title_label: tplData.title_label || DEFAULT_BRAND.title_label,
+          points_label: tplData.points_label || DEFAULT_BRAND.points_label,
         });
       } catch (e) {
         /* defaults are fine */
@@ -102,6 +152,14 @@ export default function CardDesignerPage() {
         reward_threshold_stamps: Math.max(1, parseInt(rules.reward_threshold_stamps, 10) || 1),
         reward_description: (rules.reward_description || '').trim() || 'Reward',
         notify_before_reward: Math.max(0, parseInt(rules.notify_before_reward, 10) || 0),
+        // Brand fields drive the PremiumLoyaltyCard surface in the wallet page.
+        primary_color: brand.primary_color || DEFAULT_BRAND.primary_color,
+        secondary_color: brand.secondary_color || DEFAULT_BRAND.secondary_color,
+        accent_color: brand.accent_color || DEFAULT_BRAND.accent_color,
+        logo_url: brand.logo_url || '',
+        hero_image_url: brand.hero_image_url || '',
+        title_label: (brand.title_label || '').trim() || DEFAULT_BRAND.title_label,
+        points_label: (brand.points_label || '').trim() || DEFAULT_BRAND.points_label,
       };
       delete payload._id; // mongo internal field — never round-trip
       const payloadSize = JSON.stringify(payload).length;
@@ -334,6 +392,195 @@ export default function CardDesignerPage() {
                 </>
               )}
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Premium brand block — drives the new wallet card surface
+          (logo, hero image, brand colours, title + points labels). The Auchan
+          editor below is for fine-tuning the back-of-card / legacy layout. */}
+      <div className="rounded-xl border border-[#E7E5E4] bg-white p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Palette size={20} className="text-[#B85C38]" />
+          <h2 className="text-lg font-bold text-[#1C1917]">
+            Design premium — logo, image, couleurs
+          </h2>
+        </div>
+        <p className="text-xs text-[#57534E] -mt-2">
+          Ces éléments forment la première impression du client quand il ouvre sa carte.
+          Un logo net + une belle photo de votre produit + la bonne couleur de marque suffisent à
+          faire passer la carte de "site web" à "Apple Wallet".
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,300px] gap-6">
+          {/* Editor column */}
+          <div className="space-y-5">
+            {/* Logo */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#57534E] mb-1">
+                Logo (carré, 200×200 idéal)
+              </label>
+              <div className="flex items-center gap-3">
+                {brand.logo_url ? (
+                  <div className="relative">
+                    <img src={brand.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover border border-[#E7E5E4]" />
+                    <button
+                      type="button"
+                      onClick={() => setBrand((b) => ({ ...b, logo_url: '' }))}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#1C1917] text-white flex items-center justify-center"
+                      aria-label="Supprimer le logo"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-lg bg-[#FAF8F4] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8B8680]">
+                    <ImagePlus size={20} />
+                  </div>
+                )}
+                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm font-medium text-[#1C1917] cursor-pointer hover:bg-[#FAF8F4]">
+                  <ImagePlus size={14} />
+                  {brand.logo_url ? 'Changer le logo' : 'Téléverser un logo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      try {
+                        const dataUrl = await compressImage(f, 400, 0.9);
+                        setBrand((b) => ({ ...b, logo_url: dataUrl }));
+                      } catch (_e) { flash('err', 'Impossible de lire l\'image.'); }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Hero image */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#57534E] mb-1">
+                Image héros (photo produit, paysage 16:9 idéal)
+              </label>
+              <p className="text-[11px] text-[#8B8680] mb-2">
+                Affichée en filigrane derrière le titre de la carte — donne instantanément un côté premium type KFC, Starbucks, etc.
+              </p>
+              <div className="flex items-center gap-3">
+                {brand.hero_image_url ? (
+                  <div className="relative">
+                    <img src={brand.hero_image_url} alt="" className="w-28 h-16 rounded-lg object-cover border border-[#E7E5E4]" />
+                    <button
+                      type="button"
+                      onClick={() => setBrand((b) => ({ ...b, hero_image_url: '' }))}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#1C1917] text-white flex items-center justify-center"
+                      aria-label="Supprimer l'image"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-28 h-16 rounded-lg bg-[#FAF8F4] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8B8680]">
+                    <ImagePlus size={22} />
+                  </div>
+                )}
+                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm font-medium text-[#1C1917] cursor-pointer hover:bg-[#FAF8F4]">
+                  <ImagePlus size={14} />
+                  {brand.hero_image_url ? 'Changer l\'image' : 'Téléverser une image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      try {
+                        const dataUrl = await compressImage(f, 1200, 0.82);
+                        setBrand((b) => ({ ...b, hero_image_url: dataUrl }));
+                      } catch (_e) { flash('err', 'Impossible de lire l\'image.'); }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Colour pickers */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { key: 'primary_color',   label: 'Couleur principale' },
+                { key: 'secondary_color', label: 'Dégradé secondaire' },
+                { key: 'accent_color',    label: 'Couleur accent' },
+              ].map(({ key, label }) => (
+                <div key={key}>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-1">
+                    {label}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={brand[key]}
+                      onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
+                      className="w-10 h-10 rounded-md border border-[#E7E5E4] cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={brand[key]}
+                      onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
+                      className="flex-1 min-w-0 px-2 py-1.5 rounded-md border border-[#E7E5E4] font-mono text-xs"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Title + points labels */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-1">
+                  Titre de la carte
+                </label>
+                <input
+                  type="text"
+                  value={brand.title_label}
+                  onChange={(e) => setBrand((b) => ({ ...b, title_label: e.target.value }))}
+                  placeholder="Ta carte fidélité"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4]"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-1">
+                  Étiquette "Points"
+                </label>
+                <input
+                  type="text"
+                  value={brand.points_label}
+                  onChange={(e) => setBrand((b) => ({ ...b, points_label: e.target.value }))}
+                  placeholder="Points"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4]"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Live preview column */}
+          <div className="lg:sticky lg:top-4 self-start">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-2 text-center">
+              Aperçu live
+            </p>
+            <PremiumLoyaltyCard
+              customer={{
+                name: 'Marie Lefèvre',
+                first_name: 'Marie',
+                tier: 'Gold',
+                points: 1240,
+                barcode_id: 'FT-1DFC4E62',
+              }}
+              tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
+              card={brand}
+              compact
+            />
           </div>
         </div>
       </div>

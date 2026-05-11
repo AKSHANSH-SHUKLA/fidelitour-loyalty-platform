@@ -20,6 +20,7 @@ import { useBranch } from '../contexts/BranchContext';
 import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 import CustomerStatusKPI from '../components/CustomerStatusKPI';
 import ColorfulKpiTile from '../components/ColorfulKpiTile';
+import AiRecommendationBanner from '../components/AiRecommendationBanner';
 import useTileMetric from '../hooks/useTileMetric';
 import { Trash2, UserPlus2, RefreshCcw, Repeat as RepeatIcon, BadgeCheck } from 'lucide-react';
 
@@ -55,25 +56,34 @@ const SendCampaignButton = ({ label = 'Send campaign', onClick, compact = false,
 // owns its own period picker, and re-fetches on change.
 // ------------------------------------------------------------------
 const LiveMetricTile = ({
-  icon, title, accent,
+  icon, title, accent, tone,
   metric, branchId,
   initial = { value: 30, unit: 'day' },
   sublabel,
   onDrill,
   disablePicker = false,
 }) => {
-  const { value, loading, days, period, setPeriod } = useTileMetric({ metric, branchId, initial });
+  // Fetch with series so the tile can render a sparkline + delta badge.
+  const { value, loading, days, period, setPeriod, series, deltaPct } = useTileMetric({
+    metric, branchId, initial, withSeries: true,
+  });
+  const delta = typeof deltaPct === 'number'
+    ? { value: deltaPct, sign: deltaPct > 0.5 ? 'up' : deltaPct < -0.5 ? 'down' : 'flat' }
+    : null;
   return (
     <ColorfulKpiTile
       icon={icon}
       title={title}
       accent={accent}
+      tone={tone}
       value={(value ?? 0).toLocaleString()}
       sublabel={typeof sublabel === 'function' ? sublabel(days, value) : sublabel}
       loading={loading}
       onClick={onDrill ? () => onDrill(days, value) : undefined}
       period={disablePicker ? null : period}
       onPeriodChange={disablePicker ? undefined : setPeriod}
+      trend={series}
+      delta={delta}
     />
   );
 };
@@ -684,6 +694,11 @@ const AnalyticsPage = () => {
         description="Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante."
         role="business_owner"
       />
+
+      {/* Premium AI recommendation panel — surfaces the highest-priority
+          proactive alert as a one-line "do this next" with a CTA into the
+          campaign composer. Stays hidden when nothing's urgent. */}
+      <AiRecommendationBanner onOpenComposer={openComposer ? ({ segment, presetName, presetContent }) => openComposer(segment, presetName, presetContent) : undefined} />
 
       {/* Configurable customer-status KPIs — live, uses the definition from Settings */}
       <CustomerStatusKPI />
