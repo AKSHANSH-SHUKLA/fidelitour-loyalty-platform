@@ -7,6 +7,7 @@ import api, { publicAPI } from '../lib/api';
 import { ensureSubscribed, unsubscribe as unsubscribePush, isSupported as isPushSupported } from '../lib/webpush';
 import InstallPwaPrompt from '../components/InstallPwaPrompt';
 import GeoConsentCard from '../components/GeoConsentCard';
+import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
 import TierBadge from '../components/TierBadge';
 import { AuchanPreview, DEFAULT_LAYOUT as AUCHAN_DEFAULT } from '../components/AuchanCard';
 
@@ -367,12 +368,10 @@ const MyWalletCardPage = () => {
                 </button>
               </div>
             ) : (
-              <WalletPass
+              <PremiumLoyaltyCard
                 customer={customer}
                 tenant={tenant}
                 card={card}
-                activeOffer={activeOffer}
-                onOpenDetails={() => setDetailsOpen(true)}
               />
             )}
 
