@@ -21,7 +21,6 @@ import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 import CustomerStatusKPI from '../components/CustomerStatusKPI';
 import ColorfulKpiTile from '../components/ColorfulKpiTile';
 import AiRecommendationBanner from '../components/AiRecommendationBanner';
-import BranchPillsBanner from '../components/BranchPillsBanner';
 import VisitsTwinChart from '../components/VisitsTwinChart';
 import AcquisitionDonut from '../components/AcquisitionDonut';
 import TierDonut from '../components/TierDonut';
@@ -693,10 +692,9 @@ const AnalyticsPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* Premium branch pills banner — only renders on multi-shop tenants.
-          Replaces the old branch-dropdown row with a richer cream-gradient
-          surface matching the reference mockup. */}
-      <BranchPillsBanner />
+      {/* Branch banner now lives in DashboardLayout (globally for every owner
+          page). We don't re-render it here — that was creating the duplicate
+          stacked banner the client flagged on the screenshot. */}
 
       {/* Editorial-serif Analytics title with green Live pill + date range
           on the right. The only place we re-introduce Cormorant Garamond
