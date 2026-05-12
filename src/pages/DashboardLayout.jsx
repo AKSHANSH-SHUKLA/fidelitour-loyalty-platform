@@ -8,7 +8,7 @@ import { ownerAPI } from '../lib/api';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
   Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History, ChevronDown,
-  Building2
+  Building2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
 
@@ -53,12 +53,39 @@ const SETTINGS_SECTIONS = [
   { anchor: 'settings-cleanup',  label: '🧹 Nettoyer clients inactifs' },
 ];
 
-const SettingsNavLink = ({ icon: Icon, currentPath, role }) => {
+const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
   const active = isNavActive(currentPath, '/dashboard/settings');
   const theme = themeForRole(role);
   const [open, setOpen] = React.useState(active);
   // If the user lands ON the settings page later, auto-expand for them.
   React.useEffect(() => { if (active) setOpen(true); }, [active]);
+
+  // When the sidebar is collapsed, Settings becomes a simple icon link —
+  // the inline submenu has no room. Clicking jumps straight to the settings page.
+  if (collapsed) {
+    return (
+      <Link
+        to="/dashboard/settings"
+        title="Settings"
+        className="relative group flex items-center justify-center px-2 py-2 rounded-lg text-[13.5px] transition-all"
+        style={{
+          color: active ? 'var(--ink)' : 'var(--ink-mute)',
+          background: active ? 'rgba(255,255,255,0.78)' : 'transparent',
+        }}
+      >
+        <span
+          className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
+          style={{
+            background: active ? `linear-gradient(135deg, ${theme.from}1A, ${theme.to}1A)` : 'transparent',
+            color: active ? theme.from : C.inkMute,
+            border: active ? `1px solid ${theme.from}33` : '1px solid transparent',
+          }}
+        >
+          <Icon className="w-[18px] h-[18px]" />
+        </span>
+      </Link>
+    );
+  }
 
   const toggle = (e) => {
     // A bare click on the row toggles the dropdown only — does NOT navigate.
@@ -135,13 +162,14 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role }) => {
   );
 };
 
-const NavLink = ({ to, icon: Icon, label, currentPath, role }) => {
+const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed }) => {
   const active = isNavActive(currentPath, to);
   const theme = themeForRole(role);
   return (
     <Link
       to={to}
-      className="relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all"
+      title={collapsed ? label : undefined}
+      className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all`}
       style={{
         color: active ? 'var(--ink)' : 'var(--ink-mute)',
         background: active ? 'rgba(255,255,255,0.78)' : 'transparent',
@@ -169,7 +197,7 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role }) => {
       >
         <Icon className="w-[18px] h-[18px]" />
       </span>
-      <span className="truncate">{label}</span>
+      {!collapsed && <span className="truncate">{label}</span>}
     </Link>
   );
 };
@@ -177,12 +205,13 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role }) => {
 // Same visual treatment as NavLink, but a button that triggers logout.
 // Placed inline within each role's nav so it sits directly under Settings
 // (or last nav item for roles without Settings).
-const SignOutNavItem = ({ onClick }) => {
+const SignOutNavItem = ({ onClick, collapsed }) => {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all w-full text-left"
+      title={collapsed ? 'Sign out' : undefined}
+      className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all w-full text-left`}
       style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
       onMouseOver={(e) => {
         e.currentTarget.style.background = '#FAEDEB';
@@ -199,7 +228,7 @@ const SignOutNavItem = ({ onClick }) => {
       >
         <LogOut className="w-[18px] h-[18px]" />
       </span>
-      <span className="truncate">Sign out</span>
+      {!collapsed && <span className="truncate">Sign out</span>}
     </button>
   );
 };
@@ -323,6 +352,18 @@ const DashboardLayout = () => {
   const role = user?.role || 'default';
   const theme = themeForRole(role);
 
+  // Collapsed-sidebar toggle (persisted across reloads). When true the
+  // aside shrinks to a 72px icons-only rail; click again to expand.
+  const [collapsed, setCollapsed] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    try { return window.localStorage.getItem('fdt:sidebar:collapsed') === '1'; }
+    catch { return false; }
+  });
+  React.useEffect(() => {
+    try { window.localStorage.setItem('fdt:sidebar:collapsed', collapsed ? '1' : '0'); }
+    catch { /* localStorage may be blocked — fine */ }
+  }, [collapsed]);
+
   // Fetch tenant identity once — shown in the sidebar so the user always
   // knows which business account they're acting as. Prevents the "wait,
   // why isn't this scan working" tenant-mismatch confusion.
@@ -344,43 +385,60 @@ const DashboardLayout = () => {
       <AmbientBackdrop role={role} />
 
       <aside
-        className="relative z-10 w-64 flex flex-col shrink-0"
+        className={`relative z-10 ${collapsed ? 'w-[72px]' : 'w-64'} flex flex-col shrink-0 transition-[width] duration-200 ease-out`}
         style={{
           background: 'rgba(255,255,255,0.78)',
           backdropFilter: 'blur(14px)',
           borderRight: `1px solid ${C.hairline}`,
         }}
       >
+        {/* Collapse toggle pinned to the right edge of the aside */}
+        <button
+          type="button"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="absolute -right-3 top-6 z-20 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110"
+          style={{
+            background: 'white',
+            border: `1px solid ${C.hairline}`,
+            boxShadow: '0 2px 6px rgba(28,25,23,0.08)',
+            color: C.inkSoft,
+          }}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+
         {/* Brand mark + role badge */}
-        <div className="p-5 pb-3">
-          <Link to="/" className="flex items-center gap-2.5">
+        <div className={collapsed ? 'p-3 pb-2' : 'p-5 pb-3'}>
+          <Link to="/" className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm shadow-sm"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm shadow-sm shrink-0"
               style={{ background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`, fontWeight: 500 }}
+              title={collapsed ? `FidéliTour · ${theme.label}` : undefined}
             >
               F
             </div>
-            <div className="min-w-0">
-              <p
-                className="text-[15px] leading-none"
-                style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.015em' }}
-              >
-                FidéliTour
-              </p>
-              <p
-                className="text-[9px] uppercase tracking-[0.16em] mt-1"
-                style={{ color: 'var(--ink-mute)', fontWeight: 500 }}
-              >
-                {theme.label}
-              </p>
-            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <p
+                  className="text-[15px] leading-none"
+                  style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.015em' }}
+                >
+                  FidéliTour
+                </p>
+                <p
+                  className="text-[9px] uppercase tracking-[0.16em] mt-1"
+                  style={{ color: 'var(--ink-mute)', fontWeight: 500 }}
+                >
+                  {theme.label}
+                </p>
+              </div>
+            )}
           </Link>
 
-          {/* Tenant identity badge — shows the BUSINESS the current user is
-              acting on. Critical for owners with multiple tenants and for
-              staff who need to know whether they're in the right shop's
-              account. */}
-          {tenantInfo && (
+          {/* Tenant identity badge — only when expanded */}
+          {!collapsed && tenantInfo && (
             <div
               className="mt-3 px-2.5 py-2 rounded-lg"
               style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid var(--hairline)' }}
@@ -414,72 +472,75 @@ const DashboardLayout = () => {
           <div className="h-px" style={{ background: C.hairline }} />
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-3'} py-4 space-y-0.5 overflow-y-auto`}>
           {role === 'business_owner' && (
             <>
-              <NavLink to="/dashboard"               icon={Home}         label="Dashboard"     currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/analytics"     icon={BarChart3}    label="Analytics"     currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/insights"      icon={Sparkles}     label="Insights"      currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/customers"     icon={Users}        label="Customers"     currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/map"           icon={MapPin}       label="Customer Map"  currentPath={currentPath} role={role} />
+              <NavLink to="/dashboard"               icon={Home}         label="Dashboard"     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/analytics"     icon={BarChart3}    label="Analytics"     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/insights"      icon={Sparkles}     label="Insights"      currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/customers"     icon={Users}        label="Customers"     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/map"           icon={MapPin}       label="Customer Map"  currentPath={currentPath} role={role} collapsed={collapsed} />
               {/* Scan Visit is intentionally NOT in the owner sidebar — that page
                   is the staff workspace. Owners can reach it via direct URL. */}
-              <NavLink to="/dashboard/card-designer" icon={CreditCard}   label="Card Designer" currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label="Campaigns"     currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label="AI Assistant"  currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/history"       icon={History}      label="History"       currentPath={currentPath} role={role} />
+              <NavLink to="/dashboard/card-designer" icon={CreditCard}   label="Card Designer" currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label="Campaigns"     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label="AI Assistant"  currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/history"       icon={History}      label="History"       currentPath={currentPath} role={role} collapsed={collapsed} />
               {/* Settings is expandable — click → dropdown of section anchors */}
-              <SettingsNavLink icon={Settings2} currentPath={currentPath} role={role} />
-              <SignOutNavItem onClick={logout} />
+              <SettingsNavLink icon={Settings2} currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
           {role === 'manager' && (
             <>
-              <NavLink to="/dashboard/analytics" icon={BarChart3} label="Analytics"    currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/insights"  icon={Sparkles}  label="Insights"     currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/customers" icon={Users}     label="Customers"    currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/map"       icon={MapPin}    label="Customer Map" currentPath={currentPath} role={role} />
-              <NavLink to="/dashboard/history"   icon={History}   label="History"      currentPath={currentPath} role={role} />
-              <SignOutNavItem onClick={logout} />
+              <NavLink to="/dashboard/analytics" icon={BarChart3} label="Analytics"    currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/insights"  icon={Sparkles}  label="Insights"     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/customers" icon={Users}     label="Customers"    currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/map"       icon={MapPin}    label="Customer Map" currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/history"   icon={History}   label="History"      currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
           {role === 'staff' && (
             <>
-              <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} role={role} />
-              <SignOutNavItem onClick={logout} />
+              <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
           {role === 'super_admin' && (
             <>
-              <NavLink to="/admin"               icon={Home}         label="Dashboard"          currentPath={currentPath} role={role} />
-              <NavLink to="/admin/analytics"     icon={BarChart3}    label="Global Analytics"   currentPath={currentPath} role={role} />
-              <NavLink to="/admin/insights"      icon={Sparkles}     label="Insights"           currentPath={currentPath} role={role} />
-              <NavLink to="/admin/tenants"       icon={Database}     label="Manage Businesses"  currentPath={currentPath} role={role} />
-              <NavLink to="/admin/card-designer" icon={Palette}      label="Card Designer"      currentPath={currentPath} role={role} />
-              <NavLink to="/admin/campaigns"     icon={Megaphone}    label="Campaigns"          currentPath={currentPath} role={role} />
-              <NavLink to="/admin/ai"            icon={BrainCircuit} label="AI Intelligence"    currentPath={currentPath} role={role} />
-              <SignOutNavItem onClick={logout} />
+              <NavLink to="/admin"               icon={Home}         label="Dashboard"          currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/admin/analytics"     icon={BarChart3}    label="Global Analytics"   currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/admin/insights"      icon={Sparkles}     label="Insights"           currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/admin/tenants"       icon={Database}     label="Manage Businesses"  currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/admin/card-designer" icon={Palette}      label="Card Designer"      currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/admin/campaigns"     icon={Megaphone}    label="Campaigns"          currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/admin/ai"            icon={BrainCircuit} label="AI Intelligence"    currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
         </nav>
 
         {/* User chip — sign-out moved into the nav, directly below Settings */}
-        <div className="p-4 mt-auto" style={{ borderTop: `1px solid ${C.hairline}` }}>
-          <div className="flex items-center gap-2.5 px-1">
+        <div className={`${collapsed ? 'p-3' : 'p-4'} mt-auto`} style={{ borderTop: `1px solid ${C.hairline}` }}>
+          <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-1'}`}>
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
               style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}
+              title={collapsed ? (user?.email || '') : undefined}
             >
               {(user?.email || '?').slice(0, 1).toUpperCase()}
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold truncate" style={{ color: C.inkDeep }}>
-                {user?.email || '—'}
-              </p>
-              <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: theme.from }}>
-                {theme.label}
-              </p>
-            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <p className="text-xs font-semibold truncate" style={{ color: C.inkDeep }}>
+                  {user?.email || '—'}
+                </p>
+                <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: theme.from }}>
+                  {theme.label}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </aside>

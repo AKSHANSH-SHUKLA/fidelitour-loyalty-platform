@@ -203,30 +203,47 @@ export default function OwnerDashboard() {
         {/* ═════════════ MAIN COLUMN ═════════════ */}
         <div className="fd-main">
 
-          {/* AI recommendation — always at the top */}
-          <div className="fd-ai">
-            <div className="fd-ai-ico"><Sparkles size={20} /></div>
-            <div className="fd-ai-content">
-              <div className="fd-ai-eyebrow">Notre recommandation IA pour vous</div>
-              <div className="fd-ai-title">
-                {atRiskCustomers > 0
-                  ? `${atRiskCustomers} clients sur le point de partir`
-                  : `${newCustomers.value || 0} nouveaux clients à fidéliser`}
-              </div>
-              <div className="fd-ai-text">
-                {atRiskCustomers > 0
-                  ? "Ces clients étaient réguliers mais n'ont pas visité depuis 14–29 jours. Envoyez-leur une attention douce cette semaine."
-                  : "Activez une campagne de bienvenue pour transformer vos nouveaux visiteurs en habitués."}
-              </div>
+          {/* Recommended ideas & actions — pinned to top */}
+          <div className="fd-actions-head fd-actions-head-top">
+            <div>
+              <div className="fd-actions-eyebrow"><Sparkles size={11} /> Notre recommandation IA pour vous</div>
+              <div className="fd-panel-h">Idées &amp; actions recommandées</div>
+              <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
             </div>
-            <button
-              className="fd-btn-purple"
-              onClick={() => openCampaign(atRiskCustomers > 0
-                ? { name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend chez {business_name}.' }
-                : { name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
-            >
-              Voir les suggestions <ArrowRight size={13} />
-            </button>
+          </div>
+          <div className="fd-actions-grid fd-actions-grid-top">
+            <ActionTile
+              icon={<RefreshCw size={14} />}
+              color="#B26344"
+              title="Relance inactifs 14–29j"
+              desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
+              cta="Créer la campagne"
+              onClick={() => openCampaign({ name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend.' })}
+            />
+            <ActionTile
+              icon={<Award size={14} />}
+              color="#7E5E84"
+              title="Segmentez vos VIP"
+              desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
+              cta="Voir les VIP"
+              onClick={() => navigate('/dashboard/customers?tier=vip')}
+            />
+            <ActionTile
+              icon={<UserPlus size={14} />}
+              color="#4A7BA8"
+              title="Boostez les nouveaux clients"
+              desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
+              cta="Créer une campagne"
+              onClick={() => openCampaign({ name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
+            />
+            <ActionTile
+              icon={<Sparkles size={14} />}
+              color="#4A7861"
+              title="Voir plus d'insights"
+              desc="Explorez plus d'opportunités pour votre croissance."
+              cta="Explorer"
+              onClick={() => navigate('/dashboard/insights')}
+            />
           </div>
 
           {/* Compact page header */}
@@ -612,45 +629,6 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="fd-actions-head">
-            <div className="fd-panel-h">Idées &amp; actions recommandées</div>
-            <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
-          </div>
-          <div className="fd-actions-grid">
-            <ActionTile
-              icon={<RefreshCw size={14} />}
-              color="#B26344"
-              title="Relance inactifs 14–29j"
-              desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
-              cta="Créer la campagne"
-              onClick={() => openCampaign({ name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend.' })}
-            />
-            <ActionTile
-              icon={<Award size={14} />}
-              color="#7E5E84"
-              title="Segmentez vos VIP"
-              desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
-              cta="Voir les VIP"
-              onClick={() => navigate('/dashboard/customers?tier=vip')}
-            />
-            <ActionTile
-              icon={<UserPlus size={14} />}
-              color="#4A7BA8"
-              title="Boostez les nouveaux clients"
-              desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
-              cta="Créer une campagne"
-              onClick={() => openCampaign({ name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
-            />
-            <ActionTile
-              icon={<Sparkles size={14} />}
-              color="#4A7861"
-              title="Voir plus d'insights"
-              desc="Explorez plus d'opportunités pour votre croissance."
-              cta="Explorer"
-              onClick={() => navigate('/dashboard/insights')}
-            />
-          </div>
         </div>
 
         {/* ═════════════ SIDE COLUMN ═════════════ */}
