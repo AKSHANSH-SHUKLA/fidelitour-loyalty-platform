@@ -4,6 +4,7 @@ import { ownerAPI } from '../lib/api';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
+import PhoneFrame from '../components/PhoneFrame';
 
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
 const DEFAULT_RULES = {
@@ -546,23 +547,25 @@ export default function CardDesignerPage() {
             </div>
           </div>
 
-          {/* Live preview column */}
-          <div className="lg:sticky lg:top-4 self-start">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-2 text-center">
-              Aperçu live
-            </p>
-            <PremiumLoyaltyCard
-              customer={{
-                name: 'Marie Lefèvre',
-                first_name: 'Marie',
-                tier: 'Gold',
-                points: 1240,
-                barcode_id: 'FT-1DFC4E62',
-              }}
-              tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
-              card={brand}
-              compact
-            />
+          {/* Live preview column — wrapped in a PhoneFrame so the patron sees
+              the card in the exact context a customer will: rounded device
+              chrome, dynamic-island notch, real status bar, Safari URL chip.
+              What you design here is what they'll see — pixel-for-pixel. */}
+          <div className="lg:sticky lg:top-4 self-start flex justify-center">
+            <PhoneFrame width={260} label="Aperçu sur téléphone client">
+              <PremiumLoyaltyCard
+                customer={{
+                  name: 'Marie Lefèvre',
+                  first_name: 'Marie',
+                  tier: 'Gold',
+                  points: 1240,
+                  barcode_id: 'FT-1DFC4E62',
+                }}
+                tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
+                card={brand}
+                compact
+              />
+            </PhoneFrame>
           </div>
         </div>
       </div>

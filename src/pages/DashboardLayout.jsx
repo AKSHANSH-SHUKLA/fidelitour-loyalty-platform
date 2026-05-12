@@ -377,13 +377,79 @@ const DashboardLayout = () => {
             warn about (past-due, canceled, trial ending soon). Otherwise
             invisible and out of the way. */}
         {role === 'business_owner' && <BillingBanner />}
-        {/* Floating bell — only for owners; staff/admin have separate views */}
+
+        {/* Premium top toolbar — search + bell + avatar.
+            Sits as a sticky bar across every dashboard page (matches the
+            reference mockup with the search bar centered and the bell +
+            user avatar pinned right). On non-owner roles we keep the bell
+            slot hidden so staff don't see owner-only alerts. */}
         {role === 'business_owner' && (
-          <div className="absolute top-4 right-6 z-20">
-            <NotificationBell />
+          <div
+            className="sticky top-0 z-30 flex items-center gap-4 px-6 lg:px-10 py-3 backdrop-blur"
+            style={{
+              background: 'rgba(255,255,255,0.78)',
+              borderBottom: '1px solid var(--hairline, #ECE8E1)',
+            }}
+          >
+            {/* Search — purely decorative for now (Cmd+K hook lands in a
+                later pass). Looks calm and signals "this is a real product". */}
+            <div
+              className="flex items-center gap-2 flex-1 max-w-2xl mx-auto rounded-full px-4 py-1.5"
+              style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #ECE8E1)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Rechercher un client, une campagne…"
+                aria-label="Rechercher"
+                className="flex-1 bg-transparent outline-none text-[13px]"
+                style={{ color: 'var(--ink, #1F1B1A)', fontWeight: 400 }}
+              />
+              <kbd
+                className="text-[10px] px-1.5 py-0.5 rounded"
+                style={{
+                  background: '#F4F2EE',
+                  color: 'var(--ink-mute, #7A716C)',
+                  border: '1px solid var(--hairline, #ECE8E1)',
+                  fontWeight: 500,
+                }}
+              >
+                ⌘K
+              </kbd>
+            </div>
+
+            {/* Bell — keeps the existing NotificationBell component but lives
+                in the toolbar slot instead of floating absolute. The badge
+                with the unread count comes from inside NotificationBell. */}
+            <div className="shrink-0">
+              <NotificationBell />
+            </div>
+
+            {/* User avatar pill — initial + status dot. Mirrors the mockup. */}
+            <div
+              className="shrink-0 relative w-9 h-9 rounded-full flex items-center justify-center text-white"
+              style={{
+                background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
+                fontWeight: 500,
+                fontSize: 13,
+                letterSpacing: '0.02em',
+              }}
+              title={user?.email || ''}
+            >
+              {(user?.email || '?').charAt(0).toUpperCase()}
+              <span
+                aria-hidden="true"
+                className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full"
+                style={{ background: 'var(--tone-success-line, #7FA269)', boxShadow: '0 0 0 2px white' }}
+              />
+            </div>
           </div>
         )}
-        <div className="px-6 py-8 lg:px-10 lg:py-10 max-w-[1600px] mx-auto">
+
+        <div className="px-6 py-6 lg:px-10 lg:py-6 max-w-[1600px] mx-auto">
           {/* Global branch selector — visible on EVERY dashboard page so the
               owner can pick once and have all pages filter automatically.
               Hides itself if the tenant only has one branch. */}

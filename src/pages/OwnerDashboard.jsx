@@ -238,71 +238,14 @@ const OwnerDashboard = () => {
   const newThisMonth = Object.values(newByWeek).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Smart Alerts Banner */}
-      {recovered && recovered.percentage > 10 && (
-        <div
-          className="relative p-4 rounded-2xl overflow-hidden"
-          style={{
-            background: `linear-gradient(135deg, ${C.meadow} 0%, white 100%)`,
-            border: `1px solid ${C.sage}55`,
-          }}
-        >
-          <div className="flex items-center gap-3 relative">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: `${C.sage}33`, color: C.sage }}
-            >
-              <CheckCircle2 size={20} />
-            </div>
-            <div>
-              <p className="font-semibold text-sm" style={{ color: C.inkDeep }}>
-                Great news — {recovered.count} customers came back recently!
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: C.inkMute }}>
-                They were inactive for 30+ days but visited in the last 30 days.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {topSpender && topSpender.last_visit_date && (() => {
-        const lastVisit = new Date(topSpender.last_visit_date);
-        const now = new Date();
-        const daysSince = Math.floor((now - lastVisit) / (1000 * 60 * 60 * 24));
-        return daysSince > 14 ? (
-          <div
-            className="relative p-4 rounded-2xl overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, #FFF5E5 0%, white 100%)`,
-              border: `1px solid ${C.ochre}55`,
-            }}
-          >
-            <div className="flex items-center gap-3 relative">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: `${C.ochre}33`, color: C.ochre }}
-              >
-                <AlertTriangle size={20} />
-              </div>
-              <div>
-                <p className="font-semibold text-sm" style={{ color: C.inkDeep }}>
-                  Your top customer hasn't visited in {daysSince} days — send them a thank-you offer?
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: C.inkMute }}>
-                  {topSpender.name} is your biggest supporter with €{topSpender.total_amount_paid} spent.
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : null;
-      })()}
-
+    // No-scroll fold: tight space-y so the first view shows everything important
+    // without the owner needing to scroll. Alert banners moved BELOW the main
+    // KPI rows so they don't push the fold down on quiet days.
+    <div className="space-y-3">
       <PageHeader
-        eyebrow="Operational Overview"
+        eyebrow="Dashboard"
         title="Welcome back"
-        description="A live view of your loyalty programme — customers, visits, tiers, and what's working this week."
+        description="A live view of your loyalty programme."
         role="business_owner"
       />
 
@@ -310,16 +253,16 @@ const OwnerDashboard = () => {
           LIFETIME ROWS — first two rows, no period picker.
           ═════════════════════════════════════════════════════════════════ */}
       <div>
-        <div className="flex items-baseline justify-between mb-3">
-          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: C.inkDeep }}>
+        <div className="flex items-baseline justify-between mb-2">
+          <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: 'var(--ink-mute)', fontWeight: 500 }}>
             Vue d'ensemble — depuis le début
-          </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.inkMute }}>
+          </p>
+          <span className="text-[10px] uppercase tracking-[0.16em]" style={{ color: 'var(--ink-mute)', fontWeight: 500 }}>
             Totaux lifetime
           </span>
         </div>
         {/* Lifetime row 1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <ColorfulKpiTile
             icon={Users} title="Total Customers" accent={C.sky}
             value={totalCustomers.toLocaleString()}
@@ -344,7 +287,7 @@ const OwnerDashboard = () => {
           />
         </div>
         {/* Lifetime row 2 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
           {summary?.wallet_active_count != null && (
             <ColorfulKpiTile
               icon={BadgeCheck} title="Active Cards" accent={C.teal}
@@ -381,15 +324,15 @@ const OwnerDashboard = () => {
           TIME-WINDOWED ROWS — each tile has its own period picker.
           ═════════════════════════════════════════════════════════════════ */}
       <div>
-        <div className="flex items-baseline justify-between mb-3">
-          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: C.inkDeep }}>
+        <div className="flex items-baseline justify-between mb-2">
+          <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: 'var(--ink-mute)', fontWeight: 500 }}>
             Activité dans la période choisie
-          </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: C.inkMute }}>
+          </p>
+          <span className="text-[10px] uppercase tracking-[0.16em]" style={{ color: 'var(--ink-mute)', fontWeight: 500 }}>
             Filtre temps par tuile
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <LiveMetricTile
             icon={UserPlus2} title="Nouveaux clients" tone="info"
             metric="new_customers" branchId={selectedBranch}
@@ -634,6 +577,29 @@ const OwnerDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* AI recommendation banner sits HERE in the fold — so the owner sees
+          the suggested action without scrolling. The detailed charts and
+          customer lists below are collapsed by default; one click expands.
+          This matches the reference mockup's "one glance" pattern. */}
+      <AiRecommendationBanner
+        onOpenComposer={({ presetName, presetContent }) =>
+          navigate(`/dashboard/campaigns?preset_name=${encodeURIComponent(presetName || '')}&preset_content=${encodeURIComponent(presetContent || '')}`)
+        }
+      />
+
+      {/* Below-fold detail. Collapsed by default to keep the dashboard a
+          glance, not a scroll. The owner clicks "Voir le détail" when they
+          want to drill into charts, segments, top customers, etc. */}
+      <details className="rounded-2xl border" style={{ borderColor: 'var(--hairline)', background: 'rgba(255,255,255,0.6)' }}>
+        <summary
+          className="cursor-pointer select-none px-4 py-2.5 text-[13px] flex items-center justify-between"
+          style={{ color: 'var(--ink)', fontWeight: 500 }}
+        >
+          <span>Voir le détail — graphiques, top clients, performance par boutique</span>
+          <span className="text-[11px]" style={{ color: 'var(--ink-mute)' }}>cliquer pour ouvrir</span>
+        </summary>
+        <div className="px-4 pb-4 pt-2 space-y-4">
 
       {/* Charts Row — both charts now have day/week/month/year selectors built in */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -990,13 +956,8 @@ const OwnerDashboard = () => {
         </div>
       )}
 
-      {/* AI recommendation panel at the bottom of the dashboard — matches the
-          reference mockup. Stays hidden when there's no proactive alert. */}
-      <AiRecommendationBanner
-        onOpenComposer={({ presetName, presetContent }) =>
-          navigate(`/dashboard/campaigns?preset_name=${encodeURIComponent(presetName || '')}&preset_content=${encodeURIComponent(presetContent || '')}`)
-        }
-      />
+        </div>
+      </details>
     </div>
   );
 };
