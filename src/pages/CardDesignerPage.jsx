@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Send, CheckCircle, AlertCircle, Palette, Coins, Award, ImagePlus, X } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
-import { AuchanEditor, DEFAULT_LAYOUT } from '../components/AuchanCard';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
@@ -53,7 +52,6 @@ function compressImage(file, maxDim = 1200, quality = 0.82) {
 }
 
 export default function CardDesignerPage() {
-  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   // Loyalty rules — owner-configurable. Stored on the card_template doc itself.
   const [rules, setRules] = useState(DEFAULT_RULES);
   // Brand fields for the premium card surface (logo, hero image, colours).
@@ -73,16 +71,6 @@ export default function CardDesignerPage() {
         setTenant(t.data || null);
         const tplData = tpl?.data || {};
         setServerTemplate(tplData);
-        // Pull layout from auchan_layout
-        const saved = tplData.auchan_layout;
-        if (saved && typeof saved === 'object') {
-          setLayout({
-            ...DEFAULT_LAYOUT,
-            ...saved,
-            slots: { ...DEFAULT_LAYOUT.slots, ...(saved.slots || {}) },
-            push: { ...DEFAULT_LAYOUT.push, ...(saved.push || {}) },
-          });
-        }
         // Pull rules from the top-level card_template fields
         setRules({
           points_per_visit: tplData.points_per_visit ?? DEFAULT_RULES.points_per_visit,
@@ -107,17 +95,8 @@ export default function CardDesignerPage() {
     })();
   }, []);
 
-  // When the owner edits a rule, also keep the visual layout's stamps_target in sync
-  // so the live preview shows the right number of stamps.
   const updateRule = (key, val) => {
-    setRules((r) => {
-      const next = { ...r, [key]: val };
-      if (key === 'reward_threshold_stamps') {
-        // Mirror onto the visual layout
-        setLayout((L) => ({ ...L, stamps_target: Math.max(1, parseInt(val, 10) || 1) }));
-      }
-      return next;
-    });
+    setRules((r) => ({ ...r, [key]: val }));
   };
 
   const flash = (type, msg) => {
@@ -146,7 +125,10 @@ export default function CardDesignerPage() {
       // existing serverTemplate so we never drop an admin-set field.
       const payload = {
         ...(serverTemplate || {}),
-        auchan_layout: layout,
+        // auchan_layout is no longer written — the premium card is the
+        // single source of truth. We let any legacy auchan_layout in the
+        // serverTemplate spread through so older docs aren't corrupted,
+        // but the wallet page now ignores it.
         points_per_visit: Math.max(0, parseInt(rules.points_per_visit, 10) || 0),
         visits_per_stamp: Math.max(1, parseInt(rules.visits_per_stamp, 10) || 1),
         reward_threshold_stamps: Math.max(1, parseInt(rules.reward_threshold_stamps, 10) || 1),
@@ -189,8 +171,8 @@ export default function CardDesignerPage() {
     try {
       await ownerAPI.sendCardNotification({
         type: 'offer',
-        title: layout.push?.title || tenant?.business_name || 'Nouvelle offre',
-        body: layout.push?.body || '',
+        title: tenant?.business_name || tenant?.name || 'Nouvelle offre',
+        body: `${rules.reward_description ? rules.reward_description + ' ' : ''}vous attend !`,
       });
       flash('ok', 'Push sent to all your customers.');
     } catch (e) {
@@ -585,12 +567,6 @@ export default function CardDesignerPage() {
         </div>
       </div>
 
-      <AuchanEditor
-        layout={layout}
-        onChange={setLayout}
-        ctx={ctx}
-        businessName={tenant?.business_name}
-      />
     </div>
   );
 }

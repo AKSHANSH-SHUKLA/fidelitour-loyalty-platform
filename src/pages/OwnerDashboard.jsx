@@ -17,25 +17,37 @@ import { useBranch } from '../contexts/BranchContext';
 import VisitsOverTimeChart from '../components/VisitsOverTimeChart';
 import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
 import ColorfulKpiTile from '../components/ColorfulKpiTile';
+import AiRecommendationBanner from '../components/AiRecommendationBanner';
 import useTileMetric from '../hooks/useTileMetric';
 import { BadgeCheck, RefreshCcw, UserPlus2, Calendar } from 'lucide-react';
 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
 
 // Live metric tile — same pattern as Analytics: hook + colorful tile + period picker.
-const LiveMetricTile = ({ icon, title, accent, metric, branchId, initial, sublabel, onClick }) => {
-  const { value, loading, days, period, setPeriod } = useTileMetric({ metric, branchId, initial });
+const LiveMetricTile = ({ icon, title, accent, tone, metric, branchId, initial, sublabel, onClick }) => {
+  // Fetch with series so the dashboard tiles ALSO get sparklines + delta.
+  // Same upgrade we shipped on Analytics — now applied here so the
+  // landing page (which is what every owner sees first) matches the mockup.
+  const { value, loading, days, period, setPeriod, series, deltaPct } = useTileMetric({
+    metric, branchId, initial, withSeries: true,
+  });
+  const delta = typeof deltaPct === 'number'
+    ? { value: deltaPct, sign: deltaPct > 0.5 ? 'up' : deltaPct < -0.5 ? 'down' : 'flat' }
+    : null;
   return (
     <ColorfulKpiTile
       icon={icon}
       title={title}
       accent={accent}
+      tone={tone}
       value={(value ?? 0).toLocaleString()}
       sublabel={typeof sublabel === 'function' ? sublabel(days, value) : sublabel}
       loading={loading}
       onClick={onClick ? () => onClick(days, value) : undefined}
       period={period}
       onPeriodChange={setPeriod}
+      trend={series}
+      delta={delta}
     />
   );
 };
@@ -379,28 +391,28 @@ const OwnerDashboard = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <LiveMetricTile
-            icon={UserPlus2} title="Nouveaux clients" accent={C.sky}
+            icon={UserPlus2} title="Nouveaux clients" tone="info"
             metric="new_customers" branchId={selectedBranch}
             initial={{ value: 7, unit: 'day' }}
             sublabel={(d) => `Inscrits sur les ${d} derniers jours`}
             onClick={(d) => navigate(`/dashboard/customers?created_within_days=${d}`)}
           />
           <LiveMetricTile
-            icon={Award} title="Clients actifs" accent={C.amber}
+            icon={Award} title="Clients actifs" tone="success"
             metric="active_customers" branchId={selectedBranch}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Visite dans les ${d} derniers jours`}
             onClick={(d) => navigate(`/dashboard/customers?active_within_days=${d}`)}
           />
           <LiveMetricTile
-            icon={AlertCircle} title="Inactifs" accent={C.terracotta}
+            icon={AlertCircle} title="Inactifs" tone="warning"
             metric="inactive_customers" branchId={selectedBranch}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Pas vus depuis ${d} jours`}
             onClick={(d) => navigate(`/dashboard/customers?inactive_days_min=${d}`)}
           />
           <LiveMetricTile
-            icon={Clock} title="Sur le point de partir" accent={C.ochre}
+            icon={Clock} title="Sur le point de partir" tone="danger"
             metric="about_to_lose" branchId={selectedBranch}
             initial={{ value: 14, unit: 'day' }}
             sublabel={(d) => `Silencieux ${d}–${d * 2}j`}
@@ -977,6 +989,14 @@ const OwnerDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* AI recommendation panel at the bottom of the dashboard — matches the
+          reference mockup. Stays hidden when there's no proactive alert. */}
+      <AiRecommendationBanner
+        onOpenComposer={({ presetName, presetContent }) =>
+          navigate(`/dashboard/campaigns?preset_name=${encodeURIComponent(presetName || '')}&preset_content=${encodeURIComponent(presetContent || '')}`)
+        }
+      />
     </div>
   );
 };

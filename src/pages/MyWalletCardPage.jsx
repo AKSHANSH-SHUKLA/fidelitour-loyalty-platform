@@ -9,7 +9,6 @@ import InstallPwaPrompt from '../components/InstallPwaPrompt';
 import GeoConsentCard from '../components/GeoConsentCard';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
 import TierBadge from '../components/TierBadge';
-import { AuchanPreview, DEFAULT_LAYOUT as AUCHAN_DEFAULT } from '../components/AuchanCard';
 
 // ---------------------------------------------------------------------------
 // Element / stamp rendering — mirrors the owner-side designer
@@ -335,45 +334,16 @@ const MyWalletCardPage = () => {
         </div>
 
         <div className="grid lg:grid-cols-[1fr,360px] gap-8">
-          {/* LEFT: Wallet pass card — prefers Auchan layout, falls back to legacy WalletPass */}
+          {/* LEFT: Wallet card.
+              Single source of truth — PremiumLoyaltyCard renders here AND in
+              Card Designer's preview. What the patron sees while designing is
+              literally the same component the customer sees on their phone. */}
           <section>
-            {card?.auchan_layout ? (
-              <div className="flex flex-col items-center">
-                <AuchanPreview
-                  layout={{
-                    ...AUCHAN_DEFAULT,
-                    ...card.auchan_layout,
-                    meter: { ...AUCHAN_DEFAULT.meter, ...(card.auchan_layout.meter || {}) },
-                    slots: { ...AUCHAN_DEFAULT.slots, ...(card.auchan_layout.slots || {}) },
-                    push: { ...AUCHAN_DEFAULT.push, ...(card.auchan_layout.push || {}) },
-                  }}
-                  ctx={{
-                    first_name: customer.first_name || customer.name?.split(' ')?.[0] || 'Client',
-                    name: customer.name,
-                    points: customer.points ?? 0,
-                    birthday: customer.birthday || '',
-                    tier: customer.tier,
-                    loyalty_number: customer.loyalty_number || customer.barcode_id || customer.id || '—',
-                    business_name: tenant.business_name || tenant.name || '',
-                    stamps_earned: card.stamps_earned ?? 0,
-                    stamps_target: card.reward_threshold || 10,
-                  }}
-                  width={420}
-                />
-                <button
-                  onClick={() => setDetailsOpen(true)}
-                  className="mt-3 text-sm text-[#B85C38] underline"
-                >
-                  Voir plus d’informations
-                </button>
-              </div>
-            ) : (
-              <PremiumLoyaltyCard
-                customer={customer}
-                tenant={tenant}
-                card={card}
-              />
-            )}
+            <PremiumLoyaltyCard
+              customer={customer}
+              tenant={tenant}
+              card={card}
+            />
 
             {/* Save / share actions — the previous "Add to Apple/Google Wallet"
                 buttons were fake because real .pkpass generation needs a paid
