@@ -822,19 +822,20 @@ export default function CustomersPage() {
         </p>
       </div>
 
-      {/* Customer Table */}
-      <div
-        className="rounded-lg border overflow-hidden"
-        style={{ borderColor: '#E7E5E4' }}
-      >
-        <div
-          style={{ backgroundColor: '#F3EFE7' }}
-        >
-          <div className="grid gap-4 px-6 py-3 text-sm font-semibold"
+      {/* Customer Table — uses the premium surface primitives:
+          subtle hairline + soft row hover, no zebra striping (which read as
+          'spreadsheet from 2010'), warm-but-soft avatar. */}
+      <div className="ft-card overflow-hidden">
+        <div style={{ background: 'var(--surface-sunken)' }}>
+          <div className="grid gap-4 px-6 py-3"
             style={{
-              color: '#57534E',
-              fontFamily: 'Manrope',
+              color: 'var(--ink-mute)',
+              fontSize: 10.5,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
               gridTemplateColumns: '3fr 2fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr 1fr',
+              borderBottom: '1px solid var(--hairline)',
             }}
           >
             <div>Customer</div>
@@ -849,89 +850,59 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        <div
-          style={{ backgroundColor: '#FDFBF7' }}
-        >
+        <div style={{ background: 'var(--surface-card)' }}>
           {filteredCustomers.length === 0 ? (
-            <div className="px-6 py-8 text-center"
-              style={{
-                color: '#57534E',
-                fontFamily: 'Manrope',
-              }}
-            >
+            <div className="px-6 py-12 text-center" style={{ color: 'var(--ink-mute)', fontSize: 13.5 }}>
               No customers found matching your filters.
             </div>
           ) : (
             filteredCustomers.map((customer, idx) => (
               <div
                 key={customer.id}
-                className="grid gap-4 px-6 py-4 border-t"
+                className="grid gap-4 px-6 py-3.5 transition-colors"
                 style={{
-                  borderColor: '#E7E5E4',
-                  backgroundColor: idx % 2 === 0 ? '#FDFBF7' : '#F3EFE7',
+                  borderTop: idx === 0 ? 'none' : '1px solid var(--hairline)',
+                  background: 'var(--surface-card)',
                   gridTemplateColumns: '3fr 2fr 1fr 1fr 1fr 1fr 1.2fr 1.2fr 1fr',
+                  cursor: 'default',
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-sunken)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-card)'; }}
               >
                 {/* Customer Name, Email, Phone */}
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-[13px]"
                     style={{
-                      backgroundColor: '#B85C38',
-                      color: '#FDFBF7',
+                      background: 'linear-gradient(135deg, #F8E8E2, #E8C9BC)',
+                      color: 'var(--brand-deep)',
+                      fontWeight: 500,
+                      letterSpacing: '0.01em',
                     }}
                   >
                     {getInitials(customer.name)}
                   </div>
-                  <div>
-                    <p
-                      className="font-medium text-sm"
-                      style={{
-                        color: '#1C1917',
-                        fontFamily: 'Manrope',
-                      }}
-                    >
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] truncate" style={{ color: 'var(--ink)', fontWeight: 500 }}>
                       {customer.name}
                     </p>
-                    <p
-                      className="text-xs"
-                      style={{
-                        color: '#57534E',
-                        fontFamily: 'Manrope',
-                      }}
-                    >
-                      {customer.email}
-                    </p>
-                    <p
-                      className="text-xs"
-                      style={{
-                        color: '#57534E',
-                        fontFamily: 'Manrope',
-                      }}
-                    >
-                      {customer.phone}
+                    <p className="text-[11.5px] truncate" style={{ color: 'var(--ink-mute)' }}>
+                      {customer.email || customer.phone || '—'}
                     </p>
                   </div>
                 </div>
 
                 {/* Barcode ID */}
-                <div className="flex items-center"
-                  style={{
-                    color: '#1C1917',
-                    fontFamily: 'monospace',
-                    fontSize: '13px',
-                  }}
+                <div className="flex items-center font-mono"
+                  style={{ color: 'var(--ink-soft)', fontSize: 12 }}
                 >
                   {customer.barcode_id}
                 </div>
 
                 {/* Visits */}
                 <div
-                  className="flex items-center justify-center font-bold text-sm"
-                  style={{
-                    color: '#1C1917',
-                    fontFamily: 'Manrope',
-                  }}
+                  className="flex items-center justify-center"
+                  style={{ color: 'var(--ink)', fontSize: 13.5, fontWeight: 500 }}
                 >
                   {customer.visits}
                 </div>
@@ -942,14 +913,8 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Postal Code */}
-                <div className="flex items-center"
-                  style={{
-                    color: '#57534E',
-                    fontFamily: 'Manrope',
-                    fontSize: '13px',
-                  }}
-                >
-                  <MapPin size={14} className="mr-1" />
+                <div className="flex items-center gap-1" style={{ color: 'var(--ink-mute)', fontSize: 12.5 }}>
+                  <MapPin size={13} />
                   {customer.postal_code}
                 </div>
 
@@ -958,14 +923,7 @@ export default function CustomersPage() {
                   {(() => {
                     const badge = getSourceBadge(customer.acquisition_source);
                     return (
-                      <span
-                        className="px-2 py-1 rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: badge.bg,
-                          color: '#1C1917',
-                          fontFamily: 'Manrope',
-                        }}
-                      >
+                      <span className="ft-badge" style={{ background: badge.bg, color: 'var(--ink)' }}>
                         {badge.emoji} {badge.label}
                       </span>
                     );
@@ -974,36 +932,22 @@ export default function CustomersPage() {
 
                 {/* Amount Paid */}
                 <div
-                  className="text-right flex items-center justify-end font-medium"
-                  style={{
-                    color: '#1C1917',
-                    fontFamily: 'Manrope',
-                    fontSize: '13px',
-                  }}
+                  className="text-right flex items-center justify-end"
+                  style={{ color: 'var(--ink)', fontSize: 13, fontWeight: 500 }}
                 >
                   €{customer.total_amount_paid.toFixed(2)}
                 </div>
 
                 {/* Total Spent */}
                 <div
-                  className="text-right flex items-center justify-end font-semibold"
-                  style={{
-                    color: '#B85C38',
-                    fontFamily: 'Manrope',
-                    fontSize: '13px',
-                  }}
+                  className="text-right flex items-center justify-end"
+                  style={{ color: 'var(--brand-deep)', fontSize: 13, fontWeight: 500 }}
                 >
                   €{(customer.total_amount_paid || 0).toFixed(2)}
                 </div>
 
                 {/* Last Visit */}
-                <div
-                  className="flex items-center text-xs"
-                  style={{
-                    color: '#57534E',
-                    fontFamily: 'Manrope',
-                  }}
-                >
+                <div className="flex items-center" style={{ color: 'var(--ink-mute)', fontSize: 12 }}>
                   {getRelativeDate(customer.last_visit_date)}
                 </div>
               </div>

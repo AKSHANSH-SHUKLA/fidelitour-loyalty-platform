@@ -232,4 +232,295 @@ h1, h2, h3, h4 {
   --tone-neutral-fill: #F1EEE8;
   --tone-neutral-ink:  #4A4441;
   --tone-neutral-line: #B5AEA4;
+
+  /* Premium surface tokens — what every card, form, and table should sit on. */
+  --surface-card:       #FFFFFF;
+  --surface-elevated:   #FFFFFF;
+  --surface-sunken:     #FAF8F4;
+  --surface-page:       #FCFAF6;
+  --shadow-xs:          0 1px 2px rgba(28,25,23,0.04);
+  --shadow-sm:          0 1px 3px rgba(28,25,23,0.06), 0 1px 2px rgba(28,25,23,0.04);
+  --shadow-md:          0 4px 14px rgba(28,25,23,0.08), 0 1px 3px rgba(28,25,23,0.05);
+  --shadow-lg:          0 12px 30px rgba(28,25,23,0.10), 0 4px 8px rgba(28,25,23,0.04);
+  --brand:              #B85C38;
+  --brand-deep:         #9C4427;
+  --brand-soft:         #F8E8E2;
+  --radius-sm:          8px;
+  --radius-md:          12px;
+  --radius-lg:          16px;
+  --radius-xl:          24px;
+  --duration-fast:      120ms;
+  --duration-base:      180ms;
+  --ease-out:           cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * PREMIUM PRIMITIVES — global polish every page inherits
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* Selection — brand-tinted instead of OS default blue. Tiny detail; very
+   present whenever the owner highlights a customer name or campaign body. */
+::selection {
+  background: rgba(184, 92, 56, 0.18);
+  color: #1F1B1A;
+}
+
+/* Scrollbars — calm hairline instead of OS chunky default.
+   Webkit + Firefox covered. Falls back gracefully on browsers that don't
+   support either spec. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D6D2CB transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #D6D2CB;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 10px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #B5AEA4;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* Focus rings — consistent across every interactive element. Replaces the
+   OS-default blue glow with a calm brand-tinted ring. Required for a11y
+   keyboard nav, kept subtle so it doesn't shout. */
+*:focus-visible {
+  outline: 2px solid rgba(184, 92, 56, 0.45);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Form inputs — every <input>, <textarea>, <select> gets these defaults
+   so we don't have to repeat the styling on each form. Components can
+   override freely. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+textarea,
+select {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover,
+textarea:hover,
+select:hover {
+  border-color: #D6D2CB;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(184, 92, 56, 0.12);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-mute);
+  opacity: 0.7;
+}
+
+/* Premium button utility classes — use these instead of hand-rolling
+   button styles per component. Three flavours: primary (brand), secondary
+   (hairline), ghost (text-only). All share the same height + radius
+   + transition so the platform feels coherent. */
+.ft-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+.ft-btn:active { transform: translateY(0.5px); }
+.ft-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ft-btn-primary {
+  background: linear-gradient(180deg, #C46640 0%, var(--brand) 50%, var(--brand-deep) 100%);
+  color: white;
+  box-shadow: 0 1px 2px rgba(156, 68, 39, 0.20), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.ft-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #B85C38 0%, var(--brand-deep) 50%, #8A3B22 100%);
+  box-shadow: 0 2px 4px rgba(156, 68, 39, 0.25), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+.ft-btn-secondary {
+  background: var(--surface-card);
+  color: var(--ink);
+  border-color: var(--hairline);
+  box-shadow: var(--shadow-xs);
+}
+.ft-btn-secondary:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  border-color: #D6D2CB;
+}
+
+.ft-btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+}
+.ft-btn-ghost:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+/* Premium card surface — wrap any content for the standard "card" look. */
+.ft-card {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.ft-card-padded {
+  padding: 20px;
+}
+
+/* Premium table — apply with className="ft-table" to any <table>. Gives
+   you a clean hairline grid + soft row hover + comfortable cell padding
+   without any per-component CSS. */
+.ft-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.ft-table thead th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--ink-mute);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface-sunken);
+}
+.ft-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+.ft-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.ft-table tbody tr {
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.ft-table tbody tr:hover {
+  background: var(--surface-sunken);
+}
+
+/* Premium section header — used at the top of any group of content
+   below a page header. The label is small + uppercased, the optional
+   "right-side" caption echoes a Linear/Stripe pattern. */
+.ft-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ft-section-head .ft-section-title {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-mute);
+  font-weight: 600;
+}
+.ft-section-head .ft-section-aside {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+
+/* Premium badge — small status pills used in tables, lists, headers. */
+.ft-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 999px;
+  letter-spacing: 0;
+}
+
+/* Subtle lift animation for cards/buttons/tiles — used by Tailwind's
+   hover:-translate-y-0.5 elsewhere. Adding a smooth transition prop
+   here makes it look premium instead of "snap to position". */
+.ft-lift {
+  transition: transform var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out);
+}
+.ft-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Empty-state helper — big icon, gentle copy, optional CTA. Use on any
+   list page that might be empty for a new customer.
+   Usage: <div class="ft-empty"><svg>…</svg><h3>…</h3><p>…</p></div> */
+.ft-empty {
+  text-align: center;
+  padding: 56px 24px;
+  background: var(--surface-card);
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-lg);
+  color: var(--ink-mute);
+}
+.ft-empty h3 {
+  margin: 12px 0 4px;
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 16px;
+}
+.ft-empty p {
+  font-size: 13.5px;
+  max-width: 360px;
+  margin: 0 auto;
+  line-height: 1.55;
+}
+
+/* Skeleton shimmer — used on loading placeholders so the layout doesn't
+   pop when data arrives. */
+@keyframes ftShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.ft-skeleton {
+  background: linear-gradient(90deg, #F1EEE8 25%, #FAF8F4 50%, #F1EEE8 75%);
+  background-size: 200% 100%;
+  animation: ftShimmer 1.6s linear infinite;
+  border-radius: var(--radius-sm);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ft-skeleton { animation: none; }
 }
