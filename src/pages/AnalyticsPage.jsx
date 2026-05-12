@@ -21,6 +21,11 @@ import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
 import CustomerStatusKPI from '../components/CustomerStatusKPI';
 import ColorfulKpiTile from '../components/ColorfulKpiTile';
 import AiRecommendationBanner from '../components/AiRecommendationBanner';
+import BranchPillsBanner from '../components/BranchPillsBanner';
+import VisitsTwinChart from '../components/VisitsTwinChart';
+import AcquisitionDonut from '../components/AcquisitionDonut';
+import TierDonut from '../components/TierDonut';
+import WeeklyAcquisitionPanel from '../components/WeeklyAcquisitionPanel';
 import useTileMetric from '../hooks/useTileMetric';
 import { Trash2, UserPlus2, RefreshCcw, Repeat as RepeatIcon, BadgeCheck } from 'lucide-react';
 
@@ -687,13 +692,45 @@ const AnalyticsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Live Insights"
-        title="Analytics"
-        description="Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante."
-        role="business_owner"
-      />
+    <div className="space-y-4">
+      {/* Premium branch pills banner — only renders on multi-shop tenants.
+          Replaces the old branch-dropdown row with a richer cream-gradient
+          surface matching the reference mockup. */}
+      <BranchPillsBanner />
+
+      {/* Editorial-serif Analytics title with green Live pill + date range
+          on the right. The only place we re-introduce Cormorant Garamond
+          in the dashboard — gives the analytics page one piece of identity
+          without flooding the rest of the chrome. */}
+      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+        <div>
+          <h1
+            className="ft-serif-title text-[28px] md:text-[32px] flex items-center gap-3"
+            style={{ color: 'var(--ink)', lineHeight: 1.05 }}
+          >
+            <span>Analytics</span>
+            <span
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] uppercase"
+              style={{
+                background: 'var(--tone-success-fill)', color: 'var(--tone-success-ink)',
+                letterSpacing: '0.14em', fontWeight: 600, fontFamily: 'Inter, sans-serif',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--tone-success-line)' }} />
+              Live
+            </span>
+          </h1>
+          <p className="text-[13px] mt-1" style={{ color: 'var(--ink-mute)' }}>
+            Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante.
+          </p>
+        </div>
+        <button
+          onClick={() => openComposer({ type: 'all' }, 'Message à toute ma base', 'Bonjour {first_name}, une nouveauté à partager chez {business_name}…')}
+          className="ft-btn ft-btn-primary"
+        >
+          <Megaphone size={14} /> Nouvelle campagne
+        </button>
+      </div>
 
       {/* Premium AI recommendation panel — surfaces the highest-priority
           proactive alert as a one-line "do this next" with a CTA into the
@@ -703,37 +740,17 @@ const AnalyticsPage = () => {
       {/* Configurable customer-status KPIs — live, uses the definition from Settings */}
       <CustomerStatusKPI />
 
-      {/* Header bar — branch is global (BranchSelectorBar). Period is now per-tile.
-          We only keep the "Nouvelle campagne" CTA + a tiny info chip explaining tiles. */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-xs flex items-center gap-2 text-[#7B3F00] bg-[#FDF8F0] border border-[#E3A86955] rounded-full px-3 py-1.5">
-          <span className="font-bold uppercase tracking-wider">Astuce</span>
-          <span>Les 2 premières lignes sont des chiffres lifetime. Les lignes suivantes ont leur propre filtre de période — choisissez jours / semaines / mois / années.</span>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          {branches.length > 0 && (
-            <div className="flex items-center gap-2 bg-white border border-[#E7E5E4] rounded-xl px-3 py-2">
-              <Building2 size={16} className="text-[#B85C38]" />
-              <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Branch</label>
-              <select
-                value={branchId}
-                onChange={(e) => setBranchId(e.target.value)}
-                className="text-sm bg-transparent outline-none"
-              >
-                <option value="">All branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name || b.id}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          <button
-            onClick={() => openComposer({ type: 'all' }, 'Message à toute ma base', 'Bonjour {first_name}, une nouveauté à partager chez {business_name}…')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#B85C38] text-white rounded-xl hover:bg-[#9C4E2F] font-medium"
-          >
-            <Megaphone size={16} /> Nouvelle campagne
-          </button>
-        </div>
+      {/* Visits chart + Acquisition donut + Tier donut + Weekly acquisition.
+          The four panels the reference mockup shows as the centrepiece of
+          the Analytics page — twin-series visits chart on the left, two
+          donuts in the middle, weekly acquisition with stats on the right. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <VisitsTwinChart />
+        <WeeklyAcquisitionPanel />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <AcquisitionDonut />
+        <TierDonut />
       </div>
 
       {/* ═════════════════════════════════════════════════════════════════

@@ -339,7 +339,7 @@ const DashboardLayout = () => {
   return (
     <div
       className="relative flex min-h-screen"
-      style={{ background: 'linear-gradient(180deg, #FCFAF6 0%, #FAF6EE 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #FBF7EE 0%, #F5EFE0 100%)' }}
     >
       <AmbientBackdrop role={role} />
 
