@@ -15,17 +15,52 @@ const DEFAULT_RULES = {
   notify_before_reward: 1,   // Push fires when this-many visits remain
 };
 
-// Brand defaults for the premium card preview. These are the fields that
-// drive PremiumLoyaltyCard — separate from the Auchan-layout fine-tuning.
+// Brand defaults for the premium card. EVERY visible field on
+// PremiumLoyaltyCard is editable here so the owner can match their brand
+// down to the last detail without touching code.
 const DEFAULT_BRAND = {
-  primary_color: '#B85C38',
-  secondary_color: '#9C4427',
-  accent_color: '#F4D8A8',
-  logo_url: '',
-  hero_image_url: '',
-  title_label: 'Ta carte fidélité',
-  points_label: 'Points',
+  // Colours
+  primary_color:    '#B85C38',
+  secondary_color:  '#9C4427',
+  accent_color:     '#F4D8A8',
+  text_on_brand:    '#FFFFFF',   // text colour on the hero block
+  back_link_color:  '#F4D8A8',   // "Au dos →" colour
+  // Images
+  logo_url:         '',
+  hero_image_url:   '',
+  hero_opacity:     85,          // 0–100, drives image visibility behind text
+  // Text content
+  title_label:      'Ta carte fidélité',
+  points_label:     'Points',
+  greeting_label:   'Bonjour',
+  back_label:       'Détails récompenses',
+  back_value:       'Au dos →',
+  // Typography
+  title_font:       'Cormorant Garamond',  // serif by default
+  title_italic:     true,
+  // Visibility toggles (show/hide each element)
+  show_tier:        true,   // "MEMBRE GOLD" under brand name
+  show_points:      true,   // points block top-right
+  show_title:       true,   // "Ta carte fidélité" editorial title
+  show_greeting:    true,   // "Bonjour Marie" row
+  show_back_link:   true,   // "Au dos →" right side
+  show_card_number: true,   // "N° CARTE 4E62" footer
+  show_barcode:     true,   // Code 128 strip
 };
+
+// Font options for the title. Loaded globally via index.css Google Fonts.
+const TITLE_FONTS = [
+  'Cormorant Garamond',
+  'Playfair Display',
+  'DM Serif Display',
+  'Abril Fatface',
+  'Inter',
+  'Montserrat',
+  'Bebas Neue',
+  'Poppins',
+  'Pacifico',
+  'Dancing Script',
+];
 
 // Convert an image File into a base64 data URL. We keep file size in check
 // (max 800KB after re-encode) so the card_template doc stays under Mongo's
@@ -80,8 +115,12 @@ export default function CardDesignerPage() {
           reward_description: tplData.reward_description ?? DEFAULT_RULES.reward_description,
           notify_before_reward: tplData.notify_before_reward ?? DEFAULT_RULES.notify_before_reward,
         });
-        // Pull brand fields (used by the premium card surface)
+        // Pull ALL brand fields from the saved template. Spread defaults
+        // first so any new field added later picks up sensibly.
         setBrand({
+          ...DEFAULT_BRAND,
+          ...(tplData.brand_fields || {}),
+          // Legacy field names — keep reading these for old docs
           primary_color: tplData.primary_color || DEFAULT_BRAND.primary_color,
           secondary_color: tplData.secondary_color || DEFAULT_BRAND.secondary_color,
           accent_color: tplData.accent_color || DEFAULT_BRAND.accent_color,
@@ -90,8 +129,7 @@ export default function CardDesignerPage() {
           title_label: tplData.title_label || DEFAULT_BRAND.title_label,
           points_label: tplData.points_label || DEFAULT_BRAND.points_label,
         });
-        // Note: legacy auchan_layout is preserved in the doc but no longer
-        // editable. The premium card is the single source of truth now.
+        // Legacy auchan_layout is preserved on save but no longer edited.
       } catch (e) {
         /* defaults are fine */
       }
@@ -136,7 +174,11 @@ export default function CardDesignerPage() {
         reward_threshold_stamps: Math.max(1, parseInt(rules.reward_threshold_stamps, 10) || 1),
         reward_description: (rules.reward_description || '').trim() || 'Reward',
         notify_before_reward: Math.max(0, parseInt(rules.notify_before_reward, 10) || 0),
-        // Brand fields drive the PremiumLoyaltyCard surface in the wallet page.
+        // Brand fields drive the PremiumLoyaltyCard surface. We persist
+        // both the top-level keys (for backward-compat with older readers)
+        // AND a single brand_fields object (for forward-looking growth —
+        // any new toggle landed in DEFAULT_BRAND auto-persists).
+        brand_fields: brand,
         primary_color: brand.primary_color || DEFAULT_BRAND.primary_color,
         secondary_color: brand.secondary_color || DEFAULT_BRAND.secondary_color,
         accent_color: brand.accent_color || DEFAULT_BRAND.accent_color,
@@ -490,60 +532,166 @@ export default function CardDesignerPage() {
               </div>
             </div>
 
-            {/* Colour pickers */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { key: 'primary_color',   label: 'Couleur principale' },
-                { key: 'secondary_color', label: 'Dégradé secondaire' },
-                { key: 'accent_color',    label: 'Couleur accent' },
-              ].map(({ key, label }) => (
-                <div key={key}>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-1">
-                    {label}
+            {/* Hero opacity slider — controls how prominent the image is */}
+            {brand.hero_image_url && (
+              <div>
+                <div className="flex items-baseline justify-between mb-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#57534E]">
+                    Opacité de l'image héros
                   </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={brand[key]}
-                      onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
-                      className="w-10 h-10 rounded-md border border-[#E7E5E4] cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={brand[key]}
-                      onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
-                      className="flex-1 min-w-0 px-2 py-1.5 rounded-md border border-[#E7E5E4] font-mono text-xs"
-                    />
-                  </div>
+                  <span className="text-[11px] font-mono text-[#1C1917]">{brand.hero_opacity}%</span>
                 </div>
-              ))}
+                <input
+                  type="range" min="20" max="100" step="5"
+                  value={brand.hero_opacity}
+                  onChange={(e) => setBrand((b) => ({ ...b, hero_opacity: parseInt(e.target.value, 10) }))}
+                  className="w-full"
+                />
+                <p className="text-[10px] text-[#8B8680] mt-1">
+                  20% = très discret, façon filigrane · 85% = front-and-centre comme KFC · 100% = image dominante.
+                </p>
+              </div>
+            )}
+
+            {/* 5 Colour pickers — primary, secondary, accent, text-on-brand, back-link */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Palette de marque</p>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { key: 'primary_color',   label: 'Principale' },
+                  { key: 'secondary_color', label: 'Dégradé' },
+                  { key: 'accent_color',    label: 'Accent' },
+                  { key: 'text_on_brand',   label: 'Texte sur marque' },
+                  { key: 'back_link_color', label: 'Lien "Au dos"' },
+                ].map(({ key, label }) => (
+                  <div key={key}>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-[#7A716C] mb-1">{label}</label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="color"
+                        value={brand[key]}
+                        onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
+                        className="w-9 h-9 rounded-md border border-[#E7E5E4] cursor-pointer shrink-0"
+                      />
+                      <input
+                        type="text"
+                        value={brand[key]}
+                        onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
+                        className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E7E5E4] font-mono text-[10px]"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Title + points labels */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-1">
-                  Titre de la carte
-                </label>
-                <input
-                  type="text"
-                  value={brand.title_label}
-                  onChange={(e) => setBrand((b) => ({ ...b, title_label: e.target.value }))}
-                  placeholder="Ta carte fidélité"
-                  className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4]"
-                />
+            {/* Text fields — every label on the card is editable */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Textes de la carte</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1">Titre éditorial</label>
+                  <input
+                    type="text"
+                    value={brand.title_label}
+                    onChange={(e) => setBrand((b) => ({ ...b, title_label: e.target.value }))}
+                    placeholder="Ta carte fidélité"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1">Étiquette "Points" (top droit)</label>
+                  <input
+                    type="text"
+                    value={brand.points_label}
+                    onChange={(e) => setBrand((b) => ({ ...b, points_label: e.target.value }))}
+                    placeholder="Points / Solde / Tampons"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1">Préfixe salutation</label>
+                  <input
+                    type="text"
+                    value={brand.greeting_label}
+                    onChange={(e) => setBrand((b) => ({ ...b, greeting_label: e.target.value }))}
+                    placeholder="Bonjour"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1">Étiquette "Au dos" (titre)</label>
+                  <input
+                    type="text"
+                    value={brand.back_label}
+                    onChange={(e) => setBrand((b) => ({ ...b, back_label: e.target.value }))}
+                    placeholder="Détails récompenses"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] text-[#7A716C] mb-1">Lien "Au dos" (texte cliquable)</label>
+                  <input
+                    type="text"
+                    value={brand.back_value}
+                    onChange={(e) => setBrand((b) => ({ ...b, back_value: e.target.value }))}
+                    placeholder="Au dos →"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-1">
-                  Étiquette "Points"
+            </div>
+
+            {/* Typography — font + italic */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Typographie du titre</p>
+              <div className="grid grid-cols-[1fr,auto] gap-3 items-center">
+                <select
+                  value={brand.title_font}
+                  onChange={(e) => setBrand((b) => ({ ...b, title_font: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
+                  style={{ fontFamily: brand.title_font }}
+                >
+                  {TITLE_FONTS.map((f) => (
+                    <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
+                  ))}
+                </select>
+                <label className="inline-flex items-center gap-2 text-sm text-[#1C1917] select-none cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={brand.title_italic}
+                    onChange={(e) => setBrand((b) => ({ ...b, title_italic: e.target.checked }))}
+                  />
+                  Italique
                 </label>
-                <input
-                  type="text"
-                  value={brand.points_label}
-                  onChange={(e) => setBrand((b) => ({ ...b, points_label: e.target.value }))}
-                  placeholder="Points"
-                  className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4]"
-                />
+              </div>
+              <p className="text-[10px] text-[#8B8680] mt-1.5">
+                Choisissez la police qui correspond à l'identité de votre marque. Cormorant Garamond = boutique chic. Inter = SaaS moderne. Bebas Neue = sport / urbain.
+              </p>
+            </div>
+
+            {/* Visibility toggles — show or hide each element */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Éléments visibles</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: 'show_tier',        label: 'Palier (Membre Gold)' },
+                  { key: 'show_points',      label: 'Bloc points (top droit)' },
+                  { key: 'show_title',       label: 'Titre éditorial' },
+                  { key: 'show_greeting',    label: 'Salutation (Bonjour Marie)' },
+                  { key: 'show_back_link',   label: 'Lien "Au dos"' },
+                  { key: 'show_card_number', label: 'N° de carte (footer)' },
+                  { key: 'show_barcode',     label: 'Code-barres Code 128' },
+                ].map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-2 text-[12px] text-[#1C1917] cursor-pointer py-1 px-2 rounded hover:bg-[#FAF8F4]">
+                    <input
+                      type="checkbox"
+                      checked={brand[key]}
+                      onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.checked }))}
+                    />
+                    {label}
+                  </label>
+                ))}
               </div>
             </div>
           </div>

@@ -37,11 +37,41 @@ import Code128Barcode from './Code128Barcode';
  * can be embedded inside HeroPhoneShowcase for the landing-page demo as well.
  */
 export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compact = false }) {
+  // Colour palette — every key has a sensible fallback so a half-configured
+  // card never crashes.
   const primary = card.primary_color || '#B85C38';
   const secondary = card.secondary_color || '#9C4427';
   const accent = card.accent_color || '#F4D8A8';
   const textOnBrand = card.text_on_brand || '#FFFFFF';
+  const backLinkColor = card.back_link_color || accent;
   const muted = 'rgba(255,255,255,0.78)';
+
+  // Text content — every visible label is owner-editable in Card Designer.
+  const titleText    = card.title_label    || 'Ta carte fidélité';
+  const pointsLabel  = card.points_label   || 'Points';
+  const greetingLbl  = card.greeting_label || 'Bonjour';
+  const backLabel    = card.back_label     || 'Détails récompenses';
+  const backValue    = card.back_value     || 'Au dos →';
+
+  // Typography
+  const titleFont    = card.title_font || 'Cormorant Garamond';
+  const titleItalic  = card.title_italic !== false;   // default true
+
+  // Visibility toggles — each element can be hidden by the owner.
+  // Default everything to TRUE so existing cards (without these flags
+  // in the doc) keep showing all elements.
+  const showTier        = card.show_tier        !== false;
+  const showPoints      = card.show_points      !== false;
+  const showTitle       = card.show_title       !== false;
+  const showGreeting    = card.show_greeting    !== false;
+  const showBackLink    = card.show_back_link   !== false;
+  const showCardNumber  = card.show_card_number !== false;
+  const showBarcode     = card.show_barcode     !== false;
+
+  // Hero image — opacity slider (0–100) controls how prominent it is.
+  const heroOpacity     = typeof card.hero_opacity === 'number'
+    ? Math.max(0, Math.min(100, card.hero_opacity)) / 100
+    : 0.85;
 
   // First name only — feels personal, matches the KFC pattern ("Bonjour Julie")
   const firstName = (customer?.first_name || customer?.name || '').split(' ')[0] || 'Client';
@@ -69,11 +99,7 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           color: textOnBrand,
         }}
       >
-        {/* Hero image — now front-and-centre rather than washed out.
-            The image fills the right half of the brand block with a soft
-            vertical gradient overlay on the LEFT so the logo + brand name
-            + tier remain readable. The right side stays unobstructed for
-            the points block. Matches the KFC / Fnac wallet-card pattern. */}
+        {/* Hero image — prominent by default, opacity owner-configurable. */}
         {card.hero_image_url && (
           <>
             <div
@@ -83,7 +109,7 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
                 backgroundImage: `url(${card.hero_image_url})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                opacity: 0.85,
+                opacity: heroOpacity,
               }}
             />
             {/* Readability scrim — fades the image from full-strength on
@@ -120,55 +146,65 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
               <p className="text-sm font-semibold tracking-wide" style={{ color: textOnBrand }}>
                 {tenant?.name || 'FidéliTour'}
               </p>
-              {customer?.tier && (
+              {showTier && customer?.tier && (
                 <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: muted }}>
                   Membre {customer.tier}
                 </p>
               )}
             </div>
           </div>
-          <div className="text-right leading-tight">
-            <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: muted }}>
-              {card.points_label || 'Points'}
-            </p>
-            <p className="text-2xl font-bold" style={{ color: textOnBrand, letterSpacing: '-0.02em' }}>
-              {points.toLocaleString('fr-FR')}
-            </p>
-          </div>
+          {showPoints && (
+            <div className="text-right leading-tight">
+              <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: muted }}>
+                {pointsLabel}
+              </p>
+              <p className="text-2xl font-bold" style={{ color: textOnBrand, letterSpacing: '-0.02em' }}>
+                {points.toLocaleString('fr-FR')}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Editorial title — the "TA CARTE FIDÉLITÉ" mark */}
-        <div className="relative my-3">
-          <p
-            className="ft-card-title-font text-[28px] leading-[1.02] tracking-tight uppercase"
-            style={{
-              color: textOnBrand,
-              fontStyle: 'italic',
-              textShadow: '0 1px 0 rgba(0,0,0,0.04)',
-            }}
-          >
-            {card.title_label || 'Ta carte fidélité'}
-          </p>
-        </div>
+        {/* Editorial title — owner-configurable font + italic + text */}
+        {showTitle && (
+          <div className="relative my-3">
+            <p
+              className="text-[28px] leading-[1.02] tracking-tight uppercase"
+              style={{
+                color: textOnBrand,
+                fontFamily: `'${titleFont}', Georgia, serif`,
+                fontStyle: titleItalic ? 'italic' : 'normal',
+                fontWeight: 700,
+                textShadow: '0 1px 0 rgba(0,0,0,0.04)',
+              }}
+            >
+              {titleText}
+            </p>
+          </div>
+        )}
 
-        {/* Greeting + back-of-card affordance */}
-        <div className="relative flex items-end justify-between mt-2">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: muted }}>
-              Bonjour,
-            </p>
-            <p className="text-lg font-semibold" style={{ color: textOnBrand }}>
-              {firstName}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: muted }}>
-              Détails des récompenses
-            </p>
-            <p className="text-xs font-semibold" style={{ color: accent }}>
-              Au dos&nbsp;→
-            </p>
-          </div>
+        {/* Greeting + back-of-card affordance — both independently hidable */}
+        <div className="relative flex items-end justify-between mt-2 gap-2">
+          {showGreeting ? (
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: muted }}>
+                {greetingLbl},
+              </p>
+              <p className="text-lg font-semibold" style={{ color: textOnBrand }}>
+                {firstName}
+              </p>
+            </div>
+          ) : <div />}
+          {showBackLink && (
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: muted }}>
+                {backLabel}
+              </p>
+              <p className="text-xs font-semibold" style={{ color: backLinkColor }}>
+                {backValue}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,30 +228,34 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           </div>
         </div>
 
-        {/* Code 128 barcode strip below — visible always, sized for laser POS */}
-        <div className="mt-4">
-          <Code128Barcode
-            value={customer?.barcode_id || ''}
-            height={compact ? 44 : 54}
-            barWidth={2}
-            fontSize={11}
-          />
-        </div>
+        {/* Code 128 barcode strip — owner can hide it if their POS scans QR only */}
+        {showBarcode && (
+          <div className="mt-4">
+            <Code128Barcode
+              value={customer?.barcode_id || ''}
+              height={compact ? 44 : 54}
+              barWidth={2}
+              fontSize={11}
+            />
+          </div>
+        )}
 
-        {/* Card number footer — formatted like a real loyalty card */}
-        <div
-          className="mt-4 pt-3 flex items-center justify-between text-[11px]"
-          style={{ borderTop: '1px dashed rgba(0,0,0,0.12)', color: '#6B635E' }}
-        >
-          <span className="uppercase tracking-[0.14em]">N° Carte</span>
-          <span
-            className="font-mono font-semibold"
-            style={{ color: '#1C1917', letterSpacing: '0.06em' }}
+        {/* Card number footer — owner can hide if they prefer the QR-only minimal look */}
+        {showCardNumber && (
+          <div
+            className="mt-4 pt-3 flex items-center justify-between text-[11px]"
+            style={{ borderTop: '1px dashed rgba(0,0,0,0.12)', color: '#6B635E' }}
           >
-            {cardSuffix}
-            <span className="opacity-50 ml-2 text-[10px]">{customer?.barcode_id}</span>
-          </span>
-        </div>
+            <span className="uppercase tracking-[0.14em]">N° Carte</span>
+            <span
+              className="font-mono font-semibold"
+              style={{ color: '#1C1917', letterSpacing: '0.06em' }}
+            >
+              {cardSuffix}
+              <span className="opacity-50 ml-2 text-[10px]">{customer?.barcode_id}</span>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
