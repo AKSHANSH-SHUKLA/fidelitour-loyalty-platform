@@ -834,28 +834,28 @@ const AnalyticsPage = () => {
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricTile
-            icon={UserPlus2} title="Nouveaux clients" accent="#5B8DEF"
+            icon={UserPlus2} title="Nouveaux clients" tone="info"
             metric="new_customers" branchId={branchId}
             initial={{ value: 7, unit: 'day' }}
             sublabel={(d) => `Inscrits sur les ${d} derniers jours`}
             onDrill={(d) => drillCustomers(`Nouveaux clients (${d}j)`, { created_within_days: d })}
           />
           <MetricTile
-            icon={Award} title="Clients actifs" accent="#E3A869"
+            icon={Award} title="Clients actifs" tone="success"
             metric="active_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Visite dans les ${d} derniers jours`}
             onDrill={(d) => drillCustomers(`Clients actifs (${d}j)`, { active_within_days: d })}
           />
           <MetricTile
-            icon={AlertCircle} title="Inactifs" accent="#B85C38"
+            icon={AlertCircle} title="Inactifs" tone="warning"
             metric="inactive_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Pas vus depuis ${d} jours · à reconquérir`}
             onDrill={(d) => drillCustomers(`Inactifs ≥ ${d}j`, { inactive_days_min: d })}
           />
           <MetricTile
-            icon={Clock} title="Sur le point de partir" accent="#D4A574"
+            icon={Clock} title="Sur le point de partir" tone="danger"
             metric="about_to_lose" branchId={branchId}
             initial={{ value: 14, unit: 'day' }}
             sublabel={(d) => `Silencieux depuis ${d}–${d * 2} jours`}

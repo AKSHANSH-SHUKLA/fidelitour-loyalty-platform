@@ -42,45 +42,50 @@ export const themeForRole = (role) => ROLE_THEME[role] || ROLE_THEME.default;
  * PageHeader — the consistent slot at the top of every page.
  * Eyebrow + Cormorant title + Manrope description + optional right-side actions.
  */
-export const PageHeader = ({ eyebrow, title, description, actions, role = 'default' }) => {
+export const PageHeader = ({ eyebrow, title, description, actions, role = 'default', live = true }) => {
   const theme = themeForRole(role);
   return (
-    <div className="relative mb-8">
-      {/* Soft ambient gradient orb behind the title — anchors the page. */}
-      <div
-        aria-hidden="true"
-        className="absolute -top-12 -left-8 w-72 h-72 rounded-full blur-3xl opacity-25 pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${theme.from} 0%, transparent 70%)` }}
-      />
-      <div className="relative flex flex-wrap items-end justify-between gap-4">
+    <div className="relative mb-6">
+      <div className="relative flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {eyebrow && (
             <div
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] mb-3"
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] uppercase tracking-[0.16em] mb-2"
               style={{
-                background: `linear-gradient(135deg, ${theme.from}1A, ${theme.to}1A)`,
-                color: theme.from,
-                border: `1px solid ${theme.from}33`,
+                background: 'transparent',
+                color: 'var(--ink-mute)',
+                fontWeight: 600,
               }}
             >
               {eyebrow}
             </div>
           )}
           <h1
-            className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-[1.1]"
-            style={{ color: C.inkDeep }}
+            className="flex items-center gap-3 text-[26px] md:text-[30px] leading-[1.1]"
+            style={{
+              color: 'var(--ink)',
+              fontWeight: 500,
+              letterSpacing: '-0.022em',
+            }}
           >
-            <span className="ft-gradient-text-slow">{title}</span>
-            <span
-              className="ml-3 inline-block h-1.5 rounded-full align-middle"
-              style={{
-                width: 56,
-                background: `linear-gradient(90deg, ${theme.from}, ${theme.mid}, ${theme.to})`,
-              }}
-            />
+            <span>{title}</span>
+            {live && (
+              <span
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] uppercase"
+                style={{
+                  background: 'var(--tone-success-fill)',
+                  color: 'var(--tone-success-ink)',
+                  letterSpacing: '0.12em',
+                  fontWeight: 600,
+                }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--tone-success-line)' }}></span>
+                Live
+              </span>
+            )}
           </h1>
           {description && (
-            <p className="mt-3 text-base max-w-2xl" style={{ color: C.inkMute, fontFamily: 'Manrope' }}>
+            <p className="mt-1.5 text-[13.5px] max-w-2xl" style={{ color: 'var(--ink-mute)', fontWeight: 400 }}>
               {description}
             </p>
           )}

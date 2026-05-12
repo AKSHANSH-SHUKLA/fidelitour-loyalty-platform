@@ -147,38 +147,89 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────
- * TYPOGRAPHY — SCOPED, NOT GLOBAL
+ * TYPOGRAPHY — SOOTHING, NOT HARSH
  *
- * Earlier we hard-forced Inter on every surface. The client now wants the
- * business account (dashboard) to keep its original look: Cormorant Garamond
- * serif headings + Manrope sans body. So we revert the global override and
- * instead apply Inter only where the components themselves opt in (the
- * landing page, the wallet card surface, and InstallPwaPrompt / GeoConsent /
- * Billing widgets — they all use Tailwind defaults which fall back to Inter
- * via this stylesheet).
+ * Reset pass for the premium dashboard. The previous look mixed heavy
+ * Cormorant Garamond headings (font-weight: 700/800) with bold Manrope
+ * body — visually busy and tiring to read on a workday.
  *
- * Cascade in practice:
- *   - html/body/#root sit on Inter as the BASE font (no !important).
- *   - DashboardLayout.jsx wraps every authenticated page with
- *     className="font-['Manrope']", so Manrope wins inside the dashboard.
- *   - Inline style={{ fontFamily: 'Cormorant Garamond' }} on dashboard
- *     headings wins over Manrope, restoring the serif headings.
- *   - The wallet card and landing page have no Manrope wrapper, so they
- *     stay on Inter via the body default.
- *   - .ft-gradient-text is unaffected — it carries its own gradient layer.
- *   - Card Designer's font catalogue is explicitly preserved (the owner
- *     picks a font for the *customer* card visual, not the chrome).
+ * The new system:
+ *   - Inter as the universal sans, base 14.5px, weight 400. Reads light.
+ *   - Headings cap at weight 500 (medium), with -0.02em letter-spacing —
+ *     "presented" but never shouting.
+ *   - Body weight 400. Bold pulls are reserved for inline emphasis only
+ *     (a single number in a paragraph, a tier badge label).
+ *   - Dashboard surfaces explicitly DROP the inline Cormorant Garamond
+ *     styles by class targeting — we replace them with Inter at
+ *     weight 500. The customer-facing wallet card keeps its serif
+ *     title because that surface IS the brand identity.
+ *
+ * If a component still wants Cormorant Garamond (Card Designer's font
+ * catalogue, the PremiumLoyaltyCard hero title) it can opt in via
+ * `.ft-serif-title` — that class is the one and only place the heavy
+ * serif lives now.
  * ───────────────────────────────────────────────────────────────────── */
 html, body, #root {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14.5px;
+  font-weight: 400;
+  color: #1F1B1A;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.003em;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
-/* Heading defaults still apply — but only when the component hasn't picked
-   its own font-family inline. Dashboard's Cormorant Garamond inline styles
-   override these freely. */
+/* Replace every inline Cormorant Garamond on DASHBOARD surfaces with
+   Inter — restful, modern, less heavy. The Card Designer catalogue
+   and PremiumLoyaltyCard .ft-serif-title are excluded via overrides
+   below so they keep their editorial character. */
+[style*="Cormorant Garamond"]:not(.ft-serif-title):not(.ft-card-title-font),
+[style*="cormorant garamond"]:not(.ft-serif-title):not(.ft-card-title-font) {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.018em !important;
+}
+
+/* Heading defaults — lighter than before. Components can still set their
+   own weight when they really need emphasis, but the calm default is 500. */
 h1, h2, h3, h4 {
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  color: #1F1B1A;
+}
+
+/* Opt-in for editorial serif. Used by PremiumLoyaltyCard.ft-card-title-font
+   and by the small "Analytics" page title to keep one bit of identity. */
+.ft-serif-title,
+.ft-card-title-font {
+  font-family: 'Cormorant Garamond', Georgia, serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.012em !important;
+}
+
+/* Soothing palette helpers used by the new pastel KPI tiles. These map
+   each "tone" to a paired (fill, stroke, ink) trio that feels gentle in
+   both light and dark conditions. */
+:root {
+  --ink: #1F1B1A;
+  --ink-soft: #4A4441;
+  --ink-mute: #7A716C;
+  --hairline: #ECE8E1;
+  --surface: #FCFAF6;
+  --tone-success-fill: #E8F1DD;
+  --tone-success-ink:  #3F6D11;
+  --tone-success-line: #7FA269;
+  --tone-warning-fill: #FBEFD9;
+  --tone-warning-ink:  #7A5316;
+  --tone-warning-line: #D4A574;
+  --tone-danger-fill:  #F8DFDB;
+  --tone-danger-ink:   #8A322B;
+  --tone-danger-line:  #C8675C;
+  --tone-info-fill:    #E2ECF6;
+  --tone-info-ink:     #2C4F7A;
+  --tone-info-line:    #6F94C0;
+  --tone-neutral-fill: #F1EEE8;
+  --tone-neutral-ink:  #4A4441;
+  --tone-neutral-line: #B5AEA4;
 }

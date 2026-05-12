@@ -125,10 +125,9 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
         {/* Editorial title — the "TA CARTE FIDÉLITÉ" mark */}
         <div className="relative my-3">
           <p
-            className="text-[28px] leading-[1.02] font-extrabold tracking-tight uppercase"
+            className="ft-card-title-font text-[28px] leading-[1.02] tracking-tight uppercase"
             style={{
               color: textOnBrand,
-              fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif",
               fontStyle: 'italic',
               textShadow: '0 1px 0 rgba(0,0,0,0.04)',
             }}

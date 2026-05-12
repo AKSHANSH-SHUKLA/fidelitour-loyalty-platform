@@ -72,7 +72,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role }) => {
       <button
         type="button"
         onClick={toggle}
-        className="w-full relative group flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all"
+        className="w-full relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all"
         style={{
           color: active ? C.inkDeep : C.inkMute,
           background: active ? 'rgba(255,255,255,0.6)' : 'transparent',
@@ -141,11 +141,12 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role }) => {
   return (
     <Link
       to={to}
-      className="relative group flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all"
+      className="relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all"
       style={{
-        color: active ? C.inkDeep : C.inkMute,
-        background: active ? 'rgba(255,255,255,0.6)' : 'transparent',
-        boxShadow: active ? '0 1px 2px rgba(28,25,23,0.04)' : 'none',
+        color: active ? 'var(--ink)' : 'var(--ink-mute)',
+        background: active ? 'rgba(255,255,255,0.78)' : 'transparent',
+        boxShadow: active ? '0 1px 2px rgba(28,25,23,0.03)' : 'none',
+        fontWeight: active ? 500 : 400,
       }}
     >
       {/* Active indicator: gradient bar to the left of the active row */}
@@ -181,15 +182,15 @@ const SignOutNavItem = ({ onClick }) => {
     <button
       type="button"
       onClick={onClick}
-      className="relative group flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all w-full text-left"
-      style={{ color: C.inkMute, background: 'transparent' }}
+      className="relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all w-full text-left"
+      style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
       onMouseOver={(e) => {
-        e.currentTarget.style.background = '#FEF2F2';
-        e.currentTarget.style.color = '#991B1B';
+        e.currentTarget.style.background = '#FAEDEB';
+        e.currentTarget.style.color = '#8A322B';
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.color = C.inkMute;
+        e.currentTarget.style.color = 'var(--ink-mute)';
       }}
     >
       <span
@@ -225,8 +226,8 @@ const DashboardLayout = () => {
 
   return (
     <div
-      className="relative flex min-h-screen font-['Manrope']"
-      style={{ background: `linear-gradient(180deg, ${C.bone} 0%, ${C.cream} 100%)` }}
+      className="relative flex min-h-screen"
+      style={{ background: 'linear-gradient(180deg, #FCFAF6 0%, #FAF6EE 100%)' }}
     >
       <AmbientBackdrop role={role} />
 
@@ -239,23 +240,24 @@ const DashboardLayout = () => {
         }}
       >
         {/* Brand mark + role badge */}
-        <div className="p-6 pb-4">
+        <div className="p-5 pb-3">
           <Link to="/" className="flex items-center gap-2.5">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md"
-              style={{ background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)` }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm shadow-sm"
+              style={{ background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`, fontWeight: 500 }}
             >
               F
             </div>
             <div className="min-w-0">
               <p
-                className="font-['Cormorant_Garamond'] text-[22px] font-bold leading-none ft-gradient-text-slow"
+                className="text-[15px] leading-none"
+                style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.015em' }}
               >
                 FidéliTour
               </p>
               <p
-                className="text-[10px] font-bold uppercase tracking-[0.18em] mt-1"
-                style={{ color: theme.from }}
+                className="text-[9px] uppercase tracking-[0.16em] mt-1"
+                style={{ color: 'var(--ink-mute)', fontWeight: 500 }}
               >
                 {theme.label}
               </p>
@@ -268,24 +270,30 @@ const DashboardLayout = () => {
               account. */}
           {tenantInfo && (
             <div
-              className="mt-3 px-2.5 py-2 rounded-lg flex items-start gap-2"
-              style={{ background: `${theme.from}10`, border: `1px solid ${theme.from}33` }}
+              className="mt-3 px-2.5 py-2 rounded-lg"
+              style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid var(--hairline)' }}
               title={`Compte : ${tenantInfo.name || 'Sans nom'} · slug: ${tenantInfo.slug || '—'}`}
             >
-              <Building2 size={13} className="mt-0.5 shrink-0" style={{ color: theme.from }} />
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: theme.from, opacity: 0.8 }}>
-                  Compte
+              <p
+                className="text-[9px] uppercase tracking-[0.16em]"
+                style={{ color: 'var(--ink-mute)', fontWeight: 500 }}
+              >
+                Compte
+              </p>
+              <p
+                className="text-[13px] truncate mt-0.5"
+                style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.01em' }}
+              >
+                {tenantInfo.name || 'Sans nom'}
+              </p>
+              {tenantInfo.slug && (
+                <p
+                  className="text-[10px] font-mono truncate mt-0.5"
+                  style={{ color: 'var(--ink-mute)' }}
+                >
+                  /join/{tenantInfo.slug}
                 </p>
-                <p className="text-[12px] font-bold truncate" style={{ color: C.inkDeep }}>
-                  {tenantInfo.name || 'Sans nom'}
-                </p>
-                {tenantInfo.slug && (
-                  <p className="text-[9px] font-mono truncate" style={{ color: C.inkMute }}>
-                    /join/{tenantInfo.slug}
-                  </p>
-                )}
-              </div>
+              )}
             </div>
           )}
         </div>
