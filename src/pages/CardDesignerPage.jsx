@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Send, CheckCircle, AlertCircle, Palette, Coins, Award, ImagePlus, X, Sliders } from 'lucide-react';
+import { Save, Send, CheckCircle, AlertCircle, Palette, Coins, Award, ImagePlus, X } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
 import PhoneFrame from '../components/PhoneFrame';
-import { AuchanEditor, DEFAULT_LAYOUT } from '../components/AuchanCard';
 
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
 const DEFAULT_RULES = {
@@ -58,14 +57,6 @@ export default function CardDesignerPage() {
   const [rules, setRules] = useState(DEFAULT_RULES);
   // Brand fields for the premium card surface (logo, hero image, colours).
   const [brand, setBrand] = useState(DEFAULT_BRAND);
-  // Auchan layout — fine-tune slot fonts / colours / sizes / visibility.
-  // The advanced editor below is the source of truth for the back-of-card
-  // detailed text. Casual owners can leave it untouched; power users use
-  // it to match the brand exactly.
-  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
-  // Whether the advanced editor is expanded. Collapsed by default so the
-  // page doesn't overwhelm a first-time owner.
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   // Hold the full server-side template so we don't drop fields on save.
   const [serverTemplate, setServerTemplate] = useState(null);
   const [tenant, setTenant] = useState(null);
@@ -99,19 +90,8 @@ export default function CardDesignerPage() {
           title_label: tplData.title_label || DEFAULT_BRAND.title_label,
           points_label: tplData.points_label || DEFAULT_BRAND.points_label,
         });
-        // Pull advanced layout (Auchan slots, fonts, colours)
-        const saved = tplData.auchan_layout;
-        if (saved && typeof saved === 'object') {
-          setLayout({
-            ...DEFAULT_LAYOUT,
-            ...saved,
-            slots: { ...DEFAULT_LAYOUT.slots, ...(saved.slots || {}) },
-            push: { ...DEFAULT_LAYOUT.push, ...(saved.push || {}) },
-          });
-          // Auto-expand the advanced editor if the owner has previously
-          // customised it — they're a power user, save them the click.
-          setAdvancedOpen(true);
-        }
+        // Note: legacy auchan_layout is preserved in the doc but no longer
+        // editable. The premium card is the single source of truth now.
       } catch (e) {
         /* defaults are fine */
       }
@@ -120,12 +100,6 @@ export default function CardDesignerPage() {
 
   const updateRule = (key, val) => {
     setRules((r) => ({ ...r, [key]: val }));
-    // Keep the advanced editor's visual stamp count in lockstep with the
-    // reward threshold so what the owner sees in the preview matches what
-    // the cron actually awards.
-    if (key === 'reward_threshold_stamps') {
-      setLayout((L) => ({ ...L, stamps_target: Math.max(1, parseInt(val, 10) || 1) }));
-    }
   };
 
   const flash = (type, msg) => {
@@ -154,12 +128,9 @@ export default function CardDesignerPage() {
       // existing serverTemplate so we never drop an admin-set field.
       const payload = {
         ...(serverTemplate || {}),
-        // Persist the Auchan advanced layout so power users can fine-tune
-        // every text slot. The customer-facing wallet card still uses the
-        // PremiumLoyaltyCard (sourced from primary_color / hero_image_url /
-        // logo_url / title_label / points_label), so this layout drives the
-        // detailed back-of-card view + push presets.
-        auchan_layout: layout,
+        // The premium card is the single source of truth. Legacy
+        // auchan_layout in the existing doc is preserved (it spreads
+        // through `...serverTemplate`) but no longer edited from the UI.
         points_per_visit: Math.max(0, parseInt(rules.points_per_visit, 10) || 0),
         visits_per_stamp: Math.max(1, parseInt(rules.visits_per_stamp, 10) || 1),
         reward_threshold_stamps: Math.max(1, parseInt(rules.reward_threshold_stamps, 10) || 1),
@@ -598,60 +569,6 @@ export default function CardDesignerPage() {
             </PhoneFrame>
           </div>
         </div>
-      </div>
-
-      {/* ─── Advanced editor — collapsed by default ───────────────────
-          The Premium block above covers what 90% of owners need (logo,
-          hero image, colours, title labels). The block below exposes
-          every text slot, font, size, colour, and visibility toggle.
-          Power users use it to match a brand exactly; casual users
-          leave it folded. */}
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{ background: 'white', border: '1px solid #E7E5E4' }}
-      >
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen((v) => !v)}
-          className="w-full flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-[#FAF8F4]"
-          style={{ color: '#1C1917' }}
-          aria-expanded={advancedOpen}
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: '#F8E8E2', color: '#9C4427' }}
-            >
-              <Sliders size={18} />
-            </span>
-            <div className="text-left">
-              <p className="text-[15px] font-medium" style={{ color: '#1C1917' }}>
-                Édition avancée — chaque ligne, chaque couleur, chaque police
-              </p>
-              <p className="text-[12px]" style={{ color: '#7A716C' }}>
-                Pour personnaliser au pixel près : 4 onglets (éléments, tampons, couleurs, push) avec aperçu live.
-              </p>
-            </div>
-          </div>
-          <svg
-            width="18" height="18" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            style={{ transform: advancedOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 150ms' }}
-            aria-hidden="true"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-        {advancedOpen && (
-          <div className="px-5 pb-5" style={{ borderTop: '1px solid #ECE8E1' }}>
-            <AuchanEditor
-              layout={layout}
-              onChange={setLayout}
-              ctx={ctx}
-              businessName={tenant?.business_name}
-            />
-          </div>
-        )}
       </div>
 
     </div>

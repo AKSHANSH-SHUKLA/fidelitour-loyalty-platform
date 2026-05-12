@@ -69,19 +69,34 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           color: textOnBrand,
         }}
       >
-        {/* Decorative hero image — washed behind content for depth */}
+        {/* Hero image — now front-and-centre rather than washed out.
+            The image fills the right half of the brand block with a soft
+            vertical gradient overlay on the LEFT so the logo + brand name
+            + tier remain readable. The right side stays unobstructed for
+            the points block. Matches the KFC / Fnac wallet-card pattern. */}
         {card.hero_image_url && (
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: `url(${card.hero_image_url})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'right center',
-              opacity: 0.22,
-              mixBlendMode: 'screen',
-            }}
-          />
+          <>
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: `url(${card.hero_image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: 0.85,
+              }}
+            />
+            {/* Readability scrim — fades the image from full-strength on
+                the right to a brand-tinted overlay on the left so the
+                logo + name + points stay legible. */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `linear-gradient(95deg, ${primary} 0%, ${primary}E6 38%, ${primary}66 65%, transparent 100%)`,
+              }}
+            />
+          </>
         )}
 
         {/* Top row: logo + points badge */}
