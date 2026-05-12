@@ -172,6 +172,30 @@ export default function OwnerDashboard() {
     navigate(`/dashboard/campaigns${q.toString() ? '?' + q : ''}`);
   };
 
+  // Customer status donut data (always render, gracefully degrade to zero)
+  const statusDonut = [
+    { key: 'active',  name: 'Actifs',     value: activeCustomers,  color: '#3DA876' },
+    { key: 'dormant', name: 'Dormants',   value: dormantCustomers, color: '#D9A229' },
+    { key: 'risk',    name: 'À risque',   value: atRiskCustomers,  color: '#C84A1F' },
+    { key: 'new',     name: 'Nouveaux',   value: newWithoutVisits, color: '#4A7BA8' },
+  ].filter(d => d.value > 0);
+
+  // Churn donut data
+  const churnDonut = [
+    { key: 'engaged', name: 'Engagés',         value: Math.max(0, totalCustomers - (summary?.one_visit_count || 0) - dormantCustomers - (summary?.churned_90d_count || 0)), color: '#3DA876' },
+    { key: 'one',     name: '1 visite',        value: summary?.one_visit_count || 0,    color: '#5984AC' },
+    { key: 'dormant', name: 'Inactifs 30j',    value: dormantCustomers,                 color: '#D9A229' },
+    { key: 'churned', name: 'Churned 90j',     value: summary?.churned_90d_count || 0,  color: '#C84A1F' },
+  ].filter(d => d.value > 0);
+
+  // Plan usage radial data
+  const planUsed = Math.min(totalCustomers, planLimit);
+  const planRemaining = Math.max(0, planLimit - planUsed);
+  const planDonut = [
+    { key: 'used', name: 'Utilisé',    value: planUsed,      color: '#4F7A36' },
+    { key: 'free', name: 'Disponible', value: planRemaining, color: '#E8E4D8' },
+  ];
+
   return (
     <div className="fdt-dash">
       <div className="fd-page">
@@ -179,73 +203,40 @@ export default function OwnerDashboard() {
         {/* ═════════════ MAIN COLUMN ═════════════ */}
         <div className="fd-main">
 
-          {/* Real-time banner */}
-          <div className="fd-rt">
-            <div className="fd-rt-ico"><Sun size={22} /></div>
-            <div className="fd-rt-content">
-              <div className="fd-rt-label">Données en temps réel · Toutes vos branches</div>
-              <div className="fd-rt-text">Suivez vos performances, comprenez vos clients, optimisez vos campagnes.</div>
-            </div>
-            {branches && branches.length > 0 && (
-              <div className="fd-branch-chips">
-                <button
-                  type="button"
-                  className={`fd-chip ${!branchId ? 'active' : ''}`}
-                  onClick={() => setBranchId('')}
-                >
-                  🏠 Toutes les branches ▾
-                </button>
-                {branches.slice(0, 3).map((b) => (
-                  <button
-                    key={b.id}
-                    type="button"
-                    className={`fd-chip ${branchId === b.id ? 'active' : ''}`}
-                    onClick={() => setBranchId(b.id)}
-                  >
-                    🏠 {b.name || b.id}
-                  </button>
-                ))}
+          {/* AI recommendation — always at the top */}
+          <div className="fd-ai">
+            <div className="fd-ai-ico"><Sparkles size={20} /></div>
+            <div className="fd-ai-content">
+              <div className="fd-ai-eyebrow">Notre recommandation IA pour vous</div>
+              <div className="fd-ai-title">
+                {atRiskCustomers > 0
+                  ? `${atRiskCustomers} clients sur le point de partir`
+                  : `${newCustomers.value || 0} nouveaux clients à fidéliser`}
               </div>
-            )}
+              <div className="fd-ai-text">
+                {atRiskCustomers > 0
+                  ? "Ces clients étaient réguliers mais n'ont pas visité depuis 14–29 jours. Envoyez-leur une attention douce cette semaine."
+                  : "Activez une campagne de bienvenue pour transformer vos nouveaux visiteurs en habitués."}
+              </div>
+            </div>
+            <button
+              className="fd-btn-purple"
+              onClick={() => openCampaign(atRiskCustomers > 0
+                ? { name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend chez {business_name}.' }
+                : { name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
+            >
+              Voir les suggestions <ArrowRight size={13} />
+            </button>
           </div>
 
-          {/* AI recommendation */}
-          {atRiskCustomers > 0 && (
-            <div className="fd-ai">
-              <div className="fd-ai-ico"><Sparkles size={22} /></div>
-              <div className="fd-ai-content">
-                <div className="fd-ai-eyebrow">Notre recommandation IA pour vous</div>
-                <div className="fd-ai-title">{atRiskCustomers} clients sur le point de partir</div>
-                <div className="fd-ai-text">
-                  Ces clients étaient réguliers mais n'ont pas visité depuis 14–29 jours.
-                  Envoyez-leur une attention douce cette semaine avant qu'ils ne deviennent silencieux 30+ jours.
-                </div>
-              </div>
-              <button
-                className="fd-btn-purple"
-                onClick={() => openCampaign({
-                  name: 'Vous nous manquez',
-                  content: '{first_name}, ça fait un moment ! Une attention vous attend chez {business_name}.',
-                })}
-              >
-                Voir les suggestions <ArrowRight size={14} />
-              </button>
-            </div>
-          )}
-
-          {/* Page header */}
+          {/* Compact page header */}
           <div className="fd-h">
-            <div>
-              <h1 className="fd-title">
-                Welcome back
-                <span className="fd-live">LIVE</span>
-              </h1>
-              <p className="fd-sub">
-                Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante.
-              </p>
+            <div className="fd-h-left">
+              <span className="fd-eyebrow">Vue d'ensemble</span>
+              <h1 className="fd-title-sm">Tableau de bord</h1>
             </div>
             <button className="fd-btn-primary" onClick={() => openCampaign({})}>
-              <Plus size={14} /> Nouvelle campagne
+              <Plus size={13} /> Nouvelle campagne
             </button>
           </div>
 
@@ -278,14 +269,33 @@ export default function OwnerDashboard() {
                 Voir tous les clients →
               </button>
             </div>
-            <div className="fd-status-grid">
-              <StatusCell label="Active"          value={activeCustomers}    total={totalCustomers} icon={<Users size={18} />} ink="#2D7A3E" />
-              <StatusCell label="Dormant"         value={dormantCustomers}   total={totalCustomers} icon={<Moon size={18} />}  ink="#A8862D" />
-              <StatusCell label="At Risk"         value={atRiskCustomers}    total={totalCustomers} icon={<AlertTriangle size={18} />} ink="#C84A1F" />
-              <StatusCell label="New (no visits)" value={newWithoutVisits}   total={totalCustomers} icon={<UserPlus size={18} />} ink="#5984AC" />
+            <div className="fd-status-row">
+              <div className="fd-status-grid">
+                <StatusCell label="Active"          value={activeCustomers}    total={totalCustomers} icon={<Users size={16} />} ink="#2D7A3E" />
+                <StatusCell label="Dormant"         value={dormantCustomers}   total={totalCustomers} icon={<Moon size={16} />}  ink="#A8862D" />
+                <StatusCell label="At Risk"         value={atRiskCustomers}    total={totalCustomers} icon={<AlertTriangle size={16} />} ink="#C84A1F" />
+                <StatusCell label="New (no visits)" value={newWithoutVisits}   total={totalCustomers} icon={<UserPlus size={16} />} ink="#5984AC" />
+              </div>
+              <div className="fd-status-donut">
+                <div className="fd-mini-donut">
+                  {statusDonut.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={statusDonut} dataKey="value" innerRadius={38} outerRadius={56} stroke="white" strokeWidth={3} startAngle={90} endAngle={-270}>
+                          {statusDonut.map((d) => <Cell key={d.key} fill={d.color} />)}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : null}
+                  <div className="fd-mini-center">
+                    <div className="fd-mini-val">{totalCustomers}</div>
+                    <div className="fd-mini-lbl">Total</div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="fd-status-bar">
-              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: '#2D7A3E' }} />
+              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: '#3DA876' }} />
               <div style={{ width: `${pct(dormantCustomers, totalCustomers)}%`, background: '#D9A229' }} />
               <div style={{ width: `${pct(atRiskCustomers, totalCustomers)}%`, background: '#C84A1F' }} />
               <div style={{ width: `${pct(newWithoutVisits, totalCustomers)}%`, background: '#4A7BA8' }} />
@@ -307,7 +317,7 @@ export default function OwnerDashboard() {
                 <span><span className="fd-ch-dot" style={{ background: '#B26344' }} />Visites totales</span>
                 <span><span className="fd-ch-dot" style={{ background: '#4A7BA8' }} />Clients uniques</span>
               </div>
-              <div style={{ height: 180 }}>
+              <div style={{ height: 150 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={visitsChartData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                     <CartesianGrid stroke="#F0E8D6" vertical={false} />
@@ -356,7 +366,7 @@ export default function OwnerDashboard() {
                   <div className="fd-cs-sub">Record</div>
                 </div>
               </div>
-              <div style={{ height: 180 }}>
+              <div style={{ height: 150 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={acqChartData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                     <CartesianGrid stroke="#F0E8D6" vertical={false} />
@@ -462,26 +472,54 @@ export default function OwnerDashboard() {
                 <div className="fd-panel-sub">Comprenez la perte et la rétention de vos clients</div>
               </div>
             </div>
-            <div className="fd-churn-grid">
-              <div className="fd-churn-card">
-                <div className="fd-cc-lbl">Clients Total</div>
-                <div className="fd-cc-val">{totalCustomers}</div>
-                <div className="fd-cc-sub">100% de la base</div>
+            <div className="fd-churn-row">
+              <div className="fd-churn-grid">
+                <div className="fd-churn-card">
+                  <div className="fd-cc-lbl">Clients Total</div>
+                  <div className="fd-cc-val">{totalCustomers}</div>
+                  <div className="fd-cc-sub">100% de la base</div>
+                </div>
+                <div className="fd-churn-card">
+                  <div className="fd-cc-lbl">1 visite seulement</div>
+                  <div className="fd-cc-val">{fmtPct(pct(summary?.one_visit_count || 0, totalCustomers))}</div>
+                  <div className="fd-cc-sub">{summary?.one_visit_count || 0} clients</div>
+                </div>
+                <div className="fd-churn-card">
+                  <div className="fd-cc-lbl">Inactifs 30j</div>
+                  <div className="fd-cc-val warn">{fmtPct(pct(dormantCustomers, totalCustomers))}</div>
+                  <div className="fd-cc-sub">{dormantCustomers} clients</div>
+                </div>
+                <div className="fd-churn-card">
+                  <div className="fd-cc-lbl">Churned 90j</div>
+                  <div className="fd-cc-val">{fmtPct(pct(summary?.churned_90d_count || 0, totalCustomers))}</div>
+                  <div className="fd-cc-sub">{summary?.churned_90d_count || 0} clients</div>
+                </div>
               </div>
-              <div className="fd-churn-card">
-                <div className="fd-cc-lbl">1 visite seulement</div>
-                <div className="fd-cc-val">{fmtPct(pct(summary?.one_visit_count || 0, totalCustomers))}</div>
-                <div className="fd-cc-sub">{summary?.one_visit_count || 0} clients</div>
-              </div>
-              <div className="fd-churn-card">
-                <div className="fd-cc-lbl">Inactifs 30j</div>
-                <div className="fd-cc-val warn">{fmtPct(pct(dormantCustomers, totalCustomers))}</div>
-                <div className="fd-cc-sub">{dormantCustomers} clients</div>
-              </div>
-              <div className="fd-churn-card">
-                <div className="fd-cc-lbl">Churned 90j</div>
-                <div className="fd-cc-val">{fmtPct(pct(summary?.churned_90d_count || 0, totalCustomers))}</div>
-                <div className="fd-cc-sub">{summary?.churned_90d_count || 0} clients</div>
+              <div className="fd-churn-donut">
+                <div className="fd-mini-donut">
+                  {churnDonut.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={churnDonut} dataKey="value" innerRadius={38} outerRadius={56} stroke="white" strokeWidth={3} startAngle={90} endAngle={-270}>
+                          {churnDonut.map((d) => <Cell key={d.key} fill={d.color} />)}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : null}
+                  <div className="fd-mini-center">
+                    <div className="fd-mini-val">{fmtPct(100 - pct((summary?.churned_90d_count || 0) + dormantCustomers, totalCustomers), 0)}</div>
+                    <div className="fd-mini-lbl">Rétention</div>
+                  </div>
+                </div>
+                <div className="fd-mini-legend">
+                  {churnDonut.map(d => (
+                    <div key={d.key} className="fd-ml-row">
+                      <span className="fd-ml-dot" style={{ background: d.color }} />
+                      <span className="fd-ml-name">{d.name}</span>
+                      <span className="fd-ml-val">{d.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -538,44 +576,46 @@ export default function OwnerDashboard() {
               </div>
             </div>
             <div className="fd-plan-grid">
-              <div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div className="fd-plan-num">{totalCustomers} <span className="fd-plan-num-total">/ {planLimit}</span></div>
-                  <div className="fd-plan-pct">{planUsedPct.toFixed(1)}% utilisé</div>
+              <div className="fd-plan-gauge">
+                <div className="fd-mini-donut fd-plan-donut">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={planDonut} dataKey="value" innerRadius={50} outerRadius={70} stroke="white" strokeWidth={2} startAngle={90} endAngle={-270}>
+                        {planDonut.map((d) => <Cell key={d.key} fill={d.color} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="fd-mini-center">
+                    <div className="fd-mini-val">{planUsedPct.toFixed(0)}%</div>
+                    <div className="fd-mini-lbl">utilisé</div>
+                  </div>
                 </div>
-                <div className="fd-plan-bar"><div className="fd-plan-bar-fill" style={{ width: `${planUsedPct}%` }} /></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fd-text-2)', fontSize: 13 }}>
-                  <span>Plan actuel :</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: 'var(--fd-yellow)', color: 'var(--fd-yellow-ico)', fontWeight: 700, fontSize: 12 }}>
-                    <span className="fd-tier-dot" style={{ background: 'var(--fd-yellow-bg)' }} />{planName}
-                  </span>
+                <div className="fd-plan-meta">
+                  <div className="fd-plan-num">{totalCustomers} <span className="fd-plan-num-total">/ {planLimit}</span></div>
+                  <div className="fd-plan-tag-row">
+                    <span className="fd-plan-chip">{planName}</span>
+                    <span className="fd-plan-pct">{planUsedPct.toFixed(1)}% utilisé</span>
+                  </div>
                 </div>
               </div>
               <div className="fd-plan-aside">
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Info size={14} /> À savoir
-                </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: 'var(--fd-text-2)' }}>
-                  <li style={{ padding: '5px 0' }}>Cartes actives : {activeCards}</li>
-                  <li style={{ padding: '5px 0' }}>Cartes inactives : {neverAdded}</li>
-                  <li style={{ padding: '5px 0' }}>Supprimées : {deletedCards}</li>
+                <div className="fd-pa-h"><Info size={13} /> À savoir</div>
+                <ul className="fd-pa-list">
+                  <li><span>Cartes actives</span><b>{activeCards}</b></li>
+                  <li><span>Cartes inactives</span><b>{neverAdded}</b></li>
+                  <li><span>Supprimées</span><b>{deletedCards}</b></li>
                 </ul>
-                <button
-                  onClick={() => navigate('/dashboard/settings#settings-billing')}
-                  style={{ marginTop: 12, background: 'white', border: '1px solid var(--fd-border)', color: 'var(--fd-text)', padding: '8px 12px', borderRadius: 8, fontFamily: 'inherit', fontSize: 12, cursor: 'pointer', width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontWeight: 500 }}
-                >
-                  <SettingsIcon size={13} /> Gérer mon plan
+                <button className="fd-pa-btn" onClick={() => navigate('/dashboard/settings#settings-billing')}>
+                  <SettingsIcon size={12} /> Gérer mon plan
                 </button>
               </div>
             </div>
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-            <div>
-              <div className="fd-panel-h">Idées & actions recommandées</div>
-              <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
-            </div>
+          <div className="fd-actions-head">
+            <div className="fd-panel-h">Idées &amp; actions recommandées</div>
+            <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
           </div>
           <div className="fd-actions-grid">
             <ActionTile
