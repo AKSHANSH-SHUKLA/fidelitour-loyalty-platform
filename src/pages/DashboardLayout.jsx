@@ -204,6 +204,118 @@ const SignOutNavItem = ({ onClick }) => {
   );
 };
 
+/* ────────────────────────────────────────────────────────────────────────
+ * UserMenu — clickable avatar in the top toolbar.
+ *
+ * What's inside:
+ *   • Big circle with the user's initial — gradient matches the role theme.
+ *   • Small dot at the bottom-right ("you're logged in" indicator — purely
+ *     visual cue, lifted from the reference mockup).
+ *   • Click → opens a dropdown panel showing the full email, the role label,
+ *     a link into Settings, and a Sign-out button.
+ *
+ * Why this exists separately from the sidebar's Sign-out item: the avatar
+ * is the universal "account menu" affordance every SaaS dashboard uses.
+ * The patron expects to click their picture to get out — without it, the
+ * status dot was decorative noise that the user noticed and asked about.
+ * ──────────────────────────────────────────────────────────────────── */
+function UserMenu({ user, theme, role, onLogout }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+
+  // Close when clicking outside the menu — standard popover hygiene.
+  React.useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [open]);
+
+  const initial = (user?.email || '?').charAt(0).toUpperCase();
+  const roleLabel =
+    role === 'business_owner' ? 'Business Owner' :
+    role === 'manager' ? 'Manager' :
+    role === 'staff' ? 'Staff' :
+    role === 'super_admin' ? 'Admin' : 'User';
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        aria-label="Account menu"
+        onClick={() => setOpen((v) => !v)}
+        className="relative w-9 h-9 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
+        style={{
+          background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
+          fontWeight: 500,
+          fontSize: 13,
+          letterSpacing: '0.02em',
+        }}
+      >
+        {initial}
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full"
+          style={{ background: 'var(--tone-success-line, #7FA269)', boxShadow: '0 0 0 2px white' }}
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden z-50"
+          style={{
+            background: 'white',
+            border: '1px solid var(--hairline, #ECE8E1)',
+            boxShadow: '0 12px 28px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--hairline, #ECE8E1)' }}>
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0"
+                style={{
+                  background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
+                  fontWeight: 500, fontSize: 13,
+                }}
+              >
+                {initial}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] truncate" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                  {user?.email || '—'}
+                </p>
+                <p className="text-[11px]" style={{ color: 'var(--ink-mute)' }}>
+                  {roleLabel}
+                </p>
+              </div>
+            </div>
+          </div>
+          <Link
+            to="/dashboard/settings"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#FAF8F4] transition-colors"
+            style={{ color: 'var(--ink)' }}
+          >
+            <Settings2 size={14} style={{ color: 'var(--ink-mute)' }} />
+            Settings
+          </Link>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onLogout(); }}
+            className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#FAEDEB] transition-colors"
+            style={{ color: '#8A322B', borderTop: '1px solid var(--hairline, #ECE8E1)' }}
+          >
+            <LogOut size={14} />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -428,24 +540,10 @@ const DashboardLayout = () => {
               <NotificationBell />
             </div>
 
-            {/* User avatar pill — initial + status dot. Mirrors the mockup. */}
-            <div
-              className="shrink-0 relative w-9 h-9 rounded-full flex items-center justify-center text-white"
-              style={{
-                background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
-                fontWeight: 500,
-                fontSize: 13,
-                letterSpacing: '0.02em',
-              }}
-              title={user?.email || ''}
-            >
-              {(user?.email || '?').charAt(0).toUpperCase()}
-              <span
-                aria-hidden="true"
-                className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full"
-                style={{ background: 'var(--tone-success-line, #7FA269)', boxShadow: '0 0 0 2px white' }}
-              />
-            </div>
+            {/* Clickable user-menu avatar — initial + status dot + dropdown
+                with profile / settings / sign out. Replaces the silent
+                decorative avatar we had before. */}
+            <UserMenu user={user} theme={theme} role={role} onLogout={logout} />
           </div>
         )}
 
