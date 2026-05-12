@@ -217,45 +217,68 @@ h1, h2, h3, h4 {
   --ink-mute: #7A716C;
   --hairline: #ECE8E1;
   --surface: #FCFAF6;
-  --tone-success-fill: #E8F1DD;
-  --tone-success-ink:  #3F6D11;
-  --tone-success-line: #7FA269;
-  --tone-warning-fill: #FBEFD9;
-  --tone-warning-ink:  #7A5316;
-  --tone-warning-line: #D4A574;
-  --tone-danger-fill:  #F8DFDB;
-  --tone-danger-ink:   #8A322B;
-  --tone-danger-line:  #C8675C;
-  --tone-info-fill:    #E2ECF6;
-  --tone-info-ink:     #2C4F7A;
-  --tone-info-line:    #6F94C0;
-  --tone-neutral-fill: #F1EEE8;
-  --tone-neutral-ink:  #4A4441;
-  --tone-neutral-line: #B5AEA4;
+  /* ── Boutique-muted palette (replaces saturated SaaS green/red/amber/blue)
+     Inspired by Aesop / Sézane / Le Bon Marché. All five tones sit in the
+     same low-saturation register so the strip reads as one designed family
+     rather than five UI categories.
 
-  /* ── Vivid tone variants — used by KPI tiles for richer colour pop.
-     `vivid` is the SOLID icon-chip / accent colour (more saturated than
-     -line). `gradient` is the soft-to-medium gradient that sits on the
-     tile background. `glow` is a 30% rgba of the vivid colour used for
-     decorative corner blobs. */
-  --tone-success-vivid: #5B8A38;
-  --tone-success-gradient: linear-gradient(135deg, #DCE9C6 0%, #F0F6E6 60%, #FCFCF7 100%);
-  --tone-success-glow:  rgba(91, 138, 56, 0.25);
-  --tone-warning-vivid: #C8902F;
-  --tone-warning-gradient: linear-gradient(135deg, #F4DDA3 0%, #FBEFD9 60%, #FDFAF0 100%);
-  --tone-warning-glow:  rgba(200, 144, 47, 0.22);
-  --tone-danger-vivid:  #C44A3D;
-  --tone-danger-gradient: linear-gradient(135deg, #F5C5BE 0%, #F8DFDB 60%, #FDF4F2 100%);
-  --tone-danger-glow:   rgba(196, 74, 61, 0.25);
-  --tone-info-vivid:    #4A6FA8;
-  --tone-info-gradient: linear-gradient(135deg, #C7D8EE 0%, #E2ECF6 60%, #F4F8FD 100%);
-  --tone-info-glow:     rgba(74, 111, 168, 0.25);
-  --tone-purple-vivid:  #7B6CC9;
-  --tone-purple-fill:   #E8E4F4;
-  --tone-purple-ink:    #4A3F8A;
-  --tone-purple-line:   #A89BD8;
-  --tone-purple-gradient: linear-gradient(135deg, #CFC6E8 0%, #E8E4F4 60%, #F5F2FB 100%);
-  --tone-purple-glow:   rgba(123, 108, 201, 0.25);
+       success → sage          (calm growth, earthy green)
+       warning → ochre-gold    (warm golden alert, never neon yellow)
+       danger  → terracotta    (brand-adjacent coral, not stop-sign red)
+       info    → slate-blue    (cool blue-grey, calm not bright)
+       purple  → dusty mauve   (rose-tinted violet)
+       neutral → soft sand     (warm beige-grey)
+
+     Each tone exposes fill / ink / line / vivid / gradient / glow tokens.
+  */
+
+  /* SAGE — success */
+  --tone-success-fill:     #E5EEDF;
+  --tone-success-ink:      #4A6740;
+  --tone-success-line:     #95B58A;
+  --tone-success-vivid:    #7AA070;
+  --tone-success-gradient: linear-gradient(135deg, #D9E5D0 0%, #ECF2E5 60%, #FAFCF8 100%);
+  --tone-success-glow:     rgba(122, 160, 112, 0.22);
+
+  /* OCHRE-GOLD — warning */
+  --tone-warning-fill:     #F3E8D2;
+  --tone-warning-ink:      #7A5D1F;
+  --tone-warning-line:     #D4B373;
+  --tone-warning-vivid:    #BA9347;
+  --tone-warning-gradient: linear-gradient(135deg, #EAD9B0 0%, #F3E8D2 60%, #FCF8EF 100%);
+  --tone-warning-glow:     rgba(186, 147, 71, 0.22);
+
+  /* TERRACOTTA-WARM — danger (brand-adjacent, not stop-sign red) */
+  --tone-danger-fill:      #F5DCD0;
+  --tone-danger-ink:       #7A3A2A;
+  --tone-danger-line:      #D49A85;
+  --tone-danger-vivid:     #B86F58;
+  --tone-danger-gradient:  linear-gradient(135deg, #EBC4B0 0%, #F5DCD0 60%, #FDF4ED 100%);
+  --tone-danger-glow:      rgba(184, 111, 88, 0.22);
+
+  /* SLATE-BLUE — info */
+  --tone-info-fill:        #DEE5EC;
+  --tone-info-ink:         #3F4F66;
+  --tone-info-line:        #92A4B8;
+  --tone-info-vivid:       #6B819A;
+  --tone-info-gradient:    linear-gradient(135deg, #CDD6E0 0%, #DEE5EC 60%, #F2F5F9 100%);
+  --tone-info-glow:        rgba(107, 129, 154, 0.22);
+
+  /* DUSTY MAUVE — purple */
+  --tone-purple-fill:      #ECE0E8;
+  --tone-purple-ink:       #6A4862;
+  --tone-purple-line:      #BFA4B7;
+  --tone-purple-vivid:     #A07895;
+  --tone-purple-gradient:  linear-gradient(135deg, #DEC6D4 0%, #ECE0E8 60%, #F8F1F5 100%);
+  --tone-purple-glow:      rgba(160, 120, 149, 0.22);
+
+  /* SOFT SAND — neutral */
+  --tone-neutral-fill:     #F0EAE0;
+  --tone-neutral-ink:      #4A4441;
+  --tone-neutral-line:     #C5BBA9;
+  --tone-neutral-vivid:    #9C8E78;
+  --tone-neutral-gradient: linear-gradient(135deg, #E5DCC9 0%, #F0EAE0 60%, #FAF6EE 100%);
+  --tone-neutral-glow:     rgba(156, 142, 120, 0.20);
 
   /* Premium surface tokens — what every card, form, and table should sit on. */
   --surface-card:       #FFFFFF;
