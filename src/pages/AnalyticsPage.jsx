@@ -764,14 +764,14 @@ const AnalyticsPage = () => {
           </h3>
           <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Totaux lifetime · pas de filtre temps</span>
         </div>
-        {/* Lifetime row 1 — base totals */}
+        {/* Lifetime row 1 — base totals, every tile tone-tagged for vivid colour */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <ColorfulKpiTile
             icon={Users}
             title="Total Customers"
             value={totalCustomers.toLocaleString()}
             sublabel={`Toute la base · cliquez pour la liste${branchId ? ' (cette boutique)' : ''}`}
-            accent="#B85C38"
+            tone="info"
             onClick={() => drillCustomers('All customers', {})}
             topRight={<SendCampaignButton compact label="Send" onClick={() => openComposer({ type: 'all' }, 'Un message pour toi, {first_name}', 'Merci de faire partie de la famille {business_name} ! Une surprise vous attend lors de votre prochain passage.')} />}
           />
@@ -780,7 +780,7 @@ const AnalyticsPage = () => {
             title="Total Visits"
             value={totalVisits.toLocaleString()}
             sublabel="Toutes les visites enregistrées"
-            accent="#4A5D23"
+            tone="success"
             onClick={() => drillCustomers('Customers with ≥ 1 visit', { min_visits: 1 })}
           />
           <ColorfulKpiTile
@@ -788,7 +788,7 @@ const AnalyticsPage = () => {
             title="Repeat Rate"
             value={`${repeatRate.toFixed(1)}%`}
             sublabel="Clients revenus au moins 2 fois"
-            accent="#E3A869"
+            tone="warning"
             onClick={() => drillCustomers('Repeat customers (≥ 2 visits)', { min_visits: 2 })}
           />
           <ColorfulKpiTile
@@ -796,7 +796,7 @@ const AnalyticsPage = () => {
             title="Wallet Passes"
             value={walletPasses.toLocaleString()}
             sublabel={`${totalCustomers ? Math.round((walletPasses / totalCustomers) * 100) : 0}% des clients`}
-            accent="#7B3F00"
+            tone="purple"
             onClick={() => drillCustomers('Wallet pass holders', { has_wallet_pass: true })}
           />
         </section>
@@ -808,7 +808,7 @@ const AnalyticsPage = () => {
             title="Active Cards"
             value={(summary?.wallet_active_count ?? 0).toLocaleString()}
             sublabel="Dans Apple/Google Wallet"
-            accent="#3C9D9B"
+            tone="success"
             onClick={() => drillCustomers('Active wallet cards', { wallet_state: 'active' })}
           />
           <ColorfulKpiTile
@@ -816,7 +816,7 @@ const AnalyticsPage = () => {
             title="Never Added"
             value={(summary?.wallet_never_added_count ?? 0).toLocaleString()}
             sublabel="Inscrits, mais carte non ajoutée"
-            accent="#D4A574"
+            tone="warning"
             onClick={() => drillCustomers('Never added to wallet', { wallet_state: 'never_added' })}
           />
           <ColorfulKpiTile
@@ -824,7 +824,7 @@ const AnalyticsPage = () => {
             title="Deleted Cards"
             value={(summary?.wallet_deleted_count ?? 0).toLocaleString()}
             sublabel="Carte retirée du wallet"
-            accent="#E8917C"
+            tone="danger"
             onClick={() => drillCustomers('Deleted wallet cards', { wallet_state: 'deleted' })}
           />
           <ColorfulKpiTile
@@ -832,7 +832,7 @@ const AnalyticsPage = () => {
             title="VIP Customers"
             value={vipCount.toLocaleString()}
             sublabel="Top tier — 40+ visites ou panier €60+"
-            accent="#7B3F00"
+            tone="purple"
             onClick={() => drillCustomers('VIP customers', { tier: 'vip' })}
           />
         </section>

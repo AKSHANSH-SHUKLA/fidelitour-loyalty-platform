@@ -2,43 +2,76 @@ import React from 'react';
 import PeriodPicker from './PeriodPicker';
 
 /**
- * ColorfulKpiTile — soothing pastel KPI card.
+ * ColorfulKpiTile — vivid KPI card.
  *
- * Visual specification (matches the premium reference mockups the client
- * shared, see /references/dashboard-mockup-1.png):
+ * Design notes for the "make it pop" version:
  *
- *   • Light pastel BACKGROUND derived from `tone` (success → soft green,
- *     danger → soft coral, warning → soft amber, info → soft blue,
- *     neutral → soft sand). No saturated gradients, no harsh borders.
- *   • Number rendered at 30px / weight 500 — present but not screaming.
- *     The colour of the number matches the tone (deep green / deep coral
- *     / deep amber / deep navy / deep ink). This is what carries the meaning.
- *   • Title uppercased at 10.5px / weight 600 / 0.14em tracking — secondary.
- *   • Sublabel (e.g. "72% de la base client") at 11.5px / weight 400.
- *   • Optional sparkline embedded along the bottom of the card, drawn in
- *     the tone's accent line colour.
- *   • Optional delta pill ("+12%") next to the number — soft fill, dark ink.
+ *   • The tile sits on a soft-to-medium GRADIENT (not flat pastel). This
+ *     gives it depth without breaking the calm palette.
+ *   • The icon chip is now SOLID in the tone's vivid colour, with a white
+ *     icon glyph. This is the single biggest "premium look" lever — a
+ *     vivid chip in the corner of every card.
+ *   • A decorative blurred circle ("glow") sits behind the icon chip in
+ *     the same vivid colour, adding atmosphere without noise.
+ *   • The big number is rendered in the tone's deep ink — vivid, but
+ *     readable.
+ *   • Sparkline area-fill opacity bumped to 0.22 so the line is more
+ *     present, and the line stroke is 1.8px instead of 1.4px.
+ *   • Hover lift + soft shadow growth makes the tile feel "real" when
+ *     it's clickable.
  *
- * The tile is the same component as before; the visual change is the
- * stylesheet. Every existing call site keeps working. Pages that want
- * the new pastel look pass `tone="success" | "danger" | "warning" |
- * "info" | "neutral"`. Pages without `tone` fall back to a neutral
- * white surface with the old accent-blob behaviour preserved for
- * backward compat.
+ * Existing call sites are 100% backward compatible — the `tone` prop
+ * unlocks the new look; `accent` still works for the neutral white tile.
  */
 
 const TONE_STYLE = {
-  success: { fill: 'var(--tone-success-fill)', ink: 'var(--tone-success-ink)', line: 'var(--tone-success-line)' },
-  danger:  { fill: 'var(--tone-danger-fill)',  ink: 'var(--tone-danger-ink)',  line: 'var(--tone-danger-line)' },
-  warning: { fill: 'var(--tone-warning-fill)', ink: 'var(--tone-warning-ink)', line: 'var(--tone-warning-line)' },
-  info:    { fill: 'var(--tone-info-fill)',    ink: 'var(--tone-info-ink)',    line: 'var(--tone-info-line)' },
-  neutral: { fill: 'var(--tone-neutral-fill)', ink: 'var(--tone-neutral-ink)', line: 'var(--tone-neutral-line)' },
+  success: {
+    fill: 'var(--tone-success-gradient)',
+    ink:  'var(--tone-success-ink)',
+    line: 'var(--tone-success-line)',
+    vivid:'var(--tone-success-vivid)',
+    glow: 'var(--tone-success-glow)',
+  },
+  danger: {
+    fill: 'var(--tone-danger-gradient)',
+    ink:  'var(--tone-danger-ink)',
+    line: 'var(--tone-danger-line)',
+    vivid:'var(--tone-danger-vivid)',
+    glow: 'var(--tone-danger-glow)',
+  },
+  warning: {
+    fill: 'var(--tone-warning-gradient)',
+    ink:  'var(--tone-warning-ink)',
+    line: 'var(--tone-warning-line)',
+    vivid:'var(--tone-warning-vivid)',
+    glow: 'var(--tone-warning-glow)',
+  },
+  info: {
+    fill: 'var(--tone-info-gradient)',
+    ink:  'var(--tone-info-ink)',
+    line: 'var(--tone-info-line)',
+    vivid:'var(--tone-info-vivid)',
+    glow: 'var(--tone-info-glow)',
+  },
+  purple: {
+    fill: 'var(--tone-purple-gradient)',
+    ink:  'var(--tone-purple-ink)',
+    line: 'var(--tone-purple-line)',
+    vivid:'var(--tone-purple-vivid)',
+    glow: 'var(--tone-purple-glow)',
+  },
+  neutral: {
+    fill: 'linear-gradient(135deg, #F1EEE8 0%, #FAF8F4 60%, #FCFAF6 100%)',
+    ink:  'var(--ink)',
+    line: 'var(--tone-neutral-line)',
+    vivid:'#7A716C',
+    glow: 'rgba(122, 113, 108, 0.22)',
+  },
 };
 
-/** Soft sparkline. The line is a sibling of the area fill; both share the
- *  same path. Always renders inside the card's footer slot so it never
- *  competes with the number for attention. */
-const Sparkline = ({ points = [], stroke = '#7A716C', width = 100, height = 26 }) => {
+/** Inline sparkline with bigger presence: thicker stroke + denser fill
+ *  so the chart reads as part of the tile, not decoration. */
+const Sparkline = ({ points = [], stroke = '#7A716C', width = 100, height = 32 }) => {
   if (!Array.isArray(points) || points.length < 2) return null;
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -48,9 +81,16 @@ const Sparkline = ({ points = [], stroke = '#7A716C', width = 100, height = 26 }
   const d = xy.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   const area = `${d} L${width.toFixed(1)},${height.toFixed(1)} L0,${height.toFixed(1)} Z`;
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-      <path d={area} fill={stroke} opacity="0.16" />
-      <path d={d} fill="none" stroke={stroke} strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" />
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      style={{ display: 'block' }}
+    >
+      <path d={area} fill={stroke} opacity="0.22" />
+      <path d={d} fill="none" stroke={stroke} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 };
@@ -62,11 +102,12 @@ const DeltaPill = ({ delta, ink }) => {
   const abs = Math.abs(delta.value);
   return (
     <span
-      className="inline-flex items-center gap-1 text-[11px] rounded-full px-1.5 py-0.5"
+      className="inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5"
       style={{
         color: ink || 'var(--ink-soft)',
-        background: 'rgba(255,255,255,0.6)',
-        fontWeight: 500,
+        background: 'rgba(255,255,255,0.75)',
+        fontWeight: 600,
+        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.6)',
       }}
     >
       <span aria-hidden="true">{arrow}</span>
@@ -94,24 +135,44 @@ const ColorfulKpiTile = ({
   const palette = tone ? TONE_STYLE[tone] || TONE_STYLE.neutral : null;
   const surfaceFill = palette ? palette.fill : '#FFFFFF';
   const surfaceLine = palette ? palette.line : '#7A716C';
-  const numberInk = palette ? palette.ink : 'var(--ink)';
+  const vivid       = palette ? palette.vivid : accent;
+  const glow        = palette ? palette.glow : `${accent}33`;
+  const numberInk   = palette ? palette.ink : 'var(--ink)';
   const surfaceBorder = palette ? 'transparent' : 'var(--hairline)';
 
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag
       onClick={onClick}
-      className={`relative w-full text-left rounded-2xl overflow-hidden transition-all
-        ${onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md' : ''} ${className}`}
+      className={`relative w-full text-left rounded-2xl overflow-hidden ft-lift ${onClick ? 'cursor-pointer' : ''} ${className}`}
       style={{
         background: surfaceFill,
         color: 'var(--ink)',
         border: `1px solid ${surfaceBorder}`,
-        boxShadow: palette ? '0 1px 0 rgba(0,0,0,0.02)' : '0 1px 2px rgba(28,25,23,0.04)',
-        padding: '16px 18px 14px',
-        minHeight: 134,
+        boxShadow: palette
+          ? '0 1px 0 rgba(0,0,0,0.02), 0 6px 14px -10px rgba(0,0,0,0.08)'
+          : '0 1px 2px rgba(28,25,23,0.04)',
+        padding: '16px 18px 12px',
+        minHeight: 148,
       }}
     >
+      {/* Decorative corner glow — soft vivid blur behind the icon. Adds depth
+          without competing with the number for attention. */}
+      {palette && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: -18, right: -18,
+            width: 90, height: 90,
+            background: glow,
+            borderRadius: '50%',
+            filter: 'blur(20px)',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
       {topRight && (
         <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
           {topRight}
@@ -123,7 +184,8 @@ const ColorfulKpiTile = ({
           <p
             className="text-[10.5px] uppercase"
             style={{
-              color: 'var(--ink-mute)',
+              color: palette ? numberInk : 'var(--ink-mute)',
+              opacity: palette ? 0.78 : 1,
               fontWeight: 600,
               letterSpacing: '0.14em',
             }}
@@ -133,43 +195,50 @@ const ColorfulKpiTile = ({
           <div className="mt-2 flex items-baseline gap-2 flex-wrap">
             <span
               style={{
-                fontSize: 30,
+                fontSize: 32,
                 lineHeight: 1,
-                fontWeight: 500,
+                fontWeight: 600,
                 color: numberInk,
-                letterSpacing: '-0.022em',
+                letterSpacing: '-0.026em',
               }}
             >
               {loading
-                ? <span className="inline-block w-14 h-6 rounded animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
+                ? <span className="inline-block w-14 h-7 rounded animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
                 : value}
             </span>
             <DeltaPill delta={delta} ink={numberInk} />
           </div>
           {sublabel && (
-            <p className="mt-1.5 text-[11.5px] line-clamp-2" style={{ color: 'var(--ink-mute)' }}>
+            <p
+              className="mt-1 text-[11.5px] line-clamp-2"
+              style={{ color: palette ? numberInk : 'var(--ink-mute)', opacity: palette ? 0.7 : 1 }}
+            >
               {sublabel}
             </p>
           )}
         </div>
+
+        {/* Icon chip — SOLID vivid colour with white glyph. This is the single
+            most "premium" lever; every modern dashboard uses this pattern. */}
         {Icon && (
           <div
-            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center relative"
             style={{
-              background: palette ? 'rgba(255,255,255,0.55)' : `${accent}14`,
-              color: palette ? numberInk : accent,
+              background: vivid,
+              color: '#FFFFFF',
+              boxShadow: `0 4px 12px -4px ${glow}, inset 0 1px 0 rgba(255,255,255,0.22)`,
             }}
           >
-            <Icon size={18} strokeWidth={1.7} />
+            <Icon size={19} strokeWidth={2} />
           </div>
         )}
       </div>
 
-      {/* Sparkline floats along the bottom of the card. Stays out of the way
-          and gives the tile its "is this trending" answer at a glance. */}
+      {/* Sparkline along the bottom edge of the card, full width, taller than
+          before so the trend reads as data not garnish. */}
       {Array.isArray(trend) && trend.length >= 2 && (
-        <div className="mt-2 -mx-1">
-          <Sparkline points={trend} stroke={surfaceLine} />
+        <div className="mt-3 -mx-1 -mb-1">
+          <Sparkline points={trend} stroke={surfaceLine} height={32} />
         </div>
       )}
 
@@ -179,7 +248,7 @@ const ColorfulKpiTile = ({
             value={period.value}
             unit={period.unit}
             onChange={onPeriodChange}
-            accent={palette ? surfaceLine : accent}
+            accent={palette ? vivid : accent}
             compact
           />
         </div>

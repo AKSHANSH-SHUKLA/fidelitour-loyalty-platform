@@ -261,36 +261,38 @@ const OwnerDashboard = () => {
             Totaux lifetime
           </span>
         </div>
-        {/* Lifetime row 1 */}
+        {/* Lifetime row 1 — every tile tagged with a tone so the vivid icon
+            chips + soft gradients carry colour through the whole row. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <ColorfulKpiTile
-            icon={Users} title="Total Customers" accent={C.sky}
+            icon={Users} title="Total Customers" tone="info"
             value={totalCustomers.toLocaleString()}
             sublabel="Enrolled loyalty members"
             onClick={() => navigate('/dashboard/customers')}
           />
           <ColorfulKpiTile
-            icon={Activity} title="Total Visits" accent={C.sage}
+            icon={Activity} title="Total Visits" tone="success"
             value={totalVisits.toLocaleString()}
             sublabel="All-time recorded visits"
           />
           <ColorfulKpiTile
-            icon={Repeat} title="Repeat Rate" accent={C.ochre}
+            icon={Repeat} title="Repeat Rate" tone="warning"
             value={repeatRate}
             sublabel="Customers who returned"
           />
           <ColorfulKpiTile
-            icon={Award} title="Gold Members" accent={C.amber}
+            icon={Award} title="Gold Members" tone="purple"
             value={goldCustomers.toLocaleString()}
             sublabel={`${totalCustomers > 0 ? Math.round((goldCustomers / totalCustomers) * 100) : 0}% of customers`}
             onClick={() => navigate('/dashboard/customers?tier=gold')}
           />
         </div>
-        {/* Lifetime row 2 */}
+        {/* Lifetime row 2 — wallet states. Active=success, NeverAdded=warning,
+            Deleted=danger, Avg visits = purple to round out the palette. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
           {summary?.wallet_active_count != null && (
             <ColorfulKpiTile
-              icon={BadgeCheck} title="Active Cards" accent={C.teal}
+              icon={BadgeCheck} title="Active Cards" tone="success"
               value={summary.wallet_active_count.toLocaleString()}
               sublabel="In Apple/Google Wallet right now"
               onClick={() => navigate('/dashboard/customers?wallet_state=active')}
@@ -298,7 +300,7 @@ const OwnerDashboard = () => {
           )}
           {summary?.wallet_never_added_count != null && (
             <ColorfulKpiTile
-              icon={CreditCard} title="Never Added" accent={C.ochre}
+              icon={CreditCard} title="Never Added" tone="warning"
               value={summary.wallet_never_added_count.toLocaleString()}
               sublabel="Joined but card not in wallet"
               onClick={() => navigate('/dashboard/customers?wallet_state=never_added')}
@@ -306,14 +308,14 @@ const OwnerDashboard = () => {
           )}
           {summary?.wallet_deleted_count != null && (
             <ColorfulKpiTile
-              icon={Trash2} title="Deleted Cards" accent={C.coral}
+              icon={Trash2} title="Deleted Cards" tone="danger"
               value={summary.wallet_deleted_count.toLocaleString()}
               sublabel="Customer removed the card"
               onClick={() => navigate('/dashboard/customers?wallet_state=deleted')}
             />
           )}
           <ColorfulKpiTile
-            icon={TrendingUp} title="Avg Visits / Customer" accent={C.lavender}
+            icon={TrendingUp} title="Avg Visits / Customer" tone="purple"
             value={avgVisitsPerCustomer}
             sublabel="Higher = stronger loyalty"
           />

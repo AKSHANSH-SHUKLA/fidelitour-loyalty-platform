@@ -233,6 +233,30 @@ h1, h2, h3, h4 {
   --tone-neutral-ink:  #4A4441;
   --tone-neutral-line: #B5AEA4;
 
+  /* ── Vivid tone variants — used by KPI tiles for richer colour pop.
+     `vivid` is the SOLID icon-chip / accent colour (more saturated than
+     -line). `gradient` is the soft-to-medium gradient that sits on the
+     tile background. `glow` is a 30% rgba of the vivid colour used for
+     decorative corner blobs. */
+  --tone-success-vivid: #5B8A38;
+  --tone-success-gradient: linear-gradient(135deg, #DCE9C6 0%, #F0F6E6 60%, #FCFCF7 100%);
+  --tone-success-glow:  rgba(91, 138, 56, 0.25);
+  --tone-warning-vivid: #C8902F;
+  --tone-warning-gradient: linear-gradient(135deg, #F4DDA3 0%, #FBEFD9 60%, #FDFAF0 100%);
+  --tone-warning-glow:  rgba(200, 144, 47, 0.22);
+  --tone-danger-vivid:  #C44A3D;
+  --tone-danger-gradient: linear-gradient(135deg, #F5C5BE 0%, #F8DFDB 60%, #FDF4F2 100%);
+  --tone-danger-glow:   rgba(196, 74, 61, 0.25);
+  --tone-info-vivid:    #4A6FA8;
+  --tone-info-gradient: linear-gradient(135deg, #C7D8EE 0%, #E2ECF6 60%, #F4F8FD 100%);
+  --tone-info-glow:     rgba(74, 111, 168, 0.25);
+  --tone-purple-vivid:  #7B6CC9;
+  --tone-purple-fill:   #E8E4F4;
+  --tone-purple-ink:    #4A3F8A;
+  --tone-purple-line:   #A89BD8;
+  --tone-purple-gradient: linear-gradient(135deg, #CFC6E8 0%, #E8E4F4 60%, #F5F2FB 100%);
+  --tone-purple-glow:   rgba(123, 108, 201, 0.25);
+
   /* Premium surface tokens — what every card, form, and table should sit on. */
   --surface-card:       #FFFFFF;
   --surface-elevated:   #FFFFFF;
