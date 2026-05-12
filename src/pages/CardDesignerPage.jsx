@@ -46,6 +46,45 @@ const DEFAULT_BRAND = {
   show_back_link:   true,   // "Au dos →" right side
   show_card_number: true,   // "N° CARTE 4E62" footer
   show_barcode:     true,   // Code 128 strip
+
+  // ── Layout selector + Wallet-pass-specific fields ────────────────
+  // Two ways to render the card:
+  //   - 'hero': full brand-coloured hero with logo + name + image
+  //     overlay (the existing premium layout, KFC-inspired).
+  //   - 'wallet_pass': 3-band Apple-Wallet style — light top strip,
+  //     promotional middle band (image OR colour with text + optional
+  //     CTA box), light bottom strip with member fields + barcode.
+  //     Matches GÉMO, Maison 123, FNAC adhérent, etc.
+  layout_style:        'hero',
+  // Card surface colour — shared by the top strip + bottom strip
+  // in 'wallet_pass' layout. Default white.
+  card_bg_color:       '#FFFFFF',
+  card_ink_color:      '#1F1B1A',   // text colour on top + bottom strips
+  // Middle band — solid colour OR image
+  strip_type:          'color',     // 'color' | 'image'
+  strip_color:         '#7AA070',   // sage by default (GÉMO is mint green)
+  strip_text_color:    '#FFFFFF',   // text overlaid on the strip
+  strip_title:         'Avantage exclusif fidélité',
+  strip_subtitle:      'Réservé aux membres du programme',
+  // Optional callout box inside the strip (like GÉMO's "10€ cagnottés")
+  show_offer_box:      true,
+  offer_box_text:      '10€ cagnottés*',
+  offer_box_subtext:   'Dès 3 articles achetés',
+  offer_box_color:     '#FFFFFF',   // box fill colour (often white-on-strip)
+  offer_box_ink_color: '#4A6740',   // text inside the box
+  // Top-right link (GÉMO has "PLUS D'INFOS ↗ Florian MARTINEZ")
+  top_right_label:     'Plus d\'infos',
+  top_right_value:     '',          // owner can set a URL or leave empty
+  show_top_right:      true,
+  // Member identifier line shown on the bottom strip
+  show_member_id:      true,
+  member_id_label:     'Membre',    // shown above the name
+  use_full_name:       false,       // false = "Marie", true = "Marie LEFÈVRE"
+  // Stats row on the bottom strip — "MON COMPTEUR FID 1/3" + "MES OFFRES DISPONIBLES 0"
+  show_counter:        true,
+  counter_label:       'Mon compteur fid',
+  show_offers_count:   true,
+  offers_count_label:  'Mes offres disponibles',
 };
 
 // Font options for the title. Loaded globally via index.css Google Fonts.
@@ -694,6 +733,219 @@ export default function CardDesignerPage() {
                 ))}
               </div>
             </div>
+
+            {/* ────────────────────────────────────────────────────────
+                Layout selector — Hero vs Wallet-pass (GÉMO / Maison 123)
+                ──────────────────────────────────────────────────────── */}
+            <div className="pt-4 mt-2" style={{ borderTop: '1px solid #ECE8E1' }}>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Style de carte</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: 'hero',         label: 'Style Hero', desc: 'Carte premium pleine couleur · type KFC, Café' },
+                  { key: 'wallet_pass',  label: 'Style Wallet', desc: '3 bandes · type GÉMO, Maison 123, Fnac' },
+                ].map((opt) => {
+                  const active = brand.layout_style === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setBrand((b) => ({ ...b, layout_style: opt.key }))}
+                      className="text-left p-3 rounded-lg transition-colors"
+                      style={{
+                        background: active ? '#F8E8E2' : 'white',
+                        border: active ? '2px solid #B85C38' : '1px solid #E7E5E4',
+                      }}
+                    >
+                      <div className="text-[13px] font-medium" style={{ color: active ? '#9C4427' : '#1C1917' }}>{opt.label}</div>
+                      <div className="text-[10px] mt-1" style={{ color: '#7A716C' }}>{opt.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ────────────────────────────────────────────────────────
+                Wallet-pass specific controls — only shown when that
+                layout is selected. They're additive: every existing
+                control above still works in this mode.
+                ──────────────────────────────────────────────────────── */}
+            {brand.layout_style === 'wallet_pass' && (
+              <div className="pt-4 mt-2 space-y-4" style={{ borderTop: '1px solid #ECE8E1' }}>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E]">Options Wallet-pass</p>
+
+                {/* Card surface colours (top + bottom strips) */}
+                <div>
+                  <p className="text-[10px] text-[#7A716C] mb-1">Couleur des bandes haut + bas (mêmes)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-[#7A716C] mb-1">Fond bandes</label>
+                      <div className="flex items-center gap-1">
+                        <input type="color" value={brand.card_bg_color}
+                               onChange={(e) => setBrand((b) => ({ ...b, card_bg_color: e.target.value }))}
+                               className="w-9 h-9 rounded-md border border-[#E7E5E4] cursor-pointer shrink-0" />
+                        <input type="text" value={brand.card_bg_color}
+                               onChange={(e) => setBrand((b) => ({ ...b, card_bg_color: e.target.value }))}
+                               className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E7E5E4] font-mono text-[10px]" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-[#7A716C] mb-1">Texte sur bandes</label>
+                      <div className="flex items-center gap-1">
+                        <input type="color" value={brand.card_ink_color}
+                               onChange={(e) => setBrand((b) => ({ ...b, card_ink_color: e.target.value }))}
+                               className="w-9 h-9 rounded-md border border-[#E7E5E4] cursor-pointer shrink-0" />
+                        <input type="text" value={brand.card_ink_color}
+                               onChange={(e) => setBrand((b) => ({ ...b, card_ink_color: e.target.value }))}
+                               className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E7E5E4] font-mono text-[10px]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Middle band — type + content */}
+                <div>
+                  <p className="text-[10px] text-[#7A716C] mb-1">Bande promotionnelle (milieu)</p>
+                  <div className="flex gap-2 mb-2">
+                    {[
+                      { key: 'color', label: 'Couleur unie' },
+                      { key: 'image', label: 'Image' },
+                    ].map((t) => {
+                      const active = brand.strip_type === t.key;
+                      return (
+                        <button key={t.key} type="button"
+                                onClick={() => setBrand((b) => ({ ...b, strip_type: t.key }))}
+                                className="px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
+                                style={{ background: active ? '#1C1917' : 'white', color: active ? 'white' : '#1C1917', border: '1px solid #E7E5E4' }}>
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {brand.strip_type === 'color' && (
+                    <div className="grid grid-cols-2 gap-3 mb-2">
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-[#7A716C] mb-1">Couleur bande</label>
+                        <div className="flex items-center gap-1">
+                          <input type="color" value={brand.strip_color}
+                                 onChange={(e) => setBrand((b) => ({ ...b, strip_color: e.target.value }))}
+                                 className="w-9 h-9 rounded-md border border-[#E7E5E4] cursor-pointer shrink-0" />
+                          <input type="text" value={brand.strip_color}
+                                 onChange={(e) => setBrand((b) => ({ ...b, strip_color: e.target.value }))}
+                                 className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E7E5E4] font-mono text-[10px]" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-[#7A716C] mb-1">Texte sur bande</label>
+                        <div className="flex items-center gap-1">
+                          <input type="color" value={brand.strip_text_color}
+                                 onChange={(e) => setBrand((b) => ({ ...b, strip_text_color: e.target.value }))}
+                                 className="w-9 h-9 rounded-md border border-[#E7E5E4] cursor-pointer shrink-0" />
+                          <input type="text" value={brand.strip_text_color}
+                                 onChange={(e) => setBrand((b) => ({ ...b, strip_text_color: e.target.value }))}
+                                 className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E7E5E4] font-mono text-[10px]" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {brand.strip_type === 'image' && (
+                    <p className="text-[10px] text-[#7A716C] mb-2">Téléversez l'image héros plus haut — elle remplit la bande quand ce mode est actif.</p>
+                  )}
+                  <div className="grid grid-cols-1 gap-2">
+                    <input type="text" value={brand.strip_title}
+                           onChange={(e) => setBrand((b) => ({ ...b, strip_title: e.target.value }))}
+                           placeholder="Titre principal de la bande (ex: HÔTEL MAGIQUE)"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                    <input type="text" value={brand.strip_subtitle}
+                           onChange={(e) => setBrand((b) => ({ ...b, strip_subtitle: e.target.value }))}
+                           placeholder="Sous-titre (optionnel)"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                  </div>
+                </div>
+
+                {/* Offer callout box */}
+                <div>
+                  <label className="flex items-center gap-2 text-[12px] text-[#1C1917] cursor-pointer mb-2">
+                    <input type="checkbox" checked={brand.show_offer_box}
+                           onChange={(e) => setBrand((b) => ({ ...b, show_offer_box: e.target.checked }))} />
+                    Afficher l'encart d'offre (façon « 10€ cagnottés » de GÉMO)
+                  </label>
+                  {brand.show_offer_box && (
+                    <div className="space-y-2 pl-6">
+                      <input type="text" value={brand.offer_box_text}
+                             onChange={(e) => setBrand((b) => ({ ...b, offer_box_text: e.target.value }))}
+                             placeholder="Texte principal (ex: 10€ cagnottés*)"
+                             className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                      <input type="text" value={brand.offer_box_subtext}
+                             onChange={(e) => setBrand((b) => ({ ...b, offer_box_subtext: e.target.value }))}
+                             placeholder="Sous-texte (ex: Dès 3 articles achetés)"
+                             className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[9px] font-bold uppercase tracking-wider text-[#7A716C] mb-1">Fond encart</label>
+                          <input type="color" value={brand.offer_box_color}
+                                 onChange={(e) => setBrand((b) => ({ ...b, offer_box_color: e.target.value }))}
+                                 className="w-full h-8 rounded-md border border-[#E7E5E4] cursor-pointer" />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-bold uppercase tracking-wider text-[#7A716C] mb-1">Texte encart</label>
+                          <input type="color" value={brand.offer_box_ink_color}
+                                 onChange={(e) => setBrand((b) => ({ ...b, offer_box_ink_color: e.target.value }))}
+                                 className="w-full h-8 rounded-md border border-[#E7E5E4] cursor-pointer" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Top-right link */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] text-[#7A716C] mb-1">Étiquette haut droit</label>
+                    <input type="text" value={brand.top_right_label}
+                           onChange={(e) => setBrand((b) => ({ ...b, top_right_label: e.target.value }))}
+                           placeholder="Plus d'infos"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[#7A716C] mb-1">Lien (URL optionnel)</label>
+                    <input type="text" value={brand.top_right_value}
+                           onChange={(e) => setBrand((b) => ({ ...b, top_right_value: e.target.value }))}
+                           placeholder="https://…"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                  </div>
+                </div>
+
+                {/* Member fields */}
+                <div>
+                  <p className="text-[10px] text-[#7A716C] mb-2">Champs membre (bande bas)</p>
+                  <div className="grid grid-cols-2 gap-3 mb-2">
+                    <input type="text" value={brand.counter_label}
+                           onChange={(e) => setBrand((b) => ({ ...b, counter_label: e.target.value }))}
+                           placeholder="Mon compteur fid"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                    <input type="text" value={brand.offers_count_label}
+                           onChange={(e) => setBrand((b) => ({ ...b, offers_count_label: e.target.value }))}
+                           placeholder="Mes offres disponibles"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: 'show_top_right',     label: 'Étiquette haut-droit' },
+                      { key: 'show_member_id',     label: 'Nom du membre' },
+                      { key: 'show_counter',       label: 'Compteur (1/3)' },
+                      { key: 'show_offers_count',  label: 'Compteur offres' },
+                      { key: 'use_full_name',      label: 'Nom complet (NOM Prénom)' },
+                    ].map(({ key, label }) => (
+                      <label key={key} className="flex items-center gap-2 text-[12px] text-[#1C1917] cursor-pointer py-1 px-2 rounded hover:bg-[#FAF8F4]">
+                        <input type="checkbox" checked={brand[key]}
+                               onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.checked }))} />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Live preview column — wrapped in a PhoneFrame so the patron sees

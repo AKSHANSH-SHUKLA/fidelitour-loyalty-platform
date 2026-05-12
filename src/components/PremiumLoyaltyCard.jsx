@@ -86,6 +86,184 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
 
   const points = customer?.points ?? 0;
 
+  // ── Wallet-pass layout (3 bands) ───────────────────────────────────
+  // Renders the GÉMO / Maison 123 / Fnac adhérent style: top strip with
+  // logo + identifier, promotional middle band (image OR colour), bottom
+  // strip with member fields + barcode. Top and bottom share the same
+  // background colour to read as one continuous surface.
+  if (card.layout_style === 'wallet_pass') {
+    const cardBg     = card.card_bg_color   || '#FFFFFF';
+    const cardInk    = card.card_ink_color  || '#1F1B1A';
+    const stripType  = card.strip_type      || 'color';
+    const stripColor = card.strip_color     || primary;
+    const stripInk   = card.strip_text_color || '#FFFFFF';
+    const stripTitle = card.strip_title     || titleText;
+    const stripSub   = card.strip_subtitle  || '';
+    const showOffer  = card.show_offer_box !== false;
+    const offerText  = card.offer_box_text  || '';
+    const offerSub   = card.offer_box_subtext || '';
+    const offerBg    = card.offer_box_color || '#FFFFFF';
+    const offerInk   = card.offer_box_ink_color || stripColor;
+    const trLabel    = card.top_right_label  || '';
+    const trValue    = card.top_right_value  || '';
+    const showTr     = card.show_top_right !== false;
+    const showMember = card.show_member_id !== false;
+    const memberLbl  = card.member_id_label || 'Membre';
+    const fullName   = card.use_full_name
+      ? (customer?.name || firstName).toUpperCase()
+      : firstName;
+    const showCntr   = card.show_counter !== false;
+    const cntrLbl    = card.counter_label || 'Mon compteur';
+    const showOffsCt = card.show_offers_count !== false;
+    const offsCtLbl  = card.offers_count_label || 'Mes offres';
+    const visits     = customer?.visits ?? 0;
+    const cycle      = (customer?.reward_threshold || 10);
+
+    return (
+      <div
+        className="rounded-3xl overflow-hidden shadow-2xl relative isolate"
+        style={{ background: cardBg, maxWidth: 420, margin: '0 auto' }}
+      >
+        {/* ── Top strip ─────────────────────────────────────────── */}
+        <div className="px-5 py-4 flex items-start justify-between gap-2" style={{ color: cardInk, background: cardBg }}>
+          <div className="flex items-center gap-2 min-w-0">
+            {card.logo_url ? (
+              <img src={card.logo_url} alt="" className="h-7 w-auto object-contain" style={{ maxWidth: 90 }} />
+            ) : (
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold"
+                style={{ background: stripColor, color: stripInk }}
+              >
+                {(tenant?.name || 'F').charAt(0)}
+              </div>
+            )}
+            {!card.logo_url && (
+              <span className="text-[15px] font-semibold" style={{ color: cardInk, letterSpacing: '-0.01em' }}>
+                {tenant?.name || 'FidéliTour'}
+              </span>
+            )}
+          </div>
+          {showTr && (
+            <div className="text-right leading-tight">
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.55 }}>
+                {trLabel}
+                <span className="ml-1">↗</span>
+              </p>
+              {showMember && (
+                <p className="text-[12px] mt-0.5 font-medium" style={{ color: cardInk }}>
+                  {fullName}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Middle promotional band ──────────────────────────── */}
+        <div
+          className="relative px-5 py-5"
+          style={{
+            background: stripType === 'image' && card.hero_image_url
+              ? `url(${card.hero_image_url}) center/cover no-repeat`
+              : stripColor,
+            color: stripInk,
+            minHeight: 110,
+          }}
+        >
+          {/* Readability scrim only when image is used */}
+          {stripType === 'image' && card.hero_image_url && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.45) 100%)` }}
+            />
+          )}
+          <div className="relative z-10 text-center">
+            <p
+              className="uppercase font-semibold"
+              style={{
+                color: stripInk,
+                fontFamily: `'${titleFont}', Georgia, serif`,
+                fontStyle: titleItalic ? 'italic' : 'normal',
+                fontSize: 18,
+                letterSpacing: '0.06em',
+                textShadow: stripType === 'image' ? '0 1px 2px rgba(0,0,0,0.35)' : 'none',
+              }}
+            >
+              {stripTitle}
+            </p>
+            {stripSub && (
+              <p className="text-[11.5px] mt-1" style={{ color: stripInk, opacity: 0.9 }}>
+                {stripSub}
+              </p>
+            )}
+            {/* Offer box callout */}
+            {showOffer && offerText && (
+              <div
+                className="inline-block mt-3 px-4 py-2 rounded-sm"
+                style={{ background: offerBg, color: offerInk }}
+              >
+                <p className="text-[15px] font-bold uppercase" style={{ letterSpacing: '0.04em' }}>
+                  {offerText}
+                </p>
+                {offerSub && (
+                  <p className="text-[9.5px] mt-0.5 uppercase" style={{ letterSpacing: '0.12em', opacity: 0.8 }}>
+                    {offerSub}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Bottom strip — member fields + barcode ───────────── */}
+        <div className="px-5 py-4" style={{ color: cardInk, background: cardBg }}>
+          {/* Stats row */}
+          {(showCntr || showOffsCt) && (
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              {showCntr && (
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.5 }}>
+                    {cntrLbl}
+                  </p>
+                  <p className="text-[18px] font-medium mt-0.5" style={{ color: cardInk }}>
+                    {Math.min(visits, cycle)} / {cycle}
+                  </p>
+                </div>
+              )}
+              {showOffsCt && (
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.5 }}>
+                    {offsCtLbl}
+                  </p>
+                  <p className="text-[18px] font-medium mt-0.5" style={{ color: cardInk }}>
+                    {customer?.offers_count ?? 0}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          {/* Barcode at the bottom */}
+          {showBarcode && (
+            <div className="mt-2 flex flex-col items-center">
+              <Code128Barcode
+                value={customer?.barcode_id || ''}
+                height={compact ? 44 : 54}
+                barWidth={2}
+                fontSize={11}
+              />
+            </div>
+          )}
+          {showCardNumber && !showBarcode && (
+            <div className="mt-2 text-center font-mono text-[12px]" style={{ color: cardInk }}>
+              {customer?.barcode_id}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Default: Hero layout (existing premium card) ───────────────────
   return (
     <div
       className="rounded-3xl overflow-hidden shadow-2xl relative isolate"
