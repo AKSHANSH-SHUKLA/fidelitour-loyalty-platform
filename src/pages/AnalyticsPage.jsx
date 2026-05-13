@@ -13,8 +13,6 @@ import {
   MessageSquare, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import TierBadge from '../components/TierBadge';
-import HistoricalAcquisitionChart from '../components/HistoricalAcquisitionChart';
-import VisitsOverTimeChart from '../components/VisitsOverTimeChart';
 import LoadingDistraction from '../components/LoadingDistraction';
 import { useBranch } from '../contexts/BranchContext';
 import VisitsWithCampaignsChart from '../components/VisitsWithCampaignsChart';
@@ -970,12 +968,6 @@ const AnalyticsPage = () => {
           />
         </section>
       </div>
-
-      {/* Row 2 — visits over time + new customers, BOTH with day/week/month/year selectors */}
-      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <VisitsOverTimeChart />
-        <HistoricalAcquisitionChart />
-      </section>
 
       {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">

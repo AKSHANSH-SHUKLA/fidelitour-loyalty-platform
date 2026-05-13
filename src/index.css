@@ -692,6 +692,29 @@ textarea::placeholder {
 .fdt-dash .k-rose   { background: var(--fd-rose); }   .fdt-dash .k-rose   .fd-kpi-ico { background: var(--fd-rose-ico); }
 .fdt-dash .k-lilac  { background: var(--fd-lilac); }  .fdt-dash .k-lilac  .fd-kpi-ico { background: var(--fd-lilac-ico); }
 
+/* Semantic KPI tiles — green for positive metrics, red for negative.
+   Used by the OwnerDashboard 8-tile grid + Analytics page tiles. */
+.fdt-dash .k-pos { background: linear-gradient(140deg, #D6EBC8 0%, #C9E2B6 100%); }
+.fdt-dash .k-pos .fd-kpi-ico { background: #4F7A36; color: #FFFFFF; }
+.fdt-dash .k-pos .fd-kpi-label { color: #2D5A1A; opacity: 0.85; }
+.fdt-dash .k-pos .fd-kpi-sub { color: #3F5A2C; }
+
+.fdt-dash .k-neg { background: linear-gradient(140deg, #F4D2CC 0%, #EFC2B9 100%); }
+.fdt-dash .k-neg .fd-kpi-ico { background: #B53D32; color: #FFFFFF; }
+.fdt-dash .k-neg .fd-kpi-label { color: #7A1F18; opacity: 0.85; }
+.fdt-dash .k-neg .fd-kpi-sub { color: #6B3027; }
+
+/* KPI foot row — sub + optional delta chip side by side */
+.fdt-dash .fd-kpi-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.fdt-dash .fd-kpi-foot .fd-kpi-sub { margin-top: 0; min-width: 0; flex: 1; }
+.fdt-dash .fd-kpi-delta {
+  font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.fdt-dash .fd-kpi-delta.pos { background: rgba(45, 122, 62, 0.18); color: #1F5A2E; }
+.fdt-dash .fd-kpi-delta.neg { background: rgba(181, 61, 50, 0.18); color: #7A1F18; }
+
 /* Panels */
 .fdt-dash .fd-panel {
   background: white; border: 1px solid var(--fd-border);

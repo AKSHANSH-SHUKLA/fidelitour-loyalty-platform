@@ -299,19 +299,21 @@ export default function OwnerDashboard() {
 
           {/* KPI GRID — 8 cards */}
           <div className="fd-kpi-grid">
-            <Kpi color="k-blue"   icon={<Users size={18} />}        label="Total Customers"  value={fmtNum(totalCustomers)} sub="Toute la base"
+            <Kpi color="k-pos" icon={<Users size={18} />}        label="Total Customers"  value={fmtNum(totalCustomers)} sub="Toute la base"
+                 delta={newCustomers.deltaPct}
                  onClick={() => navigate('/dashboard/customers')} />
-            <Kpi color="k-green"  icon={<Activity size={18} />}     label="Total Visits"    value={fmtNum(totalVisits)}   sub="Toutes les visites enregistrées" />
-            <Kpi color="k-yellow" icon={<TrendingUp size={18} />}   label="Repeat Rate"     value={fmtPct(repeatRate)}    sub="Clients revenus au moins 2 fois" />
-            <Kpi color="k-purple" icon={<Smartphone size={18} />}   label="Wallet Passes"   value={fmtNum(walletPasses)}  sub={`${pct(walletPasses, totalCustomers)}% des clients`} />
+            <Kpi color="k-pos" icon={<Activity size={18} />}     label="Total Visits"    value={fmtNum(totalVisits)}   sub="Toutes les visites enregistrées"
+                 delta={visitsTwin.deltaPct} />
+            <Kpi color="k-pos" icon={<TrendingUp size={18} />}   label="Repeat Rate"     value={fmtPct(repeatRate)}    sub="Clients revenus au moins 2 fois" />
+            <Kpi color="k-pos" icon={<Smartphone size={18} />}   label="Wallet Passes"   value={fmtNum(walletPasses)}  sub={`${pct(walletPasses, totalCustomers)}% des clients`} />
 
-            <Kpi color="k-mint"   icon={<BadgeCheck size={18} />}   label="Active Cards"    value={fmtNum(activeCards)}   sub="Dans Apple/Google Wallet"
+            <Kpi color="k-pos" icon={<BadgeCheck size={18} />}   label="Active Cards"    value={fmtNum(activeCards)}   sub="Dans Apple/Google Wallet"
                  onClick={() => navigate('/dashboard/customers?wallet_state=active')} />
-            <Kpi color="k-yellow" icon={<CreditCard size={18} />}   label="Never Added"     value={fmtNum(neverAdded)}    sub="Inscrits, mais carte non ajoutée"
+            <Kpi color="k-neg" icon={<CreditCard size={18} />}   label="Never Added"     value={fmtNum(neverAdded)}    sub="Inscrits, mais carte non ajoutée"
                  onClick={() => navigate('/dashboard/customers?wallet_state=never_added')} />
-            <Kpi color="k-rose"   icon={<Trash2 size={18} />}       label="Deleted Cards"   value={fmtNum(deletedCards)}  sub="Carte retirée du wallet"
+            <Kpi color="k-neg" icon={<Trash2 size={18} />}       label="Deleted Cards"   value={fmtNum(deletedCards)}  sub="Carte retirée du wallet"
                  onClick={() => navigate('/dashboard/customers?wallet_state=deleted')} />
-            <Kpi color="k-lilac"  icon={<Award size={18} />}        label="VIP Customers"  value={fmtNum(vipCount)}      sub="Top tier — 40+ visites ou panier €60+"
+            <Kpi color="k-pos" icon={<Award size={18} />}        label="VIP Customers"   value={fmtNum(vipCount)}      sub="Top tier — 40+ visites ou panier €60+"
                  onClick={() => navigate('/dashboard/customers?tier=vip')} />
           </div>
 
@@ -724,7 +726,9 @@ export default function OwnerDashboard() {
 
 /* ─── Sub-components ───────────────────────────────────────────────── */
 
-function Kpi({ color, icon, label, value, sub, onClick }) {
+function Kpi({ color, icon, label, value, sub, onClick, delta }) {
+  const hasDelta = typeof delta === 'number' && isFinite(delta);
+  const isUp = hasDelta && delta >= 0;
   return (
     <div className={`fd-kpi ${color}`} onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
       <div className="fd-kpi-head">
@@ -732,7 +736,14 @@ function Kpi({ color, icon, label, value, sub, onClick }) {
         <span className="fd-kpi-ico">{icon}</span>
       </div>
       <div className="fd-kpi-value">{value}</div>
-      <div className="fd-kpi-sub">{sub}</div>
+      <div className="fd-kpi-foot">
+        <span className="fd-kpi-sub">{sub}</span>
+        {hasDelta && (
+          <span className={`fd-kpi-delta ${isUp ? 'pos' : 'neg'}`}>
+            {isUp ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}%
+          </span>
+        )}
+      </div>
     </div>
   );
 }
