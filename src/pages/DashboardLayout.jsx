@@ -544,44 +544,6 @@ const DashboardLayout = () => {
           )}
         </nav>
 
-        {/* Gold Members promo card — only when sidebar is expanded */}
-        {!collapsed && role === 'business_owner' && (
-          <div className="px-4 pb-3">
-            <div
-              className="rounded-2xl p-4 text-center"
-              style={{ background: 'linear-gradient(180deg, #FCE3D2 0%, #F8D2BD 100%)', border: '1px solid #F0BFA8' }}
-            >
-              <div
-                className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2"
-                style={{ background: 'linear-gradient(135deg, #E0A24D, #C68B1C)' }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </div>
-              <p
-                className="text-[14px] mb-1"
-                style={{ color: '#1F1B1A', fontWeight: 600, letterSpacing: '-0.01em' }}
-              >
-                Gold Members
-              </p>
-              <p
-                className="text-[11.5px] leading-snug mb-3"
-                style={{ color: '#5C4A3E' }}
-              >
-                Fidélisez vos meilleurs clients avec des avantages exclusifs.
-              </p>
-              <Link
-                to="/dashboard/campaigns?preset_name=Gold%20Members"
-                className="block w-full rounded-lg py-2 text-[12px]"
-                style={{ background: '#DD5829', color: '#FFFFFF', fontWeight: 600 }}
-              >
-                Créer une campagne
-              </Link>
-            </div>
-          </div>
-        )}
-
         {/* User chip — sign-out moved into the nav, directly below Settings */}
         <div className={`${collapsed ? 'p-3' : 'p-4'} mt-auto`} style={{ borderTop: `1px solid ${C.hairline}` }}>
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-1'}`}>
