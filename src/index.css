@@ -636,22 +636,22 @@ textarea::placeholder {
 
 /* Page header */
 .fdt-dash .fd-h {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 18px; gap: 20px; flex-wrap: wrap;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; gap: 16px; flex-wrap: wrap;
 }
 .fdt-dash .fd-title {
-  font-size: 38px; font-weight: 700; letter-spacing: -0.02em;
-  line-height: 1.1; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  font-size: 30px; font-weight: 700; letter-spacing: -0.02em;
+  line-height: 1.1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   color: var(--fd-text);
 }
 .fdt-dash .fd-live {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
   background: #DCEFD6; color: #2D7A3E; letter-spacing: 0.4px;
 }
 .fdt-dash .fd-live::before { content: ''; width: 7px; height: 7px; background: #2D7A3E; border-radius: 50%; animation: fdPulse 2s infinite; }
 @keyframes fdPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-.fdt-dash .fd-sub { color: var(--fd-text-2); margin-top: 8px; font-size: 13.5px; }
+.fdt-dash .fd-sub { color: var(--fd-text-2); margin-top: 6px; font-size: 12.5px; }
 .fdt-dash .fd-btn-primary {
   background: var(--fd-primary); color: white; border: 0;
   padding: 11px 18px; border-radius: 10px; font-family: inherit;
@@ -811,7 +811,8 @@ textarea::placeholder {
 .fdt-dash .fd-pa-list li b { color: var(--fd-text); font-weight: 700; }
 .fdt-dash .fd-pa-btn { background: white; border: 1px solid var(--fd-border); color: var(--fd-text); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 12px; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; }
 
-.fdt-dash .fd-actions-head { margin-bottom: 16px; }
+.fdt-dash .fd-actions-head { margin-bottom: 14px; }
+.fdt-dash .fd-actions-grid-top { margin-bottom: 22px; }
 /* Action tiles */
 .fdt-dash .fd-actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 @media (max-width: 1100px) { .fdt-dash .fd-actions-grid { grid-template-columns: repeat(2, 1fr); } }

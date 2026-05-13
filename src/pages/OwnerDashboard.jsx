@@ -204,7 +204,7 @@ export default function OwnerDashboard() {
         {/* ═════════════ MAIN COLUMN ═════════════ */}
         <div className="fd-main">
 
-          {/* AI recommendation strip — pinned at top, dismissible */}
+          {/* AI recommendation strip — top, dismissible */}
           {showAiStrip && (
             <div className="fd-ai">
               <div className="fd-ai-ico"><Sparkles size={20} /></div>
@@ -240,6 +240,46 @@ export default function OwnerDashboard() {
               </button>
             </div>
           )}
+
+          {/* Idées & actions recommandées — pinned at top */}
+          <div className="fd-actions-head">
+            <div className="fd-panel-h">Idées &amp; actions recommandées</div>
+            <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
+          </div>
+          <div className="fd-actions-grid fd-actions-grid-top">
+            <ActionTile
+              icon={<RefreshCw size={14} />}
+              color="#B26344"
+              title="Relance inactifs 14–29j"
+              desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
+              cta="Créer la campagne"
+              onClick={() => openCampaign({ name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend.' })}
+            />
+            <ActionTile
+              icon={<Award size={14} />}
+              color="#7E5E84"
+              title="Segmentez vos VIP"
+              desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
+              cta="Voir les VIP"
+              onClick={() => navigate('/dashboard/customers?tier=vip')}
+            />
+            <ActionTile
+              icon={<UserPlus size={14} />}
+              color="#4A7BA8"
+              title="Boostez les nouveaux clients"
+              desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
+              cta="Créer une campagne"
+              onClick={() => openCampaign({ name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
+            />
+            <ActionTile
+              icon={<Sparkles size={14} />}
+              color="#4A7861"
+              title="Voir plus d'insights"
+              desc="Explorez plus d'opportunités pour votre croissance."
+              cta="Explorer"
+              onClick={() => navigate('/dashboard/insights')}
+            />
+          </div>
 
           {/* Welcome back header */}
           <div className="fd-h">
@@ -629,45 +669,6 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
-          {/* Actions — at the bottom of the main column */}
-          <div className="fd-actions-head">
-            <div className="fd-panel-h">Idées &amp; actions recommandées</div>
-            <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
-          </div>
-          <div className="fd-actions-grid">
-            <ActionTile
-              icon={<RefreshCw size={14} />}
-              color="#B26344"
-              title="Relance inactifs 14–29j"
-              desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
-              cta="Créer la campagne"
-              onClick={() => openCampaign({ name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend.' })}
-            />
-            <ActionTile
-              icon={<Award size={14} />}
-              color="#7E5E84"
-              title="Segmentez vos VIP"
-              desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
-              cta="Voir les VIP"
-              onClick={() => navigate('/dashboard/customers?tier=vip')}
-            />
-            <ActionTile
-              icon={<UserPlus size={14} />}
-              color="#4A7BA8"
-              title="Boostez les nouveaux clients"
-              desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
-              cta="Créer une campagne"
-              onClick={() => openCampaign({ name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
-            />
-            <ActionTile
-              icon={<Sparkles size={14} />}
-              color="#4A7861"
-              title="Voir plus d'insights"
-              desc="Explorez plus d'opportunités pour votre croissance."
-              cta="Explorer"
-              onClick={() => navigate('/dashboard/insights')}
-            />
-          </div>
 
         </div>
 

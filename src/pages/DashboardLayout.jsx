@@ -162,7 +162,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
   );
 };
 
-const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed }) => {
+const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge }) => {
   const active = isNavActive(currentPath, to);
   const theme = themeForRole(role);
   return (
@@ -197,7 +197,19 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed }) => {
       >
         <Icon className="w-[18px] h-[18px]" />
       </span>
-      {!collapsed && <span className="truncate">{label}</span>}
+      {!collapsed && (
+        <>
+          <span className="truncate flex-1">{label}</span>
+          {badge && (
+            <span
+              className="text-[9px] uppercase tracking-[0.12em] px-1.5 py-0.5 rounded font-bold shrink-0"
+              style={{ background: '#FEE0CF', color: '#9C4427', letterSpacing: '0.08em' }}
+            >
+              {badge}
+            </span>
+          )}
+        </>
+      )}
     </Link>
   );
 };
@@ -354,13 +366,15 @@ const DashboardLayout = () => {
 
   // Collapsed-sidebar toggle (persisted across reloads). When true the
   // aside shrinks to a 72px icons-only rail; click again to expand.
+  // Key is versioned (-v2) so a previous accidentally-collapsed state
+  // doesn't override the default expanded view on the next deploy.
   const [collapsed, setCollapsed] = React.useState(() => {
     if (typeof window === 'undefined') return false;
-    try { return window.localStorage.getItem('fdt:sidebar:collapsed') === '1'; }
+    try { return window.localStorage.getItem('fdt:sidebar:collapsed-v2') === '1'; }
     catch { return false; }
   });
   React.useEffect(() => {
-    try { window.localStorage.setItem('fdt:sidebar:collapsed', collapsed ? '1' : '0'); }
+    try { window.localStorage.setItem('fdt:sidebar:collapsed-v2', collapsed ? '1' : '0'); }
     catch { /* localStorage may be blocked — fine */ }
   }, [collapsed]);
 
@@ -475,11 +489,12 @@ const DashboardLayout = () => {
         <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-3'} py-4 space-y-0.5 overflow-y-auto`}>
           {role === 'business_owner' && (
             <>
-              <NavLink to="/dashboard"               icon={Home}         label="Dashboard"     currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/analytics"     icon={BarChart3}    label="Analytics"     currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/insights"      icon={Sparkles}     label="Insights"      currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/customers"     icon={Users}        label="Customers"     currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/map"           icon={MapPin}       label="Customer Map"  currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard"               icon={Home}         label="Dashboard"        currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/analytics"     icon={BarChart3}    label="Analytics"        currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/settings#settings-status" icon={Shield} label="Customer Status"  currentPath={currentPath} role={role} collapsed={collapsed} badge="Nouveau" />
+              <NavLink to="/dashboard/insights"      icon={Sparkles}     label="Insights"         currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/customers"     icon={Users}        label="Customers"        currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/map"           icon={MapPin}       label="Customer Map"     currentPath={currentPath} role={role} collapsed={collapsed} />
               {/* Scan Visit is intentionally NOT in the owner sidebar — that page
                   is the staff workspace. Owners can reach it via direct URL. */}
               <NavLink to="/dashboard/card-designer" icon={CreditCard}   label="Card Designer" currentPath={currentPath} role={role} collapsed={collapsed} />
@@ -521,6 +536,44 @@ const DashboardLayout = () => {
           )}
         </nav>
 
+        {/* Gold Members promo card — only when sidebar is expanded */}
+        {!collapsed && role === 'business_owner' && (
+          <div className="px-4 pb-3">
+            <div
+              className="rounded-2xl p-4 text-center"
+              style={{ background: 'linear-gradient(180deg, #FCE3D2 0%, #F8D2BD 100%)', border: '1px solid #F0BFA8' }}
+            >
+              <div
+                className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2"
+                style={{ background: 'linear-gradient(135deg, #E0A24D, #C68B1C)' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </div>
+              <p
+                className="text-[14px] mb-1"
+                style={{ color: '#1F1B1A', fontWeight: 600, letterSpacing: '-0.01em' }}
+              >
+                Gold Members
+              </p>
+              <p
+                className="text-[11.5px] leading-snug mb-3"
+                style={{ color: '#5C4A3E' }}
+              >
+                Fidélisez vos meilleurs clients avec des avantages exclusifs.
+              </p>
+              <Link
+                to="/dashboard/campaigns?preset_name=Gold%20Members"
+                className="block w-full rounded-lg py-2 text-[12px]"
+                style={{ background: '#DD5829', color: '#FFFFFF', fontWeight: 600 }}
+              >
+                Créer une campagne
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* User chip — sign-out moved into the nav, directly below Settings */}
         <div className={`${collapsed ? 'p-3' : 'p-4'} mt-auto`} style={{ borderTop: `1px solid ${C.hairline}` }}>
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-1'}`}>
@@ -558,30 +611,30 @@ const DashboardLayout = () => {
             slot hidden so staff don't see owner-only alerts. */}
         {role === 'business_owner' && (
           <div
-            className="sticky top-0 z-30 flex items-center gap-4 px-6 lg:px-10 py-3 backdrop-blur"
+            className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
             style={{
-              background: 'rgba(255,255,255,0.78)',
+              background: 'rgba(255,255,255,0.82)',
               borderBottom: '1px solid var(--hairline, #ECE8E1)',
             }}
           >
-            {/* Big centered search bar */}
+            {/* Search — left-aligned, fixed width */}
             <div
-              className="flex items-center gap-2 flex-1 max-w-2xl mx-auto rounded-full px-4 py-1.5"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[240px]"
               style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #ECE8E1)' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.3-4.3" />
               </svg>
               <input
                 type="text"
-                placeholder="Rechercher un client, une campagne, un KPI…"
+                placeholder="Rechercher…"
                 aria-label="Rechercher"
-                className="flex-1 bg-transparent outline-none text-[13px]"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
                 style={{ color: 'var(--ink, #1F1B1A)', fontWeight: 400 }}
               />
               <kbd
-                className="text-[10px] px-1.5 py-0.5 rounded"
+                className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
                 style={{
                   background: '#F4F2EE',
                   color: 'var(--ink-mute, #7A716C)',
@@ -591,6 +644,11 @@ const DashboardLayout = () => {
               >
                 ⌘K
               </kbd>
+            </div>
+
+            {/* Branch banner inline — fills the middle */}
+            <div className="flex-1 min-w-0 px-2">
+              <BranchPillsBanner compact />
             </div>
 
             {/* Bell */}
@@ -620,8 +678,7 @@ const DashboardLayout = () => {
           </div>
         )}
 
-        <div className="px-6 py-6 lg:px-10 lg:py-6 max-w-[1600px] mx-auto">
-          {role === 'business_owner' && <BranchPillsBanner />}
+        <div className="px-6 py-5 lg:px-8 lg:py-5 max-w-[1600px] mx-auto">
           <Outlet />
         </div>
       </main>

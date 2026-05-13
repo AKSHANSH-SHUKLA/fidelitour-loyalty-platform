@@ -48,34 +48,46 @@ export default function BranchPillsBanner({ compact = false } = {}) {
   const activeBranch = localBranches.find((b) => b.id === branchId);
   const isAll = !branchId;
 
-  // Compact variant — single line, lives inside the top toolbar between
-  // the search and the bell. No background, no subtitle, smaller chips.
+  // Compact variant — lives inside the top toolbar between the search
+  // and the bell. Two-line text on the left, chips on the right.
   if (compact) {
     return (
-      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-        <span
-          aria-hidden="true"
-          className="inline-block w-2 h-2 rounded-full shrink-0"
-          style={{ background: '#2D7A3E', boxShadow: '0 0 0 3px rgba(45,122,62,0.18)' }}
-        />
-        <span
-          className="text-[10px] uppercase tracking-[0.16em] shrink-0"
-          style={{ color: '#9C4427', fontWeight: 700 }}
-        >
-          Live · {isAll ? 'Toutes les branches' : (activeBranch?.name || 'branche')}
-        </span>
-        <div className="flex items-center gap-1 flex-wrap min-w-0">
+      <div className="flex items-center justify-between gap-3 min-w-0 w-full">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: '#1F1B1A', color: '#F4D8A8' }}
+          >
+            <Sun size={14} />
+          </div>
+          <div className="min-w-0">
+            <p
+              className="text-[9.5px] uppercase tracking-[0.14em] truncate"
+              style={{ color: '#9C4427', fontWeight: 700, letterSpacing: '0.14em' }}
+            >
+              Données en temps réel · {isAll ? 'toutes vos branches' : (activeBranch?.name || 'branche')}
+            </p>
+            <p className="text-[11px] truncate mt-0.5" style={{ color: '#5C4A3E' }}>
+              Suivez vos performances, comprenez vos clients, optimisez vos campagnes.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 flex-wrap shrink-0 justify-end">
           <button
             type="button"
             onClick={() => setBranchId('')}
             title="Toutes les branches"
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-all"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-all"
             style={
               isAll
                 ? { background: '#1F1B1A', color: '#FFFFFF', fontWeight: 500 }
                 : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
             }
           >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            </svg>
             Toutes
           </button>
           {localBranches.slice(0, 3).map((b) => {
@@ -87,13 +99,16 @@ export default function BranchPillsBanner({ compact = false } = {}) {
                 type="button"
                 onClick={() => setBranchId(b.id)}
                 title={b.name || b.id}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-all max-w-[140px] truncate"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-all max-w-[160px] truncate"
                 style={
                   isActive
                     ? { background: '#9C4427', color: '#FFFFFF', fontWeight: 500 }
                     : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
                 }
               >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                </svg>
                 {short}
               </button>
             );
