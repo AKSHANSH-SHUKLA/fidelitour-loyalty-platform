@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil, X } from 'lucide-react';
+import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil, X, Sparkles } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
 import NumberInput from '../components/NumberInput';
@@ -762,6 +762,10 @@ export default function CampaignsPage() {
           )}
         </div>
         {/* ============= /Quick Send panel ============= */}
+
+        {/* ============= Card overlay panel ============= */}
+        <CardOverlayPanel />
+        {/* ============= /Card overlay panel ============= */}
 
         {/* Per-channel performance summary */}
         {!loading && campaigns.length > 0 && (() => {
@@ -1632,6 +1636,210 @@ export default function CampaignsPage() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * CardOverlayPanel — push a per-customer middle-band overlay to a filtered
+ * segment. The overlay replaces the global card's promotional band on each
+ * matching customer's wallet for the configured expiry window. Optionally
+ * fires a web-push so the customers see the offer arrive.
+ *
+ * UI is intentionally compact — collapsible panel matching the Quick Send
+ * look-and-feel directly above it.
+ */
+function CardOverlayPanel() {
+  const [open, setOpen] = useState(false);
+  const [activeCount, setActiveCount] = useState(null);
+  // Targeting filters — same vocabulary as Quick Send
+  const [tier, setTier] = useState('');
+  const [minVisits, setMinVisits] = useState('');
+  const [minAmount, setMinAmount] = useState('');
+  const [inactiveMin, setInactiveMin] = useState('');
+  const [inactiveMax, setInactiveMax] = useState('');
+  // Overlay fields
+  const [stripTitle, setStripTitle] = useState('Offre exclusive');
+  const [stripSubtitle, setStripSubtitle] = useState('Réservée à votre profil');
+  const [stripColor, setStripColor] = useState('#1F1B1A');
+  const [stripTextColor, setStripTextColor] = useState('#F4D8A8');
+  const [offerText, setOfferText] = useState('-30%');
+  const [offerSubtext, setOfferSubtext] = useState('Sur tout le magasin');
+  const [expiresDays, setExpiresDays] = useState(14);
+  const [sendPush, setSendPush] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    let alive = true;
+    ownerAPI.getActiveCardOverrideCount?.()
+      .then((r) => { if (alive) setActiveCount(r?.data?.active_count ?? 0); })
+      .catch(() => { /* silent */ });
+    return () => { alive = false; };
+  }, []);
+
+  const send = async () => {
+    setBusy(true); setErr(''); setResult(null);
+    try {
+      const filters = {};
+      if (tier) filters.tier = tier;
+      if (minVisits) filters.min_visits = Number(minVisits);
+      if (minAmount) filters.min_amount_paid = Number(minAmount);
+      if (inactiveMin) filters.inactive_days_min = Number(inactiveMin);
+      if (inactiveMax) filters.inactive_days_max = Number(inactiveMax);
+      const payload = {
+        filters,
+        override: {
+          strip_title: stripTitle || undefined,
+          strip_subtitle: stripSubtitle || undefined,
+          strip_color: stripColor || undefined,
+          strip_text_color: stripTextColor || undefined,
+          show_offer_box: !!offerText,
+          offer_box_text: offerText || undefined,
+          offer_box_subtext: offerSubtext || undefined,
+        },
+        expires_in_days: Number(expiresDays) || 14,
+        send_push: sendPush,
+      };
+      const r = await ownerAPI.pushCardOverride(payload);
+      setResult(r?.data || null);
+      // Refresh the active counter
+      ownerAPI.getActiveCardOverrideCount?.()
+        .then((rr) => setActiveCount(rr?.data?.active_count ?? 0));
+    } catch (e) {
+      setErr(e?.response?.data?.detail || e?.message || 'Échec de l\'envoi');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const clearAll = async () => {
+    if (!window.confirm('Effacer tous les overlays actifs ? Les cartes reviendront au design global.')) return;
+    setBusy(true);
+    try {
+      await ownerAPI.clearAllCardOverrides();
+      setActiveCount(0);
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="mb-6 rounded-lg border" style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}>
+      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between p-4 hover:bg-[#F3EFE7] transition rounded-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[#7E5E84]/10 flex items-center justify-center">
+            <Sparkles size={20} style={{ color: '#7E5E84' }} />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-bold" style={{ color: '#1C1917' }}>
+              Push offer over the card — filtered overlay
+            </p>
+            <p className="text-xs" style={{ color: '#8B8680' }}>
+              Replace the middle band of the wallet card for a specific customer segment, then auto-expire.
+              {activeCount > 0 && <span className="ml-2 text-[#7E5E84] font-semibold">· {activeCount} actifs</span>}
+            </p>
+          </div>
+        </div>
+        <ChevronDown size={18} className={`transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: '#8B8680' }} />
+      </button>
+
+      {open && (
+        <div className="p-4 border-t space-y-4" style={{ borderColor: '#E7E5E4' }}>
+          {/* Targeting */}
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#7B3F00] mb-2">1. Cible (filtres)</p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <select value={tier} onChange={(e) => setTier(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm">
+                <option value="">Tous palliers</option>
+                <option value="bronze">Bronze</option>
+                <option value="silver">Silver</option>
+                <option value="gold">Gold</option>
+                <option value="vip">VIP</option>
+              </select>
+              <input type="number" min="0" placeholder="Min visites" value={minVisits}
+                     onChange={(e) => setMinVisits(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+              <input type="number" min="0" placeholder="Min € payés" value={minAmount}
+                     onChange={(e) => setMinAmount(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+              <input type="number" min="0" placeholder="Inactifs depuis (j)" value={inactiveMin}
+                     onChange={(e) => setInactiveMin(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+              <input type="number" min="0" placeholder="Inactifs jusqu'à (j)" value={inactiveMax}
+                     onChange={(e) => setInactiveMax(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+            </div>
+          </div>
+
+          {/* Overlay content */}
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#7B3F00] mb-2">2. Bande promo qui apparaîtra sur leur carte</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+              <input type="text" placeholder="Titre de la bande" value={stripTitle}
+                     onChange={(e) => setStripTitle(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+              <input type="text" placeholder="Sous-titre" value={stripSubtitle}
+                     onChange={(e) => setStripSubtitle(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+              <input type="text" placeholder="Encart offre (ex: -30%)" value={offerText}
+                     onChange={(e) => setOfferText(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+              <input type="text" placeholder="Sous-texte offre" value={offerSubtext}
+                     onChange={(e) => setOfferSubtext(e.target.value)}
+                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <label className="text-xs flex items-center gap-2">
+                Couleur fond
+                <input type="color" value={stripColor} onChange={(e) => setStripColor(e.target.value)} className="w-10 h-8 rounded" />
+              </label>
+              <label className="text-xs flex items-center gap-2">
+                Couleur texte
+                <input type="color" value={stripTextColor} onChange={(e) => setStripTextColor(e.target.value)} className="w-10 h-8 rounded" />
+              </label>
+              <label className="text-xs flex items-center gap-2">
+                Expire après (j)
+                <input type="number" min="1" max="365" value={expiresDays}
+                       onChange={(e) => setExpiresDays(e.target.value)}
+                       className="flex-1 px-2 py-1 rounded border border-[#E7E5E4] text-sm" />
+              </label>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs">
+            <input type="checkbox" checked={sendPush} onChange={(e) => setSendPush(e.target.checked)} />
+            Envoyer aussi une notification push (les clients voient l'offre arriver tout de suite)
+          </label>
+
+          {/* Result + error banners */}
+          {result && (
+            <div className="rounded-lg bg-green-50 border border-green-200 text-green-800 px-3 py-2 text-xs">
+              ✓ Overlay déposé sur <b>{result.overlaid}</b> client{result.overlaid > 1 ? 's' : ''}.
+              {result.pushed > 0 && <> Push envoyé à <b>{result.pushed}</b>.</>}
+              {result.skipped > 0 && <> ({result.skipped} sans push abonné)</>}
+              {result.expires_at && <> Expire le {new Date(result.expires_at).toLocaleDateString('fr-FR')}.</>}
+            </div>
+          )}
+          {err && (
+            <div className="rounded-lg bg-red-50 border border-red-200 text-red-800 px-3 py-2 text-xs">{err}</div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <button onClick={clearAll} disabled={busy || (activeCount ?? 0) === 0}
+                    className="text-xs text-[#8B8680] hover:underline disabled:opacity-40">
+              Effacer tous les overlays actifs
+            </button>
+            <button onClick={send} disabled={busy}
+                    className="px-4 py-2 rounded-full text-sm font-semibold text-white shadow disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #7E5E84 0%, #5C3E66 100%)' }}>
+              {busy ? 'Envoi…' : 'Pousser l\'offre sur les cartes'}
+            </button>
           </div>
         </div>
       )}

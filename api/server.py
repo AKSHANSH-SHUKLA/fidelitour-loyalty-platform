@@ -3920,11 +3920,53 @@ def _card_prefs_for(customer_id: str) -> dict:
     return rec
 
 
+# --- Per-customer card overrides (filtered "send offer over the card") ---
+# A row in db.customer_card_overrides means: for THIS specific customer in
+# THIS tenant, override these middle-band fields on the card until expires_at.
+# Used to push promotional overlays to a filtered segment without changing
+# the global card_template seen by everyone else.
+def _active_override_for(customer_id: str, tenant_id: str) -> dict:
+    """Return the active (non-expired) override for one customer, or {}."""
+    now = datetime.now(timezone.utc)
+    row = db.customer_card_overrides.find_one({
+        "customer_id": customer_id,
+        "tenant_id": tenant_id,
+        "is_active": True,
+    })
+    if not row:
+        return {}
+    # Expiry check: if expires_at is set and in the past, soft-deactivate it
+    # so the next read is a clean miss.
+    exp = row.get("expires_at")
+    if exp and isinstance(exp, datetime) and exp <= now:
+        db.customer_card_overrides.update_one(
+            {"_id": row["_id"]},
+            {"$set": {"is_active": False}},
+        )
+        return {}
+    row.pop("_id", None)
+    return row
+
+
 def _serialize_card_payload(cust: dict) -> dict:
     t = db.tenants.find_one({"id": cust["tenant_id"]}) or {}
     tpl = db.card_templates.find_one({"tenant_id": cust["tenant_id"]}) or {}
     prefs = _card_prefs_for(cust["id"])
     offers = _derive_offers_for_tenant(cust["tenant_id"])
+    # Per-customer override (active, non-expired) — promotional overlay for a
+    # filtered segment. Replaces the matching fields on the global template.
+    override = _active_override_for(cust["id"], cust["tenant_id"])
+    # Whitelist the override fields that may overlay on the card so a
+    # corrupted/malicious row can't replace unrelated fields.
+    _OVERRIDE_KEYS = {
+        "strip_title", "strip_subtitle", "strip_color", "strip_text_color",
+        "strip_type", "hero_image_url",
+        "show_offer_box", "offer_box_text", "offer_box_subtext",
+        "offer_box_color", "offer_box_ink_color",
+    }
+    for k in _OVERRIDE_KEYS:
+        if k in override:
+            tpl[k] = override[k]
 
     # Tier-aware design
     tier = (cust.get("tier") or "bronze").lower()
@@ -3980,6 +4022,25 @@ def _serialize_card_payload(cust: dict) -> dict:
             "secondary_color": tpl.get("secondary_color"),
             "accent_color": tpl.get("accent_color"),
             "background_image_url": tpl.get("background_image_url"),
+            # 3-band wallet-pass layout fields — may have been overridden
+            # per-customer by an active card override (filtered offer overlay).
+            "layout_style":         tpl.get("layout_style"),
+            "card_bg_color":        tpl.get("card_bg_color"),
+            "card_ink_color":       tpl.get("card_ink_color"),
+            "strip_type":           tpl.get("strip_type"),
+            "strip_color":          tpl.get("strip_color"),
+            "strip_text_color":     tpl.get("strip_text_color"),
+            "strip_title":          tpl.get("strip_title"),
+            "strip_subtitle":       tpl.get("strip_subtitle"),
+            "hero_image_url":       tpl.get("hero_image_url"),
+            "show_offer_box":       tpl.get("show_offer_box"),
+            "offer_box_text":       tpl.get("offer_box_text"),
+            "offer_box_subtext":    tpl.get("offer_box_subtext"),
+            "offer_box_color":      tpl.get("offer_box_color"),
+            "offer_box_ink_color":  tpl.get("offer_box_ink_color"),
+            # Tell the client whether this card currently has a personalised
+            # overlay running (so it can show "Offre spéciale réservée" badge).
+            "has_personalised_overlay": bool(override),
         },
         "offers": offers,
         "prefs": prefs,
@@ -4079,6 +4140,167 @@ def mark_wallet_readded(barcode_id: str):
         {"$set": {"pass_issued": True}, "$unset": {"card_deleted_at": ""}},
     )
     return {"status": "ok"}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Q7 — Per-customer card overrides ("send an offer over the card")
+# Owner can target a filter (tier, min_visits, etc.) and write a temporary
+# middle-band overlay on every matching customer's card. When the customer
+# opens their wallet PWA the override is merged into the card payload until
+# expires_at. The overlay is purely additive — it doesn't touch the
+# global card_template and is isolated per-tenant + per-customer.
+# ─────────────────────────────────────────────────────────────────────
+class CardOverrideFields(BaseModel):
+    strip_title:         Optional[str]  = None
+    strip_subtitle:      Optional[str]  = None
+    strip_color:         Optional[str]  = None
+    strip_text_color:    Optional[str]  = None
+    strip_type:          Optional[str]  = None     # 'color' | 'image'
+    hero_image_url:      Optional[str]  = None
+    show_offer_box:      Optional[bool] = None
+    offer_box_text:      Optional[str]  = None
+    offer_box_subtext:   Optional[str]  = None
+    offer_box_color:     Optional[str]  = None
+    offer_box_ink_color: Optional[str]  = None
+
+
+class PushCardOverrideRequest(BaseModel):
+    # Same filter shape as a campaign — keeps the targeting language consistent.
+    filters: Dict[str, Any] = {}
+    override: CardOverrideFields
+    expires_in_days: Optional[int] = 14        # default: overlay lasts 2 weeks
+    send_push: Optional[bool]     = True       # also fire a web-push notification
+    push_title: Optional[str]     = None
+    push_body:  Optional[str]     = None
+
+
+@app.post("/api/owner/card-overrides/push")
+def push_card_override(
+    req: PushCardOverrideRequest,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Write a middle-band overlay onto every customer matching `filters`.
+
+    Returns how many customers got the overlay and how many push pings fired.
+    The overlay merges into _serialize_card_payload at read time, so the
+    wallet PWA's next fetch (the page polls on focus) shows the new banner.
+    """
+    tenant_id = token_data.tenant_id
+    f = req.filters or {}
+
+    # Build the same filter query as /api/owner/campaigns/{id}/send.
+    query: Dict[str, Any] = {"tenant_id": tenant_id}
+    if f.get("tier"):              query["tier"] = f["tier"]
+    if f.get("min_visits"):        query["visits"] = {"$gte": int(f["min_visits"])}
+    if f.get("min_points"):        query["points"] = {"$gte": int(f["min_points"])}
+    if f.get("postal_code"):       query["postal_code"] = f["postal_code"]
+    if f.get("city"):              query["city"] = f["city"]
+    if f.get("min_amount_paid"):   query["total_amount_paid"] = {"$gte": float(f["min_amount_paid"])}
+    # Inactivity slice (same shape as the customers endpoint)
+    now_utc = datetime.now(timezone.utc)
+    if f.get("inactive_days_min"):
+        upper = now_utc - timedelta(days=int(f["inactive_days_min"]))
+        lv: Dict[str, Any] = {"$lte": upper}
+        if f.get("inactive_days_max"):
+            lv["$gte"] = now_utc - timedelta(days=int(f["inactive_days_max"]))
+        query["last_visit_date"] = lv
+
+    targets = list(db.customers.find(query, {"id": 1, "name": 1, "first_name": 1, "tenant_id": 1}))
+    if not targets:
+        return {"status": "ok", "overlaid": 0, "pushed": 0, "skipped": 0}
+
+    expires_at = None
+    if req.expires_in_days and req.expires_in_days > 0:
+        expires_at = now_utc + timedelta(days=int(req.expires_in_days))
+
+    # Strip None values so we don't overwrite global template with empties.
+    override_payload = {k: v for k, v in req.override.model_dump().items() if v is not None}
+
+    overlaid = 0
+    for cust in targets:
+        db.customer_card_overrides.update_one(
+            {"customer_id": cust["id"], "tenant_id": tenant_id},
+            {
+                "$set": {
+                    "customer_id": cust["id"],
+                    "tenant_id":   tenant_id,
+                    "is_active":   True,
+                    "created_at":  now_utc,
+                    "expires_at":  expires_at,
+                    **override_payload,
+                }
+            },
+            upsert=True,
+        )
+        overlaid += 1
+
+    pushed = 0
+    skipped = 0
+    if req.send_push:
+        push_title = req.push_title or (override_payload.get("strip_title") or "Une offre vous attend")
+        push_body  = req.push_body  or (override_payload.get("offer_box_text") or override_payload.get("strip_subtitle") or "Ouvrez votre carte fidélité pour la découvrir.")
+        for cust in targets:
+            # Reuse the existing per-customer push helper if available.
+            try:
+                ok = _send_web_push_to_customer(cust["id"], tenant_id, push_title, push_body)
+                if ok: pushed += 1
+                else:  skipped += 1
+            except NameError:
+                # Helper might not exist in this build — skip silently rather
+                # than 500 the whole batch.
+                skipped += 1
+
+    return {
+        "status": "ok",
+        "overlaid": overlaid,
+        "pushed": pushed,
+        "skipped": skipped,
+        "expires_at": expires_at.isoformat() if expires_at else None,
+    }
+
+
+@app.delete("/api/owner/card-overrides/customer/{customer_id}")
+def clear_card_override(
+    customer_id: str,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Clear an active overlay for one customer (e.g. they unsubscribed, or
+    the owner wants the global template back on this customer's card)."""
+    res = db.customer_card_overrides.update_one(
+        {"customer_id": customer_id, "tenant_id": token_data.tenant_id},
+        {"$set": {"is_active": False}},
+    )
+    return {"status": "ok", "cleared": res.modified_count}
+
+
+@app.delete("/api/owner/card-overrides/all")
+def clear_all_card_overrides(
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Wipe every active overlay for this tenant. Useful "kill switch"."""
+    res = db.customer_card_overrides.update_many(
+        {"tenant_id": token_data.tenant_id, "is_active": True},
+        {"$set": {"is_active": False}},
+    )
+    return {"status": "ok", "cleared": res.modified_count}
+
+
+@app.get("/api/owner/card-overrides/active-count")
+def count_active_card_overrides(
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """How many customers currently have an active overlay on their card?
+    Powers the small badge in the Campaigns UI."""
+    now_utc = datetime.now(timezone.utc)
+    n = db.customer_card_overrides.count_documents({
+        "tenant_id": token_data.tenant_id,
+        "is_active": True,
+        "$or": [
+            {"expires_at": None},
+            {"expires_at": {"$gt": now_utc}},
+        ],
+    })
+    return {"active_count": n}
 
 
 # ========================

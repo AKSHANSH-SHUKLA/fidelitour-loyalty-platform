@@ -87,6 +87,11 @@ export const ownerAPI = {
   updateCampaign: (id, data) => api.put('/owner/campaigns/' + id, data),
   sendCampaign: (id) => api.post('/owner/campaigns/' + id + '/send'),
   previewSegment: (data) => api.post('/owner/campaigns/preview-segment', data),
+  // Per-customer card overrides — push a middle-band overlay to a filtered segment.
+  pushCardOverride: (data) => api.post('/owner/card-overrides/push', data),
+  clearCardOverrideForCustomer: (customerId) => api.delete('/owner/card-overrides/customer/' + customerId),
+  clearAllCardOverrides: () => api.delete('/owner/card-overrides/all'),
+  getActiveCardOverrideCount: () => api.get('/owner/card-overrides/active-count'),
   aiQuery: (data) => api.post('/owner/ai-query', data),
   // New methods for dashboard
   getBranches: () => api.get('/owner/branches'),
