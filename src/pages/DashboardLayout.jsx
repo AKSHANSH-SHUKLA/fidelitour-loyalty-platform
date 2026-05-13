@@ -8,7 +8,7 @@ import { ownerAPI } from '../lib/api';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
   Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History, ChevronDown,
-  Building2, ChevronLeft, ChevronRight
+  Building2, Menu
 } from 'lucide-react';
 import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
 
@@ -57,8 +57,12 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
   const active = isNavActive(currentPath, '/dashboard/settings');
   const theme = themeForRole(role);
   const [open, setOpen] = React.useState(active);
-  // If the user lands ON the settings page later, auto-expand for them.
-  React.useEffect(() => { if (active) setOpen(true); }, [active]);
+  // Sync open ↔ active whenever the route changes:
+  //   • Land on /dashboard/settings → auto-expand the submenu.
+  //   • Leave for /dashboard/analytics (or any other section) → auto-collapse.
+  // Once on the same route the user is free to toggle manually; useEffect only
+  // re-runs when `active` actually flips.
+  React.useEffect(() => { setOpen(active); }, [active]);
 
   // When the sidebar is collapsed, Settings becomes a simple icon link —
   // the inline submenu has no room. Clicking jumps straight to the settings page.
@@ -399,28 +403,32 @@ const DashboardLayout = () => {
       <AmbientBackdrop role={role} />
 
       <aside
-        className={`relative z-10 ${collapsed ? 'w-[72px]' : 'w-64'} flex flex-col shrink-0 transition-[width] duration-200 ease-out`}
+        className={`sticky top-0 z-10 ${collapsed ? 'w-[72px]' : 'w-64'} h-screen flex flex-col shrink-0 transition-[width] duration-200 ease-out`}
         style={{
           background: 'rgba(255,255,255,0.78)',
           backdropFilter: 'blur(14px)',
           borderRight: `1px solid ${C.hairline}`,
+          alignSelf: 'flex-start',
         }}
       >
-        {/* Collapse toggle pinned to the right edge of the aside */}
+        {/* Collapse toggle — three-line hamburger pinned to the right edge.
+            One symbol for both states; the colour/background flips so the
+            user still gets feedback about open vs collapsed. */}
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!collapsed}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="absolute -right-3 top-6 z-20 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110"
+          className="absolute -right-3 top-6 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
           style={{
-            background: 'white',
-            border: `1px solid ${C.hairline}`,
-            boxShadow: '0 2px 6px rgba(28,25,23,0.08)',
-            color: C.inkSoft,
+            background: collapsed ? 'white' : '#1F1B1A',
+            border: `1px solid ${collapsed ? C.hairline : '#1F1B1A'}`,
+            boxShadow: '0 2px 6px rgba(28,25,23,0.10)',
+            color: collapsed ? C.inkSoft : '#FFFFFF',
           }}
         >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          <Menu size={14} strokeWidth={2.25} />
         </button>
 
         {/* Brand mark + role badge */}
