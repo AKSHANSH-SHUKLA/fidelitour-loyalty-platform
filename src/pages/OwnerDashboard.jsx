@@ -241,6 +241,46 @@ export default function OwnerDashboard() {
             </div>
           )}
 
+          {/* Idées & actions recommandées — pinned at top */}
+          <div className="fd-actions-head">
+            <div className="fd-panel-h">Idées &amp; actions recommandées</div>
+            <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
+          </div>
+          <div className="fd-actions-grid fd-actions-grid-top">
+            <ActionTile
+              icon={<RefreshCw size={14} />}
+              color="#B26344"
+              title="Relance inactifs 14–29j"
+              desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
+              cta="Créer la campagne"
+              onClick={() => openCampaign({ name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend.' })}
+            />
+            <ActionTile
+              icon={<Award size={14} />}
+              color="#7E5E84"
+              title="Segmentez vos VIP"
+              desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
+              cta="Voir les VIP"
+              onClick={() => navigate('/dashboard/customers?tier=vip')}
+            />
+            <ActionTile
+              icon={<UserPlus size={14} />}
+              color="#4A7BA8"
+              title="Boostez les nouveaux clients"
+              desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
+              cta="Créer une campagne"
+              onClick={() => openCampaign({ name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
+            />
+            <ActionTile
+              icon={<Sparkles size={14} />}
+              color="#4A7861"
+              title="Voir plus d'insights"
+              desc="Explorez plus d'opportunités pour votre croissance."
+              cta="Explorer"
+              onClick={() => navigate('/dashboard/insights')}
+            />
+          </div>
+
           {/* Welcome back header */}
           <div className="fd-h">
             <div>
@@ -319,8 +359,8 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
-          {/* CHARTS ROW — 3 columns: visits | acquisition | stacked sources + tier */}
-          <div className="fd-charts-grid-3">
+          {/* CHARTS ROW 1 — Visits + Acquisition */}
+          <div className="fd-charts-grid">
             {/* Visits chart */}
             <div className="fd-chart">
               <div className="fd-ch-head">
@@ -400,9 +440,10 @@ export default function OwnerDashboard() {
                 <TrendingUp size={20} color="#4F7A36" />
               </div>
             </div>
+          </div>
 
-            {/* Stacked third column — sources + tier */}
-            <div className="fd-chart-stack">
+          {/* CHARTS ROW 2 — Sources + Tier donuts */}
+          <div className="fd-charts-grid">
             <div className="fd-chart">
               <div className="fd-ch-head">
                 <span className="fd-ch-title">Top Sources d'acquisition</span>
@@ -478,8 +519,7 @@ export default function OwnerDashboard() {
                 </div>
               </div>
             </div>
-            </div>{/* /fd-chart-stack */}
-          </div>{/* /fd-charts-grid-3 */}
+          </div>
 
           {/* Churn & rétention */}
           <div className="fd-panel">
@@ -565,42 +605,26 @@ export default function OwnerDashboard() {
             </div>
             <table className="fd-ltv-table">
               <thead>
-                <tr><th>Palier</th><th>Clients</th><th>LTV moyenne</th><th>Revenus total</th><th>Répartition</th></tr>
+                <tr><th>Palier</th><th>Clients</th><th>LTV moyenne</th><th>Revenus total</th></tr>
               </thead>
               <tbody>
-                {(() => {
-                  const rows = ['gold', 'silver', 'bronze', 'vip'].map((k) => ({
-                    key: k,
-                    cnt: tierDist[k] || 0,
-                    ltv: summary?.ltv_by_tier?.[k] || 0,
-                  }));
-                  const totalRevenue = rows.reduce((s, r) => s + r.ltv * r.cnt, 0);
-                  return rows.map((r) => {
-                    const rev = r.ltv * r.cnt;
-                    const sharePct = totalRevenue > 0 ? Math.round((rev / totalRevenue) * 100) : 0;
-                    return (
-                      <tr key={r.key}>
-                        <td><span className="fd-tier-dot" style={{ background: TIER_COLORS[r.key] }} />{r.key.charAt(0).toUpperCase() + r.key.slice(1)}</td>
-                        <td>{r.cnt}</td>
-                        <td>{fmtEUR(r.ltv)}</td>
-                        <td>{fmtEUR(rev)}</td>
-                        <td>
-                          <div className="fd-ltv-share">
-                            <div className="fd-ltv-share-bar">
-                              <div className="fd-ltv-share-fill" style={{ width: `${sharePct}%`, background: TIER_COLORS[r.key] }} />
-                            </div>
-                            <span className="fd-ltv-share-pct">{sharePct}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
+                {['gold', 'silver', 'bronze', 'vip'].map((k) => {
+                  const cnt = tierDist[k] || 0;
+                  const ltv = summary?.ltv_by_tier?.[k] || 0;
+                  return (
+                    <tr key={k}>
+                      <td><span className="fd-tier-dot" style={{ background: TIER_COLORS[k] }} />{k.charAt(0).toUpperCase() + k.slice(1)}</td>
+                      <td>{cnt}</td>
+                      <td>{fmtEUR(ltv)}</td>
+                      <td>{fmtEUR(ltv * cnt)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          {/* Cartes de fidélité actives (plan usage) */}
+          {/* Plan usage */}
           <div className="fd-panel">
             <div className="fd-panel-head">
               <div>
@@ -645,46 +669,6 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
-          {/* Idées & actions recommandées — at the very bottom */}
-          <div className="fd-actions-head">
-            <div className="fd-actions-eyebrow"><Sparkles size={11} /> Notre recommandation IA pour vous</div>
-            <div className="fd-panel-h">Idées &amp; actions recommandées</div>
-            <div className="fd-panel-sub">4 actions à fort impact sélectionnées par notre IA</div>
-          </div>
-          <div className="fd-actions-grid">
-            <ActionTile
-              icon={<RefreshCw size={14} />}
-              color="#B26344"
-              title="Relance inactifs 14–29j"
-              desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
-              cta="Créer la campagne"
-              onClick={() => openCampaign({ name: 'Vous nous manquez', content: '{first_name}, ça fait un moment ! Une attention vous attend.' })}
-            />
-            <ActionTile
-              icon={<Award size={14} />}
-              color="#7E5E84"
-              title="Segmentez vos VIP"
-              desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
-              cta="Voir les VIP"
-              onClick={() => navigate('/dashboard/customers?tier=vip')}
-            />
-            <ActionTile
-              icon={<UserPlus size={14} />}
-              color="#4A7BA8"
-              title="Boostez les nouveaux clients"
-              desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
-              cta="Créer une campagne"
-              onClick={() => openCampaign({ name: 'Bienvenue', content: 'Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.' })}
-            />
-            <ActionTile
-              icon={<Sparkles size={14} />}
-              color="#4A7861"
-              title="Voir plus d'insights"
-              desc="Explorez plus d'opportunités pour votre croissance."
-              cta="Explorer"
-              onClick={() => navigate('/dashboard/insights')}
-            />
-          </div>
 
         </div>
 
@@ -741,13 +725,11 @@ export default function OwnerDashboard() {
 /* ─── Sub-components ───────────────────────────────────────────────── */
 
 function Kpi({ color, icon, label, value, sub, onClick }) {
-  // Tile is now white with a small colored icon chip top-right.
-  // `color` key (k-blue, k-green, …) tints only the chip via CSS variables.
   return (
     <div className={`fd-kpi ${color}`} onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
       <div className="fd-kpi-head">
         <span className="fd-kpi-label">{label}</span>
-        <span className="fd-kpi-chip">{icon}</span>
+        <span className="fd-kpi-ico">{icon}</span>
       </div>
       <div className="fd-kpi-value">{value}</div>
       <div className="fd-kpi-sub">{sub}</div>

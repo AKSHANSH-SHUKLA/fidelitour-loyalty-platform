@@ -611,30 +611,30 @@ const DashboardLayout = () => {
             slot hidden so staff don't see owner-only alerts. */}
         {role === 'business_owner' && (
           <div
-            className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-10 py-3 backdrop-blur"
+            className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
             style={{
               background: 'rgba(255,255,255,0.82)',
               borderBottom: '1px solid var(--hairline, #ECE8E1)',
             }}
           >
-            {/* Large centered search */}
+            {/* Search — left-aligned, fixed width */}
             <div
-              className="flex items-center gap-2 flex-1 max-w-2xl mx-auto rounded-full px-4 py-1.5"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[240px]"
               style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #ECE8E1)' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.3-4.3" />
               </svg>
               <input
                 type="text"
-                placeholder="Rechercher un client, une campagne, un KPI…"
+                placeholder="Rechercher…"
                 aria-label="Rechercher"
-                className="flex-1 bg-transparent outline-none text-[13px]"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
                 style={{ color: 'var(--ink, #1F1B1A)', fontWeight: 400 }}
               />
               <kbd
-                className="text-[10px] px-1.5 py-0.5 rounded"
+                className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
                 style={{
                   background: '#F4F2EE',
                   color: 'var(--ink-mute, #7A716C)',
@@ -644,6 +644,11 @@ const DashboardLayout = () => {
               >
                 ⌘K
               </kbd>
+            </div>
+
+            {/* Branch banner inline — fills the middle */}
+            <div className="flex-1 min-w-0 px-2">
+              <BranchPillsBanner compact />
             </div>
 
             {/* Bell */}
@@ -673,9 +678,7 @@ const DashboardLayout = () => {
           </div>
         )}
 
-        <div className="px-6 py-6 lg:px-10 lg:py-6 max-w-[1600px] mx-auto">
-          {/* Full-width realtime banner row — its own row below the top bar */}
-          {role === 'business_owner' && <BranchPillsBanner />}
+        <div className="px-6 py-5 lg:px-8 lg:py-5 max-w-[1600px] mx-auto">
           <Outlet />
         </div>
       </main>
