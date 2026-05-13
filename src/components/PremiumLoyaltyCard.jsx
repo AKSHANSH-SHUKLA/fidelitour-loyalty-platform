@@ -215,7 +215,7 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           </div>
         </div>
 
-        {/* ── Bottom strip — member fields + barcode ───────────── */}
+        {/* ── Bottom strip — member fields + stamps + meter + barcode ───────────── */}
         <div className="px-5 py-4" style={{ color: cardInk, background: cardBg }}>
           {/* Stats row */}
           {(showCntr || showOffsCt) && (
@@ -242,6 +242,48 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
               )}
             </div>
           )}
+
+          {/* Stamps grid — visual punch-card. Owner-configurable shape + colours. */}
+          {card.show_stamps_grid !== false && (
+            <StampGrid
+              count={cycle}
+              filled={Math.min(visits, cycle)}
+              shape={card.stamp_shape || 'circle'}
+              fillColor={card.stamp_fill_color || primary}
+              emptyColor={card.stamp_empty_color || '#E7E5E4'}
+              inkColor={card.stamp_ink_color || '#FFFFFF'}
+              customUrl={card.stamp_custom_url || ''}
+              size={card.stamp_size || 28}
+              label={card.stamps_label || ''}
+              ink={cardInk}
+            />
+          )}
+
+          {/* Progress meter — slim bar that mirrors the stamps fill */}
+          {card.show_meter !== false && cycle > 0 && (
+            <div className="mt-3 mb-4">
+              {card.meter_label && (
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.55 }}>
+                    {card.meter_label}
+                  </p>
+                  <p className="text-[10px] font-semibold" style={{ color: cardInk }}>
+                    {Math.min(visits, cycle)} / {cycle}
+                  </p>
+                </div>
+              )}
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: card.meter_track_color || '#F2EDE3' }}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(100, (Math.min(visits, cycle) / cycle) * 100)}%`,
+                    background: card.meter_fill_color || primary,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Barcode at the bottom */}
           {showBarcode && (
             <div className="mt-2 flex flex-col items-center">
@@ -434,6 +476,80 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
             </span>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * StampGrid — the classic punch-card visual.
+ * Renders `count` slots; the first `filled` are marked "collected".
+ * Owner-configurable: shape (circle, hexagon, octagon, square, custom image),
+ * fill colour, empty colour, glyph colour, size, and an optional caption.
+ *
+ * The grid wraps automatically; for the typical 10-stamp cycle this means
+ * one row of 10 on a wide card and two rows of 5 on a narrow one.
+ */
+function StampGrid({ count = 10, filled = 0, shape = 'circle', fillColor = '#B85C38', emptyColor = '#E7E5E4', inkColor = '#FFFFFF', customUrl = '', size = 28, label = '', ink = '#1F1B1A' }) {
+  const slots = Array.from({ length: Math.max(1, count) }, (_, i) => i < filled);
+  const clipPathFor = (s) => {
+    switch (s) {
+      case 'hexagon': return 'polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%)';
+      case 'octagon': return 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)';
+      case 'square':  return 'none';
+      default:        return 'none';
+    }
+  };
+  const isCircle = shape === 'circle';
+  const isCustom = shape === 'custom' && !!customUrl;
+  return (
+    <div className="mt-2">
+      {label && (
+        <p className="text-[9px] uppercase tracking-[0.14em] mb-2" style={{ color: ink, opacity: 0.55 }}>
+          {label}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        {slots.map((isFilled, i) => {
+          if (isCustom) {
+            return (
+              <div
+                key={i}
+                style={{
+                  width: size,
+                  height: size,
+                  backgroundImage: `url(${customUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  opacity: isFilled ? 1 : 0.25,
+                  filter: isFilled ? 'none' : 'grayscale(0.6)',
+                  borderRadius: 4,
+                }}
+                aria-label={isFilled ? 'Tampon collecté' : 'Tampon vide'}
+              />
+            );
+          }
+          const baseStyle = {
+            width: size,
+            height: size,
+            background: isFilled ? fillColor : emptyColor,
+            display: 'grid',
+            placeItems: 'center',
+            color: inkColor,
+            borderRadius: isCircle ? '50%' : (shape === 'square' ? 4 : 0),
+            clipPath: isCircle || shape === 'square' ? 'none' : clipPathFor(shape),
+            transition: 'background 200ms',
+          };
+          return (
+            <div key={i} style={baseStyle} aria-label={isFilled ? 'Tampon collecté' : 'Tampon vide'}>
+              {isFilled && (
+                <svg width={Math.round(size * 0.5)} height={Math.round(size * 0.5)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

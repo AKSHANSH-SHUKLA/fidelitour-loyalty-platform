@@ -85,6 +85,26 @@ const DEFAULT_BRAND = {
   counter_label:       'Mon compteur fid',
   show_offers_count:   true,
   offers_count_label:  'Mes offres disponibles',
+
+  // ── Stamps grid + progress meter (bottom band) ───────────────────
+  // The user wants the classic punch-card-style stamp grid AND a
+  // points meter on the bottom band of the wallet-pass layout.
+  show_stamps_grid:    true,
+  // Shape of each individual stamp slot. 'custom' uses stamp_custom_url
+  // for both filled and empty states (filled = full colour, empty = faded).
+  stamp_shape:         'circle',         // 'circle' | 'hexagon' | 'octagon' | 'square' | 'custom'
+  stamp_custom_url:    '',               // data URL when stamp_shape === 'custom'
+  stamp_fill_color:    '#B85C38',        // colour of a collected stamp
+  stamp_empty_color:   '#E7E5E4',        // colour of an unfilled slot
+  stamp_ink_color:     '#FFFFFF',        // colour of the icon/check inside a filled stamp
+  stamp_size:          28,               // pixel size of each slot
+  stamps_label:        'Vos tampons',    // small caption above the stamps row
+
+  // Progress meter — slim horizontal bar that mirrors the stamps fill
+  show_meter:          true,
+  meter_fill_color:    '#B85C38',
+  meter_track_color:   '#F2EDE3',
+  meter_label:         'Progression',    // caption above the meter
 };
 
 // Font options for the title. Loaded globally via index.css Google Fonts.
@@ -946,6 +966,163 @@ export default function CardDesignerPage() {
                 </div>
               </div>
             )}
+
+            {/* ─── Tampons & progression — punch-card stamps + meter ─── */}
+            <div className="rounded-xl border border-[#E7E5E4] bg-white p-4 space-y-4 mt-3">
+              <div className="flex items-center gap-2">
+                <Award size={16} className="text-[#B85C38]" />
+                <h3 className="text-[14px] font-bold text-[#1C1917]">Tampons & progression</h3>
+              </div>
+              <p className="text-[11.5px] text-[#7A716C] -mt-2">
+                Personnalisez le design des tampons et de la jauge affichés en bas de la carte.
+                Le nombre de tampons se synchronise automatiquement avec la règle "Stamps to unlock the reward".
+              </p>
+
+              {/* Stamp shape picker */}
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[#7A716C] mb-2 font-bold">Forme du tampon</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {[
+                    { key: 'circle',  label: 'Cercle',  preview: { borderRadius: '50%' } },
+                    { key: 'hexagon', label: 'Hexagone', preview: { clipPath: 'polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%)' } },
+                    { key: 'octagon', label: 'Octogone', preview: { clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' } },
+                    { key: 'square',  label: 'Carré',   preview: { borderRadius: 4 } },
+                    { key: 'custom',  label: 'Personnalisé', preview: { borderRadius: 4, border: '2px dashed #B85C38', background: '#FFF' } },
+                  ].map(({ key, label, preview }) => {
+                    const active = brand.stamp_shape === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setBrand((b) => ({ ...b, stamp_shape: key }))}
+                        className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border transition ${active ? 'border-[#B85C38] bg-[#FEF6F0]' : 'border-[#E7E5E4] bg-white hover:bg-[#FAF8F4]'}`}
+                      >
+                        <div style={{ width: 26, height: 26, background: active ? brand.stamp_fill_color : '#D6CFC1', ...preview }} />
+                        <span className="text-[10px] text-[#1C1917] font-medium">{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom stamp image upload (only when shape === 'custom') */}
+              {brand.stamp_shape === 'custom' && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[#7A716C] mb-2 font-bold">Image de tampon personnalisée</p>
+                  <div className="flex items-center gap-3">
+                    {brand.stamp_custom_url ? (
+                      <div className="relative">
+                        <img src={brand.stamp_custom_url} alt="" className="w-12 h-12 rounded object-cover border border-[#E7E5E4]" />
+                        <button type="button" onClick={() => setBrand((b) => ({ ...b, stamp_custom_url: '' }))}
+                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#1C1917] text-white flex items-center justify-center"
+                                aria-label="Supprimer">
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded border-2 border-dashed border-[#E7E5E4] flex items-center justify-center text-[#7A716C]">
+                        <ImagePlus size={18} />
+                      </div>
+                    )}
+                    <label className="cursor-pointer text-[12px] text-[#B85C38] font-semibold hover:underline">
+                      Choisir une image…
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files && e.target.files[0];
+                          if (!f) return;
+                          try {
+                            const dataUrl = await compressImage(f, 200, 0.85);
+                            setBrand((b) => ({ ...b, stamp_custom_url: dataUrl }));
+                          } catch { /* swallow — bad image */ }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Colour pickers — stamp fill, empty, ink */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Tampon rempli</label>
+                  <input type="color" value={brand.stamp_fill_color}
+                         onChange={(e) => setBrand((b) => ({ ...b, stamp_fill_color: e.target.value }))}
+                         className="w-full h-9 rounded border border-[#E7E5E4]" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Tampon vide</label>
+                  <input type="color" value={brand.stamp_empty_color}
+                         onChange={(e) => setBrand((b) => ({ ...b, stamp_empty_color: e.target.value }))}
+                         className="w-full h-9 rounded border border-[#E7E5E4]" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Icône (✓)</label>
+                  <input type="color" value={brand.stamp_ink_color}
+                         onChange={(e) => setBrand((b) => ({ ...b, stamp_ink_color: e.target.value }))}
+                         className="w-full h-9 rounded border border-[#E7E5E4]" />
+                </div>
+              </div>
+
+              {/* Size + label */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Taille (px)</label>
+                  <input type="range" min="18" max="40" value={brand.stamp_size}
+                         onChange={(e) => setBrand((b) => ({ ...b, stamp_size: parseInt(e.target.value, 10) }))}
+                         className="w-full" />
+                  <p className="text-[11px] text-[#1C1917] mt-1">{brand.stamp_size}px</p>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Étiquette</label>
+                  <input type="text" value={brand.stamps_label}
+                         onChange={(e) => setBrand((b) => ({ ...b, stamps_label: e.target.value }))}
+                         placeholder="Vos tampons"
+                         className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                </div>
+              </div>
+
+              {/* Meter (progress bar) settings */}
+              <div className="border-t border-[#F0EAE0] pt-4">
+                <label className="flex items-center gap-2 text-[12px] font-bold text-[#1C1917] cursor-pointer mb-2">
+                  <input type="checkbox" checked={brand.show_meter !== false}
+                         onChange={(e) => setBrand((b) => ({ ...b, show_meter: e.target.checked }))} />
+                  Afficher la jauge de progression
+                </label>
+                {brand.show_meter !== false && (
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Couleur de remplissage</label>
+                      <input type="color" value={brand.meter_fill_color}
+                             onChange={(e) => setBrand((b) => ({ ...b, meter_fill_color: e.target.value }))}
+                             className="w-full h-9 rounded border border-[#E7E5E4]" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Couleur de fond</label>
+                      <input type="color" value={brand.meter_track_color}
+                             onChange={(e) => setBrand((b) => ({ ...b, meter_track_color: e.target.value }))}
+                             className="w-full h-9 rounded border border-[#E7E5E4]" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Étiquette jauge</label>
+                      <input type="text" value={brand.meter_label}
+                             onChange={(e) => setBrand((b) => ({ ...b, meter_label: e.target.value }))}
+                             placeholder="Progression"
+                             className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Toggle: show stamps grid */}
+              <label className="flex items-center gap-2 text-[12px] font-bold text-[#1C1917] cursor-pointer">
+                <input type="checkbox" checked={brand.show_stamps_grid !== false}
+                       onChange={(e) => setBrand((b) => ({ ...b, show_stamps_grid: e.target.checked }))} />
+                Afficher la grille de tampons sur la carte
+              </label>
+            </div>
           </div>
 
           {/* Live preview column — wrapped in a PhoneFrame so the patron sees
