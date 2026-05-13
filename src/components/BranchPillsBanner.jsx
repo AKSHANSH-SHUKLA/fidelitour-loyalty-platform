@@ -146,8 +146,11 @@ export default function BranchPillsBanner({ compact = false } = {}) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {/* "All branches" master pill — dark when active, hairline when idle */}
+      {/* Segmented pill group — single container, multiple internal segments. */}
+      <div
+        className="inline-flex items-center rounded-full p-1 flex-wrap"
+        style={{ background: '#FFFFFF', border: '1px solid #E2DAC4' }}
+      >
         <button
           type="button"
           onClick={() => setBranchId('')}
@@ -155,7 +158,7 @@ export default function BranchPillsBanner({ compact = false } = {}) {
           style={
             isAll
               ? { background: '#1F1B1A', color: '#FFFFFF', fontWeight: 500 }
-              : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+              : { background: 'transparent', color: '#1F1B1A', fontWeight: 400 }
           }
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -168,8 +171,6 @@ export default function BranchPillsBanner({ compact = false } = {}) {
           </svg>
         </button>
 
-        {/* Individual branch pills — terracotta when active, hairline when idle.
-            Limit to the first 4 so the banner doesn't wrap on busy chains. */}
         {localBranches.slice(0, 4).map((b) => {
           const isActive = branchId === b.id;
           return (
@@ -181,7 +182,7 @@ export default function BranchPillsBanner({ compact = false } = {}) {
               style={
                 isActive
                   ? { background: '#9C4427', color: '#FFFFFF', fontWeight: 500 }
-                  : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+                  : { background: 'transparent', color: '#1F1B1A', fontWeight: 400 }
               }
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
