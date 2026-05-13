@@ -24,21 +24,28 @@ import PeriodPicker from './PeriodPicker';
  * unlocks the new look; `accent` still works for the neutral white tile.
  */
 
-// Premium SaaS look: every tile sits on the SAME warm-cream surface so the
-// dashboard reads as one cohesive product (Stripe/Linear pattern). The tone
-// only colors the icon chip, sparkline, and a subtle corner glow — the
-// big number and background stay neutral. Result: restrained, not childish.
-const SHARED_SURFACE = 'linear-gradient(135deg, #FAF5EB 0%, #FBF7EE 60%, #FDFAF3 100%)';
+// Octoboard-inspired premium SaaS look:
+//   • Every tile sits on a clean near-white surface with a subtle shadow.
+//   • The big number is a VIBRANT teal-blue across every tile (the hero
+//     accent). Joyful, not muted.
+//   • The icon chip is fully saturated in the tone's vivid colour with a
+//     white glyph — the only category cue.
+//   • Sparklines pick up the tone's vivid line so the trend reads.
+// Same surface everywhere so the dashboard reads as one cohesive product.
+const SHARED_SURFACE = '#FDFBF7';
 const SHARED_LINE    = '#ECE3D5';
-const SHARED_INK     = 'var(--ink)';
+// The vibrant hero accent used for every big number, regardless of tone.
+// Joyful teal-blue, picks up well against the cream surface.
+const HERO_INK       = '#1E88B8';
 
 const TONE_STYLE = {
-  success: { vivid: 'var(--tone-success-vivid)', glow: 'var(--tone-success-glow)', line: 'var(--tone-success-line)' },
-  danger:  { vivid: 'var(--tone-danger-vivid)',  glow: 'var(--tone-danger-glow)',  line: 'var(--tone-danger-line)'  },
-  warning: { vivid: 'var(--tone-warning-vivid)', glow: 'var(--tone-warning-glow)', line: 'var(--tone-warning-line)' },
-  info:    { vivid: 'var(--tone-info-vivid)',    glow: 'var(--tone-info-glow)',    line: 'var(--tone-info-line)'    },
-  purple:  { vivid: 'var(--tone-purple-vivid)',  glow: 'var(--tone-purple-glow)',  line: 'var(--tone-purple-line)'  },
-  neutral: { vivid: '#9C8E78',                   glow: 'rgba(156, 142, 120, 0.22)', line: 'var(--tone-neutral-line)' },
+  // Saturated vivid colors for the icon chip + sparkline + corner glow.
+  success: { vivid: '#3FA86A', glow: 'rgba(63, 168, 106, 0.25)',  line: '#3FA86A' },
+  danger:  { vivid: '#E15A47', glow: 'rgba(225, 90, 71, 0.25)',   line: '#E15A47' },
+  warning: { vivid: '#E8A53B', glow: 'rgba(232, 165, 59, 0.25)',  line: '#E8A53B' },
+  info:    { vivid: '#3FA9D9', glow: 'rgba(63, 169, 217, 0.25)',  line: '#3FA9D9' },
+  purple:  { vivid: '#9A6DBF', glow: 'rgba(154, 109, 191, 0.25)', line: '#9A6DBF' },
+  neutral: { vivid: '#7A716C', glow: 'rgba(122, 113, 108, 0.22)', line: '#7A716C' },
 };
 
 /** Inline sparkline with bigger presence: thicker stroke + denser fill
@@ -117,10 +124,9 @@ const ColorfulKpiTile = ({
   const palette     = tone ? TONE_STYLE[tone] || TONE_STYLE.neutral : null;
   const vivid       = palette ? palette.vivid : accent;
   const glow        = palette ? palette.glow  : `${accent}33`;
-  const surfaceLine = palette ? palette.line  : SHARED_LINE;
-  // Big number and background stay neutral across every tile — the tone
-  // only shows in the icon chip / sparkline / corner glow.
-  const numberInk   = SHARED_INK;
+  const sparkLine   = palette ? palette.line  : HERO_INK;
+  // The big number is always the joyful teal-blue hero ink, regardless of tone.
+  const numberInk   = HERO_INK;
 
   const Tag = onClick ? 'button' : 'div';
   return (
@@ -131,7 +137,7 @@ const ColorfulKpiTile = ({
         background: SHARED_SURFACE,
         color: 'var(--ink)',
         border: `1px solid ${SHARED_LINE}`,
-        boxShadow: '0 1px 0 rgba(0,0,0,0.02), 0 4px 12px -8px rgba(28,25,23,0.08)',
+        boxShadow: '0 1px 2px rgba(28,25,23,0.04), 0 8px 24px -12px rgba(28,25,23,0.10)',
         padding: '16px 18px 12px',
         minHeight: 148,
       }}
@@ -175,11 +181,11 @@ const ColorfulKpiTile = ({
           <div className="mt-2 flex items-baseline gap-2 flex-wrap">
             <span
               style={{
-                fontSize: 32,
+                fontSize: 36,
                 lineHeight: 1,
-                fontWeight: 600,
+                fontWeight: 700,
                 color: numberInk,
-                letterSpacing: '-0.026em',
+                letterSpacing: '-0.028em',
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -219,7 +225,7 @@ const ColorfulKpiTile = ({
           before so the trend reads as data not garnish. */}
       {Array.isArray(trend) && trend.length >= 2 && (
         <div className="mt-3 -mx-1 -mb-1">
-          <Sparkline points={trend} stroke={surfaceLine} height={32} />
+          <Sparkline points={trend} stroke={sparkLine} height={32} />
         </div>
       )}
 

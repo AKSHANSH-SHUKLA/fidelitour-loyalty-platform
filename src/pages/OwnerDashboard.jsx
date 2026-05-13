@@ -46,11 +46,13 @@ const fmtPct = (n, d = 1) => `${(typeof n === 'number' ? n : 0).toFixed(d)}%`;
 const fmtNum = (n) => (n ?? 0).toLocaleString('fr-FR');
 const fmtEUR = (n) => `${Number(n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
+// Vibrant Octoboard-style tier palette — saturated and joyful while
+// still semantically aligned with the metal/level concept.
 const TIER_COLORS = {
-  bronze: '#8B6F3E',
-  silver: '#B5B0A8',
-  gold:   '#D9A229',
-  vip:    '#7E5E84',
+  bronze: '#D27A3E',
+  silver: '#9AA6B3',
+  gold:   '#E8A53B',
+  vip:    '#9A6DBF',
 };
 
 export default function OwnerDashboard() {
@@ -129,12 +131,16 @@ export default function OwnerDashboard() {
   // Sources donut
   const sources = useMemo(() => {
     if (!acqSources) return [];
+    // Vibrant multi-color palette — joyful but each source stays distinct.
     const palette = {
-      direct: '#5C3E66', qr_store: '#5C3E66',
-      instagram: '#E55B7D',
-      google: '#3DA876', facebook: '#3DA876',
-      tiktok: '#1F1B1A',
-      manual: '#B5B0A8', website: '#B5B0A8',
+      direct:    '#3FA9D9', // teal-blue
+      qr_store:  '#3FA9D9',
+      instagram: '#E15A47', // coral-red
+      google:    '#3FA86A', // green
+      facebook:  '#2F77C7', // blue
+      tiktok:    '#1F1B1A', // ink
+      manual:    '#9A6DBF', // mauve
+      website:   '#E8A53B', // gold
     };
     const labels = {
       direct: 'Direct', qr_store: 'QR in-store',
@@ -173,20 +179,20 @@ export default function OwnerDashboard() {
     navigate(`/dashboard/campaigns${q.toString() ? '?' + q : ''}`);
   };
 
-  // Customer status donut data (always render, gracefully degrade to zero)
+  // Vibrant multi-colour palette shared with the sources donut so the
+  // dashboard reads as one joyful product.
   const statusDonut = [
-    { key: 'active',  name: 'Actifs',     value: activeCustomers,  color: '#3DA876' },
-    { key: 'dormant', name: 'Dormants',   value: dormantCustomers, color: '#D9A229' },
-    { key: 'risk',    name: 'À risque',   value: atRiskCustomers,  color: '#C84A1F' },
-    { key: 'new',     name: 'Nouveaux',   value: newWithoutVisits, color: '#4A7BA8' },
+    { key: 'active',  name: 'Actifs',     value: activeCustomers,  color: '#3FA86A' },
+    { key: 'dormant', name: 'Dormants',   value: dormantCustomers, color: '#E8A53B' },
+    { key: 'risk',    name: 'À risque',   value: atRiskCustomers,  color: '#E15A47' },
+    { key: 'new',     name: 'Nouveaux',   value: newWithoutVisits, color: '#3FA9D9' },
   ].filter(d => d.value > 0);
 
-  // Churn donut data
   const churnDonut = [
-    { key: 'engaged', name: 'Engagés',         value: Math.max(0, totalCustomers - (summary?.one_visit_count || 0) - dormantCustomers - (summary?.churned_90d_count || 0)), color: '#3DA876' },
-    { key: 'one',     name: '1 visite',        value: summary?.one_visit_count || 0,    color: '#5984AC' },
-    { key: 'dormant', name: 'Inactifs 30j',    value: dormantCustomers,                 color: '#D9A229' },
-    { key: 'churned', name: 'Churned 90j',     value: summary?.churned_90d_count || 0,  color: '#C84A1F' },
+    { key: 'engaged', name: 'Engagés',         value: Math.max(0, totalCustomers - (summary?.one_visit_count || 0) - dormantCustomers - (summary?.churned_90d_count || 0)), color: '#3FA86A' },
+    { key: 'one',     name: '1 visite',        value: summary?.one_visit_count || 0,    color: '#3FA9D9' },
+    { key: 'dormant', name: 'Inactifs 30j',    value: dormantCustomers,                 color: '#E8A53B' },
+    { key: 'churned', name: 'Churned 90j',     value: summary?.churned_90d_count || 0,  color: '#E15A47' },
   ].filter(d => d.value > 0);
 
   // Plan usage radial data
@@ -354,10 +360,10 @@ export default function OwnerDashboard() {
               </div>
             </div>
             <div className="fd-status-bar">
-              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: '#3DA876' }} />
-              <div style={{ width: `${pct(dormantCustomers, totalCustomers)}%`, background: '#D9A229' }} />
-              <div style={{ width: `${pct(atRiskCustomers, totalCustomers)}%`, background: '#C84A1F' }} />
-              <div style={{ width: `${pct(newWithoutVisits, totalCustomers)}%`, background: '#4A7BA8' }} />
+              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: '#3FA86A' }} />
+              <div style={{ width: `${pct(dormantCustomers, totalCustomers)}%`, background: '#E8A53B' }} />
+              <div style={{ width: `${pct(atRiskCustomers, totalCustomers)}%`, background: '#E15A47' }} />
+              <div style={{ width: `${pct(newWithoutVisits, totalCustomers)}%`, background: '#3FA9D9' }} />
             </div>
           </div>
 
@@ -373,8 +379,8 @@ export default function OwnerDashboard() {
                 </select>
               </div>
               <div className="fd-ch-legend">
-                <span><span className="fd-ch-dot" style={{ background: '#B26344' }} />Visites totales</span>
-                <span><span className="fd-ch-dot" style={{ background: '#4A7BA8' }} />Clients uniques</span>
+                <span><span className="fd-ch-dot" style={{ background: '#3FA9D9' }} />Visites totales</span>
+                <span><span className="fd-ch-dot" style={{ background: '#E8A53B' }} />Clients uniques</span>
               </div>
               <div style={{ height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -383,8 +389,8 @@ export default function OwnerDashboard() {
                     <XAxis dataKey="idx" tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} width={28} />
                     <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #ECE3D2' }} />
-                    <Bar dataKey="visits" fill="#B26344" radius={[3, 3, 0, 0]} maxBarSize={14} />
-                    <Line type="monotone" dataKey="uniques" stroke="#4A7BA8" strokeWidth={2} dot={{ r: 3, fill: '#4A7BA8' }} />
+                    <Bar dataKey="visits" fill="#3FA9D9" radius={[3, 3, 0, 0]} maxBarSize={14} />
+                    <Line type="monotone" dataKey="uniques" stroke="#E8A53B" strokeWidth={2} dot={{ r: 3, fill: '#E8A53B' }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -432,7 +438,7 @@ export default function OwnerDashboard() {
                     <XAxis dataKey="idx" tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} interval={3} />
                     <YAxis tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} width={28} />
                     <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #ECE3D2' }} />
-                    <Bar dataKey="value" fill="#6FA058" radius={[3, 3, 0, 0]} maxBarSize={12} />
+                    <Bar dataKey="value" fill="#3FA86A" radius={[3, 3, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

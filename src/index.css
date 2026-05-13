@@ -692,36 +692,37 @@ textarea::placeholder {
 .fdt-dash .k-rose   { background: var(--fd-rose); }   .fdt-dash .k-rose   .fd-kpi-ico { background: var(--fd-rose-ico); }
 .fdt-dash .k-lilac  { background: var(--fd-lilac); }  .fdt-dash .k-lilac  .fd-kpi-ico { background: var(--fd-lilac-ico); }
 
-/* Semantic KPI tiles — all sit on the SAME warm-cream surface so the
-   dashboard reads as one cohesive product. The icon chip is the only
-   coloured element: green for positive KPIs, red for negative.
-   Big number and labels stay in neutral ink across every tile. */
+/* Semantic KPI tiles — Octoboard-style. Clean near-white surface with
+   subtle shadow. Big number in a vibrant joyful teal-blue (the hero
+   accent across every tile). The icon chip carries the positive (green)
+   or negative (red) meaning. Labels and sublabels stay muted gray. */
 .fdt-dash .k-pos,
 .fdt-dash .k-neg {
-  background: linear-gradient(135deg, #FAF5EB 0%, #FBF7EE 60%, #FDFAF3 100%);
+  background: #FDFBF7;
   border: 1px solid #ECE3D5;
-  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 8px 24px -12px rgba(28, 25, 23, 0.10);
+  position: relative;
 }
-.fdt-dash .k-pos { position: relative; }
-.fdt-dash .k-neg { position: relative; }
-/* Subtle tone-coloured corner glow — restraint, not noise */
+/* Soft tone-coloured corner glow */
 .fdt-dash .k-pos::before,
 .fdt-dash .k-neg::before {
-  content: ''; position: absolute; top: -16px; right: -16px;
-  width: 80px; height: 80px; border-radius: 50%;
-  filter: blur(22px); opacity: 0.55; pointer-events: none;
+  content: ''; position: absolute; top: -18px; right: -18px;
+  width: 90px; height: 90px; border-radius: 50%;
+  filter: blur(24px); opacity: 0.55; pointer-events: none;
 }
-.fdt-dash .k-pos::before { background: rgba(122, 160, 112, 0.35); }
-.fdt-dash .k-neg::before { background: rgba(184, 111, 88, 0.32); }
-.fdt-dash .k-pos .fd-kpi-ico { background: #7AA070; color: #FFFFFF; }
-.fdt-dash .k-neg .fd-kpi-ico { background: #B86F58; color: #FFFFFF; }
+.fdt-dash .k-pos::before { background: rgba(63, 168, 106, 0.30); }
+.fdt-dash .k-neg::before { background: rgba(225, 90, 71, 0.28); }
+/* Saturated icon chip — green for positive, red for negative */
+.fdt-dash .k-pos .fd-kpi-ico { background: #3FA86A; color: #FFFFFF; box-shadow: 0 4px 12px -4px rgba(63, 168, 106, 0.45); }
+.fdt-dash .k-neg .fd-kpi-ico { background: #E15A47; color: #FFFFFF; box-shadow: 0 4px 12px -4px rgba(225, 90, 71, 0.45); }
 .fdt-dash .k-pos .fd-kpi-label,
 .fdt-dash .k-neg .fd-kpi-label { color: var(--fd-text-2); opacity: 1; }
 .fdt-dash .k-pos .fd-kpi-sub,
 .fdt-dash .k-neg .fd-kpi-sub { color: var(--fd-text-2); }
+/* Big number — vibrant teal-blue hero across every tile */
 .fdt-dash .k-pos .fd-kpi-value,
-.fdt-dash .k-neg .fd-kpi-value { color: var(--fd-text); }
-/* Anything inside the tile sits above the corner glow */
+.fdt-dash .k-neg .fd-kpi-value { color: #1E88B8; font-weight: 700; }
+/* Inner content sits above the corner glow */
 .fdt-dash .k-pos > *, .fdt-dash .k-neg > * { position: relative; z-index: 1; }
 
 /* KPI foot row — sub + optional delta chip side by side */
