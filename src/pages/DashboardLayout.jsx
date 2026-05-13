@@ -558,30 +558,30 @@ const DashboardLayout = () => {
             slot hidden so staff don't see owner-only alerts. */}
         {role === 'business_owner' && (
           <div
-            className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
+            className="sticky top-0 z-30 flex items-center gap-4 px-6 lg:px-10 py-3 backdrop-blur"
             style={{
-              background: 'rgba(255,255,255,0.82)',
+              background: 'rgba(255,255,255,0.78)',
               borderBottom: '1px solid var(--hairline, #ECE8E1)',
             }}
           >
-            {/* Search — compact, left-aligned. Cmd+K hook lands in a later pass. */}
+            {/* Big centered search bar */}
             <div
-              className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[240px]"
+              className="flex items-center gap-2 flex-1 max-w-2xl mx-auto rounded-full px-4 py-1.5"
               style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #ECE8E1)' }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.3-4.3" />
               </svg>
               <input
                 type="text"
-                placeholder="Rechercher…"
+                placeholder="Rechercher un client, une campagne, un KPI…"
                 aria-label="Rechercher"
-                className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
+                className="flex-1 bg-transparent outline-none text-[13px]"
                 style={{ color: 'var(--ink, #1F1B1A)', fontWeight: 400 }}
               />
               <kbd
-                className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
+                className="text-[10px] px-1.5 py-0.5 rounded"
                 style={{
                   background: '#F4F2EE',
                   color: 'var(--ink-mute, #7A716C)',
@@ -593,26 +593,35 @@ const DashboardLayout = () => {
               </kbd>
             </div>
 
-            {/* Branch banner inline — sits between the search and the bell,
-                fills the available middle space with the live data + chips. */}
-            <div className="flex-1 min-w-0 px-2">
-              <BranchPillsBanner compact />
-            </div>
-
-            {/* Bell — keeps the existing NotificationBell component but lives
-                in the toolbar slot instead of floating absolute. The badge
-                with the unread count comes from inside NotificationBell. */}
+            {/* Bell */}
             <div className="shrink-0">
               <NotificationBell />
             </div>
 
-            {/* Clickable user-menu avatar — initial + status dot + dropdown
-                with profile / settings / sign out. */}
+            {/* Help icon */}
+            <button
+              type="button"
+              aria-label="Aide"
+              title="Aide"
+              className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{ background: 'transparent', border: '1px solid var(--hairline, #ECE8E1)', color: 'var(--ink-mute, #7A716C)' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#F4F2EE'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </button>
+
+            {/* User menu avatar */}
             <UserMenu user={user} theme={theme} role={role} onLogout={logout} />
           </div>
         )}
 
-        <div className="px-6 py-5 lg:px-8 lg:py-5 max-w-[1600px] mx-auto">
+        <div className="px-6 py-6 lg:px-10 lg:py-6 max-w-[1600px] mx-auto">
+          {role === 'business_owner' && <BranchPillsBanner />}
           <Outlet />
         </div>
       </main>
