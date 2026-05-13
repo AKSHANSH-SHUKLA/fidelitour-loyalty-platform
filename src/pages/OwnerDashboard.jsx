@@ -334,7 +334,7 @@ export default function OwnerDashboard() {
                 <span><span className="fd-ch-dot" style={{ background: '#B26344' }} />Visites totales</span>
                 <span><span className="fd-ch-dot" style={{ background: '#4A7BA8' }} />Clients uniques</span>
               </div>
-              <div style={{ height: 150 }}>
+              <div style={{ height: 130 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={visitsChartData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                     <CartesianGrid stroke="#F0E8D6" vertical={false} />
@@ -383,7 +383,7 @@ export default function OwnerDashboard() {
                   <div className="fd-cs-sub">Record</div>
                 </div>
               </div>
-              <div style={{ height: 150 }}>
+              <div style={{ height: 130 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={acqChartData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                     <CartesianGrid stroke="#F0E8D6" vertical={false} />

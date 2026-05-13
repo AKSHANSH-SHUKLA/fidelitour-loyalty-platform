@@ -18,7 +18,7 @@ import { useBranch } from '../contexts/BranchContext';
  *     account doesn't need the noise).
  *   - Active pill carries the brand colour; idle pills carry a hairline.
  */
-export default function BranchPillsBanner() {
+export default function BranchPillsBanner({ compact = false } = {}) {
   const { branchId, setBranchId, branches: ctxBranches, setBranches } = useBranch();
   const [localBranches, setLocalBranches] = useState(ctxBranches || []);
 
@@ -47,6 +47,61 @@ export default function BranchPillsBanner() {
 
   const activeBranch = localBranches.find((b) => b.id === branchId);
   const isAll = !branchId;
+
+  // Compact variant — single line, lives inside the top toolbar between
+  // the search and the bell. No background, no subtitle, smaller chips.
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+        <span
+          aria-hidden="true"
+          className="inline-block w-2 h-2 rounded-full shrink-0"
+          style={{ background: '#2D7A3E', boxShadow: '0 0 0 3px rgba(45,122,62,0.18)' }}
+        />
+        <span
+          className="text-[10px] uppercase tracking-[0.16em] shrink-0"
+          style={{ color: '#9C4427', fontWeight: 700 }}
+        >
+          Live · {isAll ? 'Toutes les branches' : (activeBranch?.name || 'branche')}
+        </span>
+        <div className="flex items-center gap-1 flex-wrap min-w-0">
+          <button
+            type="button"
+            onClick={() => setBranchId('')}
+            title="Toutes les branches"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-all"
+            style={
+              isAll
+                ? { background: '#1F1B1A', color: '#FFFFFF', fontWeight: 500 }
+                : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+            }
+          >
+            Toutes
+          </button>
+          {localBranches.slice(0, 3).map((b) => {
+            const isActive = branchId === b.id;
+            const short = (b.name || b.id || '').split('-').pop().trim() || b.name || b.id;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => setBranchId(b.id)}
+                title={b.name || b.id}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] transition-all max-w-[140px] truncate"
+                style={
+                  isActive
+                    ? { background: '#9C4427', color: '#FFFFFF', fontWeight: 500 }
+                    : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+                }
+              >
+                {short}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
