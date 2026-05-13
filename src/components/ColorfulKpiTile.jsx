@@ -24,49 +24,21 @@ import PeriodPicker from './PeriodPicker';
  * unlocks the new look; `accent` still works for the neutral white tile.
  */
 
+// Premium SaaS look: every tile sits on the SAME warm-cream surface so the
+// dashboard reads as one cohesive product (Stripe/Linear pattern). The tone
+// only colors the icon chip, sparkline, and a subtle corner glow — the
+// big number and background stay neutral. Result: restrained, not childish.
+const SHARED_SURFACE = 'linear-gradient(135deg, #FAF5EB 0%, #FBF7EE 60%, #FDFAF3 100%)';
+const SHARED_LINE    = '#ECE3D5';
+const SHARED_INK     = 'var(--ink)';
+
 const TONE_STYLE = {
-  success: {
-    fill: 'var(--tone-success-gradient)',
-    ink:  'var(--tone-success-ink)',
-    line: 'var(--tone-success-line)',
-    vivid:'var(--tone-success-vivid)',
-    glow: 'var(--tone-success-glow)',
-  },
-  danger: {
-    fill: 'var(--tone-danger-gradient)',
-    ink:  'var(--tone-danger-ink)',
-    line: 'var(--tone-danger-line)',
-    vivid:'var(--tone-danger-vivid)',
-    glow: 'var(--tone-danger-glow)',
-  },
-  warning: {
-    fill: 'var(--tone-warning-gradient)',
-    ink:  'var(--tone-warning-ink)',
-    line: 'var(--tone-warning-line)',
-    vivid:'var(--tone-warning-vivid)',
-    glow: 'var(--tone-warning-glow)',
-  },
-  info: {
-    fill: 'var(--tone-info-gradient)',
-    ink:  'var(--tone-info-ink)',
-    line: 'var(--tone-info-line)',
-    vivid:'var(--tone-info-vivid)',
-    glow: 'var(--tone-info-glow)',
-  },
-  purple: {
-    fill: 'var(--tone-purple-gradient)',
-    ink:  'var(--tone-purple-ink)',
-    line: 'var(--tone-purple-line)',
-    vivid:'var(--tone-purple-vivid)',
-    glow: 'var(--tone-purple-glow)',
-  },
-  neutral: {
-    fill: 'linear-gradient(135deg, #F1EEE8 0%, #FAF8F4 60%, #FCFAF6 100%)',
-    ink:  'var(--ink)',
-    line: 'var(--tone-neutral-line)',
-    vivid:'#7A716C',
-    glow: 'rgba(122, 113, 108, 0.22)',
-  },
+  success: { vivid: 'var(--tone-success-vivid)', glow: 'var(--tone-success-glow)', line: 'var(--tone-success-line)' },
+  danger:  { vivid: 'var(--tone-danger-vivid)',  glow: 'var(--tone-danger-glow)',  line: 'var(--tone-danger-line)'  },
+  warning: { vivid: 'var(--tone-warning-vivid)', glow: 'var(--tone-warning-glow)', line: 'var(--tone-warning-line)' },
+  info:    { vivid: 'var(--tone-info-vivid)',    glow: 'var(--tone-info-glow)',    line: 'var(--tone-info-line)'    },
+  purple:  { vivid: 'var(--tone-purple-vivid)',  glow: 'var(--tone-purple-glow)',  line: 'var(--tone-purple-line)'  },
+  neutral: { vivid: '#9C8E78',                   glow: 'rgba(156, 142, 120, 0.22)', line: 'var(--tone-neutral-line)' },
 };
 
 /** Inline sparkline with bigger presence: thicker stroke + denser fill
@@ -95,22 +67,32 @@ const Sparkline = ({ points = [], stroke = '#7A716C', width = 100, height = 32 }
   );
 };
 
-const DeltaPill = ({ delta, ink }) => {
+// Delta colors are DIRECTION-based, never metric-based: a "+" delta is
+// always green, a "-" delta is always red. A flat delta is muted.
+const DELTA_STYLE = {
+  up:   { bg: 'rgba(56, 130, 80, 0.14)',  fg: '#2F6A3C', dot: '#3F8A52' },
+  down: { bg: 'rgba(184, 60, 50, 0.14)',  fg: '#8A2E24', dot: '#B53D32' },
+  flat: { bg: 'rgba(122, 113, 108, 0.12)', fg: '#5C544F', dot: '#7A716C' },
+};
+
+const DeltaPill = ({ delta }) => {
   if (!delta || typeof delta.value !== 'number') return null;
   const sign = delta.sign || (delta.value > 0 ? 'up' : delta.value < 0 ? 'down' : 'flat');
+  const s = DELTA_STYLE[sign] || DELTA_STYLE.flat;
   const arrow = sign === 'up' ? '↗' : sign === 'down' ? '↘' : '→';
   const abs = Math.abs(delta.value);
   return (
     <span
       className="inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5"
       style={{
-        color: ink || 'var(--ink-soft)',
-        background: 'rgba(255,255,255,0.75)',
+        color: s.fg,
+        background: s.bg,
         fontWeight: 600,
-        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.6)',
+        boxShadow: `inset 0 0 0 1px ${s.dot}33`,
+        fontVariantNumeric: 'tabular-nums',
       }}
     >
-      <span aria-hidden="true">{arrow}</span>
+      <span aria-hidden="true" style={{ color: s.dot }}>{arrow}</span>
       {sign === 'up' && '+'}{sign === 'down' && '-'}{abs.toFixed(abs < 10 ? 1 : 0)}%
     </span>
   );
@@ -132,13 +114,13 @@ const ColorfulKpiTile = ({
   loading = false,
   className = '',
 }) => {
-  const palette = tone ? TONE_STYLE[tone] || TONE_STYLE.neutral : null;
-  const surfaceFill = palette ? palette.fill : '#FFFFFF';
-  const surfaceLine = palette ? palette.line : '#7A716C';
+  const palette     = tone ? TONE_STYLE[tone] || TONE_STYLE.neutral : null;
   const vivid       = palette ? palette.vivid : accent;
-  const glow        = palette ? palette.glow : `${accent}33`;
-  const numberInk   = palette ? palette.ink : 'var(--ink)';
-  const surfaceBorder = palette ? 'transparent' : 'var(--hairline)';
+  const glow        = palette ? palette.glow  : `${accent}33`;
+  const surfaceLine = palette ? palette.line  : SHARED_LINE;
+  // Big number and background stay neutral across every tile — the tone
+  // only shows in the icon chip / sparkline / corner glow.
+  const numberInk   = SHARED_INK;
 
   const Tag = onClick ? 'button' : 'div';
   return (
@@ -146,18 +128,16 @@ const ColorfulKpiTile = ({
       onClick={onClick}
       className={`relative w-full text-left rounded-2xl overflow-hidden ft-lift ${onClick ? 'cursor-pointer' : ''} ${className}`}
       style={{
-        background: surfaceFill,
+        background: SHARED_SURFACE,
         color: 'var(--ink)',
-        border: `1px solid ${surfaceBorder}`,
-        boxShadow: palette
-          ? '0 1px 0 rgba(0,0,0,0.02), 0 6px 14px -10px rgba(0,0,0,0.08)'
-          : '0 1px 2px rgba(28,25,23,0.04)',
+        border: `1px solid ${SHARED_LINE}`,
+        boxShadow: '0 1px 0 rgba(0,0,0,0.02), 0 4px 12px -8px rgba(28,25,23,0.08)',
         padding: '16px 18px 12px',
         minHeight: 148,
       }}
     >
-      {/* Decorative corner glow — soft vivid blur behind the icon. Adds depth
-          without competing with the number for attention. */}
+      {/* Subtle corner glow in the tone colour — only added when there's a
+          tone. Adds restraint-level depth without competing with the number. */}
       {palette && (
         <div
           aria-hidden="true"
@@ -167,7 +147,8 @@ const ColorfulKpiTile = ({
             width: 90, height: 90,
             background: glow,
             borderRadius: '50%',
-            filter: 'blur(20px)',
+            filter: 'blur(22px)',
+            opacity: 0.6,
             pointerEvents: 'none',
           }}
         />
@@ -184,9 +165,8 @@ const ColorfulKpiTile = ({
           <p
             className="text-[10.5px] uppercase"
             style={{
-              color: palette ? numberInk : 'var(--ink-mute)',
-              opacity: palette ? 0.78 : 1,
-              fontWeight: 600,
+              color: 'var(--ink-mute)',
+              fontWeight: 700,
               letterSpacing: '0.14em',
             }}
           >
@@ -200,18 +180,19 @@ const ColorfulKpiTile = ({
                 fontWeight: 600,
                 color: numberInk,
                 letterSpacing: '-0.026em',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {loading
                 ? <span className="inline-block w-14 h-7 rounded animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
                 : value}
             </span>
-            <DeltaPill delta={delta} ink={numberInk} />
+            <DeltaPill delta={delta} />
           </div>
           {sublabel && (
             <p
               className="mt-1 text-[11.5px] line-clamp-2"
-              style={{ color: palette ? numberInk : 'var(--ink-mute)', opacity: palette ? 0.7 : 1 }}
+              style={{ color: 'var(--ink-mute)' }}
             >
               {sublabel}
             </p>
