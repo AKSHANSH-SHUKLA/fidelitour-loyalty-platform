@@ -430,6 +430,49 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
 
       {/* ── QR section (always white for max scanner contrast) ──────────── */}
       <div className="px-5 py-5 bg-white">
+        {/* Stamps grid — punch-card visual on the hero layout too */}
+        {card.show_stamps_grid !== false && (
+          <div className="mb-4">
+            <StampGrid
+              count={customer?.reward_threshold || 10}
+              filled={Math.min(customer?.visits || 0, customer?.reward_threshold || 10)}
+              shape={card.stamp_shape || 'circle'}
+              fillColor={card.stamp_fill_color || primary}
+              emptyColor={card.stamp_empty_color || '#E7E5E4'}
+              inkColor={card.stamp_ink_color || '#FFFFFF'}
+              customUrl={card.stamp_custom_url || ''}
+              size={card.stamp_size || 28}
+              label={card.stamps_label || ''}
+              ink="#1F1B1A"
+            />
+          </div>
+        )}
+
+        {/* Progress meter — slim bar that mirrors stamps fill */}
+        {card.show_meter !== false && (customer?.reward_threshold || 10) > 0 && (
+          <div className="mb-4">
+            {card.meter_label && (
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: '#1F1B1A', opacity: 0.55 }}>
+                  {card.meter_label}
+                </p>
+                <p className="text-[10px] font-semibold" style={{ color: '#1F1B1A' }}>
+                  {Math.min(customer?.visits || 0, customer?.reward_threshold || 10)} / {customer?.reward_threshold || 10}
+                </p>
+              </div>
+            )}
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: card.meter_track_color || '#F2EDE3' }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.min(100, ((customer?.visits || 0) / (customer?.reward_threshold || 10)) * 100)}%`,
+                  background: card.meter_fill_color || primary,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-center">
           <div
             className="rounded-2xl p-4"

@@ -55,7 +55,10 @@ const DEFAULT_BRAND = {
   //     promotional middle band (image OR colour with text + optional
   //     CTA box), light bottom strip with member fields + barcode.
   //     Matches GÉMO, Maison 123, FNAC adhérent, etc.
-  layout_style:        'hero',
+  // Default to the 3-band wallet-pass layout (FNAC / Maison 123 / GÉMO style)
+  // since this is what most owners want out of the box. They can flip to
+  // 'hero' from the layout picker if they prefer the brand-coloured full-bleed.
+  layout_style:        'wallet_pass',
   // Card surface colour — shared by the top strip + bottom strip
   // in 'wallet_pass' layout. Default white.
   card_bg_color:       '#FFFFFF',
@@ -1138,6 +1141,11 @@ export default function CardDesignerPage() {
                   tier: 'Gold',
                   points: 1240,
                   barcode_id: 'FT-1DFC4E62',
+                  // Sample progress so the stamps + meter render in the preview.
+                  // Auto-tracks the rule the owner just set so the editor feels live.
+                  visits: Math.min(Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6), parseInt(rules.reward_threshold_stamps, 10) || 10),
+                  reward_threshold: parseInt(rules.reward_threshold_stamps, 10) || 10,
+                  offers_count: 1,
                 }}
                 tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
                 card={brand}
