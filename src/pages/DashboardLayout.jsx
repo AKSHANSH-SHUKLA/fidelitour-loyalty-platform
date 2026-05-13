@@ -56,13 +56,22 @@ const SETTINGS_SECTIONS = [
 const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
   const active = isNavActive(currentPath, '/dashboard/settings');
   const theme = themeForRole(role);
-  const [open, setOpen] = React.useState(active);
-  // Sync open ↔ active whenever the route changes:
-  //   • Land on /dashboard/settings → auto-expand the submenu.
-  //   • Leave for /dashboard/analytics (or any other section) → auto-collapse.
-  // Once on the same route the user is free to toggle manually; useEffect only
-  // re-runs when `active` actually flips.
-  React.useEffect(() => { setOpen(active); }, [active]);
+  // The user's manual override (null = follow route default). It resets to
+  // null every time the route changes, so:
+  //   • Navigate to Analytics / Insights / any non-settings page → override
+  //     clears, `open` falls back to `active === false` → dropdown collapses.
+  //   • Navigate to /dashboard/settings → override clears, `open` falls back
+  //     to `active === true` → dropdown auto-expands.
+  //   • While on settings, click the toggle → override drives `open`.
+  // This is intentionally a derived value (not synced state via useEffect)
+  // so it can never get out of sync with the route.
+  const [manualOverride, setManualOverride] = React.useState(null);
+  React.useEffect(() => { setManualOverride(null); }, [currentPath]);
+  const open = manualOverride !== null ? manualOverride : active;
+  const setOpen = (next) => {
+    const nextVal = typeof next === 'function' ? next(open) : next;
+    setManualOverride(nextVal);
+  };
 
   // When the sidebar is collapsed, Settings becomes a simple icon link —
   // the inline submenu has no room. Clicking jumps straight to the settings page.
