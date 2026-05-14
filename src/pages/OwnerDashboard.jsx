@@ -166,6 +166,10 @@ export default function OwnerDashboard() {
     .filter((t) => t.value > 0);
   const tiersTotal = tierData.reduce((s, p) => s + p.value, 0);
 
+  // Visit-time heatmap — { day_of_week: { hour: count } } from the
+  // analytics summary. Used by the "When Do Customers Visit" panel.
+  const heatmap = summary?.visit_time_heatmap || {};
+
   // Plan usage
   const planName = (tenant?.plan || 'gold').toUpperCase();
   const planLimit = ({ basic: 500, gold: 2000, vip: 10000, chain: 50000 })[tenant?.plan || 'gold'] || 2000;
@@ -528,6 +532,88 @@ export default function OwnerDashboard() {
             </div>
             </div>{/* /fd-chart-col-stack */}
           </div>{/* /fd-charts-grid */}
+
+          {/* When Do Customers Visit — gradient heatmap (day × hour).
+              Restored from the pre-rebuild dashboard. Cells go from pale
+              cream (idle) → deep terracotta (peak) so peak hours pop. */}
+          {Object.keys(heatmap).length > 0 && (
+            <div className="fd-panel">
+              <div className="fd-panel-head">
+                <div>
+                  <div className="fd-panel-h">When Do Your Customers Usually Come In?</div>
+                  <div className="fd-panel-sub">Darker cells = more visits. Use this to time your campaigns for maximum impact.</div>
+                </div>
+              </div>
+              <div className="fd-heatmap-wrap">
+                <table className="fd-heatmap">
+                  <thead>
+                    <tr>
+                      <th className="fd-hm-th-hour">Hour</th>
+                      {Object.keys(heatmap).map((day) => (
+                        <th key={day} className="fd-hm-th-day">{day}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.keys(Object.values(heatmap)[0] || {})
+                      .sort((a, b) => parseInt(a) - parseInt(b))
+                      .map((hour) => {
+                        const maxCount = Math.max(
+                          ...Object.values(heatmap).flatMap((d) => Object.values(d)),
+                          1,
+                        );
+                        // 2-stop ramp: pale cream → deep terracotta-burgundy.
+                        // Linear lerp between two anchors keeps every step distinguishable.
+                        const STOPS = [
+                          { p: 0.0, c: [0xFD, 0xFB, 0xF7] },
+                          { p: 1.0, c: [0x6B, 0x21, 0x0F] },
+                        ];
+                        const lerpRamp = (t) => {
+                          for (let i = 1; i < STOPS.length; i++) {
+                            const a = STOPS[i - 1], b = STOPS[i];
+                            if (t <= b.p) {
+                              const span = b.p - a.p;
+                              const local = span > 0 ? (t - a.p) / span : 0;
+                              const lerp = (x, y) => Math.round(x + (y - x) * local);
+                              return [lerp(a.c[0], b.c[0]), lerp(a.c[1], b.c[1]), lerp(a.c[2], b.c[2])];
+                            }
+                          }
+                          return STOPS[STOPS.length - 1].c;
+                        };
+                        return (
+                          <tr key={hour}>
+                            <td className="fd-hm-hour">{hour}:00</td>
+                            {Object.keys(heatmap).map((day) => {
+                              const count = heatmap[day]?.[hour] || 0;
+                              const intensity = count / maxCount;
+                              const [r, g, bb] = lerpRamp(intensity);
+                              const bgColor = count === 0 ? '#FDFBF7' : `rgb(${r}, ${g}, ${bb})`;
+                              // Flip text to cream once cell is dark enough.
+                              const textColor = intensity > 0.55 ? '#FDFBF7' : '#1C1917';
+                              return (
+                                <td
+                                  key={day}
+                                  className="fd-hm-cell"
+                                  style={{ backgroundColor: bgColor, color: textColor }}
+                                  title={`${count} visit${count === 1 ? '' : 's'}`}
+                                >
+                                  {count || ''}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="fd-hm-legend">
+                <span className="fd-hm-legend-lbl">Moins</span>
+                <span className="fd-hm-legend-ramp" />
+                <span className="fd-hm-legend-lbl">Plus</span>
+              </div>
+            </div>
+          )}
 
           {/* Churn & rétention */}
           <div className="fd-panel">

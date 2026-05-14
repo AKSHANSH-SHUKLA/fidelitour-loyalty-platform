@@ -737,6 +737,19 @@ textarea::placeholder {
 .fdt-dash .fd-panel-h { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
 .fdt-dash .fd-panel-sub { font-size: 12.5px; color: var(--fd-text-2); margin-top: 3px; }
 
+/* Visit-time heatmap (day × hour gradient table) */
+.fdt-dash .fd-heatmap-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--fd-border); }
+.fdt-dash .fd-heatmap { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+.fdt-dash .fd-heatmap thead th { background: var(--fd-surface-2); color: var(--fd-text-3); font-weight: 700; padding: 8px 10px; letter-spacing: 0.6px; text-transform: uppercase; font-size: 10.5px; }
+.fdt-dash .fd-heatmap .fd-hm-th-hour { text-align: left; width: 64px; }
+.fdt-dash .fd-heatmap .fd-hm-th-day { text-align: center; min-width: 52px; }
+.fdt-dash .fd-heatmap td { padding: 6px 8px; border-top: 1px solid #F4ECDD; }
+.fdt-dash .fd-heatmap .fd-hm-hour { font-weight: 600; color: var(--fd-text-2); width: 64px; white-space: nowrap; background: var(--fd-surface-2); }
+.fdt-dash .fd-heatmap .fd-hm-cell { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; transition: background-color 200ms ease; }
+.fdt-dash .fd-hm-legend { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-left: 4px; }
+.fdt-dash .fd-hm-legend-lbl { font-size: 10.5px; color: var(--fd-text-3); letter-spacing: 0.9px; text-transform: uppercase; font-weight: 600; }
+.fdt-dash .fd-hm-legend-ramp { flex: 0 0 220px; height: 8px; border-radius: 99px; background: linear-gradient(to right, #FDFBF7, #6B210F); border: 1px solid var(--fd-border); }
+
 /* Customer status grid */
 .fdt-dash .fd-status-row { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: center; }
 .fdt-dash .fd-status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
