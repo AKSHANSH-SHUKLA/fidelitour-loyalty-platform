@@ -122,30 +122,31 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
     //
     // Example: visits_per_stamp=2, points_per_visit=10, reward=10 stamps.
     //   6 stamps filled  →  12 visits  →  120 pts earned / 200 pts max.
+    // Declare cycle + visits FIRST — they're inputs to the maths below.
+    const visits         = parseInt(customer?.visits, 10) || 0;
+    const cycle          = parseInt(customer?.reward_threshold, 10) || 10;
     const pointsPerVisit = parseInt(card.points_per_visit, 10) || 10;
     const visitsPerStamp = Math.max(1, parseInt(card.visits_per_stamp, 10) || 1);
-    const totalVisits    = parseInt(customer?.visits, 10) || 0;
+    const totalVisits    = visits;
     const stampsFilled   = Math.min(cycle, Math.floor(totalVisits / visitsPerStamp));
     const earnedPoints   = totalVisits * pointsPerVisit;
     const maxPoints      = cycle * visitsPerStamp * pointsPerVisit;
     const pointsFillPct  = maxPoints > 0 ? Math.min(100, (earnedPoints / maxPoints) * 100) : 0;
-    const showQr     = card.show_qr !== false;
-    const qrSize     = Math.max(48, Math.min(140, parseInt(card.qr_size, 10) || 90));
-    const showBday   = !!card.show_birthday;
-    const bdayLbl    = card.birthday_label || 'Anniversaire';
-    const showTier   = card.show_tier_badge !== false;
-    const tierKey    = (customer?.tier || 'bronze').toLowerCase();
-    const tierColor  = ({
+    const showQr         = card.show_qr !== false;
+    const qrSize         = Math.max(48, Math.min(140, parseInt(card.qr_size, 10) || 90));
+    const showBday       = !!card.show_birthday;
+    const bdayLbl        = card.birthday_label || 'Anniversaire';
+    const showTier       = card.show_tier_badge !== false;
+    const tierKey        = (customer?.tier || 'bronze').toLowerCase();
+    const tierColor      = ({
       bronze: card.tier_badge_bronze || '#B26344',
       silver: card.tier_badge_silver || '#9AA6B3',
       gold:   card.tier_badge_gold   || '#E8A53B',
       vip:    card.tier_badge_vip    || '#9A6DBF',
     })[tierKey] || (card.tier_badge_bronze || '#B26344');
-    const fullName   = card.use_full_name
+    const fullName       = card.use_full_name
       ? (customer?.name || firstName).toUpperCase()
       : firstName;
-    const visits     = customer?.visits ?? 0;
-    const cycle      = (customer?.reward_threshold || 10);
 
     return (
       <div
