@@ -68,10 +68,8 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
   const showCardNumber  = card.show_card_number !== false;
   const showBarcode     = card.show_barcode     !== false;
 
-  // Hero image — opacity slider (0–100) controls how prominent it is.
-  const heroOpacity     = typeof card.hero_opacity === 'number'
-    ? Math.max(0, Math.min(100, card.hero_opacity)) / 100
-    : 0.85;
+  // Hero image fully opaque — opacity feature removed at owner request.
+  const heroOpacity = 1;
 
   // First name only — feels personal, matches the KFC pattern ("Bonjour Julie")
   const firstName = (customer?.first_name || customer?.name || '').split(' ')[0] || 'Client';
@@ -86,11 +84,15 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
 
   const points = customer?.points ?? 0;
 
-  // ── Wallet-pass layout (3 bands) ───────────────────────────────────
-  // Renders the GÉMO / Maison 123 / Fnac adhérent style: top strip with
-  // logo + identifier, promotional middle band (image OR colour), bottom
-  // strip with member fields + barcode. Top and bottom share the same
-  // background colour to read as one continuous surface.
+  // ── Wallet-pass layout (3 bands, Apple Wallet pattern) ────────────
+  // TOP STRIP:    business logo + name (top-left), "+ D'INFOS / N pts"
+  //               (top-right), tier badge (optional). Uses card_bg_color.
+  // MIDDLE STRIP: brand-coloured or image promo band, optionally with
+  //               business logo overlaid centre. Independent strip_color.
+  // BOTTOM STRIP: greeting + name (left), action prompt (right), then
+  //               stamps grid, points meter, smaller QR code with
+  //               customer ID + barcode + birthday. Same card_bg_color
+  //               as the top so they read as one continuous surface.
   if (card.layout_style === 'wallet_pass') {
     const cardBg     = card.card_bg_color   || '#FFFFFF';
     const cardInk    = card.card_ink_color  || '#1F1B1A';
@@ -104,102 +106,121 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
     const offerSub   = card.offer_box_subtext || '';
     const offerBg    = card.offer_box_color || '#FFFFFF';
     const offerInk   = card.offer_box_ink_color || stripColor;
-    const trLabel    = card.top_right_label  || '';
-    const trValue    = card.top_right_value  || '';
-    const showTr     = card.show_top_right !== false;
-    const showMember = card.show_member_id !== false;
-    const memberLbl  = card.member_id_label || 'Membre';
+    const logoPos    = card.logo_position || 'top_left';
+    const showPtsTR  = card.show_points_top_right !== false;
+    const ptsTRLbl   = card.points_top_right_label || '+ D\'INFOS';
+    const showActPr  = card.show_action_prompt !== false;
+    const actPrTitle = card.action_prompt_title || 'Présentez votre carte fidélité';
+    const actPrSub   = card.action_prompt_sub   || 'Et cumulez des points';
+    const greetLbl   = (card.bottom_greeting_label || 'Bienvenue').toUpperCase();
+    const showQr     = card.show_qr !== false;
+    const qrSize     = Math.max(48, Math.min(140, parseInt(card.qr_size, 10) || 90));
+    const showBday   = !!card.show_birthday;
+    const bdayLbl    = card.birthday_label || 'Anniversaire';
+    const showTier   = card.show_tier_badge !== false;
+    const tierKey    = (customer?.tier || 'bronze').toLowerCase();
+    const tierColor  = ({
+      bronze: card.tier_badge_bronze || '#B26344',
+      silver: card.tier_badge_silver || '#9AA6B3',
+      gold:   card.tier_badge_gold   || '#E8A53B',
+      vip:    card.tier_badge_vip    || '#9A6DBF',
+    })[tierKey] || (card.tier_badge_bronze || '#B26344');
     const fullName   = card.use_full_name
       ? (customer?.name || firstName).toUpperCase()
       : firstName;
-    const showCntr   = card.show_counter !== false;
-    const cntrLbl    = card.counter_label || 'Mon compteur';
-    const showOffsCt = card.show_offers_count !== false;
-    const offsCtLbl  = card.offers_count_label || 'Mes offres';
     const visits     = customer?.visits ?? 0;
     const cycle      = (customer?.reward_threshold || 10);
 
     return (
       <div
-        className="rounded-3xl overflow-hidden shadow-2xl relative isolate"
-        style={{ background: cardBg, maxWidth: 420, margin: '0 auto' }}
+        className="rounded-2xl overflow-hidden shadow-xl relative isolate"
+        style={{ background: cardBg, maxWidth: 380, margin: '0 auto' }}
       >
-        {/* ── Top strip ─────────────────────────────────────────── */}
-        <div className="px-5 py-4 flex items-start justify-between gap-2" style={{ color: cardInk, background: cardBg }}>
-          <div className="flex items-center gap-2 min-w-0">
-            {card.logo_url ? (
-              <img src={card.logo_url} alt="" className="h-7 w-auto object-contain" style={{ maxWidth: 90 }} />
-            ) : (
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold"
-                style={{ background: stripColor, color: stripInk }}
-              >
-                {(tenant?.name || 'F').charAt(0)}
-              </div>
-            )}
-            {!card.logo_url && (
-              <span className="text-[15px] font-semibold" style={{ color: cardInk, letterSpacing: '-0.01em' }}>
-                {tenant?.name || 'FidéliTour'}
-              </span>
-            )}
-          </div>
-          {showTr && (
-            <div className="text-right leading-tight">
+        {/* ── TOP STRIP ────────────────────────────────────────── */}
+        <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-2" style={{ color: cardInk, background: cardBg }}>
+          {/* Logo + tenant name top-left (unless logo_position overrides it) */}
+          {logoPos !== 'middle_overlay' && (
+            <div className={`flex items-center gap-2 min-w-0 ${logoPos === 'top_center' ? 'mx-auto' : ''}`}>
+              {card.logo_url ? (
+                <img src={card.logo_url} alt="" className="h-6 w-auto object-contain" style={{ maxWidth: 100 }} />
+              ) : (
+                <span className="text-[15px] font-semibold" style={{ color: cardInk, letterSpacing: '-0.01em' }}>
+                  {tenant?.name || 'FidéliTour'}
+                </span>
+              )}
+              {showTier && (
+                <span
+                  className="text-[9px] uppercase tracking-[0.14em] font-bold px-1.5 py-0.5 rounded"
+                  style={{ background: tierColor, color: '#FFFFFF', letterSpacing: '0.12em' }}
+                >
+                  {tierKey}
+                </span>
+              )}
+            </div>
+          )}
+          {/* Top-right: "+ D'INFOS / N pts" */}
+          {showPtsTR && (
+            <div className="text-right leading-tight shrink-0">
               <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.55 }}>
-                {trLabel}
+                {ptsTRLbl}
                 <span className="ml-1">↗</span>
               </p>
-              {showMember && (
-                <p className="text-[12px] mt-0.5 font-medium" style={{ color: cardInk }}>
-                  {fullName}
-                </p>
-              )}
+              <p className="text-[14px] mt-0.5 font-semibold" style={{ color: cardInk }}>
+                {points} pts
+              </p>
             </div>
           )}
         </div>
 
-        {/* ── Middle promotional band ──────────────────────────── */}
+        {/* ── MIDDLE STRIP — image OR colour with optional overlay ── */}
         <div
-          className="relative px-5 py-5"
+          className="relative"
           style={{
             background: stripType === 'image' && card.hero_image_url
               ? `url(${card.hero_image_url}) center/cover no-repeat`
               : stripColor,
             color: stripInk,
-            minHeight: 110,
+            minHeight: 130,
           }}
         >
-          {/* Readability scrim only when image is used */}
+          {/* Readability scrim when image is used */}
           {stripType === 'image' && card.hero_image_url && (
             <div
               aria-hidden="true"
               className="absolute inset-0"
-              style={{ background: `linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.45) 100%)` }}
+              style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.35) 100%)' }}
             />
           )}
-          <div className="relative z-10 text-center">
-            <p
-              className="uppercase font-semibold"
-              style={{
-                color: stripInk,
-                fontFamily: `'${titleFont}', Georgia, serif`,
-                fontStyle: titleItalic ? 'italic' : 'normal',
-                fontSize: 18,
-                letterSpacing: '0.06em',
-                textShadow: stripType === 'image' ? '0 1px 2px rgba(0,0,0,0.35)' : 'none',
-              }}
-            >
-              {stripTitle}
-            </p>
+          {/* Middle-overlay logo option */}
+          {logoPos === 'middle_overlay' && card.logo_url && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
+              <img src={card.logo_url} alt="" className="h-7 w-auto object-contain" style={{ maxWidth: 120, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }} />
+            </div>
+          )}
+          <div className="relative z-10 px-5 py-5 text-center flex flex-col items-center justify-center" style={{ minHeight: 130 }}>
+            {stripTitle && (
+              <p
+                className="uppercase font-semibold"
+                style={{
+                  color: stripInk,
+                  fontFamily: `'${titleFont}', Georgia, serif`,
+                  fontStyle: titleItalic ? 'italic' : 'normal',
+                  fontSize: 22,
+                  letterSpacing: '0.06em',
+                  textShadow: stripType === 'image' ? '0 1px 3px rgba(0,0,0,0.45)' : 'none',
+                }}
+              >
+                {stripTitle}
+              </p>
+            )}
             {stripSub && (
-              <p className="text-[11.5px] mt-1" style={{ color: stripInk, opacity: 0.9 }}>
+              <p className="text-[11.5px] mt-1" style={{ color: stripInk, opacity: 0.92 }}>
                 {stripSub}
               </p>
             )}
-            {/* Offer box callout */}
             {showOffer && offerText && (
               <div
-                className="inline-block mt-3 px-4 py-2 rounded-sm"
+                className="inline-block mt-3 px-4 py-2"
                 style={{ background: offerBg, color: offerInk }}
               >
                 <p className="text-[15px] font-bold uppercase" style={{ letterSpacing: '0.04em' }}>
@@ -215,35 +236,31 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           </div>
         </div>
 
-        {/* ── Bottom strip — member fields + stamps + meter + barcode ───────────── */}
-        <div className="px-5 py-4" style={{ color: cardInk, background: cardBg }}>
-          {/* Stats row */}
-          {(showCntr || showOffsCt) && (
-            <div className="grid grid-cols-2 gap-4 mb-5">
-              {showCntr && (
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.5 }}>
-                    {cntrLbl}
-                  </p>
-                  <p className="text-[18px] font-medium mt-0.5" style={{ color: cardInk }}>
-                    {Math.min(visits, cycle)} / {cycle}
-                  </p>
-                </div>
-              )}
-              {showOffsCt && (
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.5 }}>
-                    {offsCtLbl}
-                  </p>
-                  <p className="text-[18px] font-medium mt-0.5" style={{ color: cardInk }}>
-                    {customer?.offers_count ?? 0}
-                  </p>
-                </div>
-              )}
+        {/* ── BOTTOM STRIP — greeting + action prompt + stamps + meter + QR + barcode ── */}
+        <div className="px-5 pt-4 pb-5" style={{ color: cardInk, background: cardBg }}>
+          {/* Greeting (left) + Action prompt (right) — Maison 123 pattern */}
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.16em]" style={{ color: cardInk, opacity: 0.55 }}>
+                {greetLbl}
+              </p>
+              <p className="text-[18px] font-semibold mt-0.5 truncate" style={{ color: cardInk }}>
+                {fullName}
+              </p>
             </div>
-          )}
+            {showActPr && (
+              <div className="text-right min-w-0">
+                <p className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: cardInk, opacity: 0.85 }}>
+                  {actPrTitle}
+                </p>
+                <p className="text-[11px] mt-0.5" style={{ color: cardInk, opacity: 0.6 }}>
+                  {actPrSub}
+                </p>
+              </div>
+            )}
+          </div>
 
-          {/* Stamps grid — visual punch-card. Owner-configurable shape + colours. */}
+          {/* Stamps grid */}
           {card.show_stamps_grid !== false && (
             <StampGrid
               count={cycle}
@@ -253,13 +270,13 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
               emptyColor={card.stamp_empty_color || '#E7E5E4'}
               inkColor={card.stamp_ink_color || '#FFFFFF'}
               customUrl={card.stamp_custom_url || ''}
-              size={card.stamp_size || 28}
+              size={card.stamp_size || 26}
               label={card.stamps_label || ''}
               ink={cardInk}
             />
           )}
 
-          {/* Progress meter — slim bar that mirrors the stamps fill */}
+          {/* Progress meter */}
           {card.show_meter !== false && cycle > 0 && (
             <div className="mt-3 mb-4">
               {card.meter_label && (
@@ -284,18 +301,45 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
             </div>
           )}
 
+          {/* Birthday line */}
+          {showBday && customer?.birthday && (
+            <div className="mt-3 flex items-center justify-between border-t pt-3" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+              <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.55 }}>
+                {bdayLbl}
+              </p>
+              <p className="text-[12px] font-medium" style={{ color: cardInk }}>
+                {customer.birthday}
+              </p>
+            </div>
+          )}
+
+          {/* QR code (smaller) — only when enabled */}
+          {showQr && (
+            <div className="mt-3 flex flex-col items-center">
+              <div className="rounded-lg p-2 bg-white" style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.06)' }}>
+                <QRCodeSVG
+                  value={customer?.barcode_id || ''}
+                  size={qrSize}
+                  level="M"
+                  bgColor="#FFFFFF"
+                  fgColor="#0F0F0F"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Barcode at the bottom */}
           {showBarcode && (
-            <div className="mt-2 flex flex-col items-center">
+            <div className="mt-3 flex flex-col items-center">
               <Code128Barcode
                 value={customer?.barcode_id || ''}
-                height={compact ? 44 : 54}
+                height={compact ? 40 : 48}
                 barWidth={2}
                 fontSize={11}
               />
             </div>
           )}
-          {showCardNumber && !showBarcode && (
+          {showCardNumber && !showBarcode && !showQr && (
             <div className="mt-2 text-center font-mono text-[12px]" style={{ color: cardInk }}>
               {customer?.barcode_id}
             </div>

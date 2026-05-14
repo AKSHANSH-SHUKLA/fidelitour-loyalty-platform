@@ -28,7 +28,10 @@ const DEFAULT_BRAND = {
   // Images
   logo_url:         '',
   hero_image_url:   '',
-  hero_opacity:     85,          // 0–100, drives image visibility behind text
+  // Where the logo sits on the card. 'top_left' is the Apple-Wallet default
+  // (matches Maison 123, FNAC, GÉMO). 'middle_overlay' puts it centred over
+  // the middle band, 'top_center' centres it on the top strip.
+  logo_position:    'top_left',  // 'top_left' | 'top_center' | 'middle_overlay'
   // Text content
   title_label:      'Ta carte fidélité',
   points_label:     'Points',
@@ -108,6 +111,30 @@ const DEFAULT_BRAND = {
   meter_fill_color:    '#B85C38',
   meter_track_color:   '#F2EDE3',
   meter_label:         'Progression',    // caption above the meter
+
+  // ── Apple-Wallet-style bottom band layout ──────────────────────────
+  // Top-right corner of the card — small "+ D'INFOS / N pts" stack
+  show_points_top_right: true,
+  points_top_right_label: '+ D\'INFOS',
+  // Bottom action prompt (Maison 123: "Présentez votre carte fidélité / Et cumulez des points")
+  show_action_prompt:   true,
+  action_prompt_title:  'Présentez votre carte fidélité',
+  action_prompt_sub:    'Et cumulez des points',
+  // Greeting on the bottom band (Maison 123: "VICTOIRE / Utku")
+  bottom_greeting_label: 'Bienvenue',
+  // QR code + barcode controls — owner picks one or both, and the size
+  show_qr:              true,
+  show_barcode:         true,           // re-declared for clarity (matches above)
+  qr_size:              90,             // px on the card surface
+  // Birthday display
+  show_birthday:        false,
+  birthday_label:       'Anniversaire',
+  // Tier badge on the top strip
+  show_tier_badge:      true,
+  tier_badge_bronze:    '#B26344',
+  tier_badge_silver:    '#9AA6B3',
+  tier_badge_gold:      '#E8A53B',
+  tier_badge_vip:       '#9A6DBF',
 };
 
 // Font options for the title. Loaded globally via index.css Google Fonts.
@@ -594,27 +621,6 @@ export default function CardDesignerPage() {
               </div>
             </div>
 
-            {/* Hero opacity slider — controls how prominent the image is */}
-            {brand.hero_image_url && (
-              <div>
-                <div className="flex items-baseline justify-between mb-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-[#57534E]">
-                    Opacité de l'image héros
-                  </label>
-                  <span className="text-[11px] font-mono text-[#1C1917]">{brand.hero_opacity}%</span>
-                </div>
-                <input
-                  type="range" min="20" max="100" step="5"
-                  value={brand.hero_opacity}
-                  onChange={(e) => setBrand((b) => ({ ...b, hero_opacity: parseInt(e.target.value, 10) }))}
-                  className="w-full"
-                />
-                <p className="text-[10px] text-[#8B8680] mt-1">
-                  20% = très discret, façon filigrane · 85% = front-and-centre comme KFC · 100% = image dominante.
-                </p>
-              </div>
-            )}
-
             {/* 5 Colour pickers — primary, secondary, accent, text-on-brand, back-link */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Palette de marque</p>
@@ -969,6 +975,146 @@ export default function CardDesignerPage() {
                 </div>
               </div>
             )}
+
+            {/* ─── Disposition Apple Wallet — logo, top-right, action prompt, QR, anniversaire, tiers ─── */}
+            <div className="rounded-xl border border-[#E7E5E4] bg-white p-4 space-y-4 mt-3">
+              <div className="flex items-center gap-2">
+                <Palette size={16} className="text-[#B85C38]" />
+                <h3 className="text-[14px] font-bold text-[#1C1917]">Disposition Apple Wallet</h3>
+              </div>
+              <p className="text-[11.5px] text-[#7A716C] -mt-2">
+                Réglez où va le logo, ce qui s'affiche en haut à droite, l'invite d'action en bas, la taille du QR, l'anniversaire et les badges de palier.
+              </p>
+
+              {/* Logo position */}
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[#7A716C] mb-2 font-bold">Position du logo</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { key: 'top_left',       label: 'Haut gauche' },
+                    { key: 'top_center',     label: 'Haut centre' },
+                    { key: 'middle_overlay', label: 'Sur la bande centrale' },
+                  ].map(({ key, label }) => {
+                    const active = brand.logo_position === key;
+                    return (
+                      <button key={key} type="button"
+                        onClick={() => setBrand((b) => ({ ...b, logo_position: key }))}
+                        className={`p-2 rounded-lg border text-[11px] text-center transition ${active ? 'border-[#B85C38] bg-[#FEF6F0] text-[#B85C38] font-semibold' : 'border-[#E7E5E4] bg-white hover:bg-[#FAF8F4] text-[#1C1917]'}`}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Top-right pts label */}
+              <div>
+                <label className="flex items-center gap-2 text-[12px] font-bold text-[#1C1917] mb-2 cursor-pointer">
+                  <input type="checkbox" checked={brand.show_points_top_right !== false}
+                         onChange={(e) => setBrand((b) => ({ ...b, show_points_top_right: e.target.checked }))} />
+                  Afficher les points en haut à droite ("+ D'INFOS / N pts")
+                </label>
+                {brand.show_points_top_right !== false && (
+                  <input type="text" value={brand.points_top_right_label}
+                         onChange={(e) => setBrand((b) => ({ ...b, points_top_right_label: e.target.value }))}
+                         placeholder="+ D'INFOS"
+                         className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                )}
+              </div>
+
+              {/* Action prompt */}
+              <div>
+                <label className="flex items-center gap-2 text-[12px] font-bold text-[#1C1917] mb-2 cursor-pointer">
+                  <input type="checkbox" checked={brand.show_action_prompt !== false}
+                         onChange={(e) => setBrand((b) => ({ ...b, show_action_prompt: e.target.checked }))} />
+                  Afficher l'invite d'action (style "Présentez votre carte fidélité")
+                </label>
+                {brand.show_action_prompt !== false && (
+                  <div className="grid grid-cols-1 gap-2">
+                    <input type="text" value={brand.action_prompt_title}
+                           onChange={(e) => setBrand((b) => ({ ...b, action_prompt_title: e.target.value }))}
+                           placeholder="Présentez votre carte fidélité"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                    <input type="text" value={brand.action_prompt_sub}
+                           onChange={(e) => setBrand((b) => ({ ...b, action_prompt_sub: e.target.value }))}
+                           placeholder="Et cumulez des points"
+                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                  </div>
+                )}
+              </div>
+
+              {/* Greeting label */}
+              <div>
+                <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Étiquette d'accueil</label>
+                <input type="text" value={brand.bottom_greeting_label}
+                       onChange={(e) => setBrand((b) => ({ ...b, bottom_greeting_label: e.target.value }))}
+                       placeholder="Bienvenue / Membre / Bonjour"
+                       className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+              </div>
+
+              {/* QR / barcode / birthday toggles */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <label className="flex items-center gap-2 text-[12px] text-[#1C1917] cursor-pointer">
+                  <input type="checkbox" checked={brand.show_qr !== false}
+                         onChange={(e) => setBrand((b) => ({ ...b, show_qr: e.target.checked }))} />
+                  QR code
+                </label>
+                <label className="flex items-center gap-2 text-[12px] text-[#1C1917] cursor-pointer">
+                  <input type="checkbox" checked={brand.show_barcode !== false}
+                         onChange={(e) => setBrand((b) => ({ ...b, show_barcode: e.target.checked }))} />
+                  Code-barres
+                </label>
+                <label className="flex items-center gap-2 text-[12px] text-[#1C1917] cursor-pointer">
+                  <input type="checkbox" checked={!!brand.show_birthday}
+                         onChange={(e) => setBrand((b) => ({ ...b, show_birthday: e.target.checked }))} />
+                  Anniversaire
+                </label>
+              </div>
+
+              {/* QR size + birthday label */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Taille du QR (px)</label>
+                  <input type="range" min="48" max="140" value={brand.qr_size}
+                         onChange={(e) => setBrand((b) => ({ ...b, qr_size: parseInt(e.target.value, 10) }))}
+                         className="w-full" />
+                  <p className="text-[11px] text-[#1C1917] mt-1">{brand.qr_size}px</p>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Étiquette anniversaire</label>
+                  <input type="text" value={brand.birthday_label}
+                         onChange={(e) => setBrand((b) => ({ ...b, birthday_label: e.target.value }))}
+                         placeholder="Anniversaire"
+                         className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                </div>
+              </div>
+
+              {/* Tier badge colours */}
+              <div>
+                <label className="flex items-center gap-2 text-[12px] font-bold text-[#1C1917] mb-2 cursor-pointer">
+                  <input type="checkbox" checked={brand.show_tier_badge !== false}
+                         onChange={(e) => setBrand((b) => ({ ...b, show_tier_badge: e.target.checked }))} />
+                  Afficher le badge de palier sur la carte
+                </label>
+                {brand.show_tier_badge !== false && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { key: 'tier_badge_bronze', label: 'Bronze' },
+                      { key: 'tier_badge_silver', label: 'Silver' },
+                      { key: 'tier_badge_gold',   label: 'Gold' },
+                      { key: 'tier_badge_vip',    label: 'VIP' },
+                    ].map(({ key, label }) => (
+                      <div key={key}>
+                        <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">{label}</label>
+                        <input type="color" value={brand[key]}
+                               onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
+                               className="w-full h-8 rounded border border-[#E7E5E4]" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* ─── Tampons & progression — punch-card stamps + meter ─── */}
             <div className="rounded-xl border border-[#E7E5E4] bg-white p-4 space-y-4 mt-3">
