@@ -476,21 +476,23 @@ const AnalyticsPage = () => {
   const branches = branchesCtx;
   const setBranches = setBranchesCtx;
 
-  // Shared time filter for the "Activité dans la période choisie" section
-  // and the Visits / Acquisition charts. mode = 'preset' | 'custom' | 'since'.
-  //  - preset: a pre-defined chip (7d, 30d, 90d, 6mo, 1y)
-  //  - custom: owner-typed N + unit (day/week/month/year)
-  //  - since:  "depuis le …" calendar date — days = today - chosen date
-  const [sharedFilter, setSharedFilter] = useState({ mode: 'preset', value: 30, unit: 'day', sinceDate: '' });
-  const sharedDays = useMemo(() => {
-    const f = sharedFilter;
+  // TWO independent time filters:
+  //  - chartsFilter: drives Visites dans le temps + Acquisition de clients
+  //  - tilesFilter:  drives every tile in "Activité dans la période choisie"
+  // Same UI control (SharedTimeFilter) is rendered above each section.
+  // mode = 'preset' | 'custom' | 'since'.
+  const [chartsFilter, setChartsFilter] = useState({ mode: 'preset', value: 30, unit: 'day', sinceDate: '' });
+  const [tilesFilter,  setTilesFilter ] = useState({ mode: 'preset', value: 30, unit: 'day', sinceDate: '' });
+  const filterToDays = (f) => {
     if (f.mode === 'since' && f.sinceDate) {
       const ms = Date.now() - new Date(f.sinceDate).getTime();
       return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
     }
     const UNIT_DAYS = { day: 1, week: 7, month: 30, year: 365 };
     return Math.max(1, Math.round((Number(f.value) || 1) * (UNIT_DAYS[f.unit] || 1)));
-  }, [sharedFilter]);
+  };
+  const chartsDays = useMemo(() => filterToDays(chartsFilter), [chartsFilter]);
+  const tilesDays  = useMemo(() => filterToDays(tilesFilter),  [tilesFilter]);
 
   const [recoveryInactiveDays, setRecoveryInactiveDays] = useState(30);
   const [recoveryWindowDays, setRecoveryWindowDays] = useState(30);
@@ -837,23 +839,21 @@ const AnalyticsPage = () => {
       {/* Configurable customer-status KPIs — live, uses the definition from Settings */}
       <CustomerStatusKPI />
 
-      {/* Shared time filter — drives the Visits chart, the Acquisition
-          chart, AND every tile in the "Activité dans la période choisie"
-          section below. ONE control for the whole time-windowed area. */}
+      {/* Filter A — charts only (Visites + Acquisition). */}
       <div className="flex items-baseline justify-between gap-4 flex-wrap mt-2 mb-1">
         <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Fenêtre de temps — Visites · Acquisition · Activité
+          Fenêtre de temps — Visites · Acquisition
         </h3>
         <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
-          {sharedDays} jour{sharedDays === 1 ? '' : 's'}
+          {chartsDays} jour{chartsDays === 1 ? '' : 's'}
         </span>
       </div>
-      <SharedTimeFilter value={sharedFilter} onChange={setSharedFilter} sharedDays={sharedDays} />
+      <SharedTimeFilter value={chartsFilter} onChange={setChartsFilter} sharedDays={chartsDays} />
 
-      {/* Visits chart + Acquisition chart — both driven by the shared filter. */}
+      {/* Visits chart + Acquisition chart — driven by chartsFilter. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <VisitsTwinChart controlledDays={sharedDays} />
-        <WeeklyAcquisitionPanel controlledDays={sharedDays} />
+        <VisitsTwinChart controlledDays={chartsDays} />
+        <WeeklyAcquisitionPanel controlledDays={chartsDays} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AcquisitionDonut />
@@ -954,34 +954,38 @@ const AnalyticsPage = () => {
             Activité dans la période choisie
           </h3>
           <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
-            Fenêtre partagée · {sharedDays} jour{sharedDays === 1 ? '' : 's'} (filtre en haut)
+            {tilesDays} jour{tilesDays === 1 ? '' : 's'}
           </span>
         </div>
 
+        {/* Filter B — controls every tile in the section. Independent of
+            the charts filter above so the owner can compare windows. */}
+        <SharedTimeFilter value={tilesFilter} onChange={setTilesFilter} sharedDays={tilesDays} />
+
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={UserPlus2} title="Nouveaux clients" tone="info"
             metric="new_customers" branchId={branchId}
             initial={{ value: 7, unit: 'day' }}
             sublabel={(d) => `Inscrits sur les ${d} derniers jours`}
             onDrill={(d) => drillCustomers(`Nouveaux clients (${d}j)`, { created_within_days: d })}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={Award} title="Clients actifs" tone="success"
             metric="active_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Visite dans les ${d} derniers jours`}
             onDrill={(d) => drillCustomers(`Clients actifs (${d}j)`, { active_within_days: d })}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={AlertCircle} title="Inactifs" tone="warning"
             metric="inactive_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Pas vus depuis ${d} jours · à reconquérir`}
             onDrill={(d) => drillCustomers(`Inactifs ≥ ${d}j`, { inactive_days_min: d })}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={Clock} title="Sur le point de partir" tone="danger"
             metric="about_to_lose" branchId={branchId}
             initial={{ value: 14, unit: 'day' }}
@@ -991,14 +995,14 @@ const AnalyticsPage = () => {
         </section>
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={CreditCard} title="Cartes complétées" accent="#4A5D23"
             metric="cards_filled" branchId={branchId}
             initial={{ value: 1, unit: 'month' }}
             sublabel={(d) => `Récompenses débloquées · ${d}j`}
             onDrill={() => drillCustomers('Clients ayant rempli une carte', { cards_filled: true })}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={RefreshCcw} title="Clients récupérés" accent="#B85C38"
             metric="recovered" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
@@ -1017,7 +1021,7 @@ const AnalyticsPage = () => {
               })
             }
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={Gift} title="Récompenses utilisées" accent="#9B7FB8"
             metric="rewards_redeemed" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
@@ -1039,7 +1043,7 @@ const AnalyticsPage = () => {
               } catch (e) { alert('Failed: ' + (e?.response?.data?.detail || e.message)); }
             }}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={Calendar} title="Premières visites" accent="#3C9D9B"
             metric="first_time_today" branchId={branchId}
             initial={{ value: 1, unit: 'day' }}
@@ -1049,28 +1053,28 @@ const AnalyticsPage = () => {
         </section>
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={Trophy} title="Loyal" accent="#7B3F00"
             metric="loyal_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `≥ seuil "Loyal" sur ${d}j`}
             onDrill={() => drillCustomers('Loyal customers', { loyalty_bucket: 'loyal' })}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={RepeatIcon} title="Réguliers" accent="#E8917C"
             metric="regular_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `≥ seuil "Régulier" sur ${d}j`}
             onDrill={() => drillCustomers('Regular customers', { loyalty_bucket: 'regular' })}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={Activity} title="Visites totales" accent="#4A5D23"
             metric="total_visits" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Visites enregistrées sur ${d}j`}
             onDrill={(d) => drillCustomers(`Customers visited last ${d}d`, { active_within_days: d })}
           />
-          <MetricTile controlledDays={sharedDays}
+          <MetricTile controlledDays={tilesDays}
             icon={Calendar} title="Anniversaires ce mois" accent="#E3A869"
             metric="birthdays_this_month_static"
             branchId={branchId}

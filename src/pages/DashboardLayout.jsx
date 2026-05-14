@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import NotificationBell from '../components/NotificationBell';
 import BranchPillsBanner from '../components/BranchPillsBanner';
 import BillingBanner from '../components/BillingBanner';
@@ -373,6 +373,23 @@ function UserMenu({ user, theme, role, onLogout }) {
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  // Global search — currently routes to /dashboard/customers with the query
+  // as ?q=. Could be expanded later to a Cmd+K palette across customers,
+  // campaigns, and KPIs.
+  const [searchQ, setSearchQ] = React.useState('');
+  const submitSearch = (e) => {
+    e?.preventDefault?.();
+    const q = (searchQ || '').trim();
+    if (!q) {
+      navigate('/dashboard/customers');
+    } else {
+      // Honor numeric / barcode-style queries — drop straight onto that customer
+      const isBarcode = /^FT-?[A-Z0-9]{4,}/i.test(q);
+      const param = isBarcode ? 'barcode_id' : 'q';
+      navigate(`/dashboard/customers?${param}=${encodeURIComponent(q)}`);
+    }
+  };
   const currentPath = location.pathname;
   const role = user?.role || 'default';
   const theme = themeForRole(role);
@@ -596,22 +613,39 @@ const DashboardLayout = () => {
               borderBottom: '1px solid var(--hairline, #ECE8E1)',
             }}
           >
-            {/* Search — left-aligned, fixed width */}
-            <div
-              className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[240px]"
+            {/* Global search — Enter routes to /dashboard/customers with
+                the query. Barcode-style inputs (FT-XXXX) hit the customer
+                page filter by barcode_id; everything else hits the free
+                text search. */}
+            <form
+              onSubmit={submitSearch}
+              className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[280px]"
               style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #ECE8E1)' }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
-                <circle cx="11" cy="11" r="7" />
-                <path d="M21 21l-4.3-4.3" />
-              </svg>
+              <button type="submit" aria-label="Lancer la recherche" className="shrink-0" style={{ lineHeight: 0 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M21 21l-4.3-4.3" />
+                </svg>
+              </button>
               <input
                 type="text"
-                placeholder="Rechercher…"
-                aria-label="Rechercher"
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+                placeholder="Rechercher un client, un code FT-…"
+                aria-label="Rechercher un client"
                 className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
                 style={{ color: 'var(--ink, #1F1B1A)', fontWeight: 400 }}
               />
+              {searchQ && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQ('')}
+                  aria-label="Effacer"
+                  className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F4F2EE]"
+                  style={{ color: 'var(--ink-mute, #7A716C)' }}
+                >✕</button>
+              )}
               <kbd
                 className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
                 style={{
@@ -620,10 +654,11 @@ const DashboardLayout = () => {
                   border: '1px solid var(--hairline, #ECE8E1)',
                   fontWeight: 500,
                 }}
+                title="Entrée pour rechercher"
               >
-                ⌘K
+                ↵
               </kbd>
-            </div>
+            </form>
 
             {/* Branch banner inline — fills the middle */}
             <div className="flex-1 min-w-0 px-2">

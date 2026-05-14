@@ -8,7 +8,8 @@
  * the dropdown, all currently-shown alerts are marked read.
  */
 import React, { useEffect, useState, useRef } from 'react';
-import { Bell, AlertTriangle, TrendingDown, TrendingUp, Sparkles, X, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, AlertTriangle, TrendingDown, TrendingUp, Sparkles, X, Building2, Users, Send, Cake, ChevronRight } from 'lucide-react';
 import api, { ownerAPI } from '../lib/api';
 
 const STORAGE_KEY = 'ft_read_alerts_v1';
@@ -35,7 +36,63 @@ const severityColor = (severity) => {
   return '#8B7DC9';
 };
 
+// Resolve an alert into "Voir clients" + "Envoyer campagne" navigation
+// targets based on its type/title keywords. Each alert in the dropdown
+// becomes a real to-do item the owner can act on in two clicks.
+const resolveAlertActions = (alert) => {
+  const title = (alert.title || '').toLowerCase();
+  const type = (alert.type || alert.category || '').toLowerCase();
+  // Birthday flow
+  if (type.includes('birthday') || title.includes('anniversaire') || title.includes('birthday')) {
+    return {
+      icon: Cake,
+      customersUrl: '/dashboard/customers?has_birthday_this_month=true',
+      campaignUrl: '/dashboard/campaigns?preset_name=' + encodeURIComponent('Joyeux anniversaire') +
+        '&preset_content=' + encodeURIComponent('Joyeux anniversaire {first_name} ! Une attention vous attend chez {business_name}.'),
+      campaignLabel: 'Envoyer un vœu',
+    };
+  }
+  // At risk / about to lose / inactif
+  if (type.includes('at_risk') || type.includes('inactive') || title.includes('risque') || title.includes('inactif') || title.includes('point de partir')) {
+    return {
+      icon: Users,
+      customersUrl: '/dashboard/customers?inactive_days_min=14&inactive_days_max=29',
+      campaignUrl: '/dashboard/campaigns?preset_name=' + encodeURIComponent('Vous nous manquez') +
+        '&preset_content=' + encodeURIComponent('{first_name}, ça fait un moment ! Une attention vous attend chez {business_name}.'),
+      campaignLabel: 'Envoyer "We miss you"',
+    };
+  }
+  // New customers
+  if (type.includes('new') || title.includes('nouveau') || title.includes('nouveaux')) {
+    return {
+      icon: Users,
+      customersUrl: '/dashboard/customers?created_within_days=7',
+      campaignUrl: '/dashboard/campaigns?preset_name=' + encodeURIComponent('Bienvenue') +
+        '&preset_content=' + encodeURIComponent('Bienvenue {first_name} ! Une attention vous attend lors de votre prochain passage.'),
+      campaignLabel: 'Envoyer Bienvenue',
+    };
+  }
+  // VIP / loyal segment
+  if (type.includes('vip') || type.includes('loyal') || title.includes('vip') || title.includes('loyal')) {
+    return {
+      icon: Users,
+      customersUrl: '/dashboard/customers?tier=vip',
+      campaignUrl: '/dashboard/campaigns?preset_name=' + encodeURIComponent('Merci VIP') +
+        '&preset_content=' + encodeURIComponent('{first_name}, un grand merci pour votre fidélité. Une attention exclusive vous attend.'),
+      campaignLabel: 'Récompenser les VIP',
+    };
+  }
+  // Default — just open Customers
+  return {
+    icon: Users,
+    customersUrl: '/dashboard/customers',
+    campaignUrl: '/dashboard/campaigns',
+    campaignLabel: 'Envoyer une campagne',
+  };
+};
+
 const NotificationBell = () => {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [readIds, setReadIds] = useState(loadReadIds);
   const [open, setOpen] = useState(false);
@@ -226,46 +283,68 @@ const NotificationBell = () => {
                 const Icon = severityIcon(a.severity);
                 const color = severityColor(a.severity);
                 const isUnread = !readIds.has(a.id || a.title);
+                const actions = resolveAlertActions(a);
                 return (
                   <div
                     key={a.id || i}
-                    className="px-4 py-3 border-b last:border-b-0 flex gap-3 items-start"
+                    className="px-4 py-3 border-b last:border-b-0"
                     style={{
                       borderColor: '#F5F1EB',
                       background: isUnread ? `linear-gradient(90deg, ${color}0F 0%, transparent 30%)` : 'white',
                     }}
                   >
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                         style={{ background: `${color}1A` }}>
-                      <Icon size={16} style={{ color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {/* Branch badge — every alert is now per-shop. */}
-                      {a.branch_name && (
-                        <span
-                          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1.5"
-                          style={{
-                            background: `${color}1A`,
-                            color: color,
-                            border: `1px solid ${color}33`,
-                          }}
-                          title={`Boutique : ${a.branch_name}`}
-                        >
-                          <Building2 size={9} /> {a.branch_name}
-                        </span>
-                      )}
-                      <p className="text-sm font-bold leading-tight" style={{ color: '#1C1917' }}>
-                        {a.title}
-                      </p>
-                      {a.body && (
-                        <p className="text-xs mt-1 leading-snug" style={{ color: '#57534E' }}>
-                          {a.body}
+                    <div className="flex gap-3 items-start">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                           style={{ background: `${color}1A` }}>
+                        <Icon size={16} style={{ color }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {a.branch_name && (
+                          <span
+                            className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1.5"
+                            style={{
+                              background: `${color}1A`,
+                              color: color,
+                              border: `1px solid ${color}33`,
+                            }}
+                            title={`Boutique : ${a.branch_name}`}
+                          >
+                            <Building2 size={9} /> {a.branch_name}
+                          </span>
+                        )}
+                        <p className="text-sm font-bold leading-tight" style={{ color: '#1C1917' }}>
+                          {a.title}
                         </p>
+                        {a.body && (
+                          <p className="text-xs mt-1 leading-snug" style={{ color: '#57534E' }}>
+                            {a.body}
+                          </p>
+                        )}
+                      </div>
+                      {isUnread && (
+                        <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: color }} />
                       )}
                     </div>
-                    {isUnread && (
-                      <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: color }} />
-                    )}
+                    {/* Action row — Voir clients / Envoyer campagne, resolved by alert type */}
+                    <div className="mt-2 ml-12 flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => { setOpen(false); navigate(actions.customersUrl); }}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1 transition"
+                        style={{ background: '#F4F2EE', color: '#1C1917', border: '1px solid #E7E5E4' }}
+                      >
+                        <Users size={11} /> Voir les clients
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setOpen(false); navigate(actions.campaignUrl); }}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1 text-white transition"
+                        style={{ background: color, border: `1px solid ${color}` }}
+                      >
+                        <Send size={11} /> {actions.campaignLabel}
+                        <ChevronRight size={11} style={{ opacity: 0.8 }} />
+                      </button>
+                    </div>
                   </div>
                 );
               })

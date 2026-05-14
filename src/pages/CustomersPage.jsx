@@ -53,8 +53,20 @@ export default function CustomersPage() {
   // The "filter pill" we show at the top when arriving via a Dashboard tile
   const [urlFilterPill, setUrlFilterPill] = useState(null);   // { label, icon, color, clear }
 
-  // Filter state
-  const [searchQuery, setSearchQuery] = useState('');
+  // Filter state. Initialize searchQuery from URL ?q= or ?barcode_id= so
+  // the global toolbar search lands the user with their query pre-filled.
+  const [searchQuery, setSearchQuery] = useState(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get('q') || sp.get('barcode_id') || '';
+    } catch { return ''; }
+  });
+  // Also re-sync if URL changes (back/forward, or a fresh search submit).
+  React.useEffect(() => {
+    const q = searchParams.get('q') || searchParams.get('barcode_id') || '';
+    if (q) setSearchQuery(q);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const [tierFilter, setTierFilter] = useState('All');
   const [minVisits, setMinVisits] = useState('');
   const [maxVisits, setMaxVisits] = useState('');
