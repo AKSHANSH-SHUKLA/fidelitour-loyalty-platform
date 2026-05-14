@@ -1185,11 +1185,56 @@ export default function CardDesignerPage() {
           <div
             className="card-designer-preview-pane self-start"
           >
-            <div className="flex flex-col items-stretch gap-2 p-3 rounded-2xl" style={{ background: '#1F1B1A' }}>
-              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-center" style={{ color: '#9C8E78', letterSpacing: '0.18em' }}>
-                Aperçu Apple Wallet
-              </p>
-              <div className="relative">
+            {/* Hyper-realistic iPhone 15 Pro frame. Titanium-edged body,
+                Dynamic Island, real status bar (time / signal / Wi-Fi /
+                battery), Apple Wallet's "Done / ⋯" detail-view top bar,
+                home indicator at the bottom. Card lives inside this. */}
+            <div
+              className="mx-auto"
+              style={{
+                position: 'relative',
+                width: 312,
+                height: 640,
+                borderRadius: 50,
+                background: 'linear-gradient(155deg, #5C5A57 0%, #2A2826 26%, #181615 60%, #2E2C2A 100%)',
+                padding: 6,
+                boxShadow: '0 36px 70px -28px rgba(0,0,0,0.60), 0 14px 28px -10px rgba(0,0,0,0.32)',
+              }}
+            >
+              {/* Inner black bezel ring */}
+              <div style={{ position: 'absolute', inset: 4, borderRadius: 46, background: '#000', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)' }} />
+              {/* Screen */}
+              <div style={{ position: 'absolute', inset: 8, borderRadius: 42, overflow: 'hidden', background: '#000000' }}>
+                {/* Status bar */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px 0', color: '#FFFFFF', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>9:41</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true">
+                      <rect x="0"  y="6" width="3" height="4"  rx="0.6" fill="#FFFFFF" />
+                      <rect x="4"  y="4" width="3" height="6"  rx="0.6" fill="#FFFFFF" />
+                      <rect x="8"  y="2" width="3" height="8"  rx="0.6" fill="#FFFFFF" />
+                      <rect x="12" y="0" width="3" height="10" rx="0.6" fill="#FFFFFF" />
+                    </svg>
+                    <svg width="14" height="10" viewBox="0 0 15 11" aria-hidden="true">
+                      <path d="M7.5 10.2a1.1 1.1 0 100-2.2 1.1 1.1 0 000 2.2zM7.5 6.6a3.3 3.3 0 012.35.97l1.05-1.05a4.8 4.8 0 00-6.8 0L5.15 7.57A3.3 3.3 0 017.5 6.6zm0-3.6a6.9 6.9 0 014.93 2.05l1.05-1.05A8.4 8.4 0 007.5 1.4 8.4 8.4 0 001.52 4l1.05 1.05A6.9 6.9 0 017.5 3z" fill="#FFFFFF"/>
+                    </svg>
+                    <svg width="26" height="11" viewBox="0 0 26 11" aria-hidden="true">
+                      <rect x="0.5" y="0.5" width="21" height="10" rx="2.4" fill="none" stroke="#FFFFFF" strokeOpacity="0.55" />
+                      <rect x="2.2" y="2.2" width="15.6" height="6.6" rx="1.2" fill="#FFFFFF" />
+                      <rect x="22.5" y="3.5" width="2" height="4" rx="0.6" fill="#FFFFFF" fillOpacity="0.55" />
+                    </svg>
+                  </div>
+                </div>
+                {/* Dynamic Island */}
+                <div style={{ position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)', width: 96, height: 28, borderRadius: 999, background: '#000000', border: '1px solid #1A1A1A' }} />
+                {/* Apple Wallet detail-view top bar */}
+                <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', color: '#FFFFFF', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                  <span style={{ fontSize: 16, fontWeight: 400 }}>OK</span>
+                  <div style={{ width: 28, height: 28, borderRadius: 14, background: 'rgba(255,255,255,0.15)', display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 700, color: '#FFFFFF', letterSpacing: 1 }}>⋯</div>
+                </div>
+                {/* Card surface — sits just below the Wallet top bar */}
+                <div style={{ position: 'absolute', top: 92, left: 10, right: 10, bottom: 26, overflowY: 'auto' }}>
+                  <div className="relative">
                 <PremiumLoyaltyCard
                   customer={{
                     name: 'Marie Lefèvre',
@@ -1217,9 +1262,14 @@ export default function CardDesignerPage() {
                 />
                 {/* Numbered band tags overlaid on the card so the owner can
                     visually anchor each editor section to a strip. */}
-                <span className="absolute -left-2 top-[10%] -translate-x-full text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded" style={{ background: '#3FA9D9', color: '#FFFFFF' }}>1 · Haut</span>
-                <span className="absolute -left-2 top-[42%] -translate-x-full text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded" style={{ background: '#E8A53B', color: '#FFFFFF' }}>2 · Milieu</span>
-                <span className="absolute -left-2 top-[78%] -translate-x-full text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded" style={{ background: '#3FA86A', color: '#FFFFFF' }}>3 · Bas</span>
+                {/* Numbered band tags overlaid on the card (legend below) */}
+                <span className="absolute -left-1 top-[8%] text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: '#3FA9D9', color: '#FFFFFF', letterSpacing: '0.10em' }}>1</span>
+                <span className="absolute -left-1 top-[40%] text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: '#E8A53B', color: '#FFFFFF', letterSpacing: '0.10em' }}>2</span>
+                <span className="absolute -left-1 top-[74%] text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: '#3FA86A', color: '#FFFFFF', letterSpacing: '0.10em' }}>3</span>
+                  </div>
+                </div>
+                {/* Home indicator bar */}
+                <div aria-hidden="true" style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 110, height: 5, background: '#FFFFFF', borderRadius: 3, opacity: 0.9 }} />
               </div>
             </div>
 

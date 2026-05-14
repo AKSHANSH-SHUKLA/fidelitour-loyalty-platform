@@ -913,10 +913,10 @@ textarea::placeholder {
 @media (min-width: 1024px) {
   .card-designer-preview-pane {
     position: fixed;
-    top: 88px;
+    top: 76px;
     right: 24px;
-    width: 320px;
-    max-height: calc(100vh - 110px);
+    width: 340px;
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
     z-index: 30;
   }
