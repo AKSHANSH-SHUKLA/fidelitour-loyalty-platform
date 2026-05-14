@@ -167,8 +167,19 @@ export default function OwnerDashboard() {
   const tiersTotal = tierData.reduce((s, p) => s + p.value, 0);
 
   // Visit-time heatmap — { day_of_week: { hour: count } } from the
-  // analytics summary. Used by the "When Do Customers Visit" panel.
-  const heatmap = summary?.visit_time_heatmap || {};
+  // analytics summary. If the backend doesn't return the field for any
+  // reason, fall back to a 7-day x 13-hour skeleton (Mon-Sun, 7am-7pm)
+  // with all zeros so the panel always renders and the owner can see
+  // the schedule grid even before any visits land.
+  const HEATMAP_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const HEATMAP_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+  const heatmapEmpty = HEATMAP_DAYS.reduce((acc, d) => {
+    acc[d] = HEATMAP_HOURS.reduce((h, hr) => { h[String(hr)] = 0; return h; }, {});
+    return acc;
+  }, {});
+  const heatmap = (summary?.visit_time_heatmap && Object.keys(summary.visit_time_heatmap).length > 0)
+    ? summary.visit_time_heatmap
+    : heatmapEmpty;
 
   // Plan usage
   const planName = (tenant?.plan || 'gold').toUpperCase();
@@ -535,8 +546,10 @@ export default function OwnerDashboard() {
 
           {/* When Do Customers Visit — gradient heatmap (day × hour).
               Restored from the pre-rebuild dashboard. Cells go from pale
-              cream (idle) → deep terracotta (peak) so peak hours pop. */}
-          {Object.keys(heatmap).length > 0 && (
+              cream (idle) → deep terracotta (peak) so peak hours pop.
+              Always rendered — uses the empty skeleton when the API
+              hasn't sent data yet, so the panel is visible immediately. */}
+          {(
             <div className="fd-panel">
               <div className="fd-panel-head">
                 <div>
