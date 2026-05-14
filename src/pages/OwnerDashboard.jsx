@@ -305,21 +305,21 @@ export default function OwnerDashboard() {
 
           {/* KPI GRID — 8 cards */}
           <div className="fd-kpi-grid">
-            <Kpi color="k-pos" icon={<Users size={18} />}        label="Total Customers"  value={fmtNum(totalCustomers)} sub="Toute la base"
+            <Kpi color="k-blue"    icon={<Users size={18} />}        label="Total Customers"  value={fmtNum(totalCustomers)} sub="Toute la base"
                  delta={newCustomers.deltaPct}
                  onClick={() => navigate('/dashboard/customers')} />
-            <Kpi color="k-pos" icon={<Activity size={18} />}     label="Total Visits"    value={fmtNum(totalVisits)}   sub="Toutes les visites enregistrées"
+            <Kpi color="k-emerald" icon={<Activity size={18} />}     label="Total Visits"    value={fmtNum(totalVisits)}   sub="Toutes les visites enregistrées"
                  delta={visitsTwin.deltaPct} />
-            <Kpi color="k-pos" icon={<TrendingUp size={18} />}   label="Repeat Rate"     value={fmtPct(repeatRate)}    sub="Clients revenus au moins 2 fois" />
-            <Kpi color="k-pos" icon={<Smartphone size={18} />}   label="Wallet Passes"   value={fmtNum(walletPasses)}  sub={`${pct(walletPasses, totalCustomers)}% des clients`} />
+            <Kpi color="k-orange"  icon={<TrendingUp size={18} />}   label="Repeat Rate"     value={fmtPct(repeatRate)}    sub="Clients revenus au moins 2 fois" />
+            <Kpi color="k-indigo"  icon={<Smartphone size={18} />}   label="Wallet Passes"   value={fmtNum(walletPasses)}  sub={`${pct(walletPasses, totalCustomers)}% des clients`} />
 
-            <Kpi color="k-pos" icon={<BadgeCheck size={18} />}   label="Active Cards"    value={fmtNum(activeCards)}   sub="Dans Apple/Google Wallet"
+            <Kpi color="k-emerald" icon={<BadgeCheck size={18} />}   label="Active Cards"    value={fmtNum(activeCards)}   sub="Dans Apple/Google Wallet"
                  onClick={() => navigate('/dashboard/customers?wallet_state=active')} />
-            <Kpi color="k-neg" icon={<CreditCard size={18} />}   label="Never Added"     value={fmtNum(neverAdded)}    sub="Inscrits, mais carte non ajoutée"
+            <Kpi color="k-amber"   icon={<CreditCard size={18} />}   label="Never Added"     value={fmtNum(neverAdded)}    sub="Inscrits, mais carte non ajoutée"
                  onClick={() => navigate('/dashboard/customers?wallet_state=never_added')} />
-            <Kpi color="k-neg" icon={<Trash2 size={18} />}       label="Deleted Cards"   value={fmtNum(deletedCards)}  sub="Carte retirée du wallet"
+            <Kpi color="k-red"     icon={<Trash2 size={18} />}       label="Deleted Cards"   value={fmtNum(deletedCards)}  sub="Carte retirée du wallet"
                  onClick={() => navigate('/dashboard/customers?wallet_state=deleted')} />
-            <Kpi color="k-pos" icon={<Award size={18} />}        label="VIP Customers"   value={fmtNum(vipCount)}      sub="Top tier — 40+ visites ou panier €60+"
+            <Kpi color="k-purple"  icon={<Award size={18} />}        label="VIP Customers"   value={fmtNum(vipCount)}      sub="Top tier — 40+ visites ou panier €60+"
                  onClick={() => navigate('/dashboard/customers?tier=vip')} />
           </div>
 

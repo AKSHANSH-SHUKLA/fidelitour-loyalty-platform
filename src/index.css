@@ -692,38 +692,29 @@ textarea::placeholder {
 .fdt-dash .k-rose   { background: var(--fd-rose); }   .fdt-dash .k-rose   .fd-kpi-ico { background: var(--fd-rose-ico); }
 .fdt-dash .k-lilac  { background: var(--fd-lilac); }  .fdt-dash .k-lilac  .fd-kpi-ico { background: var(--fd-lilac-ico); }
 
-/* Semantic KPI tiles — Octoboard-style. Clean near-white surface with
-   subtle shadow. Big number in a vibrant joyful teal-blue (the hero
-   accent across every tile). The icon chip carries the positive (green)
-   or negative (red) meaning. Labels and sublabels stay muted gray. */
-.fdt-dash .k-pos,
-.fdt-dash .k-neg {
-  background: #FDFBF7;
+/* Per-tile pastel KPI palette — matches the spec mockup:
+   blue / emerald / orange / indigo / amber / red / purple.
+   All tiles share a clean white-cream surface; only the icon chip
+   carries the category colour (saturated bg + white icon).
+   Big number stays neutral ink, labels/subs in muted gray, numbers
+   use tabular-nums for column alignment. */
+.fdt-dash .fd-kpi[class*="k-"] {
+  background: #FFFFFF;
   border: 1px solid #ECE3D5;
-  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 8px 24px -12px rgba(28, 25, 23, 0.10);
-  position: relative;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
 }
-/* Soft tone-coloured corner glow */
-.fdt-dash .k-pos::before,
-.fdt-dash .k-neg::before {
-  content: ''; position: absolute; top: -18px; right: -18px;
-  width: 90px; height: 90px; border-radius: 50%;
-  filter: blur(24px); opacity: 0.55; pointer-events: none;
-}
-.fdt-dash .k-pos::before { background: rgba(63, 168, 106, 0.30); }
-.fdt-dash .k-neg::before { background: rgba(225, 90, 71, 0.28); }
-/* Saturated icon chip — green for positive, red for negative */
-.fdt-dash .k-pos .fd-kpi-ico { background: #3FA86A; color: #FFFFFF; box-shadow: 0 4px 12px -4px rgba(63, 168, 106, 0.45); }
-.fdt-dash .k-neg .fd-kpi-ico { background: #E15A47; color: #FFFFFF; box-shadow: 0 4px 12px -4px rgba(225, 90, 71, 0.45); }
-.fdt-dash .k-pos .fd-kpi-label,
-.fdt-dash .k-neg .fd-kpi-label { color: var(--fd-text-2); opacity: 1; }
-.fdt-dash .k-pos .fd-kpi-sub,
-.fdt-dash .k-neg .fd-kpi-sub { color: var(--fd-text-2); }
-/* Big number — vibrant teal-blue hero across every tile */
-.fdt-dash .k-pos .fd-kpi-value,
-.fdt-dash .k-neg .fd-kpi-value { color: #1E88B8; font-weight: 700; }
-/* Inner content sits above the corner glow */
-.fdt-dash .k-pos > *, .fdt-dash .k-neg > * { position: relative; z-index: 1; }
+.fdt-dash .fd-kpi[class*="k-"] .fd-kpi-label { color: var(--fd-text-2); opacity: 1; letter-spacing: 0.08em; }
+.fdt-dash .fd-kpi[class*="k-"] .fd-kpi-sub   { color: var(--fd-text-2); }
+.fdt-dash .fd-kpi[class*="k-"] .fd-kpi-value { color: #0F172A; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fdt-dash .fd-kpi[class*="k-"] .fd-kpi-ico   { color: #FFFFFF; border-radius: 10px; }
+
+.fdt-dash .k-blue    .fd-kpi-ico { background: #3B82F6; box-shadow: 0 4px 12px -4px rgba(59, 130, 246, 0.45); }
+.fdt-dash .k-emerald .fd-kpi-ico { background: #10B981; box-shadow: 0 4px 12px -4px rgba(16, 185, 129, 0.45); }
+.fdt-dash .k-orange  .fd-kpi-ico { background: #F97316; box-shadow: 0 4px 12px -4px rgba(249, 115, 22, 0.45); }
+.fdt-dash .k-indigo  .fd-kpi-ico { background: #6366F1; box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.45); }
+.fdt-dash .k-amber   .fd-kpi-ico { background: #F59E0B; box-shadow: 0 4px 12px -4px rgba(245, 158, 11, 0.45); }
+.fdt-dash .k-red     .fd-kpi-ico { background: #EF4444; box-shadow: 0 4px 12px -4px rgba(239, 68, 68, 0.45); }
+.fdt-dash .k-purple  .fd-kpi-ico { background: #8B5CF6; box-shadow: 0 4px 12px -4px rgba(139, 92, 246, 0.45); }
 
 /* KPI foot row — sub + optional delta chip side by side */
 .fdt-dash .fd-kpi-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
