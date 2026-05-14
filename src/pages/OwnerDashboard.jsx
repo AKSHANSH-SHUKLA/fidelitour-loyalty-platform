@@ -367,8 +367,8 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
-          {/* CHARTS ROW 1 — Visits + Acquisition */}
-          <div className="fd-charts-grid">
+          {/* CHARTS ROW — Visits | Acquisition | (Sources + Tier stacked) */}
+          <div className="fd-charts-grid fd-charts-3col">
             {/* Visits chart */}
             <div className="fd-chart">
               <div className="fd-ch-head">
@@ -448,10 +448,9 @@ export default function OwnerDashboard() {
                 <TrendingUp size={20} color="#4F7A36" />
               </div>
             </div>
-          </div>
 
-          {/* CHARTS ROW 2 — Sources + Tier donuts */}
-          <div className="fd-charts-grid">
+            {/* Column 3 — Sources + Tier donuts stacked */}
+            <div className="fd-chart-col-stack">
             <div className="fd-chart">
               <div className="fd-ch-head">
                 <span className="fd-ch-title">Top Sources d'acquisition</span>
@@ -527,7 +526,8 @@ export default function OwnerDashboard() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>{/* /fd-chart-col-stack */}
+          </div>{/* /fd-charts-grid */}
 
           {/* Churn & rétention */}
           <div className="fd-panel">

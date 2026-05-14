@@ -374,21 +374,66 @@ const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  // Global search — currently routes to /dashboard/customers with the query
-  // as ?q=. Could be expanded later to a Cmd+K palette across customers,
-  // campaigns, and KPIs.
+  // Global search — smart routing.
+  //
+  // The owner expects: "card" → Card Designer, "settings" → Settings,
+  // "campaign" → Campaigns, etc. If the query matches a known
+  // section/page synonym, we navigate directly there. Otherwise we treat
+  // it as a customer search (barcode FT-XXXX → exact, anything else →
+  // free-text q=).
   const [searchQ, setSearchQ] = React.useState('');
+
+  // Keyword → route mapping. Each route lists the words (FR + EN) that
+  // should land the user on that page. Match is case-insensitive and
+  // word-boundary aware (so "carte cadeau" still routes to Card Designer
+  // via "carte"). Order doesn't matter — we pick the first key whose
+  // keyword list matches.
+  const ROUTE_SYNONYMS = React.useMemo(() => ([
+    { route: '/dashboard',                              words: ['dashboard', 'tableau de bord', 'tableau', 'accueil', 'home', 'overview', 'vue d’ensemble', 'welcome'] },
+    { route: '/dashboard/analytics',                    words: ['analytics', 'analyses', 'analyse', 'kpi', 'kpis', 'stats', 'statistiques', 'rapport', 'reports', 'metrics', 'metric', 'métriques'] },
+    { route: '/dashboard/settings#settings-status',     words: ['customer status', 'statut client', 'segment', 'segments', 'statuts'] },
+    { route: '/dashboard/insights',                     words: ['insights', 'insight', 'reco', 'recommendations', 'recommandations', 'suggestion', 'suggestions', 'ai', 'ia'] },
+    { route: '/dashboard/map',                          words: ['map', 'carte (geo)', 'geographie', 'geography', 'géographie', 'localisation', 'lieux'] },
+    { route: '/dashboard/card-designer',                words: ['card designer', 'card', 'carte', 'carte de fidélité', 'loyalty card', 'design', 'pass', 'wallet', 'walletpass'] },
+    { route: '/dashboard/campaigns',                    words: ['campaigns', 'campaign', 'campagnes', 'campagne', 'sms', 'push', 'message', 'messages', 'notif', 'notifications'] },
+    { route: '/dashboard/ai-assistant',                 words: ['ai assistant', 'assistant', 'chatbot', 'chat', 'assistant ia', 'copilot'] },
+    { route: '/dashboard/history',                      words: ['history', 'historique', 'logs', 'journal', 'activity log', 'audit'] },
+    { route: '/dashboard/scan',                         words: ['scan', 'scanner', 'qr', 'qr code', 'visit', 'visite', 'check-in', 'checkin'] },
+    { route: '/dashboard/customers',                    words: ['customers', 'clients', 'customer', 'client', 'liste clients'] },
+    { route: '/dashboard/settings',                     words: ['settings', 'parametres', 'paramètres', 'reglages', 'réglages', 'config', 'configuration', 'preferences', 'préférences', 'compte', 'account', 'profile', 'profil', 'billing', 'facturation', 'plan', 'equipe', 'équipe', 'team', 'staff', 'utilisateurs', 'users'] },
+  ]), []);
+
   const submitSearch = (e) => {
     e?.preventDefault?.();
-    const q = (searchQ || '').trim();
-    if (!q) {
+    const raw = (searchQ || '').trim();
+    if (!raw) {
       navigate('/dashboard/customers');
-    } else {
-      // Honor numeric / barcode-style queries — drop straight onto that customer
-      const isBarcode = /^FT-?[A-Z0-9]{4,}/i.test(q);
-      const param = isBarcode ? 'barcode_id' : 'q';
-      navigate(`/dashboard/customers?${param}=${encodeURIComponent(q)}`);
+      return;
     }
+
+    // 1) Barcode lookup — direct hit on the customer.
+    const isBarcode = /^FT-?[A-Z0-9]{4,}/i.test(raw);
+    if (isBarcode) {
+      navigate(`/dashboard/customers?barcode_id=${encodeURIComponent(raw)}`);
+      return;
+    }
+
+    // 2) Page/section synonyms — route to the matching page.
+    const q = raw.toLowerCase();
+    for (const entry of ROUTE_SYNONYMS) {
+      for (const w of entry.words) {
+        const wl = w.toLowerCase();
+        // Exact match OR query starts/ends/contains the keyword as a token.
+        const re = new RegExp(`(^|[^a-zà-ÿ])${wl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-zà-ÿ]|$)`, 'i');
+        if (q === wl || re.test(q)) {
+          navigate(entry.route);
+          return;
+        }
+      }
+    }
+
+    // 3) Fallback — free-text customer search.
+    navigate(`/dashboard/customers?q=${encodeURIComponent(raw)}`);
   };
   const currentPath = location.pathname;
   const role = user?.role || 'default';

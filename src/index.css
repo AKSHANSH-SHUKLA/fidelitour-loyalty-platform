@@ -762,6 +762,21 @@ textarea::placeholder {
 /* Charts grid */
 .fdt-dash .fd-charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
 @media (max-width: 1100px) { .fdt-dash .fd-charts-grid { grid-template-columns: 1fr; } }
+
+/* 3-column layout: Visits | Acquisition | (Sources+Tier stacked) */
+.fdt-dash .fd-charts-grid.fd-charts-3col { grid-template-columns: 1.05fr 1.05fr 0.9fr; }
+@media (max-width: 1280px) {
+  .fdt-dash .fd-charts-grid.fd-charts-3col { grid-template-columns: 1fr 1fr; }
+  .fdt-dash .fd-charts-grid.fd-charts-3col .fd-chart-col-stack { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+}
+@media (max-width: 720px) {
+  .fdt-dash .fd-charts-grid.fd-charts-3col { grid-template-columns: 1fr; }
+  .fdt-dash .fd-charts-grid.fd-charts-3col .fd-chart-col-stack { grid-template-columns: 1fr; }
+}
+.fdt-dash .fd-chart-col-stack { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.fdt-dash .fd-chart-col-stack .fd-chart { padding: 14px 16px; }
+.fdt-dash .fd-chart-col-stack .fd-donut-wrap { width: 104px; height: 104px; }
+.fdt-dash .fd-chart-col-stack .fd-donut-block { gap: 12px; }
 .fdt-dash .fd-chart {
   background: white; border: 1px solid var(--fd-border);
   border-radius: 16px; padding: 20px;
