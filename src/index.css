@@ -900,3 +900,22 @@ textarea::placeholder {
 .fdt-dash .fd-sm-delta { font-size: 10.5px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
 .fdt-dash .fd-sm-delta.pos { background: #DCEFD6; color: #2D7A3E; }
 .fdt-dash .fd-sm-delta.neg { background: #FAD9D2; color: var(--fd-neg); }
+
+/* Card Designer preview pane — always visible while the owner scrolls
+   the editor. Sticky against the closest scrolling ancestor (the
+   <main> with overflow-auto). The `align-self: start` and
+   `-webkit-sticky` fallbacks are present so Safari + Firefox don't
+   silently disable it. The top offset (88px) clears the sticky toolbar
+   above (search + bell + avatar). */
+.card-designer-preview-pane {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 88px;
+  align-self: start;          /* grid value */
+  -webkit-align-self: start;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  z-index: 5;
+}
+.card-designer-preview-pane::-webkit-scrollbar { width: 6px; }
+.card-designer-preview-pane::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }

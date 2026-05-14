@@ -537,19 +537,21 @@ export default function CardDesignerPage() {
               <div className="flex items-center gap-3">
                 {brand.logo_url ? (
                   <div className="relative">
-                    <img src={brand.logo_url} alt="" className="w-24 h-24 rounded-xl object-cover border border-[#E7E5E4]" />
+                    <div className="w-36 h-36 rounded-xl border border-[#E7E5E4] bg-white p-2 flex items-center justify-center overflow-hidden">
+                      <img src={brand.logo_url} alt="" className="max-w-full max-h-full object-contain" />
+                    </div>
                     <button
                       type="button"
                       onClick={() => setBrand((b) => ({ ...b, logo_url: '' }))}
-                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#1C1917] text-white flex items-center justify-center"
+                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#1C1917] text-white flex items-center justify-center shadow-md"
                       aria-label="Supprimer le logo"
                     >
-                      <X size={13} />
+                      <X size={14} />
                     </button>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-xl bg-[#FAF8F4] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8B8680]">
-                    <ImagePlus size={28} />
+                  <div className="w-36 h-36 rounded-xl bg-[#FAF8F4] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8B8680]">
+                    <ImagePlus size={36} />
                   </div>
                 )}
                 <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm font-medium text-[#1C1917] cursor-pointer hover:bg-[#FAF8F4]">
@@ -652,62 +654,11 @@ export default function CardDesignerPage() {
               </div>
             </div>
 
-            {/* Text fields — every label on the card is editable */}
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Textes de la carte</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] text-[#7A716C] mb-1">Titre éditorial</label>
-                  <input
-                    type="text"
-                    value={brand.title_label}
-                    onChange={(e) => setBrand((b) => ({ ...b, title_label: e.target.value }))}
-                    placeholder="Ta carte fidélité"
-                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#7A716C] mb-1">Étiquette "Points" (top droit)</label>
-                  <input
-                    type="text"
-                    value={brand.points_label}
-                    onChange={(e) => setBrand((b) => ({ ...b, points_label: e.target.value }))}
-                    placeholder="Points / Solde / Tampons"
-                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#7A716C] mb-1">Préfixe salutation</label>
-                  <input
-                    type="text"
-                    value={brand.greeting_label}
-                    onChange={(e) => setBrand((b) => ({ ...b, greeting_label: e.target.value }))}
-                    placeholder="Bonjour"
-                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#7A716C] mb-1">Étiquette "Au dos" (titre)</label>
-                  <input
-                    type="text"
-                    value={brand.back_label}
-                    onChange={(e) => setBrand((b) => ({ ...b, back_label: e.target.value }))}
-                    placeholder="Détails récompenses"
-                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[10px] text-[#7A716C] mb-1">Lien "Au dos" (texte cliquable)</label>
-                  <input
-                    type="text"
-                    value={brand.back_value}
-                    onChange={(e) => setBrand((b) => ({ ...b, back_value: e.target.value }))}
-                    placeholder="Au dos →"
-                    className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm"
-                  />
-                </div>
-              </div>
-            </div>
+            {/* Map text / "Au dos" fields removed — they belonged to the
+                legacy hero layout and don't appear anywhere on the 3-band
+                card. The 3-band design has its own clearly-labelled controls
+                in the "Disposition Apple Wallet" section below
+                (points top-right, greeting, action prompt, etc.). */}
 
             {/* Typography — font + italic */}
             <div>
@@ -1254,19 +1205,7 @@ export default function CardDesignerPage() {
               Underneath the card we render an annotated map that names each
               of the 3 patches and which controls live there. */}
           <div
-            className="self-start"
-            style={{
-              // Sticky preview — the top offset clears the sticky toolbar
-              // (search + bell + avatar) that lives at the top of <main>.
-              // Without this offset the preview slides up behind it as the
-              // owner scrolls.
-              position: 'sticky',
-              top: 80,
-              alignSelf: 'flex-start',
-              maxHeight: 'calc(100vh - 96px)',
-              overflowY: 'auto',
-              zIndex: 5,
-            }}
+            className="card-designer-preview-pane self-start"
           >
             <div className="flex flex-col items-stretch gap-2 p-3 rounded-2xl" style={{ background: '#1F1B1A' }}>
               <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-center" style={{ color: '#9C8E78', letterSpacing: '0.18em' }}>
