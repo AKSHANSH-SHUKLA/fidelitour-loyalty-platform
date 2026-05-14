@@ -40,6 +40,8 @@ const DEFAULT_BRAND = {
   // Typography
   title_font:       'Cormorant Garamond',  // serif by default
   title_italic:     true,
+  title_bold:       true,
+  title_underline:  false,
   // Visibility toggles (show/hide each element)
   show_tier:        true,   // "MEMBRE GOLD" under brand name
   show_points:      true,   // points block top-right
@@ -136,18 +138,33 @@ const DEFAULT_BRAND = {
   tier_badge_vip:       '#9A6DBF',
 };
 
-// Font options for the title. Loaded globally via index.css Google Fonts.
+// Font options for the title.
 const TITLE_FONTS = [
+  // Serif — boutique / luxury
   'Cormorant Garamond',
   'Playfair Display',
   'DM Serif Display',
   'Abril Fatface',
+  'Libre Caslon Text',
+  'EB Garamond',
+  // Sans — modern SaaS
   'Inter',
   'Montserrat',
-  'Bebas Neue',
   'Poppins',
+  'Work Sans',
+  'DM Sans',
+  // Display — bold, sporty, brand
+  'Bebas Neue',
+  'Anton',
+  'Oswald',
+  'Archivo Black',
+  // Script — handwritten
   'Pacifico',
   'Dancing Script',
+  'Great Vibes',
+  // Monospace — tech / editorial
+  'JetBrains Mono',
+  'IBM Plex Mono',
 ];
 
 // Convert an image File into a base64 data URL. We keep file size in check
@@ -660,10 +677,10 @@ export default function CardDesignerPage() {
                 in the "Disposition Apple Wallet" section below
                 (points top-right, greeting, action prompt, etc.). */}
 
-            {/* Typography — font + italic */}
+            {/* Typography — font + italic + bold + underline */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Typographie du titre</p>
-              <div className="grid grid-cols-[1fr,auto] gap-3 items-center">
+              <div className="grid grid-cols-1 gap-3">
                 <select
                   value={brand.title_font}
                   onChange={(e) => setBrand((b) => ({ ...b, title_font: e.target.value }))}
@@ -674,14 +691,32 @@ export default function CardDesignerPage() {
                     <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
                   ))}
                 </select>
+                <div className="flex items-center gap-4 flex-wrap">
                 <label className="inline-flex items-center gap-2 text-sm text-[#1C1917] select-none cursor-pointer">
                   <input
                     type="checkbox"
                     checked={brand.title_italic}
                     onChange={(e) => setBrand((b) => ({ ...b, title_italic: e.target.checked }))}
                   />
-                  Italique
+                  <span style={{ fontStyle: 'italic' }}>Italique</span>
                 </label>
+                <label className="inline-flex items-center gap-2 text-sm text-[#1C1917] select-none cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={brand.title_bold !== false}
+                    onChange={(e) => setBrand((b) => ({ ...b, title_bold: e.target.checked }))}
+                  />
+                  <span style={{ fontWeight: 700 }}>Gras</span>
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-[#1C1917] select-none cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!brand.title_underline}
+                    onChange={(e) => setBrand((b) => ({ ...b, title_underline: e.target.checked }))}
+                  />
+                  <span style={{ textDecoration: 'underline' }}>Souligné</span>
+                </label>
+                </div>
               </div>
               <p className="text-[10px] text-[#8B8680] mt-1.5">
                 Choisissez la police qui correspond à l'identité de votre marque. Cormorant Garamond = boutique chic. Inter = SaaS moderne. Bebas Neue = sport / urbain.
@@ -759,6 +794,11 @@ export default function CardDesignerPage() {
                 {/* Middle band — type + content */}
                 <div>
                   <p className="text-[10px] text-[#7A716C] mb-1">Bande promotionnelle (milieu)</p>
+                  <p className="text-[10.5px] text-[#7A716C] mb-2 leading-snug">
+                    <b>Couleur unie</b> = la bande du milieu est un aplat de couleur (style GÉMO vert, Maison 123 brun) avec votre titre + sous-titre en surimpression.
+                    <br />
+                    <b>Image</b> = vous téléversez une photo promotionnelle qui remplit la bande (style FNAC Black Friday).
+                  </p>
                   <div className="flex gap-2 mb-2">
                     {[
                       { key: 'color', label: 'Couleur unie' },
@@ -851,53 +891,11 @@ export default function CardDesignerPage() {
                   )}
                 </div>
 
-                {/* Top-right link */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] text-[#7A716C] mb-1">Étiquette haut droit</label>
-                    <input type="text" value={brand.top_right_label}
-                           onChange={(e) => setBrand((b) => ({ ...b, top_right_label: e.target.value }))}
-                           placeholder="Plus d'infos"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] text-[#7A716C] mb-1">Lien (URL optionnel)</label>
-                    <input type="text" value={brand.top_right_value}
-                           onChange={(e) => setBrand((b) => ({ ...b, top_right_value: e.target.value }))}
-                           placeholder="https://…"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
-                  </div>
-                </div>
-
-                {/* Member fields */}
-                <div>
-                  <p className="text-[10px] text-[#7A716C] mb-2">Champs membre (bande bas)</p>
-                  <div className="grid grid-cols-2 gap-3 mb-2">
-                    <input type="text" value={brand.counter_label}
-                           onChange={(e) => setBrand((b) => ({ ...b, counter_label: e.target.value }))}
-                           placeholder="Mon compteur fid"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
-                    <input type="text" value={brand.offers_count_label}
-                           onChange={(e) => setBrand((b) => ({ ...b, offers_count_label: e.target.value }))}
-                           placeholder="Mes offres disponibles"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { key: 'show_top_right',     label: 'Étiquette haut-droit' },
-                      { key: 'show_member_id',     label: 'Nom du membre' },
-                      { key: 'show_counter',       label: 'Compteur (1/3)' },
-                      { key: 'show_offers_count',  label: 'Compteur offres' },
-                      { key: 'use_full_name',      label: 'Nom complet (NOM Prénom)' },
-                    ].map(({ key, label }) => (
-                      <label key={key} className="flex items-center gap-2 text-[12px] text-[#1C1917] cursor-pointer py-1 px-2 rounded hover:bg-[#FAF8F4]">
-                        <input type="checkbox" checked={brand[key]}
-                               onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.checked }))} />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                {/* Orphan "top-right link" + "member fields" blocks removed.
+                    Their fields didn't render anywhere on the 3-band card.
+                    The active fields (points top-right label, action prompt,
+                    greeting label) live in the "Disposition Apple Wallet"
+                    section below. */}
               </div>
 
             {/* ─── Disposition Apple Wallet — logo, top-right, action prompt, QR, anniversaire, tiers ─── */}

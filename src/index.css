@@ -901,21 +901,29 @@ textarea::placeholder {
 .fdt-dash .fd-sm-delta.pos { background: #DCEFD6; color: #2D7A3E; }
 .fdt-dash .fd-sm-delta.neg { background: #FAD9D2; color: var(--fd-neg); }
 
-/* Card Designer preview pane — always visible while the owner scrolls
-   the editor. Sticky against the closest scrolling ancestor (the
-   <main> with overflow-auto). The `align-self: start` and
-   `-webkit-sticky` fallbacks are present so Safari + Firefox don't
-   silently disable it. The top offset (88px) clears the sticky toolbar
-   above (search + bell + avatar). */
+/* Card Designer preview pane.
+   Mobile & small screens: render inline (no positioning trick).
+   Large screens: pin to a fixed spot on the right edge of the viewport
+   so the card is ALWAYS visible regardless of any parent grid /
+   overflow / transform ancestor. This sidesteps every quirk that was
+   stopping position: sticky from engaging. */
 .card-designer-preview-pane {
-  position: -webkit-sticky;
-  position: sticky;
-  top: 88px;
-  align-self: start;          /* grid value */
-  -webkit-align-self: start;
-  max-height: calc(100vh - 110px);
-  overflow-y: auto;
-  z-index: 5;
+  align-self: start;
+}
+@media (min-width: 1024px) {
+  .card-designer-preview-pane {
+    position: fixed;
+    top: 88px;
+    right: 24px;
+    width: 320px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    z-index: 30;
+  }
+  /* When the preview is fixed, the grid cell still reserves the 300px
+     column — but we also need to make sure the page content doesn't run
+     under it on narrow desktops. The grid template already includes the
+     reserved column, so no extra padding needed. */
 }
 .card-designer-preview-pane::-webkit-scrollbar { width: 6px; }
 .card-designer-preview-pane::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }

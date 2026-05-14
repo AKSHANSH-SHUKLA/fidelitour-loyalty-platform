@@ -144,9 +144,9 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           {logoPos !== 'middle_overlay' && (
             <div className={`flex items-center gap-2 min-w-0 ${logoPos === 'top_center' ? 'mx-auto' : ''}`}>
               {card.logo_url ? (
-                <img src={card.logo_url} alt="" className="h-6 w-auto object-contain" style={{ maxWidth: 100 }} />
+                <img src={card.logo_url} alt="" className="w-auto object-contain" style={{ height: 44, maxWidth: 160 }} />
               ) : (
-                <span className="text-[15px] font-semibold" style={{ color: cardInk, letterSpacing: '-0.01em' }}>
+                <span className="text-[17px] font-semibold" style={{ color: cardInk, letterSpacing: '-0.01em' }}>
                   {tenant?.name || 'FidéliTour'}
                 </span>
               )}
@@ -195,18 +195,20 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           )}
           {/* Middle-overlay logo option */}
           {logoPos === 'middle_overlay' && card.logo_url && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
-              <img src={card.logo_url} alt="" className="h-7 w-auto object-contain" style={{ maxWidth: 120, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }} />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+              <img src={card.logo_url} alt="" className="w-auto object-contain" style={{ height: 56, maxWidth: 180, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))' }} />
             </div>
           )}
           <div className="relative z-10 px-5 py-5 text-center flex flex-col items-center justify-center" style={{ minHeight: 130 }}>
             {stripTitle && (
               <p
-                className="uppercase font-semibold"
+                className="uppercase"
                 style={{
                   color: stripInk,
                   fontFamily: `'${titleFont}', Georgia, serif`,
                   fontStyle: titleItalic ? 'italic' : 'normal',
+                  fontWeight: card.title_bold !== false ? 700 : 400,
+                  textDecoration: card.title_underline ? 'underline' : 'none',
                   fontSize: 22,
                   letterSpacing: '0.06em',
                   textShadow: stripType === 'image' ? '0 1px 3px rgba(0,0,0,0.45)' : 'none',
