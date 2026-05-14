@@ -836,33 +836,8 @@ const AnalyticsPage = () => {
           campaign composer. Stays hidden when nothing's urgent. */}
       <AiRecommendationBanner onOpenComposer={openComposer ? ({ segment, presetName, presetContent }) => openComposer(segment, presetName, presetContent) : undefined} />
 
-      {/* Configurable customer-status KPIs — live, uses the definition from Settings */}
-      <CustomerStatusKPI />
-
-      {/* Filter A — charts only (Visites + Acquisition). */}
-      <div className="flex items-baseline justify-between gap-4 flex-wrap mt-2 mb-1">
-        <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Fenêtre de temps — Visites · Acquisition
-        </h3>
-        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
-          {chartsDays} jour{chartsDays === 1 ? '' : 's'}
-        </span>
-      </div>
-      <SharedTimeFilter value={chartsFilter} onChange={setChartsFilter} sharedDays={chartsDays} />
-
-      {/* Visits chart + Acquisition chart — driven by chartsFilter. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <VisitsTwinChart controlledDays={chartsDays} />
-        <WeeklyAcquisitionPanel controlledDays={chartsDays} />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <AcquisitionDonut />
-        <TierDonut />
-      </div>
-
       {/* ═════════════════════════════════════════════════════════════════
-          LIFETIME ROWS — time-proof tiles (no period picker).
-          The first 2 rows give an at-a-glance, all-time picture.
+          1) TIME-INDEPENDENT KPIs — lifetime tiles (no period picker).
           ═════════════════════════════════════════════════════════════════ */}
       <div>
         <div className="flex items-baseline justify-between mb-3">
@@ -946,7 +921,155 @@ const AnalyticsPage = () => {
       </div>
 
       {/* ═════════════════════════════════════════════════════════════════
-          TIME-WINDOWED ROWS — each tile owns its own period picker.
+          2) GRAPHS + PIE CHARTS — Visites · Acquisition · Donuts · Tier+Acq.
+          ═════════════════════════════════════════════════════════════════ */}
+      {/* Filter A — charts only (Visites + Acquisition). */}
+      <div className="flex items-baseline justify-between gap-4 flex-wrap mt-2 mb-1">
+        <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          Fenêtre de temps — Visites · Acquisition
+        </h3>
+        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
+          {chartsDays} jour{chartsDays === 1 ? '' : 's'}
+        </span>
+      </div>
+      <SharedTimeFilter value={chartsFilter} onChange={setChartsFilter} sharedDays={chartsDays} />
+
+      {/* Visits chart + Acquisition chart — driven by chartsFilter. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <VisitsTwinChart controlledDays={chartsDays} />
+        <WeeklyAcquisitionPanel controlledDays={chartsDays} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <AcquisitionDonut />
+        <TierDonut />
+      </div>
+
+      {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread. Click any tier to see its customers.">
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {tierData.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E7E5E4] bg-[#FDFBF7] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
+                title={`Click to view ${t.name} customers`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full" style={{ background: TIER_COLORS[t.key] }}></span>
+                  <span className="text-xs font-semibold text-[#1C1917]">{t.name}</span>
+                </div>
+                <span className="text-lg font-bold">{t.value}</span>
+                <span className="text-[10px] text-[#8B8680]">
+                  {totalCustomers ? `${Math.round((t.value / totalCustomers) * 100)}%` : '—'} · click to view
+                </span>
+                <SendCampaignButton
+                  compact
+                  label={`Send to ${t.name}`}
+                  onClick={() => openComposer(
+                    { type: 'tier', value: t.key },
+                    `Offre exclusive ${t.name} pour {first_name}`,
+                    `Parce que vous êtes ${t.name}, voici une attention spéciale de {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.`
+                  )}
+                />
+              </button>
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie
+                data={tierData}
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                dataKey="value"
+                labelLine={false}
+                label={({ name, value }) =>
+                  totalCustomers
+                    ? `${name}: ${value} (${Math.round((value / totalCustomers) * 100)}%)`
+                    : `${name}: ${value}`
+                }
+                onClick={(data) => data && drillCustomers(`${data.name} tier customers`, { tier: data.key })}
+                style={{ cursor: 'pointer' }}
+              >
+                {tierData.map((t, i) => (
+                  <Cell key={i} fill={TIER_COLORS[t.key] || '#B85C38'} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
+          {/* Lifetime headline */}
+          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E7E5E4]">
+            <p className="text-3xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              {acquisitionTotal}
+            </p>
+            <p className="text-sm text-[#57534E]">customers acquired across all channels (all-time)</p>
+          </div>
+
+          {/* Per-channel KPI tiles — count + percentage. Click to drill into customer list. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            {acquisitionChart.map((a) => {
+              const style = SOURCE_STYLE[a.raw] || { color: '#8B8680', bg: '#F3EFE7', icon: '•' };
+              return (
+                <button
+                  key={a.raw}
+                  type="button"
+                  onClick={() => drillCustomers(
+                    `Customers acquired via ${a.name}`,
+                    { source: a.raw }
+                  )}
+                  className="text-left p-3 rounded-lg border border-[#E7E5E4] hover:border-[#B85C38] hover:shadow-sm transition"
+                  style={{ backgroundColor: style.bg }}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-base">{style.icon}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: style.color }}>
+                      {a.name}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-[#1C1917] leading-tight">
+                    {a.value}
+                    <span className="text-sm text-[#8B8680] font-normal"> customers</span>
+                  </p>
+                  <p className="text-[11px] mt-0.5 font-semibold" style={{ color: style.color }}>
+                    {a.pct}% of total
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={acquisitionChart} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+              <XAxis type="number" stroke="#57534E" />
+              <YAxis type="category" dataKey="name" stroke="#57534E" width={110} />
+              <Tooltip
+                formatter={(value, _name, p) => [`${value} customers (${p?.payload?.pct || 0}%)`, 'Acquired']}
+              />
+              <Bar dataKey="value" radius={[0, 8, 8, 0]}>
+                {acquisitionChart.map((row, i) => (
+                  <Cell key={i} fill={(SOURCE_STYLE[row.raw] || {}).color || ACQ_COLORS[i % ACQ_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </section>
+
+      {/* ═════════════════════════════════════════════════════════════════
+          3) CUSTOMER STATUS — configurable customer-status KPIs (live).
+          ═════════════════════════════════════════════════════════════════ */}
+      <CustomerStatusKPI />
+
+      {/* ═════════════════════════════════════════════════════════════════
+          4) TIME-DEPENDENT KPIs — each tile owns its own period picker.
           ═════════════════════════════════════════════════════════════════ */}
       <div>
         <div className="flex items-baseline justify-between mb-3 gap-4 flex-wrap">
@@ -1086,125 +1209,6 @@ const AnalyticsPage = () => {
           />
         </section>
       </div>
-
-      {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread. Click any tier to see its customers.">
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {tierData.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E7E5E4] bg-[#FDFBF7] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
-                title={`Click to view ${t.name} customers`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full" style={{ background: TIER_COLORS[t.key] }}></span>
-                  <span className="text-xs font-semibold text-[#1C1917]">{t.name}</span>
-                </div>
-                <span className="text-lg font-bold">{t.value}</span>
-                <span className="text-[10px] text-[#8B8680]">
-                  {totalCustomers ? `${Math.round((t.value / totalCustomers) * 100)}%` : '—'} · click to view
-                </span>
-                <SendCampaignButton
-                  compact
-                  label={`Send to ${t.name}`}
-                  onClick={() => openComposer(
-                    { type: 'tier', value: t.key },
-                    `Offre exclusive ${t.name} pour {first_name}`,
-                    `Parce que vous êtes ${t.name}, voici une attention spéciale de {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.`
-                  )}
-                />
-              </button>
-            ))}
-          </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={tierData}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="value"
-                labelLine={false}
-                label={({ name, value }) =>
-                  totalCustomers
-                    ? `${name}: ${value} (${Math.round((value / totalCustomers) * 100)}%)`
-                    : `${name}: ${value}`
-                }
-                onClick={(data) => data && drillCustomers(`${data.name} tier customers`, { tier: data.key })}
-                style={{ cursor: 'pointer' }}
-              >
-                {tierData.map((t, i) => (
-                  <Cell key={i} fill={TIER_COLORS[t.key] || '#B85C38'} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
-          {/* Lifetime headline */}
-          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E7E5E4]">
-            <p className="text-3xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-              {acquisitionTotal}
-            </p>
-            <p className="text-sm text-[#57534E]">customers acquired across all channels (all-time)</p>
-          </div>
-
-          {/* Per-channel KPI tiles — count + percentage. Click to drill into customer list. */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-            {acquisitionChart.map((a) => {
-              const style = SOURCE_STYLE[a.raw] || { color: '#8B8680', bg: '#F3EFE7', icon: '•' };
-              return (
-                <button
-                  key={a.raw}
-                  type="button"
-                  onClick={() => drillCustomers(
-                    `Customers acquired via ${a.name}`,
-                    { source: a.raw }
-                  )}
-                  className="text-left p-3 rounded-lg border border-[#E7E5E4] hover:border-[#B85C38] hover:shadow-sm transition"
-                  style={{ backgroundColor: style.bg }}
-                >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-base">{style.icon}</span>
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: style.color }}>
-                      {a.name}
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-[#1C1917] leading-tight">
-                    {a.value}
-                    <span className="text-sm text-[#8B8680] font-normal"> customers</span>
-                  </p>
-                  <p className="text-[11px] mt-0.5 font-semibold" style={{ color: style.color }}>
-                    {a.pct}% of total
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={acquisitionChart} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis type="number" stroke="#57534E" />
-              <YAxis type="category" dataKey="name" stroke="#57534E" width={110} />
-              <Tooltip
-                formatter={(value, _name, p) => [`${value} customers (${p?.payload?.pct || 0}%)`, 'Acquired']}
-              />
-              <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                {acquisitionChart.map((row, i) => (
-                  <Cell key={i} fill={(SOURCE_STYLE[row.raw] || {}).color || ACQ_COLORS[i % ACQ_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </section>
 
       {/* Row 4 — Recovered Filter */}
       <section
