@@ -350,10 +350,13 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
   }
 
   // ── Default: Hero layout (existing premium card) ───────────────────
+  // Top brand block AND bottom QR section share the same brand-gradient
+  // background so the card reads as one continuous surface (the user
+  // explicitly asked for top + bottom to match in hero style too).
   return (
     <div
       className="rounded-3xl overflow-hidden shadow-2xl relative isolate"
-      style={{ background: '#FFFFFF', maxWidth: 420, margin: '0 auto' }}
+      style={{ background: `linear-gradient(140deg, ${primary} 0%, ${secondary} 100%)`, maxWidth: 420, margin: '0 auto' }}
     >
       {/* ── Top brand block ─────────────────────────────────────────────── */}
       <div
@@ -472,8 +475,11 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
         </div>
       </div>
 
-      {/* ── QR section (always white for max scanner contrast) ──────────── */}
-      <div className="px-5 py-5 bg-white">
+      {/* ── Bottom section — SAME brand gradient as the top block so top
+           and bottom read as one continuous coloured surface (user
+           requirement). The QR code itself sits inside a small white
+           tile for scanner contrast. ─────────────────────────────────── */}
+      <div className="px-5 py-5" style={{ color: textOnBrand }}>
         {/* Stamps grid — punch-card visual on the hero layout too */}
         {card.show_stamps_grid !== false && (
           <div className="mb-4">
@@ -481,13 +487,13 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
               count={customer?.reward_threshold || 10}
               filled={Math.min(customer?.visits || 0, customer?.reward_threshold || 10)}
               shape={card.stamp_shape || 'circle'}
-              fillColor={card.stamp_fill_color || primary}
-              emptyColor={card.stamp_empty_color || '#E7E5E4'}
-              inkColor={card.stamp_ink_color || '#FFFFFF'}
+              fillColor={card.stamp_fill_color || accent}
+              emptyColor={card.stamp_empty_color || 'rgba(255,255,255,0.18)'}
+              inkColor={card.stamp_ink_color || primary}
               customUrl={card.stamp_custom_url || ''}
               size={card.stamp_size || 28}
               label={card.stamps_label || ''}
-              ink="#1F1B1A"
+              ink={textOnBrand}
             />
           </div>
         )}
@@ -497,20 +503,20 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           <div className="mb-4">
             {card.meter_label && (
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: '#1F1B1A', opacity: 0.55 }}>
+                <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: textOnBrand, opacity: 0.7 }}>
                   {card.meter_label}
                 </p>
-                <p className="text-[10px] font-semibold" style={{ color: '#1F1B1A' }}>
+                <p className="text-[10px] font-semibold" style={{ color: textOnBrand }}>
                   {Math.min(customer?.visits || 0, customer?.reward_threshold || 10)} / {customer?.reward_threshold || 10}
                 </p>
               </div>
             )}
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: card.meter_track_color || '#F2EDE3' }}>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: card.meter_track_color || 'rgba(255,255,255,0.18)' }}>
               <div
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${Math.min(100, ((customer?.visits || 0) / (customer?.reward_threshold || 10)) * 100)}%`,
-                  background: card.meter_fill_color || primary,
+                  background: card.meter_fill_color || accent,
                 }}
               />
             </div>
@@ -535,9 +541,10 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           </div>
         </div>
 
-        {/* Code 128 barcode strip — owner can hide it if their POS scans QR only */}
+        {/* Code 128 barcode strip — owner can hide it if their POS scans QR only.
+            Wrapped in a white tile so the bars stay scannable on the brand surface. */}
         {showBarcode && (
-          <div className="mt-4">
+          <div className="mt-4 rounded-lg bg-white p-2">
             <Code128Barcode
               value={customer?.barcode_id || ''}
               height={compact ? 44 : 54}
@@ -547,16 +554,16 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
           </div>
         )}
 
-        {/* Card number footer — owner can hide if they prefer the QR-only minimal look */}
+        {/* Card number footer */}
         {showCardNumber && (
           <div
             className="mt-4 pt-3 flex items-center justify-between text-[11px]"
-            style={{ borderTop: '1px dashed rgba(0,0,0,0.12)', color: '#6B635E' }}
+            style={{ borderTop: '1px dashed rgba(255,255,255,0.20)', color: textOnBrand, opacity: 0.85 }}
           >
             <span className="uppercase tracking-[0.14em]">N° Carte</span>
             <span
               className="font-mono font-semibold"
-              style={{ color: '#1C1917', letterSpacing: '0.06em' }}
+              style={{ color: textOnBrand, letterSpacing: '0.06em' }}
             >
               {cardSuffix}
               <span className="opacity-50 ml-2 text-[10px]">{customer?.barcode_id}</span>

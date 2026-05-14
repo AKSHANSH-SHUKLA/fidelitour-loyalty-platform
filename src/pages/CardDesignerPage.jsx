@@ -4,7 +4,6 @@ import { ownerAPI } from '../lib/api';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
-import PhoneFrame from '../components/PhoneFrame';
 
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
 const DEFAULT_RULES = {
@@ -1274,12 +1273,15 @@ export default function CardDesignerPage() {
             </div>
           </div>
 
-          {/* Live preview column — wrapped in a PhoneFrame so the patron sees
-              the card in the exact context a customer will: rounded device
-              chrome, dynamic-island notch, real status bar, Safari URL chip.
-              What you design here is what they'll see — pixel-for-pixel. */}
-          <div className="lg:sticky lg:top-4 self-start flex justify-center">
-            <PhoneFrame width={260} label="Aperçu Apple Wallet" chrome="wallet">
+          {/* Live preview column — the card renders standalone (no PhoneFrame,
+              no Safari URL bar) so it reads as if it's already sitting inside
+              the Apple Wallet app. Sticky so the owner can scroll through the
+              editor on the left and never lose sight of the live result. */}
+          <div className="self-start" style={{ position: 'sticky', top: 16, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}>
+            <div className="flex flex-col items-center gap-2 p-3 rounded-2xl" style={{ background: '#1F1B1A' }}>
+              <p className="text-[10px] uppercase tracking-[0.18em] font-bold" style={{ color: '#9C8E78', letterSpacing: '0.18em' }}>
+                Aperçu Apple Wallet
+              </p>
               <PremiumLoyaltyCard
                 customer={{
                   name: 'Marie Lefèvre',
@@ -1288,16 +1290,16 @@ export default function CardDesignerPage() {
                   points: 1240,
                   barcode_id: 'FT-1DFC4E62',
                   // Sample progress so the stamps + meter render in the preview.
-                  // Auto-tracks the rule the owner just set so the editor feels live.
                   visits: Math.min(Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6), parseInt(rules.reward_threshold_stamps, 10) || 10),
                   reward_threshold: parseInt(rules.reward_threshold_stamps, 10) || 10,
                   offers_count: 1,
+                  birthday: '12/05',
                 }}
                 tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
                 card={brand}
                 compact
               />
-            </PhoneFrame>
+            </div>
           </div>
         </div>
       </div>
