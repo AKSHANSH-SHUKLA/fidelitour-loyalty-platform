@@ -111,10 +111,16 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
     const logoPos    = card.logo_position || 'top_left';
     const showPtsTR  = card.show_points_top_right !== false;
     const ptsTRLbl   = card.points_top_right_label || '+ D\'INFOS';
-    const showActPr  = card.show_action_prompt !== false;
-    const actPrTitle = card.action_prompt_title || 'Présentez votre carte fidélité';
-    const actPrSub   = card.action_prompt_sub   || 'Et cumulez des points';
     const greetLbl   = (card.bottom_greeting_label || 'Bienvenue').toUpperCase();
+    // Points + visits maths — driven by the loyalty rules saved on the
+    // template. The customer's actual `points` is preferred when present;
+    // otherwise we derive it from visits × points_per_visit.
+    const pointsPerVisit = parseInt(card.points_per_visit, 10) || 10;
+    const visitsPerStamp = parseInt(card.visits_per_stamp, 10) || 1;
+    const totalVisits    = parseInt(customer?.visits, 10) || 0;
+    const cyclePoints    = (parseInt(customer?.reward_threshold, 10) || 10) * visitsPerStamp * pointsPerVisit;
+    const earnedPoints   = (typeof customer?.points === 'number' ? customer.points : totalVisits * pointsPerVisit);
+    const pointsFillPct  = cyclePoints > 0 ? Math.min(100, (earnedPoints / cyclePoints) * 100) : 0;
     const showQr     = card.show_qr !== false;
     const qrSize     = Math.max(48, Math.min(140, parseInt(card.qr_size, 10) || 90));
     const showBday   = !!card.show_birthday;
@@ -242,7 +248,7 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
 
         {/* ── BOTTOM STRIP — greeting + action prompt + stamps + meter + QR + barcode ── */}
         <div className="px-5 pt-4 pb-5" style={{ color: cardInk, background: cardBg }}>
-          {/* Greeting (left) + Action prompt (right) — Maison 123 pattern */}
+          {/* Greeting (left) + Total visits (right) */}
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="min-w-0">
               <p className="text-[9px] uppercase tracking-[0.16em]" style={{ color: cardInk, opacity: 0.55 }}>
@@ -252,16 +258,14 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
                 {fullName}
               </p>
             </div>
-            {showActPr && (
-              <div className="text-right min-w-0">
-                <p className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: cardInk, opacity: 0.85 }}>
-                  {actPrTitle}
-                </p>
-                <p className="text-[11px] mt-0.5" style={{ color: cardInk, opacity: 0.6 }}>
-                  {actPrSub}
-                </p>
-              </div>
-            )}
+            <div className="text-right min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.16em]" style={{ color: cardInk, opacity: 0.55 }}>
+                Total visites
+              </p>
+              <p className="text-[22px] font-semibold mt-0.5" style={{ color: cardInk, fontVariantNumeric: 'tabular-nums' }}>
+                {totalVisits}
+              </p>
+            </div>
           </div>
 
           {/* Stamps grid */}
@@ -280,24 +284,24 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
             />
           )}
 
-          {/* Progress meter */}
-          {card.show_meter !== false && cycle > 0 && (
+          {/* Points meter — points earned vs points needed for next reward.
+              Points = visits × points_per_visit, ceiling = cycle stamps ×
+              visits_per_stamp × points_per_visit. */}
+          {card.show_meter !== false && cyclePoints > 0 && (
             <div className="mt-3 mb-4">
-              {card.meter_label && (
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.55 }}>
-                    {card.meter_label}
-                  </p>
-                  <p className="text-[10px] font-semibold" style={{ color: cardInk }}>
-                    {Math.min(visits, cycle)} / {cycle}
-                  </p>
-                </div>
-              )}
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.55 }}>
+                  {card.meter_label || 'Points'}
+                </p>
+                <p className="text-[10px] font-semibold" style={{ color: cardInk, fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.min(earnedPoints, cyclePoints)} / {cyclePoints} pts
+                </p>
+              </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: card.meter_track_color || '#F2EDE3' }}>
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
-                    width: `${Math.min(100, (Math.min(visits, cycle) / cycle) * 100)}%`,
+                    width: `${pointsFillPct}%`,
                     background: card.meter_fill_color || primary,
                   }}
                 />

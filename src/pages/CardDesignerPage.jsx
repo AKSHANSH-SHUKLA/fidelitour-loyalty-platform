@@ -111,16 +111,12 @@ const DEFAULT_BRAND = {
   show_meter:          true,
   meter_fill_color:    '#B85C38',
   meter_track_color:   '#F2EDE3',
-  meter_label:         'Progression',    // caption above the meter
+  meter_label:         'Points',         // caption above the points meter
 
   // ── Apple-Wallet-style bottom band layout ──────────────────────────
   // Top-right corner of the card — small "+ D'INFOS / N pts" stack
   show_points_top_right: true,
   points_top_right_label: '+ D\'INFOS',
-  // Bottom action prompt (Maison 123: "Présentez votre carte fidélité / Et cumulez des points")
-  show_action_prompt:   true,
-  action_prompt_title:  'Présentez votre carte fidélité',
-  action_prompt_sub:    'Et cumulez des points',
   // Greeting on the bottom band (Maison 123: "VICTOIRE / Utku")
   bottom_greeting_label: 'Bienvenue',
   // QR code + barcode controls — owner picks one or both, and the size
@@ -944,26 +940,10 @@ export default function CardDesignerPage() {
                 )}
               </div>
 
-              {/* Action prompt */}
-              <div>
-                <label className="flex items-center gap-2 text-[12px] font-bold text-[#1C1917] mb-2 cursor-pointer">
-                  <input type="checkbox" checked={brand.show_action_prompt !== false}
-                         onChange={(e) => setBrand((b) => ({ ...b, show_action_prompt: e.target.checked }))} />
-                  Afficher l'invite d'action (style "Présentez votre carte fidélité")
-                </label>
-                {brand.show_action_prompt !== false && (
-                  <div className="grid grid-cols-1 gap-2">
-                    <input type="text" value={brand.action_prompt_title}
-                           onChange={(e) => setBrand((b) => ({ ...b, action_prompt_title: e.target.value }))}
-                           placeholder="Présentez votre carte fidélité"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
-                    <input type="text" value={brand.action_prompt_sub}
-                           onChange={(e) => setBrand((b) => ({ ...b, action_prompt_sub: e.target.value }))}
-                           placeholder="Et cumulez des points"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
-                  </div>
-                )}
-              </div>
+              {/* Action prompt section removed — the bottom-right of the
+                  card now shows "Total visites / N" (computed from the
+                  customer's visits count). The points meter underneath
+                  shows points earned / points needed for next reward. */}
 
               {/* Greeting label */}
               <div>
@@ -1160,7 +1140,7 @@ export default function CardDesignerPage() {
                 <label className="flex items-center gap-2 text-[12px] font-bold text-[#1C1917] cursor-pointer mb-2">
                   <input type="checkbox" checked={brand.show_meter !== false}
                          onChange={(e) => setBrand((b) => ({ ...b, show_meter: e.target.checked }))} />
-                  Afficher la jauge de progression
+                  Afficher la jauge de points
                 </label>
                 {brand.show_meter !== false && (
                   <div className="grid grid-cols-3 gap-3">
@@ -1177,7 +1157,7 @@ export default function CardDesignerPage() {
                              className="w-full h-9 rounded border border-[#E7E5E4]" />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Étiquette jauge</label>
+                      <label className="block text-[10px] text-[#7A716C] mb-1 font-bold uppercase tracking-wider">Étiquette jauge points</label>
                       <input type="text" value={brand.meter_label}
                              onChange={(e) => setBrand((b) => ({ ...b, meter_label: e.target.value }))}
                              placeholder="Progression"
@@ -1223,7 +1203,13 @@ export default function CardDesignerPage() {
                     birthday: '12/05',
                   }}
                   tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
-                  card={brand}
+                  card={{
+                    ...brand,
+                    // Merge loyalty rules so the points meter on the preview
+                    // reflects the owner's current points-per-visit setting.
+                    points_per_visit: parseInt(rules.points_per_visit, 10) || 10,
+                    visits_per_stamp: parseInt(rules.visits_per_stamp, 10) || 1,
+                  }}
                   compact
                 />
                 {/* Numbered band tags overlaid on the card so the owner can
@@ -1257,7 +1243,7 @@ export default function CardDesignerPage() {
                   <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#3FA86A', color: '#FFFFFF' }}>3</span>
                   <div>
                     <div className="font-semibold text-[#1C1917]">Bande BAS</div>
-                    <div className="text-[#7A716C] leading-snug">Salutation · prénom · invite d'action · grille de tampons · jauge de progression · QR code · code-barres · anniversaire. Même couleur que la bande haut.</div>
+                    <div className="text-[#7A716C] leading-snug">Salutation · prénom · total visites · grille de tampons · jauge de points · QR code · code-barres · anniversaire. Même couleur que la bande haut.</div>
                   </div>
                 </li>
               </ul>
