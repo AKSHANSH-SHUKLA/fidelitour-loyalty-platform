@@ -762,44 +762,19 @@ export default function CardDesignerPage() {
               </div>
             </div>
 
-            {/* ────────────────────────────────────────────────────────
-                Layout selector — Hero vs Wallet-pass (GÉMO / Maison 123)
-                ──────────────────────────────────────────────────────── */}
-            <div className="pt-4 mt-2" style={{ borderTop: '1px solid #ECE8E1' }}>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E] mb-2">Style de carte</p>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { key: 'hero',         label: 'Style Hero', desc: 'Carte premium pleine couleur · type KFC, Café' },
-                  { key: 'wallet_pass',  label: 'Style Wallet', desc: '3 bandes · type GÉMO, Maison 123, Fnac' },
-                ].map((opt) => {
-                  const active = brand.layout_style === opt.key;
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => setBrand((b) => ({ ...b, layout_style: opt.key }))}
-                      className="text-left p-3 rounded-lg transition-colors"
-                      style={{
-                        background: active ? '#F8E8E2' : 'white',
-                        border: active ? '2px solid #B85C38' : '1px solid #E7E5E4',
-                      }}
-                    >
-                      <div className="text-[13px] font-medium" style={{ color: active ? '#9C4427' : '#1C1917' }}>{opt.label}</div>
-                      <div className="text-[10px] mt-1" style={{ color: '#7A716C' }}>{opt.desc}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Layout picker removed — the card now uses ONE design (the
+                3-band Apple-Wallet style). brand.layout_style is hard-wired
+                to 'wallet_pass' so the user gets the FNAC / Maison 123 /
+                GÉMO pattern strictly: top + bottom share the same colour,
+                middle is the fully-customizable promotional band. */}
 
             {/* ────────────────────────────────────────────────────────
                 Wallet-pass specific controls — only shown when that
                 layout is selected. They're additive: every existing
                 control above still works in this mode.
                 ──────────────────────────────────────────────────────── */}
-            {brand.layout_style === 'wallet_pass' && (
-              <div className="pt-4 mt-2 space-y-4" style={{ borderTop: '1px solid #ECE8E1' }}>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E]">Options Wallet-pass</p>
+            <div className="pt-4 mt-2 space-y-4" style={{ borderTop: '1px solid #ECE8E1' }}>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57534E]">3 bandes — Top, Milieu, Bas</p>
 
                 {/* Card surface colours (top + bottom strips) */}
                 <div>
@@ -973,7 +948,6 @@ export default function CardDesignerPage() {
                   </div>
                 </div>
               </div>
-            )}
 
             {/* ─── Disposition Apple Wallet — logo, top-right, action prompt, QR, anniversaire, tiers ─── */}
             <div className="rounded-xl border border-[#E7E5E4] bg-white p-4 space-y-4 mt-3">
@@ -1276,29 +1250,66 @@ export default function CardDesignerPage() {
           {/* Live preview column — the card renders standalone (no PhoneFrame,
               no Safari URL bar) so it reads as if it's already sitting inside
               the Apple Wallet app. Sticky so the owner can scroll through the
-              editor on the left and never lose sight of the live result. */}
+              editor on the left and never lose sight of the live result.
+              Underneath the card we render an annotated map that names each
+              of the 3 patches and which controls live there. */}
           <div className="self-start" style={{ position: 'sticky', top: 16, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}>
-            <div className="flex flex-col items-center gap-2 p-3 rounded-2xl" style={{ background: '#1F1B1A' }}>
-              <p className="text-[10px] uppercase tracking-[0.18em] font-bold" style={{ color: '#9C8E78', letterSpacing: '0.18em' }}>
+            <div className="flex flex-col items-stretch gap-2 p-3 rounded-2xl" style={{ background: '#1F1B1A' }}>
+              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-center" style={{ color: '#9C8E78', letterSpacing: '0.18em' }}>
                 Aperçu Apple Wallet
               </p>
-              <PremiumLoyaltyCard
-                customer={{
-                  name: 'Marie Lefèvre',
-                  first_name: 'Marie',
-                  tier: 'Gold',
-                  points: 1240,
-                  barcode_id: 'FT-1DFC4E62',
-                  // Sample progress so the stamps + meter render in the preview.
-                  visits: Math.min(Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6), parseInt(rules.reward_threshold_stamps, 10) || 10),
-                  reward_threshold: parseInt(rules.reward_threshold_stamps, 10) || 10,
-                  offers_count: 1,
-                  birthday: '12/05',
-                }}
-                tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
-                card={brand}
-                compact
-              />
+              <div className="relative">
+                <PremiumLoyaltyCard
+                  customer={{
+                    name: 'Marie Lefèvre',
+                    first_name: 'Marie',
+                    tier: 'Gold',
+                    points: 1240,
+                    barcode_id: 'FT-1DFC4E62',
+                    visits: Math.min(Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6), parseInt(rules.reward_threshold_stamps, 10) || 10),
+                    reward_threshold: parseInt(rules.reward_threshold_stamps, 10) || 10,
+                    offers_count: 1,
+                    birthday: '12/05',
+                  }}
+                  tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
+                  card={brand}
+                  compact
+                />
+                {/* Numbered band tags overlaid on the card so the owner can
+                    visually anchor each editor section to a strip. */}
+                <span className="absolute -left-2 top-[10%] -translate-x-full text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded" style={{ background: '#3FA9D9', color: '#FFFFFF' }}>1 · Haut</span>
+                <span className="absolute -left-2 top-[42%] -translate-x-full text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded" style={{ background: '#E8A53B', color: '#FFFFFF' }}>2 · Milieu</span>
+                <span className="absolute -left-2 top-[78%] -translate-x-full text-[10px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded" style={{ background: '#3FA86A', color: '#FFFFFF' }}>3 · Bas</span>
+              </div>
+            </div>
+
+            {/* Map text — pictorial legend that shows what each band contains
+                and which editor section controls it. */}
+            <div className="mt-3 rounded-xl border bg-white p-3" style={{ borderColor: '#E7E5E4' }}>
+              <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-[#7A716C] mb-2">Carte — légende</p>
+              <ul className="space-y-2 text-[11.5px]">
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#3FA9D9', color: '#FFFFFF' }}>1</span>
+                  <div>
+                    <div className="font-semibold text-[#1C1917]">Bande HAUT</div>
+                    <div className="text-[#7A716C] leading-snug">Logo · nom du commerce · badge palier · "+ D'INFOS / N pts". Couleur = <span className="font-mono text-[10.5px] text-[#1C1917]">card_bg_color</span> (partagée avec la bande bas).</div>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#E8A53B', color: '#FFFFFF' }}>2</span>
+                  <div>
+                    <div className="font-semibold text-[#1C1917]">Bande MILIEU</div>
+                    <div className="text-[#7A716C] leading-snug">Image ou couleur · titre · sous-titre · encart offre. Couleur indépendante via <span className="font-mono text-[10.5px] text-[#1C1917]">strip_color</span> ou l'image téléversée.</div>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#3FA86A', color: '#FFFFFF' }}>3</span>
+                  <div>
+                    <div className="font-semibold text-[#1C1917]">Bande BAS</div>
+                    <div className="text-[#7A716C] leading-snug">Salutation · prénom · invite d'action · grille de tampons · jauge de progression · QR code · code-barres · anniversaire. Même couleur que la bande haut.</div>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
