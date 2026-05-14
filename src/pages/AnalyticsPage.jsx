@@ -64,10 +64,13 @@ const LiveMetricTile = ({
   sublabel,
   onDrill,
   disablePicker = false,
+  // When set, the tile uses this shared day window instead of its own
+  // period state. Used by the shared filter for the "Activité" section.
+  controlledDays = null,
 }) => {
   // Fetch with series so the tile can render a sparkline + delta badge.
   const { value, loading, days, period, setPeriod, series, deltaPct } = useTileMetric({
-    metric, branchId, initial, withSeries: true,
+    metric, branchId, initial, withSeries: true, controlledDays,
   });
   const delta = typeof deltaPct === 'number'
     ? { value: deltaPct, sign: deltaPct > 0.5 ? 'up' : deltaPct < -0.5 ? 'down' : 'flat' }
@@ -82,8 +85,8 @@ const LiveMetricTile = ({
       sublabel={typeof sublabel === 'function' ? sublabel(days, value) : sublabel}
       loading={loading}
       onClick={onDrill ? () => onDrill(days, value) : undefined}
-      period={disablePicker ? null : period}
-      onPeriodChange={disablePicker ? undefined : setPeriod}
+      period={(disablePicker || controlledDays != null) ? null : period}
+      onPeriodChange={(disablePicker || controlledDays != null) ? undefined : setPeriod}
       trend={series}
       delta={delta}
     />
@@ -107,6 +110,88 @@ const MetricTile = ({ staticValue, ...rest }) =>
   staticValue != null
     ? <StaticMetricTile {...rest} value={staticValue} />
     : <LiveMetricTile {...rest} />;
+
+/**
+ * SharedTimeFilter — one control that drives every tile in the
+ * "Activité dans la période choisie" section plus the two charts.
+ *
+ * Three modes:
+ *   • preset — chips: 7j / 30j / 90j / 6 mois / 1 an
+ *   • custom — owner types N + unit (jours / semaines / mois / années)
+ *   • since  — calendar date; window = today − chosen date
+ */
+const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
+  const PRESETS = [
+    { key: '7d',   label: '7 jours',  v: 7,   u: 'day' },
+    { key: '30d',  label: '30 jours', v: 30,  u: 'day' },
+    { key: '90d',  label: '90 jours', v: 90,  u: 'day' },
+    { key: '6m',   label: '6 mois',   v: 6,   u: 'month' },
+    { key: '1y',   label: '1 an',     v: 1,   u: 'year' },
+  ];
+  const set = (partial) => onChange({ ...value, ...partial });
+  return (
+    <div className="rounded-xl border bg-white p-3 mb-4 flex items-center gap-3 flex-wrap" style={{ borderColor: '#E7E5E4' }}>
+      <span className="text-[10px] uppercase tracking-widest font-bold text-[#7A716C] shrink-0">Filtre temps</span>
+      <div className="flex items-center gap-1 flex-wrap">
+        {PRESETS.map((p) => {
+          const active = value.mode === 'preset' && value.value === p.v && value.unit === p.u;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => onChange({ mode: 'preset', value: p.v, unit: p.u, sinceDate: '' })}
+              className="px-2.5 py-1 rounded-full text-[11.5px] font-medium transition"
+              style={{
+                background: active ? '#1F1B1A' : '#FFFFFF',
+                color: active ? '#FFFFFF' : '#1C1917',
+                border: '1px solid ' + (active ? '#1F1B1A' : '#E7E5E4'),
+              }}
+            >
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex-1" />
+      <div className="flex items-center gap-1.5 text-[11.5px] text-[#1C1917]">
+        <span className="text-[10px] uppercase text-[#7A716C]">Sur mesure :</span>
+        <input
+          type="number"
+          min="1"
+          max="365"
+          value={value.mode === 'custom' ? value.value : ''}
+          placeholder="N"
+          onChange={(e) => {
+            const n = Math.max(1, parseInt(e.target.value, 10) || 1);
+            onChange({ ...value, mode: 'custom', value: n, sinceDate: '' });
+          }}
+          className="w-14 px-2 py-1 rounded border border-[#E7E5E4] text-[11.5px]"
+        />
+        <select
+          value={value.unit}
+          onChange={(e) => onChange({ ...value, mode: 'custom', unit: e.target.value, sinceDate: '' })}
+          className="px-2 py-1 rounded border border-[#E7E5E4] text-[11.5px] bg-white"
+        >
+          <option value="day">jours</option>
+          <option value="week">semaines</option>
+          <option value="month">mois</option>
+          <option value="year">années</option>
+        </select>
+      </div>
+      <div className="flex items-center gap-1.5 text-[11.5px] text-[#1C1917]">
+        <span className="text-[10px] uppercase text-[#7A716C]">Depuis :</span>
+        <input
+          type="date"
+          value={value.sinceDate || ''}
+          max={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => onChange({ ...value, mode: 'since', sinceDate: e.target.value })}
+          className="px-2 py-1 rounded border border-[#E7E5E4] text-[11.5px] bg-white"
+        />
+      </div>
+      <span className="text-[10px] font-mono text-[#1C1917] bg-[#FAF6EE] px-2 py-0.5 rounded">{sharedDays} j</span>
+    </div>
+  );
+};
 
 // ------------------------------------------------------------------
 // KPI card with optional Send Campaign CTA in top-right corner.
@@ -390,6 +475,22 @@ const AnalyticsPage = () => {
   const setBranchId = (id) => setBranchIdGlobal(id || null);
   const branches = branchesCtx;
   const setBranches = setBranchesCtx;
+
+  // Shared time filter for the "Activité dans la période choisie" section
+  // and the Visits / Acquisition charts. mode = 'preset' | 'custom' | 'since'.
+  //  - preset: a pre-defined chip (7d, 30d, 90d, 6mo, 1y)
+  //  - custom: owner-typed N + unit (day/week/month/year)
+  //  - since:  "depuis le …" calendar date — days = today - chosen date
+  const [sharedFilter, setSharedFilter] = useState({ mode: 'preset', value: 30, unit: 'day', sinceDate: '' });
+  const sharedDays = useMemo(() => {
+    const f = sharedFilter;
+    if (f.mode === 'since' && f.sinceDate) {
+      const ms = Date.now() - new Date(f.sinceDate).getTime();
+      return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+    }
+    const UNIT_DAYS = { day: 1, week: 7, month: 30, year: 365 };
+    return Math.max(1, Math.round((Number(f.value) || 1) * (UNIT_DAYS[f.unit] || 1)));
+  }, [sharedFilter]);
 
   const [recoveryInactiveDays, setRecoveryInactiveDays] = useState(30);
   const [recoveryWindowDays, setRecoveryWindowDays] = useState(30);
@@ -741,8 +842,8 @@ const AnalyticsPage = () => {
           the Analytics page — twin-series visits chart on the left, two
           donuts in the middle, weekly acquisition with stats on the right. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <VisitsTwinChart />
-        <WeeklyAcquisitionPanel />
+        <VisitsTwinChart controlledDays={sharedDays} />
+        <WeeklyAcquisitionPanel controlledDays={sharedDays} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AcquisitionDonut />
@@ -838,36 +939,42 @@ const AnalyticsPage = () => {
           TIME-WINDOWED ROWS — each tile owns its own period picker.
           ═════════════════════════════════════════════════════════════════ */}
       <div>
-        <div className="flex items-baseline justify-between mb-3">
+        <div className="flex items-baseline justify-between mb-3 gap-4 flex-wrap">
           <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Activité dans la période choisie
           </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Chaque tuile a son propre filtre temps</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
+            Fenêtre actuelle : {sharedDays} jour{sharedDays === 1 ? '' : 's'}
+          </span>
         </div>
 
+        {/* Shared time filter — drives every tile below + the two charts */}
+        <SharedTimeFilter value={sharedFilter} onChange={setSharedFilter} sharedDays={sharedDays} />
+
+
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={UserPlus2} title="Nouveaux clients" tone="info"
             metric="new_customers" branchId={branchId}
             initial={{ value: 7, unit: 'day' }}
             sublabel={(d) => `Inscrits sur les ${d} derniers jours`}
             onDrill={(d) => drillCustomers(`Nouveaux clients (${d}j)`, { created_within_days: d })}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={Award} title="Clients actifs" tone="success"
             metric="active_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Visite dans les ${d} derniers jours`}
             onDrill={(d) => drillCustomers(`Clients actifs (${d}j)`, { active_within_days: d })}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={AlertCircle} title="Inactifs" tone="warning"
             metric="inactive_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Pas vus depuis ${d} jours · à reconquérir`}
             onDrill={(d) => drillCustomers(`Inactifs ≥ ${d}j`, { inactive_days_min: d })}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={Clock} title="Sur le point de partir" tone="danger"
             metric="about_to_lose" branchId={branchId}
             initial={{ value: 14, unit: 'day' }}
@@ -877,14 +984,14 @@ const AnalyticsPage = () => {
         </section>
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={CreditCard} title="Cartes complétées" accent="#4A5D23"
             metric="cards_filled" branchId={branchId}
             initial={{ value: 1, unit: 'month' }}
             sublabel={(d) => `Récompenses débloquées · ${d}j`}
             onDrill={() => drillCustomers('Clients ayant rempli une carte', { cards_filled: true })}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={RefreshCcw} title="Clients récupérés" accent="#B85C38"
             metric="recovered" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
@@ -903,7 +1010,7 @@ const AnalyticsPage = () => {
               })
             }
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={Gift} title="Récompenses utilisées" accent="#9B7FB8"
             metric="rewards_redeemed" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
@@ -925,7 +1032,7 @@ const AnalyticsPage = () => {
               } catch (e) { alert('Failed: ' + (e?.response?.data?.detail || e.message)); }
             }}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={Calendar} title="Premières visites" accent="#3C9D9B"
             metric="first_time_today" branchId={branchId}
             initial={{ value: 1, unit: 'day' }}
@@ -935,28 +1042,28 @@ const AnalyticsPage = () => {
         </section>
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={Trophy} title="Loyal" accent="#7B3F00"
             metric="loyal_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `≥ seuil "Loyal" sur ${d}j`}
             onDrill={() => drillCustomers('Loyal customers', { loyalty_bucket: 'loyal' })}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={RepeatIcon} title="Réguliers" accent="#E8917C"
             metric="regular_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `≥ seuil "Régulier" sur ${d}j`}
             onDrill={() => drillCustomers('Regular customers', { loyalty_bucket: 'regular' })}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={Activity} title="Visites totales" accent="#4A5D23"
             metric="total_visits" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Visites enregistrées sur ${d}j`}
             onDrill={(d) => drillCustomers(`Customers visited last ${d}d`, { active_within_days: d })}
           />
-          <MetricTile
+          <MetricTile controlledDays={sharedDays}
             icon={Calendar} title="Anniversaires ce mois" accent="#E3A869"
             metric="birthdays_this_month_static"
             branchId={branchId}

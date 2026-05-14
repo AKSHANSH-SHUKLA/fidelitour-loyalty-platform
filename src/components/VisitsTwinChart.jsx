@@ -28,9 +28,12 @@ const PERIOD_OPTS = [
   { label: 'Cette année',         days: 365 },
 ];
 
-export default function VisitsTwinChart() {
+export default function VisitsTwinChart({ controlledDays = null } = {}) {
   const { branchId } = useBranch();
   const [opt, setOpt] = useState(PERIOD_OPTS[1]);
+  // When the parent passes a controlledDays (the shared filter on the
+  // Analytics page), it overrides the local picker.
+  const effectiveDays = controlledDays != null && Number.isFinite(controlledDays) ? Math.max(1, Math.round(controlledDays)) : opt.days;
   const [visits, setVisits] = useState([]);
   const [uniques, setUniques] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,8 +43,8 @@ export default function VisitsTwinChart() {
     let alive = true;
     setLoading(true);
     Promise.all([
-      ownerAPI.getAnalyticsMetric({ metric: 'total_visits',   days: opt.days, series: true, ...(branchId ? { branch_id: branchId } : {}) }),
-      ownerAPI.getAnalyticsMetric({ metric: 'new_customers',  days: opt.days, series: true, ...(branchId ? { branch_id: branchId } : {}) }),
+      ownerAPI.getAnalyticsMetric({ metric: 'total_visits',   days: effectiveDays, series: true, ...(branchId ? { branch_id: branchId } : {}) }),
+      ownerAPI.getAnalyticsMetric({ metric: 'new_customers',  days: effectiveDays, series: true, ...(branchId ? { branch_id: branchId } : {}) }),
     ]).then(([a, b]) => {
       if (!alive) return;
       setVisits(Array.isArray(a?.data?.series) ? a.data.series : []);
@@ -49,7 +52,7 @@ export default function VisitsTwinChart() {
     }).catch(() => { /* silent */ })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [opt.days, branchId]);
+  }, [effectiveDays, branchId]);
 
   const data = useMemo(() => {
     const n = Math.max(visits.length, uniques.length, 0);

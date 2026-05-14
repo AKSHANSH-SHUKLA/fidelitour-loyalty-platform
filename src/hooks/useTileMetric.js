@@ -17,9 +17,13 @@ import { ownerAPI } from '../lib/api';
 const UNIT_DAYS = { day: 1, week: 7, month: 30, year: 365 };
 const toDays = (v, u) => Math.max(1, Math.round((Number(v) || 1) * (UNIT_DAYS[u] || 1)));
 
-export default function useTileMetric({ metric, branchId, initial = { value: 30, unit: 'day' }, fallback = 0, withSeries = false }) {
+export default function useTileMetric({ metric, branchId, initial = { value: 30, unit: 'day' }, fallback = 0, withSeries = false, controlledDays = null }) {
   const [period, setPeriodState] = useState(initial);
-  const [days, setDays] = useState(toDays(initial.value, initial.unit));
+  // When controlledDays is provided, the parent component owns the time
+  // window — the hook just consumes it and re-fetches whenever it changes.
+  // Falls back to internal state when controlledDays === null.
+  const [internalDays, setDays] = useState(toDays(initial.value, initial.unit));
+  const days = (controlledDays != null && Number.isFinite(controlledDays)) ? Math.max(1, Math.round(controlledDays)) : internalDays;
   const [value, setValue] = useState(fallback);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({});

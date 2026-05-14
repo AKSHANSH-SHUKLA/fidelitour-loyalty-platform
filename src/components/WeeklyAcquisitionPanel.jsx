@@ -18,20 +18,24 @@ import { TrendingUp } from 'lucide-react';
  */
 const WEEKS = 26;
 
-export default function WeeklyAcquisitionPanel() {
+export default function WeeklyAcquisitionPanel({ controlledDays = null } = {}) {
   const { branchId } = useBranch();
   const [series, setSeries] = useState([]);
   const [loading, setLoading] = useState(true);
+  // When the parent passes a controlledDays (the shared filter), use that
+  // window. Otherwise default to 26 weeks.
+  const effectiveDays = controlledDays != null && Number.isFinite(controlledDays)
+    ? Math.max(7, Math.round(controlledDays))
+    : WEEKS * 7;
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    // The metric endpoint emits 12 buckets per window. We ask for ~182 days
-    // (26 weeks), then re-bucket client-side. Cheaper than a new endpoint
-    // and good enough for a sparkline-style panel.
+    // The metric endpoint emits 12 buckets per window. We ask for the
+    // effective day count, then re-bucket client-side.
     ownerAPI.getAnalyticsMetric({
       metric: 'new_customers',
-      days: WEEKS * 7,
+      days: effectiveDays,
       series: true,
       ...(branchId ? { branch_id: branchId } : {}),
     }).then((r) => {
@@ -56,7 +60,7 @@ export default function WeeklyAcquisitionPanel() {
     }).catch(() => { /* silent */ })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [branchId]);
+  }, [branchId, effectiveDays]);
 
   const { total, avg, best, data } = useMemo(() => {
     const tot = series.reduce((s, v) => s + v, 0);
