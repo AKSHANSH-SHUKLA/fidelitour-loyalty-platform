@@ -130,7 +130,7 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
   ];
   const set = (partial) => onChange({ ...value, ...partial });
   return (
-    <div className="rounded-xl border bg-white p-3 mb-4 flex items-center gap-3 flex-wrap" style={{ borderColor: '#E7E5E4' }}>
+    <div className="rounded-lg border bg-white px-2.5 py-1.5 mb-3 flex items-center gap-2 flex-wrap" style={{ borderColor: '#E7E5E4' }}>
       <span className="text-[10px] uppercase tracking-widest font-bold text-[#7A716C] shrink-0">Filtre temps</span>
       <div className="flex items-center gap-1 flex-wrap">
         {PRESETS.map((p) => {
@@ -140,7 +140,7 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
               key={p.key}
               type="button"
               onClick={() => onChange({ mode: 'preset', value: p.v, unit: p.u, sinceDate: '' })}
-              className="px-2.5 py-1 rounded-full text-[11.5px] font-medium transition"
+              className="px-2 py-0.5 rounded-full text-[10.5px] font-medium transition"
               style={{
                 background: active ? '#1F1B1A' : '#FFFFFF',
                 color: active ? '#FFFFFF' : '#1C1917',
@@ -202,12 +202,12 @@ const KPICard = ({
 }) => (
   <div
     onClick={onClick}
-    className={`relative bg-white p-5 rounded-xl border border-[#E7E5E4] ${
+    className={`relative bg-white p-3 rounded-xl border border-[#E7E5E4] ${
       onClick ? 'cursor-pointer hover:shadow-md transition' : ''
     }`}
   >
     {segment && openComposer && (
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-1.5 right-1.5">
         <SendCampaignButton
           compact
           label="Send"
@@ -215,17 +215,17 @@ const KPICard = ({
         />
       </div>
     )}
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3">
       <div
-        className="w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0"
+        className="w-9 h-9 rounded-full flex items-center justify-center text-white flex-shrink-0"
         style={{ background: accent }}
       >
-        <Icon size={22} />
+        <Icon size={17} />
       </div>
-      <div className="min-w-0 pr-6">
-        <p className="text-xs text-[#57534E] uppercase tracking-wide font-semibold truncate">{title}</p>
-        <p className="text-2xl font-bold text-[#1C1917] leading-tight">{value}</p>
-        {sublabel && <p className="text-xs text-[#8B8680] mt-0.5 truncate">{sublabel}</p>}
+      <div className="min-w-0 pr-5">
+        <p className="text-[10px] text-[#57534E] uppercase tracking-wide font-semibold truncate">{title}</p>
+        <p className="text-lg font-bold text-[#1C1917] leading-tight">{value}</p>
+        {sublabel && <p className="text-[10.5px] text-[#8B8680] mt-0.5 truncate">{sublabel}</p>}
       </div>
     </div>
   </div>
@@ -235,10 +235,10 @@ const KPICard = ({
 // ChartCard with optional Send CTA
 // ------------------------------------------------------------------
 const ChartCard = ({ title, hint, children, segment, openComposer, presetName, presetContent }) => (
-  <div className="bg-white p-6 rounded-xl border border-[#E7E5E4]">
-    <div className="flex items-start justify-between gap-3 mb-1">
+  <div className="bg-white p-4 rounded-xl border border-[#E7E5E4]">
+    <div className="flex items-start justify-between gap-2 mb-0.5">
       <h2
-        className="text-xl font-semibold text-[#1C1917]"
+        className="text-base font-semibold text-[#1C1917]"
         style={{ fontFamily: 'Cormorant Garamond' }}
       >
         {title}
@@ -250,7 +250,7 @@ const ChartCard = ({ title, hint, children, segment, openComposer, presetName, p
         />
       )}
     </div>
-    {hint && <p className="text-xs text-[#8B8680] mt-1 mb-3">{hint}</p>}
+    {hint && <p className="text-[10.5px] text-[#8B8680] mt-0.5 mb-2">{hint}</p>}
     {children}
   </div>
 );
@@ -792,7 +792,7 @@ const AnalyticsPage = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Branch banner now lives in DashboardLayout (globally for every owner
           page). We don't re-render it here — that was creating the duplicate
           stacked banner the client flagged on the screenshot. */}
@@ -804,22 +804,22 @@ const AnalyticsPage = () => {
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
         <div>
           <h1
-            className="ft-serif-title text-[28px] md:text-[32px] flex items-center gap-3"
+            className="ft-serif-title text-[22px] md:text-[26px] flex items-center gap-2"
             style={{ color: 'var(--ink)', lineHeight: 1.05 }}
           >
             <span>Analytics</span>
             <span
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] uppercase"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] uppercase"
               style={{
                 background: 'var(--tone-success-fill)', color: 'var(--tone-success-ink)',
-                letterSpacing: '0.14em', fontWeight: 600, fontFamily: 'Inter, sans-serif',
+                letterSpacing: '0.12em', fontWeight: 600, fontFamily: 'Inter, sans-serif',
               }}
             >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--tone-success-line)' }} />
+              <span className="w-1 h-1 rounded-full" style={{ background: 'var(--tone-success-line)' }} />
               Live
             </span>
           </h1>
-          <p className="text-[13px] mt-1" style={{ color: 'var(--ink-mute)' }}>
+          <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--ink-mute)' }}>
             Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante.
           </p>
         </div>
@@ -840,14 +840,14 @@ const AnalyticsPage = () => {
           1) TIME-INDEPENDENT KPIs — lifetime tiles (no period picker).
           ═════════════════════════════════════════════════════════════════ */}
       <div>
-        <div className="flex items-baseline justify-between mb-3">
-          <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <div className="flex items-baseline justify-between mb-2">
+          <h3 className="text-[13px] font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Vue d'ensemble — depuis le début
           </h3>
           <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Totaux lifetime · pas de filtre temps</span>
         </div>
         {/* Lifetime row 1 — base totals, every tile tone-tagged for vivid colour */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <ColorfulKpiTile
             icon={Users}
             title="Total Customers"
@@ -884,7 +884,7 @@ const AnalyticsPage = () => {
         </section>
 
         {/* Lifetime row 2 — wallet-card states + VIP + birthdays */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <ColorfulKpiTile
             icon={BadgeCheck}
             title="Active Cards"
@@ -924,8 +924,8 @@ const AnalyticsPage = () => {
           2) GRAPHS + PIE CHARTS — Visites · Acquisition · Donuts · Tier+Acq.
           ═════════════════════════════════════════════════════════════════ */}
       {/* Filter A — charts only (Visites + Acquisition). */}
-      <div className="flex items-baseline justify-between gap-4 flex-wrap mt-2 mb-1">
-        <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+      <div className="flex items-baseline justify-between gap-3 flex-wrap mt-1 mb-0.5">
+        <h3 className="text-[12px] font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
           Fenêtre de temps — Visites · Acquisition
         </h3>
         <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
@@ -935,17 +935,17 @@ const AnalyticsPage = () => {
       <SharedTimeFilter value={chartsFilter} onChange={setChartsFilter} sharedDays={chartsDays} />
 
       {/* Visits chart + Acquisition chart — driven by chartsFilter. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <VisitsTwinChart controlledDays={chartsDays} />
         <WeeklyAcquisitionPanel controlledDays={chartsDays} />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <AcquisitionDonut />
         <TierDonut />
       </div>
 
       {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread. Click any tier to see its customers.">
           <div className="grid grid-cols-3 gap-2 mb-4">
             {tierData.map((t) => (
@@ -1072,8 +1072,8 @@ const AnalyticsPage = () => {
           4) TIME-DEPENDENT KPIs — each tile owns its own period picker.
           ═════════════════════════════════════════════════════════════════ */}
       <div>
-        <div className="flex items-baseline justify-between mb-3 gap-4 flex-wrap">
-          <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <div className="flex items-baseline justify-between mb-2 gap-3 flex-wrap">
+          <h3 className="text-[13px] font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Activité dans la période choisie
           </h3>
           <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
@@ -1086,7 +1086,7 @@ const AnalyticsPage = () => {
         <SharedTimeFilter value={tilesFilter} onChange={setTilesFilter} sharedDays={tilesDays} />
 
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricTile controlledDays={tilesDays}
             icon={UserPlus2} title="Nouveaux clients" tone="info"
             metric="new_customers" branchId={branchId}
@@ -1117,7 +1117,7 @@ const AnalyticsPage = () => {
           />
         </section>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <MetricTile controlledDays={tilesDays}
             icon={CreditCard} title="Cartes complétées" accent="#4A5D23"
             metric="cards_filled" branchId={branchId}
@@ -1175,7 +1175,7 @@ const AnalyticsPage = () => {
           />
         </section>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <MetricTile controlledDays={tilesDays}
             icon={Trophy} title="Loyal" accent="#7B3F00"
             metric="loyal_customers" branchId={branchId}
@@ -1212,7 +1212,7 @@ const AnalyticsPage = () => {
 
       {/* Row 4 — Recovered Filter */}
       <section
-        className="rounded-xl p-6 relative overflow-hidden"
+        className="rounded-xl p-4 relative overflow-hidden"
         style={{
           background: `radial-gradient(circle at 100% 0%, #DDF1ED 0%, transparent 55%), radial-gradient(circle at 0% 100%, #E5F0DC 0%, transparent 60%), white`,
           border: '1px solid #6FA89C44',
@@ -1220,7 +1220,7 @@ const AnalyticsPage = () => {
         }}
       >
         <div className="relative flex flex-wrap items-start justify-between gap-3 mb-2">
-          <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#2d5016' }}>
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#2d5016' }}>
             Customize Recovered Customers Filter
           </h3>
           <SendCampaignButton
@@ -1296,7 +1296,7 @@ const AnalyticsPage = () => {
 
       {/* Row 4b — Customer reviews & sentiment */}
       <section
-        className="rounded-xl p-6 space-y-4 relative overflow-hidden"
+        className="rounded-xl p-4 space-y-3 relative overflow-hidden"
         style={{
           background: `radial-gradient(circle at 100% 0%, #F0EBF8 0%, transparent 55%), radial-gradient(circle at 0% 100%, #FCE3DC 0%, transparent 60%), white`,
           border: '1px solid #8B7DC944',
@@ -1305,7 +1305,7 @@ const AnalyticsPage = () => {
       >
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#5E527C' }}>
+            <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#5E527C' }}>
               Customer reviews & sentiment
             </h3>
             <p className="text-xs max-w-3xl mt-1" style={{ color: '#5E527C' }}>
@@ -1540,7 +1540,7 @@ const AnalyticsPage = () => {
 
       {/* Row 5 — Ranking Tabs */}
       <section
-        className="rounded-xl p-6 relative overflow-hidden"
+        className="rounded-xl p-4 relative overflow-hidden"
         style={{
           background: `radial-gradient(circle at 100% 0%, #DDEBF6 0%, transparent 55%), radial-gradient(circle at 0% 100%, #DDF1ED 0%, transparent 60%), white`,
           border: '1px solid #6BA4D944',
@@ -1548,7 +1548,7 @@ const AnalyticsPage = () => {
         }}
       >
         <div className="relative flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1E40AF' }}>
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1E40AF' }}>
             Customer Ranking
           </h3>
           <div className="flex flex-wrap gap-2">

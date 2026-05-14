@@ -137,9 +137,9 @@ const ColorfulKpiTile = ({
         background: SHARED_SURFACE,
         color: 'var(--ink)',
         border: `1px solid ${SHARED_LINE}`,
-        boxShadow: '0 1px 2px rgba(28,25,23,0.04), 0 8px 24px -12px rgba(28,25,23,0.10)',
-        padding: '16px 18px 12px',
-        minHeight: 148,
+        boxShadow: '0 1px 2px rgba(28,25,23,0.04), 0 6px 18px -12px rgba(28,25,23,0.10)',
+        padding: '11px 13px 9px',
+        minHeight: 112,
       }}
     >
       {/* Subtle corner glow in the tone colour — only added when there's a
@@ -149,11 +149,11 @@ const ColorfulKpiTile = ({
           aria-hidden="true"
           style={{
             position: 'absolute',
-            top: -18, right: -18,
-            width: 90, height: 90,
+            top: -14, right: -14,
+            width: 70, height: 70,
             background: glow,
             borderRadius: '50%',
-            filter: 'blur(22px)',
+            filter: 'blur(18px)',
             opacity: 0.6,
             pointerEvents: 'none',
           }}
@@ -161,7 +161,7 @@ const ColorfulKpiTile = ({
       )}
 
       {topRight && (
-        <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute top-1.5 right-1.5 z-10" onClick={(e) => e.stopPropagation()}>
           {topRight}
         </div>
       )}
@@ -169,35 +169,35 @@ const ColorfulKpiTile = ({
       <div className="relative flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p
-            className="text-[10.5px] uppercase"
+            className="text-[9.5px] uppercase"
             style={{
               color: 'var(--ink-mute)',
               fontWeight: 700,
-              letterSpacing: '0.14em',
+              letterSpacing: '0.12em',
             }}
           >
             {title}
           </p>
-          <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+          <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
             <span
               style={{
-                fontSize: 36,
+                fontSize: 26,
                 lineHeight: 1,
                 fontWeight: 700,
                 color: numberInk,
-                letterSpacing: '-0.028em',
+                letterSpacing: '-0.024em',
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
               {loading
-                ? <span className="inline-block w-14 h-7 rounded animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
+                ? <span className="inline-block w-12 h-6 rounded animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
                 : value}
             </span>
             <DeltaPill delta={delta} />
           </div>
           {sublabel && (
             <p
-              className="mt-1 text-[11.5px] line-clamp-2"
+              className="mt-0.5 text-[10.5px] line-clamp-2"
               style={{ color: 'var(--ink-mute)' }}
             >
               {sublabel}
@@ -209,14 +209,14 @@ const ColorfulKpiTile = ({
             most "premium" lever; every modern dashboard uses this pattern. */}
         {Icon && (
           <div
-            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center relative"
+            className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center relative"
             style={{
               background: vivid,
               color: '#FFFFFF',
-              boxShadow: `0 4px 12px -4px ${glow}, inset 0 1px 0 rgba(255,255,255,0.22)`,
+              boxShadow: `0 3px 10px -4px ${glow}, inset 0 1px 0 rgba(255,255,255,0.22)`,
             }}
           >
-            <Icon size={19} strokeWidth={2} />
+            <Icon size={16} strokeWidth={2} />
           </div>
         )}
       </div>
@@ -224,13 +224,13 @@ const ColorfulKpiTile = ({
       {/* Sparkline along the bottom edge of the card, full width, taller than
           before so the trend reads as data not garnish. */}
       {Array.isArray(trend) && trend.length >= 2 && (
-        <div className="mt-3 -mx-1 -mb-1">
-          <Sparkline points={trend} stroke={sparkLine} height={32} />
+        <div className="mt-2 -mx-1 -mb-1">
+          <Sparkline points={trend} stroke={sparkLine} height={24} />
         </div>
       )}
 
       {period && onPeriodChange && (
-        <div className="relative mt-3 flex justify-start">
+        <div className="relative mt-2 flex justify-start">
           <PeriodPicker
             value={period.value}
             unit={period.unit}
