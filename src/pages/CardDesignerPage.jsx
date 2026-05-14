@@ -259,7 +259,7 @@ export default function CardDesignerPage() {
         // through `...serverTemplate`) but no longer edited from the UI.
         points_per_visit: Math.max(0, parseInt(rules.points_per_visit, 10) || 0),
         visits_per_stamp: Math.max(1, parseInt(rules.visits_per_stamp, 10) || 1),
-        reward_threshold_stamps: Math.max(1, parseInt(rules.reward_threshold_stamps, 10) || 1),
+        reward_threshold_stamps: Math.max(1, Math.min(15, parseInt(rules.reward_threshold_stamps, 10) || 1)),
         reward_description: (rules.reward_description || '').trim() || 'Reward',
         notify_before_reward: Math.max(0, parseInt(rules.notify_before_reward, 10) || 0),
         // Brand fields drive the PremiumLoyaltyCard surface. We persist
@@ -422,7 +422,7 @@ export default function CardDesignerPage() {
             </p>
             <NumberInput
               min={1}
-              max={20}
+              max={15}
               emptyValue={10}
               value={rules.reward_threshold_stamps}
               onChange={(n) => updateRule('reward_threshold_stamps', n)}
@@ -537,19 +537,19 @@ export default function CardDesignerPage() {
               <div className="flex items-center gap-3">
                 {brand.logo_url ? (
                   <div className="relative">
-                    <img src={brand.logo_url} alt="" className="w-14 h-14 rounded-lg object-cover border border-[#E7E5E4]" />
+                    <img src={brand.logo_url} alt="" className="w-24 h-24 rounded-xl object-cover border border-[#E7E5E4]" />
                     <button
                       type="button"
                       onClick={() => setBrand((b) => ({ ...b, logo_url: '' }))}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#1C1917] text-white flex items-center justify-center"
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#1C1917] text-white flex items-center justify-center"
                       aria-label="Supprimer le logo"
                     >
-                      <X size={11} />
+                      <X size={13} />
                     </button>
                   </div>
                 ) : (
-                  <div className="w-14 h-14 rounded-lg bg-[#FAF8F4] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8B8680]">
-                    <ImagePlus size={20} />
+                  <div className="w-24 h-24 rounded-xl bg-[#FAF8F4] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8B8680]">
+                    <ImagePlus size={28} />
                   </div>
                 )}
                 <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm font-medium text-[#1C1917] cursor-pointer hover:bg-[#FAF8F4]">
@@ -1253,7 +1253,21 @@ export default function CardDesignerPage() {
               editor on the left and never lose sight of the live result.
               Underneath the card we render an annotated map that names each
               of the 3 patches and which controls live there. */}
-          <div className="self-start" style={{ position: 'sticky', top: 16, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}>
+          <div
+            className="self-start"
+            style={{
+              // Sticky preview — the top offset clears the sticky toolbar
+              // (search + bell + avatar) that lives at the top of <main>.
+              // Without this offset the preview slides up behind it as the
+              // owner scrolls.
+              position: 'sticky',
+              top: 80,
+              alignSelf: 'flex-start',
+              maxHeight: 'calc(100vh - 96px)',
+              overflowY: 'auto',
+              zIndex: 5,
+            }}
+          >
             <div className="flex flex-col items-stretch gap-2 p-3 rounded-2xl" style={{ background: '#1F1B1A' }}>
               <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-center" style={{ color: '#9C8E78', letterSpacing: '0.18em' }}>
                 Aperçu Apple Wallet
