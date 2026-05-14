@@ -1279,7 +1279,7 @@ export default function CardDesignerPage() {
               chrome, dynamic-island notch, real status bar, Safari URL chip.
               What you design here is what they'll see — pixel-for-pixel. */}
           <div className="lg:sticky lg:top-4 self-start flex justify-center">
-            <PhoneFrame width={260} label="Aperçu sur téléphone client">
+            <PhoneFrame width={260} label="Aperçu Apple Wallet" chrome="wallet">
               <PremiumLoyaltyCard
                 customer={{
                   name: 'Marie Lefèvre',

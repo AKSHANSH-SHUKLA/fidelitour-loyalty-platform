@@ -37,7 +37,12 @@ export default function PhoneFrame({
   carrier = 'Orange F',
   url = 'fidelitour.fr',
   label,
+  // chrome === 'wallet' hides the Safari URL bar so the card preview
+  // reads as if it's sitting inside the iPhone Wallet app rather than
+  // a browser tab. Used by the Card Designer preview.
+  chrome = 'safari',
 }) {
+  const isWallet = chrome === 'wallet';
   // Aspect ratio tightened so the phone reads as normal-sized. iPhone 15 Pro
   // body is roughly 2.17:1, but our screen is showing only the card area —
   // we don't need to mimic the full body, just enough chrome to feel real.
@@ -139,61 +144,67 @@ export default function PhoneFrame({
             </div>
           </div>
 
-          {/* Safari address bar — chrome we want to feel real but not steal focus.
-              On modern Safari, the URL chip is a rounded grey pill below a thin
-              top toolbar. We render just the chip — it's the recognisable bit. */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 38,
-              left: 0,
-              right: 0,
-              padding: '8px 16px 6px',
-              background: 'rgba(245,243,239,0.92)',
-              backdropFilter: 'blur(8px)',
-              borderBottom: '0.5px solid rgba(0,0,0,0.06)',
-              zIndex: 5,
-            }}
-          >
+          {/* Safari address bar — only shown when chrome === 'safari'.
+              For Apple-Wallet style previews (chrome === 'wallet') we drop the
+              URL bar entirely so the card reads as if it's inside the iPhone
+              Wallet app rather than a browser tab. */}
+          {!isWallet && (
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 5,
-                background: '#FFFFFF',
-                border: '0.5px solid rgba(0,0,0,0.06)',
-                borderRadius: 10,
-                padding: '5px 10px',
-                fontSize: 11,
-                color: '#1F1B1A',
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontWeight: 500,
-                letterSpacing: '-0.01em',
+                position: 'absolute',
+                top: 38,
+                left: 0,
+                right: 0,
+                padding: '8px 16px 6px',
+                background: 'rgba(245,243,239,0.92)',
+                backdropFilter: 'blur(8px)',
+                borderBottom: '0.5px solid rgba(0,0,0,0.06)',
+                zIndex: 5,
               }}
             >
-              {/* Padlock — site is HTTPS */}
-              <svg width="9" height="11" viewBox="0 0 9 11" aria-hidden="true">
-                <path d="M2 4.5V3a2.5 2.5 0 015 0v1.5h1v6H1v-6h1zm1 0h3V3a1.5 1.5 0 00-3 0v1.5z" fill="#1F1B1A" fillOpacity="0.7"/>
-              </svg>
-              <span style={{ opacity: 0.92 }}>{url}</span>
-              {/* Reload arrow */}
-              <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true" style={{ opacity: 0.5 }}>
-                <path d="M10 6a4 4 0 11-1.17-2.83L10 4M10 1.5V4h-2.5" fill="none" stroke="#1F1B1A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 5,
+                  background: '#FFFFFF',
+                  border: '0.5px solid rgba(0,0,0,0.06)',
+                  borderRadius: 10,
+                  padding: '5px 10px',
+                  fontSize: 11,
+                  color: '#1F1B1A',
+                  fontFamily: "'Inter', system-ui, sans-serif",
+                  fontWeight: 500,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {/* Padlock — site is HTTPS */}
+                <svg width="9" height="11" viewBox="0 0 9 11" aria-hidden="true">
+                  <path d="M2 4.5V3a2.5 2.5 0 015 0v1.5h1v6H1v-6h1zm1 0h3V3a1.5 1.5 0 00-3 0v1.5z" fill="#1F1B1A" fillOpacity="0.7"/>
+                </svg>
+                <span style={{ opacity: 0.92 }}>{url}</span>
+                {/* Reload arrow */}
+                <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true" style={{ opacity: 0.5 }}>
+                  <path d="M10 6a4 4 0 11-1.17-2.83L10 4M10 1.5V4h-2.5" fill="none" stroke="#1F1B1A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Page content — wallet card sits here on white, exactly like real Safari */}
+          {/* Page content — wallet card sits here. Top offset depends on whether
+              we're rendering the Safari URL bar (78) or going straight from the
+              status bar (44). */}
           <div
             style={{
               position: 'absolute',
-              top: 78,
+              top: isWallet ? 44 : 78,
               left: 0,
               right: 0,
               bottom: 28,
               padding: '8px 8px 4px',
               overflow: 'hidden',
+              background: isWallet ? '#000000' : 'transparent',
             }}
           >
             {children}
