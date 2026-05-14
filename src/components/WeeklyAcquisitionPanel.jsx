@@ -80,7 +80,7 @@ export default function WeeklyAcquisitionPanel({ controlledDays = null } = {}) {
           className="text-[10px] px-2 py-0.5 rounded"
           style={{ background: 'var(--surface-sunken)', color: 'var(--ink-mute)', letterSpacing: '0.04em' }}
         >
-          26 dernières semaines
+          {controlledDays != null ? `${effectiveDays} derniers jours` : '26 dernières semaines'}
         </span>
       </div>
 

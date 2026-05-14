@@ -837,10 +837,20 @@ const AnalyticsPage = () => {
       {/* Configurable customer-status KPIs — live, uses the definition from Settings */}
       <CustomerStatusKPI />
 
-      {/* Visits chart + Acquisition donut + Tier donut + Weekly acquisition.
-          The four panels the reference mockup shows as the centrepiece of
-          the Analytics page — twin-series visits chart on the left, two
-          donuts in the middle, weekly acquisition with stats on the right. */}
+      {/* Shared time filter — drives the Visits chart, the Acquisition
+          chart, AND every tile in the "Activité dans la période choisie"
+          section below. ONE control for the whole time-windowed area. */}
+      <div className="flex items-baseline justify-between gap-4 flex-wrap mt-2 mb-1">
+        <h3 className="text-base font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          Fenêtre de temps — Visites · Acquisition · Activité
+        </h3>
+        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
+          {sharedDays} jour{sharedDays === 1 ? '' : 's'}
+        </span>
+      </div>
+      <SharedTimeFilter value={sharedFilter} onChange={setSharedFilter} sharedDays={sharedDays} />
+
+      {/* Visits chart + Acquisition chart — both driven by the shared filter. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <VisitsTwinChart controlledDays={sharedDays} />
         <WeeklyAcquisitionPanel controlledDays={sharedDays} />
@@ -944,12 +954,9 @@ const AnalyticsPage = () => {
             Activité dans la période choisie
           </h3>
           <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
-            Fenêtre actuelle : {sharedDays} jour{sharedDays === 1 ? '' : 's'}
+            Fenêtre partagée · {sharedDays} jour{sharedDays === 1 ? '' : 's'} (filtre en haut)
           </span>
         </div>
-
-        {/* Shared time filter — drives every tile below + the two charts */}
-        <SharedTimeFilter value={sharedFilter} onChange={setSharedFilter} sharedDays={sharedDays} />
 
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">

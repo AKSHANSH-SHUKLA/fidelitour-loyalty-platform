@@ -69,35 +69,42 @@ export default function VisitsTwinChart({ controlledDays = null } = {}) {
         <p className="text-[10.5px] uppercase" style={{ letterSpacing: '0.16em', color: 'var(--ink-mute)', fontWeight: 600 }}>
           Visites dans le temps
         </p>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px]"
-            style={{ background: 'var(--surface-card)', border: '1px solid var(--hairline)', color: 'var(--ink-soft)' }}
-          >
-            {opt.label}
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          {open && (
-            <div
-              className="absolute right-0 top-full mt-1 rounded-md overflow-hidden z-20"
-              style={{ background: 'var(--surface-card)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-md)' }}
+        {controlledDays != null ? (
+          // Shared filter controls this chart — show effective window as text
+          <span className="text-[11px] font-medium" style={{ color: 'var(--ink-soft)' }}>
+            {effectiveDays} derniers jours
+          </span>
+        ) : (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px]"
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--hairline)', color: 'var(--ink-soft)' }}
             >
-              {PERIOD_OPTS.map((o) => (
-                <button
-                  key={o.days}
-                  type="button"
-                  onClick={() => { setOpt(o); setOpen(false); }}
-                  className="block w-full text-left px-3 py-1.5 text-[12px] hover:bg-[#FAF8F4]"
-                  style={{ color: o.days === opt.days ? 'var(--brand-deep)' : 'var(--ink)' }}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+              {opt.label}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            {open && (
+              <div
+                className="absolute right-0 top-full mt-1 rounded-md overflow-hidden z-20"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-md)' }}
+              >
+                {PERIOD_OPTS.map((o) => (
+                  <button
+                    key={o.days}
+                    type="button"
+                    onClick={() => { setOpt(o); setOpen(false); }}
+                    className="block w-full text-left px-3 py-1.5 text-[12px] hover:bg-[#FAF8F4]"
+                    style={{ color: o.days === opt.days ? 'var(--brand-deep)' : 'var(--ink)' }}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Legend — two coloured dots, calm spacing */}
