@@ -1195,9 +1195,12 @@ export default function CardDesignerPage() {
                     name: 'Marie Lefèvre',
                     first_name: 'Marie',
                     tier: 'Gold',
-                    points: 1240,
                     barcode_id: 'FT-1DFC4E62',
-                    visits: Math.min(Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6), parseInt(rules.reward_threshold_stamps, 10) || 10),
+                    // Sample customer at 60% of one reward cycle so the
+                    // owner sees a half-filled card. Visits are EXPRESSED
+                    // as raw visits (not stamps), so we multiply by
+                    // visits_per_stamp to get the correct underlying count.
+                    visits: Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6) * (Math.max(1, parseInt(rules.visits_per_stamp, 10) || 1)),
                     reward_threshold: parseInt(rules.reward_threshold_stamps, 10) || 10,
                     offers_count: 1,
                     birthday: '12/05',

@@ -112,15 +112,23 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
     const showPtsTR  = card.show_points_top_right !== false;
     const ptsTRLbl   = card.points_top_right_label || '+ D\'INFOS';
     const greetLbl   = (card.bottom_greeting_label || 'Bienvenue').toUpperCase();
-    // Points + visits maths — driven by the loyalty rules saved on the
-    // template. The customer's actual `points` is preferred when present;
-    // otherwise we derive it from visits × points_per_visit.
+    // Points + visits + stamps maths — single source of truth derived
+    // from the owner's loyalty rules, NEVER from stored customer.points
+    // (which can drift if the rules change after a customer accumulated).
+    //
+    //   stampsFilled = floor(visits / visits_per_stamp)   capped at cycle
+    //   earnedPoints = visits × points_per_visit
+    //   maxPoints    = cycle × visits_per_stamp × points_per_visit
+    //
+    // Example: visits_per_stamp=2, points_per_visit=10, reward=10 stamps.
+    //   6 stamps filled  →  12 visits  →  120 pts earned / 200 pts max.
     const pointsPerVisit = parseInt(card.points_per_visit, 10) || 10;
-    const visitsPerStamp = parseInt(card.visits_per_stamp, 10) || 1;
+    const visitsPerStamp = Math.max(1, parseInt(card.visits_per_stamp, 10) || 1);
     const totalVisits    = parseInt(customer?.visits, 10) || 0;
-    const cyclePoints    = (parseInt(customer?.reward_threshold, 10) || 10) * visitsPerStamp * pointsPerVisit;
-    const earnedPoints   = (typeof customer?.points === 'number' ? customer.points : totalVisits * pointsPerVisit);
-    const pointsFillPct  = cyclePoints > 0 ? Math.min(100, (earnedPoints / cyclePoints) * 100) : 0;
+    const stampsFilled   = Math.min(cycle, Math.floor(totalVisits / visitsPerStamp));
+    const earnedPoints   = totalVisits * pointsPerVisit;
+    const maxPoints      = cycle * visitsPerStamp * pointsPerVisit;
+    const pointsFillPct  = maxPoints > 0 ? Math.min(100, (earnedPoints / maxPoints) * 100) : 0;
     const showQr     = card.show_qr !== false;
     const qrSize     = Math.max(48, Math.min(140, parseInt(card.qr_size, 10) || 90));
     const showBday   = !!card.show_birthday;
@@ -268,11 +276,12 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
             </div>
           </div>
 
-          {/* Stamps grid */}
+          {/* Stamps grid — count = cycle target, filled = stampsFilled
+              (visits ÷ visits_per_stamp, capped at cycle). */}
           {card.show_stamps_grid !== false && (
             <StampGrid
               count={cycle}
-              filled={Math.min(visits, cycle)}
+              filled={stampsFilled}
               shape={card.stamp_shape || 'circle'}
               fillColor={card.stamp_fill_color || primary}
               emptyColor={card.stamp_empty_color || '#E7E5E4'}
@@ -284,17 +293,17 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
             />
           )}
 
-          {/* Points meter — points earned vs points needed for next reward.
-              Points = visits × points_per_visit, ceiling = cycle stamps ×
-              visits_per_stamp × points_per_visit. */}
-          {card.show_meter !== false && cyclePoints > 0 && (
+          {/* Points meter — earned vs maxPoints (one full reward cycle).
+              earned = visits × points_per_visit
+              max    = cycle × visits_per_stamp × points_per_visit */}
+          {card.show_meter !== false && maxPoints > 0 && (
             <div className="mt-3 mb-4">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: cardInk, opacity: 0.55 }}>
                   {card.meter_label || 'Points'}
                 </p>
                 <p className="text-[10px] font-semibold" style={{ color: cardInk, fontVariantNumeric: 'tabular-nums' }}>
-                  {Math.min(earnedPoints, cyclePoints)} / {cyclePoints} pts
+                  {Math.min(earnedPoints, maxPoints)} / {maxPoints} pts
                 </p>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: card.meter_track_color || '#F2EDE3' }}>
