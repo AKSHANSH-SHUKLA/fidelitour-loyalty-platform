@@ -15,11 +15,14 @@ import React, { useEffect, useState } from 'react';
 import { Users, Activity, TrendingUp, Smartphone, Award, Calendar, Filter, Bell } from 'lucide-react';
 import { useBranch } from '../contexts/BranchContext';
 import { ownerAPI } from '../lib/api';
-import { getKpiSparkline } from '../services/analyticsExtra';
+import { getKpiSparkline, getRfmMatrix, getTopProducts } from '../services/analyticsExtra';
 import KpiCard from '../components/analytics/KpiCard';
 import ChartCard from '../components/analytics/ChartCard';
 import VisitsBarLineChart from '../components/analytics/VisitsBarLineChart';
 import ChannelDonut from '../components/analytics/ChannelDonut';
+import RfmHeatmap from '../components/analytics/RfmHeatmap';
+import RevenueAreaChart from '../components/analytics/RevenueAreaChart';
+import TopProductsList from '../components/analytics/TopProductsList';
 
 const Eyebrow = ({ children }) => (
   <span className="av2-eyebrow">{children}</span>
@@ -72,6 +75,9 @@ export default function AnalyticsPageV2() {
   const [sparks, setSparks] = useState({
     customers: [], visits: [], repeat: [], wallet: [], vip: [],
   });
+  // Phase 3 data — RFM matrix and top-products list. Both DEMO today.
+  const [rfmMatrix, setRfmMatrix] = useState([[0, 0, 0], [0, 0, 0], [0, 0, 0]]);
+  const [topProducts, setTopProducts] = useState([]);
 
   // Fetch summary + acquisition sources + 5 sparklines in parallel on
   // mount and on branch change.
@@ -88,11 +94,15 @@ export default function AnalyticsPageV2() {
       getKpiSparkline('repeat',    branchId).catch(() => []),
       getKpiSparkline('wallet',    branchId).catch(() => []),
       getKpiSparkline('vip',       branchId).catch(() => []),
-    ]).then(([s, a, c, v, r, w, vip]) => {
+      getRfmMatrix(branchId).catch(() => [[0,0,0],[0,0,0],[0,0,0]]),
+      getTopProducts(branchId).catch(() => []),
+    ]).then(([s, a, c, v, r, w, vip, rfm, top]) => {
       if (!alive) return;
       setSummary(s?.data || null);
       setAcqSources(a?.data?.breakdown || a?.data?.acquisition_breakdown || a?.data || null);
       setSparks({ customers: c, visits: v, repeat: r, wallet: w, vip });
+      setRfmMatrix(rfm);
+      setTopProducts(top);
     }).finally(() => { if (alive) setLoading(false); });
 
     return () => { alive = false; };
@@ -141,6 +151,31 @@ export default function AnalyticsPageV2() {
   }, [acqSources]);
 
   const channelsTotal = channelDonutData.reduce((s, r) => s + r.value, 0);
+
+  // ─── Phase 3 — Revenue series + headline.
+  //
+  // No backend revenue series today; derive a stand-in by multiplying
+  // visits_by_day by an average ticket of €3.20 (typical café spend).
+  // When a real revenue_by_day field lands we just swap this useMemo.
+  const revenueSeries = React.useMemo(() => {
+    const map = summary?.visits_by_day || {};
+    const keys = Object.keys(map).sort();
+    if (!keys.length) return [];
+    const AVG_TICKET = 3.2; // EUR, demo
+    return keys.slice(-30).map((iso) => ({
+      x: iso,
+      value: Math.round((Number(map[iso]) || 0) * AVG_TICKET),
+    }));
+  }, [summary]);
+  const revenueTotal = revenueSeries.reduce((s, p) => s + (p.value || 0), 0);
+  const revenueDelta = (() => {
+    if (revenueSeries.length < 14) return null;
+    const half = Math.floor(revenueSeries.length / 2);
+    const a = revenueSeries.slice(0, half).reduce((s, p) => s + p.value, 0);
+    const b = revenueSeries.slice(half).reduce((s, p) => s + p.value, 0);
+    if (a <= 0) return null;
+    return ((b - a) / a) * 100;
+  })();
 
   // KPI values — fall back to safe defaults when summary is loading.
   const totalCustomers = summary?.total_customers ?? 0;
@@ -296,15 +331,35 @@ export default function AnalyticsPageV2() {
 
           {/* Phase 3 — RFM + Revenue + Top products */}
           <section aria-labelledby="phase-3-heading">
-            <Eyebrow>Phase 3 · RFM, revenu, top produits</Eyebrow>
             <h2 id="phase-3-heading" style={{ position: 'absolute', left: -10000, top: 'auto' }}>
               Segments RFM, revenu et top produits
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 12, marginTop: 8 }}>
-              <Placeholder label="RfmHeatmap" />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <Placeholder label="RevenueAreaChart" />
-                <Placeholder label="TopProductsList" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 12 }}>
+              <ChartCard
+                title="RFM Segments"
+                chip={
+                  <span style={{ fontSize: 10, color: 'hsl(228 11% 60%)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Récence × Fréquence
+                  </span>
+                }
+              >
+                <RfmHeatmap matrix={rfmMatrix} />
+              </ChartCard>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+                <ChartCard padding={14}>
+                  <RevenueAreaChart
+                    total={fmtNum(revenueTotal)}
+                    unit="€"
+                    delta={revenueDelta}
+                    data={revenueSeries}
+                    label="Revenu — 30 derniers jours"
+                    height={70}
+                  />
+                </ChartCard>
+                <ChartCard title="Top produits">
+                  <TopProductsList items={topProducts} />
+                </ChartCard>
               </div>
             </div>
           </section>
