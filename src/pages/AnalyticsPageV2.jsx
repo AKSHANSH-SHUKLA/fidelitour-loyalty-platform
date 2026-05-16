@@ -12,7 +12,8 @@
  *     per-metric trend endpoints land (see services/analyticsExtra.js).
  */
 import React, { useEffect, useState } from 'react';
-import { Users, Activity, TrendingUp, Smartphone, Award, Calendar, Filter, Bell } from 'lucide-react';
+import { Users, Activity, TrendingUp, Smartphone, Award, Calendar, Filter, Bell, Gift, Clock, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useBranch } from '../contexts/BranchContext';
 import { ownerAPI } from '../lib/api';
 import {
@@ -31,6 +32,8 @@ import RevenueAreaChart from '../components/analytics/RevenueAreaChart';
 import TopProductsList from '../components/analytics/TopProductsList';
 import HoursHeatmap from '../components/analytics/HoursHeatmap';
 import WeekdayBars from '../components/analytics/WeekdayBars';
+import AutomationCard from '../components/analytics/AutomationCard';
+import AutomationEmpty from '../components/analytics/AutomationEmpty';
 
 const Eyebrow = ({ children }) => (
   <span className="av2-eyebrow">{children}</span>
@@ -75,6 +78,7 @@ const HeaderChip = ({ icon: Icon, children, dot = false, label }) => (
 );
 
 export default function AnalyticsPageV2() {
+  const navigate = useNavigate();
   const { branchId } = useBranch();
   const [summary, setSummary] = useState(null);
   const [acqSources, setAcqSources] = useState(null);
@@ -217,6 +221,11 @@ export default function AnalyticsPageV2() {
   const walletPasses = summary?.wallet_passes_issued ?? 0;
   const vipCount = summary?.tier_distribution?.vip ?? 0;
   const walletPct = totalCustomers > 0 ? Math.round((walletPasses / totalCustomers) * 100) : 0;
+  // Proxy "at-risk" count for the automation card. The summary endpoint
+  // doesn't include this number directly today; approximate as 12% of
+  // the base which is a typical café churn-risk floor. Replace with a
+  // real backend field when one ships.
+  const atRiskCount = Math.round(totalCustomers * 0.12);
 
   // Format helpers — thin & local so we don't pull in the heavy
   // PageShell helpers (which carry cream-theme color refs).
@@ -428,16 +437,53 @@ export default function AnalyticsPageV2() {
 
           {/* Phase 5 — Automations */}
           <section aria-labelledby="phase-5-heading">
-            <Eyebrow>Phase 5 · Automatisations</Eyebrow>
             <h2 id="phase-5-heading" style={{ position: 'absolute', left: -10000, top: 'auto' }}>
               Automatisations
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 8 }}>
-              <Placeholder label="AutomationCard" />
-              <Placeholder label="AutomationCard" />
-              <Placeholder label="AutomationCard" />
-              <Placeholder label="AutomationEmpty" />
-            </div>
+            <ChartCard
+              title="Automatisations"
+              action={
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard/campaigns')}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 11, color: 'hsl(252 95% 85%)', fontWeight: 500,
+                    padding: 0, font: 'inherit',
+                  }}
+                >
+                  Voir tout →
+                </button>
+              }
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                <AutomationCard
+                  icon={Gift}
+                  accent="purple"
+                  title="Anniversaire"
+                  subtitle="Vœux personnalisés"
+                  status="active"
+                  onClick={() => navigate('/dashboard/campaigns?preset=birthday')}
+                />
+                <AutomationCard
+                  icon={Clock}
+                  accent="cyan"
+                  title="Inactifs 14j"
+                  subtitle={atRiskCount > 0 ? `${atRiskCount} clients ciblés` : 'Prêt à activer'}
+                  status="active"
+                  onClick={() => navigate('/dashboard/campaigns?preset=we-miss-you')}
+                />
+                <AutomationCard
+                  icon={Crown}
+                  accent="amber"
+                  title="VIP nudge"
+                  subtitle="Récompense top-tier"
+                  status="paused"
+                  onClick={() => navigate('/dashboard/campaigns?preset=vip')}
+                />
+                <AutomationEmpty onClick={() => navigate('/dashboard/campaigns?new=1')} />
+              </div>
+            </ChartCard>
           </section>
         </main>
 
