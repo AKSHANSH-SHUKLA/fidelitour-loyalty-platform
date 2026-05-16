@@ -53,6 +53,11 @@ import WeekdayBars from '../components/analytics/WeekdayBars';
 import AutomationCard from '../components/analytics/AutomationCard';
 import RightAiPanel from '../components/analytics/RightAiPanel';
 import OwnerDashboard from './OwnerDashboard';
+// Legacy Analytics page — the time-windowed Activité tiles, full
+// Tier / Acquisition breakdown panels, Recovered Filter, Reviews &
+// sentiment, and Rankings tabs all live in this component. Render it
+// below so none of that content is lost in the V2 redesign.
+import LegacyAnalyticsPage from './AnalyticsPage';
 
 const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
   <button
@@ -508,6 +513,17 @@ export default function AnalyticsPageV2() {
 
       {/* ─── EXISTING DASHBOARD CONTENT (preserved verbatim) ─────── */}
       <OwnerDashboard />
+
+      {/* ─── DIVIDER ──────────────────────────────────────────────── */}
+      <SectionDivider>Activité dans la période choisie &amp; analyses approfondies</SectionDivider>
+
+      {/* ─── LEGACY ANALYTICS CONTENT — time-windowed Activité tiles,
+            full Tier / Acquisition breakdown panels, Recovered Filter,
+            Reviews & sentiment, Rankings tabs. Restored after they were
+            dropped by the OwnerDashboard route swap. ──────────────── */}
+      <div style={{ padding: '0 18px 24px' }}>
+        <LegacyAnalyticsPage />
+      </div>
     </div>
   );
 }
