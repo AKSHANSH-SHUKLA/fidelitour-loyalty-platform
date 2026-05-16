@@ -1357,3 +1357,66 @@ textarea::placeholder {
 }
 .av2-dark-skin .recharts-tooltip-label { color: hsl(228 11% 60%) !important; }
 .av2-dark-skin .recharts-tooltip-item  { color: hsl(228 23% 97%) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANALYTICS V2 — SECTION REORDER FOR FIRST-VIEWPORT IMPACT
+   ───────────────────────────────────────────────────────────────────────
+   The owner asked for visuals (KPIs, charts, status bar, heatmap) to
+   be visible the moment the page loads, instead of being buried below
+   the AI banner + the 4-tile "Idées & actions recommandées" block.
+
+   We don't touch the JSX — keeps the regular /dashboard view exactly
+   as it is. Just turn .fd-main into a flex column and assign each
+   direct-child section an explicit `order`. CSS :has() targets the
+   five .fd-panel siblings by the unique content they wrap (status,
+   heatmap, churn, ltv, plan) so we can place each one independently.
+
+   New order top → bottom:
+     1. Welcome back header        (.fd-h)
+     2. KPI grid (8 tiles)         (.fd-kpi-grid)
+     3. Customer Status            (.fd-panel:has(.fd-status-row))
+     4. Charts row                 (.fd-charts-grid)
+     5. Hours heatmap              (.fd-panel:has(.fd-heatmap-wrap))
+     6. AI recommendation banner   (.fd-ai)
+     7. Idées & actions header     (.fd-actions-head)
+     8. Idées & actions grid       (.fd-actions-grid)
+     9. Churn & rétention          (.fd-panel:has(.fd-churn-row))
+    10. LTV                        (.fd-panel:has(.fd-ltv-cards))
+    11. Plan usage                 (.fd-panel:has(.fd-plan-grid))
+   ═════════════════════════════════════════════════════════════════════ */
+.av2-dark-skin .fdt-dash .fd-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.av2-dark-skin .fdt-dash .fd-main > .fd-h            { order: 1; margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-kpi-grid     { order: 2; margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-status-row)   { order: 3;  margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-charts-grid  { order: 4;  margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-heatmap-wrap) { order: 5;  margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-ai           { order: 6;  margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-actions-head { order: 7;  margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-actions-grid { order: 8;  margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-churn-row)    { order: 9;  margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-ltv-cards)    { order: 10; margin: 0; }
+.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-plan-grid)    { order: 11; margin: 0; }
+/* Fallback for browsers without :has() — keep the panels in their
+   original DOM positions (one block) rather than collapsing on top
+   of each other. The major engines (Chrome 105+, Safari 15.4+,
+   Firefox 121+) all support :has() in 2026, so this is belt-and-
+   braces only. */
+@supports not selector(:has(*)) {
+  .av2-dark-skin .fdt-dash .fd-main > .fd-panel { order: 5; margin: 0; }
+}
+
+/* Tighten the "Welcome back" header so the visuals get pulled even
+   higher into the first viewport. */
+.av2-dark-skin .fd-h        { padding-bottom: 0; }
+.av2-dark-skin .fd-title    { font-size: 26px !important; letter-spacing: -0.02em; line-height: 1.05; }
+.av2-dark-skin .fd-sub      { margin-top: 4px !important; font-size: 12.5px !important; }
+
+/* Compact the AI banner once it's been moved down so it doesn't eat
+   too much vertical room a second time. */
+.av2-dark-skin .fd-ai           { padding: 14px 16px !important; gap: 14px !important; }
+.av2-dark-skin .fd-ai-title     { font-size: 14.5px !important; margin: 2px 0 !important; }
+.av2-dark-skin .fd-ai-text      { font-size: 12px !important; line-height: 1.45 !important; }
