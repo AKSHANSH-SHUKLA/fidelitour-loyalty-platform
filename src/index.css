@@ -2,7 +2,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 /* Card-designer font catalogue (25+ families, grouped to one request) */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Oswald:wght@400;700&family=Bebas+Neue&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=PT+Serif:wght@400;700&family=Lora:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Libre+Baskerville:wght@400;700&family=Inter:wght@400;700&family=Nunito:wght@400;700&family=Quicksand:wght@400;700&family=Work+Sans:wght@400;700&family=Rubik:wght@400;700&family=DM+Serif+Display&family=Abril+Fatface&family=Pacifico&family=Dancing+Script:wght@400;700&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Special+Elite&family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Oswald:wght@400;700&family=Bebas+Neue&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=PT+Serif:wght@400;700&family=Lora:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Libre+Baskerville:wght@400;700&family=Inter:wght@400;500;700&family=Nunito:wght@400;700&family=Quicksand:wght@400;700&family=Work+Sans:wght@400;700&family=Rubik:wght@400;700&family=DM+Serif+Display&family=Abril+Fatface&family=Pacifico&family=Dancing+Script:wght@400;700&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Special+Elite&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -946,3 +946,146 @@ textarea::placeholder {
 }
 .card-designer-preview-pane::-webkit-scrollbar { width: 6px; }
 .card-designer-preview-pane::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   ANALYTICS DARK REDESIGN (v2)
+   ─────────────────────────────────────────────────────────────────────────
+   Scoped to .fdt-analytics-v2. Applies only inside the Analytics page so
+   the rest of the app keeps the existing cream theme. The sidebar also
+   adopts these tokens when the dashboard root has data-route-dark="true"
+   (set by DashboardLayout when location.pathname starts with
+   /dashboard/analytics).
+
+   All colors are HSL triplets so Tailwind opacity modifiers (bg-purple/20)
+   work in the JSX when we get there.
+   ═════════════════════════════════════════════════════════════════════════ */
+.fdt-analytics-v2,
+[data-route-dark="true"] .fd-sidebar-host {
+  /* Surfaces */
+  --bg: 226 30% 7%;
+  --bg-2: 228 30% 9%;
+  --surface: 228 30% 12%;
+  --surface-2: 228 28% 14%;
+  --surface-3: 230 32% 18%;
+  --sidebar-dark: 228 30% 9%;
+  --hairline: 230 32% 18%;
+  --av2-border: 228 30% 21%;
+  --av2-border-strong: 228 28% 26%;
+  /* Text */
+  --av2-text: 228 23% 97%;
+  --av2-text-dim: 228 14% 81%;
+  --av2-text-muted: 228 11% 60%;
+  --av2-text-faint: 228 11% 41%;
+  /* Brand */
+  --av2-purple-300: 252 95% 85%;
+  --av2-purple-400: 252 90% 76%;
+  --av2-purple: 258 90% 66%;
+  --av2-purple-600: 263 70% 50%;
+  --av2-indigo: 239 84% 67%;
+  --av2-pink: 352 89% 60%;
+  --av2-pink-soft: 351 95% 71%;
+  --av2-cyan: 189 94% 43%;
+  --av2-cyan-soft: 187 85% 53%;
+  --av2-emerald: 160 84% 39%;
+  --av2-emerald-soft: 158 64% 52%;
+  --av2-amber: 38 92% 50%;
+  --av2-orange: 21 90% 53%;
+  /* Radii */
+  --av2-radius-sm: 10px;
+  --av2-radius: 14px;
+  --av2-radius-lg: 18px;
+  --av2-radius-xl: 22px;
+}
+
+.fdt-analytics-v2 {
+  background: hsl(var(--bg));
+  color: hsl(var(--av2-text));
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: calc(100vh - 64px);
+  margin: -1rem;  /* bleed past parent padding so dark fills the whole viewport */
+  padding: 1rem 1.25rem 1.5rem;
+}
+.fdt-analytics-v2 *,
+.fdt-analytics-v2 *::before,
+.fdt-analytics-v2 *::after { font-family: inherit; }
+.fdt-analytics-v2 .av2-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.fdt-analytics-v2 .av2-num { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+/* Three-column shell */
+.fdt-analytics-v2 .av2-shell {
+  display: grid;
+  grid-template-columns: 1fr 304px;  /* sidebar is owned by DashboardLayout */
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1500px) { .fdt-analytics-v2 .av2-shell { grid-template-columns: 1fr 288px; gap: 14px; } }
+@media (max-width: 1280px) { .fdt-analytics-v2 .av2-shell { grid-template-columns: 1fr; } .fdt-analytics-v2 .av2-rail { display: none; } }
+
+.fdt-analytics-v2 .av2-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.fdt-analytics-v2 .av2-rail { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 80px; }
+
+/* Base card primitive */
+.fdt-analytics-v2 .av2-card {
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--hairline));
+  border-radius: var(--av2-radius-lg);
+  box-shadow: 0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7);
+}
+.fdt-analytics-v2 .av2-card.av2-glow {
+  box-shadow: 0 0 0 1px hsl(var(--av2-purple) / .25), 0 12px 40px -12px hsl(var(--av2-purple) / .45);
+  border-color: hsl(var(--av2-purple) / .35);
+}
+
+/* Header */
+.fdt-analytics-v2 .av2-h1 {
+  font-size: 28px; font-weight: 500; letter-spacing: -0.02em;
+  color: hsl(var(--av2-text)); line-height: 1.05; margin: 0;
+}
+.fdt-analytics-v2 .av2-sub {
+  font-size: 13px; color: hsl(var(--av2-text-muted)); margin-top: 4px;
+}
+.fdt-analytics-v2 .av2-eyebrow {
+  font-size: 10px; letter-spacing: 0.12em; color: hsl(var(--av2-text-muted));
+  text-transform: uppercase; font-weight: 500;
+}
+
+/* Phase-0 placeholder skin for unbuilt slots */
+.fdt-analytics-v2 .av2-placeholder {
+  border: 1px dashed hsl(var(--av2-border));
+  background: hsl(var(--bg-2));
+  color: hsl(var(--av2-text-faint));
+  border-radius: var(--av2-radius-lg);
+  padding: 24px; text-align: center; font-size: 12px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* Sidebar dark variant — applied to the existing .fdt-dash sidebar when the
+   dashboard root has data-route-dark. Doesn't touch any other route. */
+[data-route-dark="true"] .fdt-dash aside.fd-sidebar-host,
+[data-route-dark="true"] .fdt-dash .fd-aside {
+  background: hsl(var(--sidebar-dark));
+  border-color: hsl(var(--hairline));
+  color: hsl(var(--av2-text-dim));
+}
+[data-route-dark="true"] .fdt-dash .fd-aside .fd-nav-link {
+  color: hsl(var(--av2-text-dim));
+}
+[data-route-dark="true"] .fdt-dash .fd-aside .fd-nav-link[aria-current="page"],
+[data-route-dark="true"] .fdt-dash .fd-aside .fd-nav-link.active {
+  background: hsl(var(--surface-2));
+  color: hsl(var(--av2-text));
+  box-shadow: inset 3px 0 0 hsl(var(--av2-purple)),
+              0 0 18px -8px hsl(var(--av2-purple) / .55);
+}
+
+/* Reduced motion — kill any analytics entrance animation. */
+@media (prefers-reduced-motion: reduce) {
+  .fdt-analytics-v2 * { animation: none !important; transition: none !important; }
+}
+
+/* Focus ring */
+.fdt-analytics-v2 :focus-visible {
+  outline: 2px solid hsl(var(--av2-purple));
+  outline-offset: 2px;
+  border-radius: 6px;
+}

@@ -8,7 +8,11 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardLayout from './pages/DashboardLayout';
 import OwnerDashboard from './pages/OwnerDashboard';
-import AnalyticsPage from './pages/AnalyticsPage';
+// Legacy AnalyticsPage kept for rollback during the dark-redesign rollout.
+// AnalyticsPageV2 is the new dark redesign that replaces it on the
+// /dashboard/analytics route. To revert: swap the imports here.
+// import AnalyticsPage from './pages/AnalyticsPage';
+import AnalyticsPage from './pages/AnalyticsPageV2';
 import CustomersPage from './pages/CustomersPage';
 import CustomerMapPage from './pages/CustomerMapPage';
 import ScanPage from './pages/ScanPage';
