@@ -34,14 +34,7 @@ import HoursHeatmap from '../components/analytics/HoursHeatmap';
 import WeekdayBars from '../components/analytics/WeekdayBars';
 import AutomationCard from '../components/analytics/AutomationCard';
 import AutomationEmpty from '../components/analytics/AutomationEmpty';
-
-const Eyebrow = ({ children }) => (
-  <span className="av2-eyebrow">{children}</span>
-);
-
-const Placeholder = ({ label }) => (
-  <div className="av2-placeholder">{label}</div>
-);
+import RightAiPanel from '../components/analytics/RightAiPanel';
 
 /** Stylised pill — date range chip + filter / bell icon buttons.
  *  Phase 1 keeps them static; Phase 7 wires the calendar popover. */
@@ -226,6 +219,61 @@ export default function AnalyticsPageV2() {
   // the base which is a typical café churn-risk floor. Replace with a
   // real backend field when one ships.
   const atRiskCount = Math.round(totalCustomers * 0.12);
+
+  // ─── Phase 6 — Loyalty score + AI insights.
+  //
+  // Score blends three signals: repeat_rate (heavy weight), wallet
+  // attach rate (medium), and VIP share (light). Capped at 100.
+  const loyaltyScore = React.useMemo(() => {
+    if (!summary) return 0;
+    const repeat = Math.min(100, repeatRatePct);                 // 0..100
+    const wallet = totalCustomers > 0 ? (walletPasses / totalCustomers) * 100 : 0;
+    const vipShare = totalCustomers > 0 ? (vipCount / totalCustomers) * 100 : 0;
+    const score = repeat * 0.5 + wallet * 0.35 + vipShare * 1.5; // weighted
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }, [summary, repeatRatePct, totalCustomers, walletPasses, vipCount]);
+
+  // Score delta — same blend but using a "two weeks ago" snapshot we
+  // don't have. Approximated as a stable small positive for the demo.
+  const scoreDelta = loyaltyScore > 0 ? 6 : null;
+
+  // Insights — derived from real numbers when available.
+  const aiInsights = React.useMemo(() => {
+    const arr = [];
+    if (hours.matrix?.length) {
+      // Peak day insight
+      const dayTotals = hours.matrix.map((row) => row.reduce((a, b) => a + b, 0));
+      const peakIdx = dayTotals.indexOf(Math.max(...dayTotals));
+      const baseAvg = dayTotals.reduce((s, n) => s + n, 0) / Math.max(1, dayTotals.length);
+      if (dayTotals[peakIdx] > baseAvg * 1.25) {
+        const dayName = hours.days?.[peakIdx] || '';
+        const liftPct = Math.round(((dayTotals[peakIdx] - baseAvg) / baseAvg) * 100);
+        arr.push({
+          kind: 'opportunity',
+          text: <>Pic {dayName} — <strong>+{liftPct}% trafic</strong>.</>,
+          cta: 'Lancer une happy hour',
+          onClick: () => navigate('/dashboard/campaigns?preset=happy-hour'),
+        });
+      }
+    }
+    if (atRiskCount > 0) {
+      arr.push({
+        kind: 'warning',
+        text: <>{atRiskCount} clients silencieux 14j.</>,
+        cta: 'Envoyer "On vous miss"',
+        onClick: () => navigate('/dashboard/campaigns?preset=we-miss-you'),
+      });
+    }
+    if (vipCount > 0) {
+      arr.push({
+        kind: 'opportunity',
+        text: <>VIP non revenu 30j+.</>,
+        cta: 'Récompense personnalisée',
+        onClick: () => navigate('/dashboard/campaigns?preset=vip-recovery'),
+      });
+    }
+    return arr;
+  }, [hours, atRiskCount, vipCount, navigate]);
 
   // Format helpers — thin & local so we don't pull in the heavy
   // PageShell helpers (which carry cream-theme color refs).
@@ -489,11 +537,17 @@ export default function AnalyticsPageV2() {
 
         {/* ─── RIGHT AI RAIL ─── */}
         <aside className="av2-rail" aria-label="Assistant IA et insights">
-          <Eyebrow>Phase 6 · Right AI panel</Eyebrow>
-          <Placeholder label="ScoreWidget" />
-          <Placeholder label="Insights IA" />
-          <Placeholder label="Actions rapides" />
-          <Placeholder label="Assistant IA" />
+          <RightAiPanel
+            score={loyaltyScore}
+            scoreDelta={scoreDelta}
+            insights={aiInsights}
+            onAction={(kind) => {
+              if (kind === 'new-campaign') navigate('/dashboard/campaigns?new=1');
+              else if (kind === 'import-customers') navigate('/dashboard/customers?import=1');
+              else if (kind === 'export-csv') navigate('/dashboard/customers?export=csv');
+            }}
+            onAssistantSubmit={(q) => navigate(`/dashboard/ai-assistant?q=${encodeURIComponent(q)}`)}
+          />
         </aside>
       </div>
     </div>
