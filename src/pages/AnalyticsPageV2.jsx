@@ -15,7 +15,13 @@ import React, { useEffect, useState } from 'react';
 import { Users, Activity, TrendingUp, Smartphone, Award, Calendar, Filter, Bell } from 'lucide-react';
 import { useBranch } from '../contexts/BranchContext';
 import { ownerAPI } from '../lib/api';
-import { getKpiSparkline, getRfmMatrix, getTopProducts } from '../services/analyticsExtra';
+import {
+  getKpiSparkline,
+  getRfmMatrix,
+  getTopProducts,
+  getHourlyMatrix,
+  getNewVsReturning,
+} from '../services/analyticsExtra';
 import KpiCard from '../components/analytics/KpiCard';
 import ChartCard from '../components/analytics/ChartCard';
 import VisitsBarLineChart from '../components/analytics/VisitsBarLineChart';
@@ -23,6 +29,8 @@ import ChannelDonut from '../components/analytics/ChannelDonut';
 import RfmHeatmap from '../components/analytics/RfmHeatmap';
 import RevenueAreaChart from '../components/analytics/RevenueAreaChart';
 import TopProductsList from '../components/analytics/TopProductsList';
+import HoursHeatmap from '../components/analytics/HoursHeatmap';
+import WeekdayBars from '../components/analytics/WeekdayBars';
 
 const Eyebrow = ({ children }) => (
   <span className="av2-eyebrow">{children}</span>
@@ -78,6 +86,9 @@ export default function AnalyticsPageV2() {
   // Phase 3 data — RFM matrix and top-products list. Both DEMO today.
   const [rfmMatrix, setRfmMatrix] = useState([[0, 0, 0], [0, 0, 0], [0, 0, 0]]);
   const [topProducts, setTopProducts] = useState([]);
+  // Phase 4 data — hours heatmap (real) + new-vs-returning split (DEMO).
+  const [hours, setHours] = useState({ matrix: [], days: [], hours: [] });
+  const [nvr, setNvr] = useState({ newPct: 0, returningPct: 0 });
 
   // Fetch summary + acquisition sources + 5 sparklines in parallel on
   // mount and on branch change.
@@ -96,13 +107,17 @@ export default function AnalyticsPageV2() {
       getKpiSparkline('vip',       branchId).catch(() => []),
       getRfmMatrix(branchId).catch(() => [[0,0,0],[0,0,0],[0,0,0]]),
       getTopProducts(branchId).catch(() => []),
-    ]).then(([s, a, c, v, r, w, vip, rfm, top]) => {
+      getHourlyMatrix(branchId).catch(() => ({ matrix: [], days: [], hours: [] })),
+      getNewVsReturning(branchId).catch(() => ({ newPct: 0, returningPct: 0 })),
+    ]).then(([s, a, c, v, r, w, vip, rfm, top, hrs, nv]) => {
       if (!alive) return;
       setSummary(s?.data || null);
       setAcqSources(a?.data?.breakdown || a?.data?.acquisition_breakdown || a?.data || null);
       setSparks({ customers: c, visits: v, repeat: r, wallet: w, vip });
       setRfmMatrix(rfm);
       setTopProducts(top);
+      setHours(hrs);
+      setNvr(nv);
     }).finally(() => { if (alive) setLoading(false); });
 
     return () => { alive = false; };
@@ -176,6 +191,22 @@ export default function AnalyticsPageV2() {
     if (a <= 0) return null;
     return ((b - a) / a) * 100;
   })();
+
+  // ─── Phase 4 — Weekday bars derived from hours matrix.
+  // Sum each row of `hours.matrix` to get the total visits per weekday.
+  // Short labels for the bar chart (L M M J V S D).
+  const weekdayCounts = React.useMemo(() => {
+    return (hours.matrix || []).map((row) => row.reduce((a, b) => a + b, 0));
+  }, [hours]);
+  const SHORT_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+  // ─── Phase 4 — New vs Returning donut data shape.
+  const nvrSegments = (nvr.newPct > 0 || nvr.returningPct > 0) ? [
+    { name: 'Récurrent', value: Number(nvr.returningPct) || 0,
+      gradientFrom: 'hsl(258 90% 66%)', gradientTo: 'hsl(263 70% 50%)' },
+    { name: 'Nouveau',   value: Number(nvr.newPct) || 0,
+      gradientFrom: 'hsl(187 85% 53%)', gradientTo: 'hsl(189 94% 43%)' },
+  ] : [];
 
   // KPI values — fall back to safe defaults when summary is loading.
   const totalCustomers = summary?.total_customers ?? 0;
@@ -366,14 +397,32 @@ export default function AnalyticsPageV2() {
 
           {/* Phase 4 — Hours, weekday, new vs returning */}
           <section aria-labelledby="phase-4-heading">
-            <Eyebrow>Phase 4 · Heures, jours, nouveau vs récurrent</Eyebrow>
             <h2 id="phase-4-heading" style={{ position: 'absolute', left: -10000, top: 'auto' }}>
               Heures de pointe, jours, nouveau vs récurrent
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 0.8fr 0.8fr', gap: 12, marginTop: 8 }}>
-              <Placeholder label="HoursHeatmap" />
-              <Placeholder label="WeekdayBars" />
-              <Placeholder label="NewVsReturningDonut" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 0.8fr 0.8fr', gap: 12 }}>
+              <ChartCard title="Heures de pointe">
+                <HoursHeatmap matrix={hours.matrix} days={hours.days} hours={hours.hours} />
+              </ChartCard>
+
+              <ChartCard title="Par jour">
+                <WeekdayBars counts={weekdayCounts} days={SHORT_DAYS} height={110} />
+              </ChartCard>
+
+              <ChartCard title="Nouveau vs récurrent">
+                {nvrSegments.length > 0 ? (
+                  <ChannelDonut
+                    data={nvrSegments}
+                    centerNum={`${Math.round(nvr.returningPct)}%`}
+                    centerLabel="Récurrent"
+                    size={120}
+                  />
+                ) : (
+                  <div style={{ display: 'grid', placeItems: 'center', height: 120, color: 'hsl(228 11% 41%)', fontSize: 12 }}>
+                    Aucune donnée.
+                  </div>
+                )}
+              </ChartCard>
             </div>
           </section>
 
