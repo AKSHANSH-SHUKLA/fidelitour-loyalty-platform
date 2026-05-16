@@ -1,83 +1,127 @@
 /**
- * RightAiPanel — the sticky right rail with score, insights, quick
- * actions, and an assistant stub.
+ * RightAiPanel — sticky right rail matching the V2 mockup.
  *
- * Phase 6 wires real content. Phase 7 will add focus rings + reduced
- * motion + screen-reader labels.
+ *  ┌─ AI Copilot card (purple glow) ─────────────┐
+ *  │ AI Copilot   [BETA]                          │
+ *  │ Score de croissance                          │
+ *  │ ●──────────   82  /100                       │
+ *  │ Excellent                                     │
+ *  │ ↑ 12 pts vs mois précédent                    │
+ *  │ [ Voir le diagnostic complet ]                │
+ *  └──────────────────────────────────────────────┘
+ *  ┌─ Insights IA ────────────────────────────────┐
+ *  │ ✦  N insight rows                             │
+ *  │ Voir tous les insights →                      │
+ *  └──────────────────────────────────────────────┘
+ *  ┌─ Actions rapides ────────────────────────────┐
+ *  │ Créer une campagne          ↗                 │
+ *  │ Segmenter des clients       ↗                 │
+ *  │ Exporter un rapport         ↗                 │
+ *  │ Activer le mode auto        ↗                 │
+ *  └──────────────────────────────────────────────┘
+ *  ┌─ Assistant IA ───────────────────────────────┐
+ *  │ Posez une question sur vos données…     ↗     │
+ *  └──────────────────────────────────────────────┘
  */
 import React from 'react';
-import { TrendingUp, AlertTriangle, Sparkles, Send, UserPlus, Download, MessageCircle } from 'lucide-react';
+import { Sparkles, ChevronRight, MessageSquarePlus, Users, Download, Zap, ArrowUpRight } from 'lucide-react';
 import ScoreWidget from './ScoreWidget';
 
-const Eyebrow = ({ children }) => (
-  <div
-    style={{
-      fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
-      color: 'hsl(228 11% 60%)', fontWeight: 500, marginBottom: 8,
-    }}
-  >
-    {children}
-  </div>
-);
-
-const Card = ({ children, glow = false }) => (
+const Card = ({ children, glow = false, style = {} }) => (
   <div
     className={`av2-card${glow ? ' av2-glow' : ''}`}
-    style={{ padding: 12 }}
+    style={{ padding: 14, ...style }}
   >
     {children}
   </div>
 );
 
-const InsightItem = ({ icon: Icon, iconColor, title, cta, onClick }) => (
-  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-    <Icon size={14} style={{ color: iconColor, marginTop: 2, flexShrink: 0 }} aria-hidden="true" />
-    <div style={{ fontSize: 11, color: 'hsl(228 14% 81%)', lineHeight: 1.4, minWidth: 0 }}>
-      <div>{title}</div>
+const SectionTitle = ({ children, action }) => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+    <span style={{ fontSize: 13, fontWeight: 500, color: 'hsl(228 23% 97%)' }}>{children}</span>
+    {action}
+  </div>
+);
+
+const InsightItem = ({ text, cta, onClick }) => (
+  <div style={{ display: 'flex', gap: 10, padding: '10px 0', borderTop: '1px solid hsl(230 32% 18%)' }}>
+    <div
+      aria-hidden="true"
+      style={{
+        flexShrink: 0, width: 26, height: 26, borderRadius: 8,
+        background: 'hsl(258 90% 66% / .15)',
+        display: 'grid', placeItems: 'center',
+        color: 'hsl(252 95% 85%)',
+      }}
+    >
+      <Sparkles size={13} />
+    </div>
+    <div style={{ minWidth: 0, fontSize: 11.5, lineHeight: 1.45 }}>
+      <div style={{ color: 'hsl(228 14% 81%)' }}>{text}</div>
       {cta && (
         <button
           type="button"
           onClick={onClick}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'hsl(252 95% 85%)', font: 'inherit', fontSize: 11,
-            padding: 0, marginTop: 2,
+            background: 'transparent', border: '1px solid hsl(230 32% 18%)',
+            borderRadius: 8, padding: '4px 9px', marginTop: 6, cursor: 'pointer',
+            color: 'hsl(228 23% 97%)', font: 'inherit', fontSize: 11, fontWeight: 500,
+            transition: 'background 150ms ease',
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(258 90% 66% / .08)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
-          {cta} →
+          {cta}
         </button>
       )}
     </div>
   </div>
 );
 
-const QuickAction = ({ icon: Icon, label, primary = false, onClick }) => (
+const QuickAction = ({ icon: Icon, label, onClick }) => (
   <button
     type="button"
     onClick={onClick}
     style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      padding: '8px 10px', borderRadius: 9,
-      background: primary ? 'hsl(228 28% 14%)' : 'transparent',
-      border: 'none', cursor: 'pointer',
-      color: primary ? 'hsl(228 23% 97%)' : 'hsl(228 14% 81%)',
-      font: 'inherit', fontSize: 11.5, width: '100%', textAlign: 'left',
-      transition: 'background 150ms ease',
+      display: 'flex', alignItems: 'center', gap: 10,
+      width: '100%', textAlign: 'left',
+      padding: '9px 10px',
+      background: 'transparent', border: 'none', cursor: 'pointer',
+      color: 'hsl(228 14% 81%)', font: 'inherit', fontSize: 12,
+      borderRadius: 8,
+      transition: 'background 150ms ease, color 150ms ease',
     }}
-    onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(258 90% 66% / .08)'; }}
-    onMouseLeave={(e) => { e.currentTarget.style.background = primary ? 'hsl(228 28% 14%)' : 'transparent'; }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.background = 'hsl(258 90% 66% / .08)';
+      e.currentTarget.style.color = 'hsl(228 23% 97%)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.background = 'transparent';
+      e.currentTarget.style.color = 'hsl(228 14% 81%)';
+    }}
   >
-    <Icon size={13} style={{ color: primary ? 'hsl(252 95% 85%)' : 'hsl(228 11% 60%)' }} aria-hidden="true" />
-    {label}
+    <Icon size={14} aria-hidden="true" style={{ color: 'hsl(252 95% 85%)', flexShrink: 0 }} />
+    <span style={{ flex: 1 }}>{label}</span>
+    <ChevronRight size={14} aria-hidden="true" style={{ color: 'hsl(228 11% 60%)', flexShrink: 0 }} />
   </button>
 );
 
+const scoreLabel = (n) => {
+  if (n >= 80) return 'Excellent';
+  if (n >= 60) return 'Bon';
+  if (n >= 40) return 'Moyen';
+  if (n > 0)   return 'À améliorer';
+  return '—';
+};
+
 const RightAiPanel = ({
   score = 82,
-  scoreDelta = 6,
+  scoreDelta = 12,
   insights = [],
+  onDiagnostic,
   onAction,
   onAssistantSubmit,
+  onAllInsights,
 }) => {
   const [draft, setDraft] = React.useState('');
 
@@ -91,32 +135,89 @@ const RightAiPanel = ({
 
   return (
     <>
+      {/* AI Copilot — score + diagnostic CTA */}
       <Card glow>
-        <Eyebrow>Score fidélité IA</Eyebrow>
-        <ScoreWidget score={score} delta={scoreDelta} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'hsl(228 23% 97%)' }}>
+            <Sparkles size={14} aria-hidden="true" style={{ color: 'hsl(252 95% 85%)' }} />
+            AI Copilot
+          </span>
+          <span
+            style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+              color: 'hsl(252 95% 85%)',
+              background: 'hsl(258 90% 66% / .15)',
+              border: '1px solid hsl(258 90% 66% / .35)',
+              padding: '2px 6px', borderRadius: 99,
+            }}
+          >
+            BETA
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: 'hsl(228 11% 60%)', marginBottom: 8 }}>
+          Score de croissance
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <ScoreWidget score={score} delta={null} denominator="100" />
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 500, color: 'hsl(160 84% 60%)', marginBottom: 4 }}>
+          {scoreLabel(score)}
+        </div>
+        {scoreDelta != null && isFinite(scoreDelta) && (
+          <div style={{ fontSize: 11, color: 'hsl(228 14% 81%)', marginBottom: 10 }}>
+            <span style={{ color: scoreDelta >= 0 ? 'hsl(160 84% 60%)' : 'hsl(351 95% 71%)' }}>
+              {scoreDelta >= 0 ? '↑' : '↓'} {Math.abs(scoreDelta)} pts
+            </span>{' '}
+            vs mois précédent
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onDiagnostic}
+          style={{
+            width: '100%', padding: '8px 12px',
+            background: 'hsl(228 28% 14%)',
+            border: '1px solid hsl(230 32% 18%)',
+            borderRadius: 9,
+            color: 'hsl(228 23% 97%)', cursor: 'pointer',
+            font: 'inherit', fontSize: 12, fontWeight: 500,
+            transition: 'background 150ms ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(258 90% 66% / .1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'hsl(228 28% 14%)'; }}
+        >
+          Voir le diagnostic complet
+        </button>
       </Card>
 
+      {/* Insights IA */}
       <Card>
-        <Eyebrow>Insights IA</Eyebrow>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <SectionTitle
+          action={
+            <button
+              type="button"
+              onClick={onAllInsights}
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: 'hsl(252 95% 85%)', font: 'inherit', fontSize: 11, fontWeight: 500,
+                padding: 0,
+              }}
+            >
+              Voir tous →
+            </button>
+          }
+        >
+          Insights IA
+        </SectionTitle>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {insights.length === 0 ? (
-            <div style={{ fontSize: 11, color: 'hsl(228 11% 41%)' }}>
-              Aucune alerte cette semaine.
+            <div style={{ fontSize: 11.5, color: 'hsl(228 11% 41%)', padding: '8px 0' }}>
+              Aucun insight pour cette période.
             </div>
           ) : insights.map((it, i) => (
             <InsightItem
               key={i}
-              icon={
-                it.kind === 'opportunity' ? TrendingUp
-                : it.kind === 'warning' ? AlertTriangle
-                : Sparkles
-              }
-              iconColor={
-                it.kind === 'opportunity' ? 'hsl(160 84% 50%)'
-                : it.kind === 'warning' ? 'hsl(38 92% 50%)'
-                : 'hsl(252 95% 85%)'
-              }
-              title={it.text}
+              text={it.text}
               cta={it.cta}
               onClick={it.onClick}
             />
@@ -124,20 +225,25 @@ const RightAiPanel = ({
         </div>
       </Card>
 
+      {/* Actions rapides */}
       <Card>
-        <Eyebrow>Actions rapides</Eyebrow>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <QuickAction icon={Send}      label="Nouvelle campagne"     primary onClick={() => onAction?.('new-campaign')} />
-          <QuickAction icon={UserPlus}  label="Importer des clients"          onClick={() => onAction?.('import-customers')} />
-          <QuickAction icon={Download}  label="Exporter en CSV"               onClick={() => onAction?.('export-csv')} />
+        <SectionTitle>Actions rapides</SectionTitle>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <QuickAction icon={MessageSquarePlus} label="Créer une campagne"     onClick={() => onAction?.('new-campaign')} />
+          <QuickAction icon={Users}              label="Segmenter des clients" onClick={() => onAction?.('segment-customers')} />
+          <QuickAction icon={Download}           label="Exporter un rapport"   onClick={() => onAction?.('export-report')} />
+          <QuickAction icon={Zap}                label="Activer le mode auto"  onClick={() => onAction?.('auto-mode')} />
         </div>
       </Card>
 
+      {/* Assistant IA */}
       <Card>
-        <Eyebrow>Assistant IA</Eyebrow>
-        <div style={{ fontSize: 11, color: 'hsl(228 14% 81%)', lineHeight: 1.5, marginBottom: 8 }}>
-          Demandez "Qui sont mes top 10 clients ?" ou "Pourquoi le trafic baisse mardi ?"
-        </div>
+        <SectionTitle>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={13} aria-hidden="true" style={{ color: 'hsl(252 95% 85%)' }} />
+            Assistant IA
+          </span>
+        </SectionTitle>
         <form onSubmit={handleAssistant}>
           <label htmlFor="av2-assistant-input" style={{ position: 'absolute', left: -10000 }}>
             Question à l'assistant
@@ -145,25 +251,35 @@ const RightAiPanel = ({
           <div
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '7px 10px',
+              padding: '9px 11px',
               background: 'hsl(228 28% 14%)',
               border: '1px solid hsl(230 32% 18%)',
               borderRadius: 9,
             }}
           >
-            <MessageCircle size={13} style={{ color: 'hsl(228 11% 41%)', flexShrink: 0 }} aria-hidden="true" />
             <input
               id="av2-assistant-input"
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Posez une question…"
+              placeholder="Posez une question sur vos données…"
               style={{
                 flex: 1, minWidth: 0,
                 background: 'transparent', border: 'none', outline: 'none',
-                color: 'hsl(228 23% 97%)', font: 'inherit', fontSize: 11,
+                color: 'hsl(228 23% 97%)', font: 'inherit', fontSize: 11.5,
               }}
             />
+            <button
+              type="submit"
+              aria-label="Envoyer la question"
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: 'hsl(252 95% 85%)', padding: 0,
+                display: 'grid', placeItems: 'center',
+              }}
+            >
+              <ArrowUpRight size={14} aria-hidden="true" />
+            </button>
           </div>
         </form>
       </Card>
