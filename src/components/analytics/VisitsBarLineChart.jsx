@@ -1,0 +1,108 @@
+/**
+ * VisitsBarLineChart — Recharts ComposedChart with purple bars (total visits)
+ * + a cyan line for unique customers. Dark theme.
+ *
+ * Props:
+ *   data:       Array<{ label, visits, uniques }>
+ *   height:     px (default 200)
+ *   ariaLabel:  string (defaults to a generated summary)
+ */
+import React, { useMemo } from 'react';
+import {
+  ResponsiveContainer, ComposedChart, Bar, Line,
+  CartesianGrid, XAxis, YAxis, Tooltip,
+} from 'recharts';
+
+const TOOLTIP_STYLE = {
+  background: 'hsl(228 28% 14%)',
+  border: '1px solid hsl(228 30% 21%)',
+  borderRadius: 10,
+  color: 'hsl(228 23% 97%)',
+  fontSize: 12,
+  padding: '8px 10px',
+  boxShadow: '0 12px 30px -12px rgba(0,0,0,.6)',
+};
+
+const LegendDot = ({ color, label }) => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'hsl(228 14% 81%)', fontSize: 11 }}>
+    <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+    {label}
+  </span>
+);
+
+const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
+  const summary = useMemo(() => {
+    const totalV = data.reduce((s, d) => s + (Number(d.visits) || 0), 0);
+    const totalU = data.reduce((s, d) => s + (Number(d.uniques) || 0), 0);
+    return `Visites: ${totalV}, clients uniques: ${totalU} sur ${data.length} jours`;
+  }, [data]);
+
+  if (!data.length) {
+    return (
+      <div style={{ height, display: 'grid', placeItems: 'center', color: 'hsl(228 11% 41%)', fontSize: 12 }}>
+        Aucune visite à afficher pour cette période.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div style={{ display: 'flex', gap: 14, marginBottom: 4 }}>
+        <LegendDot color="hsl(258 90% 66%)" label="Visites totales" />
+        <LegendDot color="hsl(187 85% 53%)" label="Clients uniques" />
+      </div>
+      <div role="img" aria-label={ariaLabel || summary} style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -22 }}>
+            <defs>
+              <linearGradient id="av2-vis-bar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="hsl(258 90% 66%)" />
+                <stop offset="100%" stopColor="hsl(263 70% 50%)" />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="hsl(230 32% 18%)" vertical={false} strokeDasharray="2 4" />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: 'hsl(228 11% 41%)', fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+              minTickGap={28}
+            />
+            <YAxis
+              tick={{ fill: 'hsl(228 11% 41%)', fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              width={32}
+            />
+            <Tooltip
+              contentStyle={TOOLTIP_STYLE}
+              labelStyle={{ color: 'hsl(228 11% 60%)', fontSize: 11 }}
+              cursor={{ fill: 'hsl(228 28% 14% / .55)' }}
+            />
+            <Bar
+              dataKey="visits"
+              fill="url(#av2-vis-bar)"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={16}
+              name="Visites"
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="uniques"
+              stroke="hsl(187 85% 53%)"
+              strokeWidth={2}
+              dot={{ r: 2.5, fill: 'hsl(187 85% 53%)', stroke: 'hsl(228 30% 12%)', strokeWidth: 1 }}
+              activeDot={{ r: 4 }}
+              name="Uniques"
+              isAnimationActive={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </>
+  );
+};
+
+export default VisitsBarLineChart;
