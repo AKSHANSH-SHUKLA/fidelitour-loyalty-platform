@@ -1089,3 +1089,271 @@ textarea::placeholder {
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANALYTICS V2 — DARK SKIN OVERRIDES
+   ───────────────────────────────────────────────────────────────────────
+   Wraps the existing OwnerDashboard component. Flips every cream/white
+   surface to the new dark navy palette while leaving the JSX, data
+   hooks, and behaviour entirely untouched. Scoped to .av2-dark-skin
+   so the real Dashboard (/dashboard) stays on the cream theme.
+
+   Strategy:
+     1. Re-bind the dashboard's own --fd-* CSS variables so every place
+        that already reads them flips automatically.
+     2. Backstop with direct surface/border/text overrides on the most
+        common .fd-* element classes for anything that hardcoded a
+        color string.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* Outer page background — kill the cream gradient, switch to solid dark. */
+[data-route-dark="true"] {
+  background: hsl(226 30% 7%) !important;
+}
+
+.av2-dark-skin {
+  background: hsl(226 30% 7%);
+  min-height: calc(100vh - 64px);
+  padding: 0;
+  color: hsl(228 23% 97%);
+}
+
+/* Re-map the dashboard's tokens for everything nested inside us. */
+.av2-dark-skin .fdt-dash {
+  /* Surfaces & chrome */
+  --fd-bg-2:     hsl(228 30% 9%);
+  --fd-surface-2: hsl(228 28% 14%);
+  --fd-border:   hsl(230 32% 18%);
+  --fd-divider:  hsl(228 30% 21%);
+  /* Text */
+  --fd-text:     hsl(228 23% 97%);
+  --fd-text-2:   hsl(228 14% 81%);
+  --fd-text-3:   hsl(228 11% 60%);
+  /* Brand & semantics — bias toward the v2 purple while keeping
+     the green / red / amber semantic accents readable. */
+  --fd-primary:   hsl(258 90% 66%);
+  --fd-primary-2: hsl(263 70% 50%);
+  --fd-pos:       hsl(160 84% 50%);
+  --fd-neg:       hsl(351 95% 71%);
+  --fd-warn:      hsl(38 92% 60%);
+  color: hsl(228 23% 97%);
+}
+
+/* ─── Cards / panels — every white surface becomes the v2 surface. */
+.av2-dark-skin .fd-panel,
+.av2-dark-skin .fd-chart,
+.av2-dark-skin .fd-action,
+.av2-dark-skin .fd-side-panel,
+.av2-dark-skin .fd-status-row,
+.av2-dark-skin .fd-churn-card,
+.av2-dark-skin .fd-ltv-card,
+.av2-dark-skin .fd-plan-gauge,
+.av2-dark-skin .fd-plan-aside,
+.av2-dark-skin .fd-pt-cell {
+  background: hsl(228 30% 12%) !important;
+  border-color: hsl(230 32% 18%) !important;
+  color: hsl(228 23% 97%);
+  box-shadow: 0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7) !important;
+}
+
+/* AI recommendation strip — keep purple identity but on dark surface. */
+.av2-dark-skin .fd-ai {
+  background: hsl(258 90% 66% / .08) !important;
+  border-color: hsl(258 90% 66% / .35) !important;
+  color: hsl(228 23% 97%);
+}
+.av2-dark-skin .fd-ai-eyebrow { color: hsl(252 95% 85%) !important; }
+.av2-dark-skin .fd-ai-title   { color: hsl(228 23% 97%) !important; }
+.av2-dark-skin .fd-ai-text    { color: hsl(228 14% 81%) !important; }
+.av2-dark-skin .fd-ai-close   { color: hsl(252 95% 85%) !important; }
+.av2-dark-skin .fd-ai-close:hover { background: hsl(258 90% 66% / .15) !important; }
+
+/* Page title + LIVE pill */
+.av2-dark-skin .fd-title { color: hsl(228 23% 97%) !important; }
+.av2-dark-skin .fd-live {
+  background: hsl(160 84% 39% / .15) !important;
+  color: hsl(160 84% 60%) !important;
+}
+.av2-dark-skin .fd-sub { color: hsl(228 11% 60%) !important; }
+
+/* Primary buttons — switch to v2 purple gradient. */
+.av2-dark-skin .fd-btn-primary {
+  background: linear-gradient(135deg, hsl(258 90% 66%), hsl(263 70% 50%)) !important;
+  color: hsl(228 23% 97%) !important;
+  border-color: transparent !important;
+}
+.av2-dark-skin .fd-btn-primary:hover {
+  background: linear-gradient(135deg, hsl(263 70% 50%), hsl(258 90% 66%)) !important;
+}
+.av2-dark-skin .fd-btn-purple {
+  background: hsl(258 90% 66%) !important;
+  color: hsl(228 23% 97%) !important;
+}
+.av2-dark-skin .fd-btn-purple:hover { background: hsl(263 70% 50%) !important; }
+
+/* KPI grid — flip pastel surfaces to dark, keep colored icon chips. */
+.av2-dark-skin .fd-kpi[class*="k-"] {
+  background: hsl(228 30% 12%) !important;
+  border: 1px solid hsl(230 32% 18%) !important;
+}
+.av2-dark-skin .fd-kpi[class*="k-"] .fd-kpi-value { color: hsl(228 23% 97%) !important; }
+.av2-dark-skin .fd-kpi[class*="k-"] .fd-kpi-label { color: hsl(228 11% 60%) !important; }
+.av2-dark-skin .fd-kpi[class*="k-"] .fd-kpi-sub   { color: hsl(228 11% 60%) !important; }
+.av2-dark-skin .fd-kpi-foot { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-kpi-delta.pos { color: hsl(160 84% 60%) !important; }
+.av2-dark-skin .fd-kpi-delta.neg { color: hsl(351 95% 71%) !important; }
+
+/* Panel headers */
+.av2-dark-skin .fd-panel-h     { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-panel-sub   { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-panel-title { color: hsl(228 11% 60%); }
+
+/* Customer Status & breakdown — the stacked colour bar keeps its hues. */
+.av2-dark-skin .fd-status-bar {
+  background: hsl(228 30% 21%) !important;
+  border-color: hsl(228 30% 21%) !important;
+}
+.av2-dark-skin .fd-sc-label   { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-sc-value   { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-sc-sub     { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-mini-val   { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-mini-lbl   { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-mini-name  { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-mini-val   { color: hsl(228 23% 97%); }
+
+/* Charts row — titles, dropdowns, footers. */
+.av2-dark-skin .fd-ch-title  { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-ch-select {
+  background: hsl(228 28% 14%) !important;
+  border-color: hsl(230 32% 18%) !important;
+  color: hsl(228 14% 81%) !important;
+}
+.av2-dark-skin .fd-ch-legend { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-ch-foot   {
+  background: hsl(258 90% 66% / .08) !important;
+  color: hsl(228 14% 81%) !important;
+}
+.av2-dark-skin .fd-cs-lbl { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-cs-val { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-cs-sub { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-pt-lbl { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-pt-val { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-pt-delta      { color: hsl(160 84% 60%); }
+.av2-dark-skin .fd-pt-delta.neg  { color: hsl(351 95% 71%); }
+
+/* Donuts — center text and legend rows. */
+.av2-dark-skin .fd-donut-val { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-donut-lbl { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-dl-row    { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-dl-pct    { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-dl-val    { color: hsl(228 23% 97%); }
+
+/* Heatmap — the visit-time gradient grid lives in fd-heatmap*. */
+.av2-dark-skin .fd-heatmap-wrap { border-color: hsl(230 32% 18%) !important; background: hsl(228 30% 12%); }
+.av2-dark-skin .fd-heatmap thead th {
+  background: hsl(228 28% 14%) !important;
+  color: hsl(228 11% 60%) !important;
+}
+.av2-dark-skin .fd-heatmap .fd-hm-hour {
+  background: hsl(228 28% 14%) !important;
+  color: hsl(228 14% 81%) !important;
+}
+.av2-dark-skin .fd-heatmap td { border-top-color: hsl(230 32% 18%) !important; }
+.av2-dark-skin .fd-hm-legend-lbl  { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-hm-legend-ramp { border-color: hsl(230 32% 18%); }
+
+/* Action tiles (Idées & actions recommandées) */
+.av2-dark-skin .fd-action { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-at-title { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-at-desc  { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-at-btn   { color: white; }
+.av2-dark-skin .fd-actions-head .fd-panel-h { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-actions-head .fd-panel-sub { color: hsl(228 14% 81%); }
+
+/* Churn cards */
+.av2-dark-skin .fd-cc-lbl { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-cc-val { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-cc-val.warn { color: hsl(38 92% 60%) !important; }
+.av2-dark-skin .fd-cc-sub { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-ml-row  { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-ml-name { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-ml-val  { color: hsl(228 23% 97%); }
+
+/* LTV */
+.av2-dark-skin .fd-lc-lbl { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-lc-val { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-ltv-card.high {
+  background: hsl(258 90% 66% / .12) !important;
+  border-color: hsl(258 90% 66% / .35) !important;
+}
+.av2-dark-skin .fd-ltv-table { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-ltv-table th { color: hsl(228 11% 60%); border-bottom-color: hsl(230 32% 18%) !important; }
+.av2-dark-skin .fd-ltv-table td { border-top-color: hsl(230 32% 18%) !important; color: hsl(228 14% 81%); }
+
+/* Plan usage */
+.av2-dark-skin .fd-plan-num       { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-plan-num-total { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-plan-chip {
+  background: hsl(258 90% 66% / .15) !important;
+  color: hsl(252 95% 85%) !important;
+  border-color: hsl(258 90% 66% / .35) !important;
+}
+.av2-dark-skin .fd-plan-pct { color: hsl(228 11% 60%); }
+.av2-dark-skin .fd-pa-h     { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-pa-list  { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-pa-list li b { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-pa-btn   {
+  background: hsl(228 28% 14%) !important;
+  border-color: hsl(230 32% 18%) !important;
+  color: hsl(228 14% 81%) !important;
+}
+
+/* Right rail — Alertes + Résumé rapide */
+.av2-dark-skin .fd-sp-head    { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-sp-title   { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-sp-count   {
+  background: hsl(258 90% 66% / .15) !important;
+  color: hsl(252 95% 85%) !important;
+}
+.av2-dark-skin .fd-sp-cta {
+  color: hsl(252 95% 85%) !important;
+  background: transparent !important;
+}
+.av2-dark-skin .fd-sp-cta:hover { background: hsl(258 90% 66% / .08) !important; }
+
+/* Alert items inside the right rail */
+.av2-dark-skin .fd-alert {
+  background: hsl(228 28% 14%) !important;
+  border-color: hsl(230 32% 18%) !important;
+  color: hsl(228 14% 81%);
+}
+.av2-dark-skin .fd-alert-title { color: hsl(228 23% 97%); }
+.av2-dark-skin .fd-alert-sub   { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-alert-time  { color: hsl(228 11% 60%); }
+
+/* Summary rows (Résumé rapide) */
+.av2-dark-skin .fd-sr-row { color: hsl(228 14% 81%); border-bottom-color: hsl(230 32% 18%) !important; }
+.av2-dark-skin .fd-sr-label { color: hsl(228 14% 81%); }
+.av2-dark-skin .fd-sr-value { color: hsl(228 23% 97%); }
+
+/* Generic links / hint text that may sit on white in places we missed. */
+.av2-dark-skin a { color: hsl(252 95% 85%); }
+
+/* Stat-bar separators that used to be on cream surfaces. */
+.av2-dark-skin .fd-status-grid > * { border-color: hsl(230 32% 18%); }
+.av2-dark-skin .fd-churn-row,
+.av2-dark-skin .fd-plan-grid { border-color: hsl(230 32% 18%); }
+
+/* Recharts axes / grid lines inside any chart on this skin should read
+   on dark — Recharts inlines stroke colours from props so we use a
+   tinted CartesianGrid backdrop instead. Tooltip already handled in
+   the chart components. */
+.av2-dark-skin .recharts-cartesian-grid line { stroke: hsl(230 32% 18%) !important; }
+.av2-dark-skin .recharts-cartesian-axis-tick text { fill: hsl(228 11% 60%) !important; }
+.av2-dark-skin .recharts-default-tooltip {
+  background: hsl(228 28% 14%) !important;
+  border-color: hsl(228 30% 21%) !important;
+  color: hsl(228 23% 97%) !important;
+}
+.av2-dark-skin .recharts-tooltip-label { color: hsl(228 11% 60%) !important; }
+.av2-dark-skin .recharts-tooltip-item  { color: hsl(228 23% 97%) !important; }
