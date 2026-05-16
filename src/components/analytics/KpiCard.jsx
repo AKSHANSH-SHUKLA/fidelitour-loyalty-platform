@@ -1,0 +1,162 @@
+/**
+ * KpiCard — metric tile for the dark Analytics page.
+ *
+ *   [icon chip]                            [delta pill]
+ *   LABEL (uppercase, muted)
+ *   BIG NUMBER  (tabular-nums, -0.02em)
+ *   vs 14 Avr — 13 Mai
+ *   ────────── sparkline bleeds to edges ──────────
+ *
+ * Renders as a <button> when onClick is provided so keyboard users can
+ * activate it. Otherwise renders as a plain <div>.
+ *
+ * Accents: purple | pink | cyan | emerald | orange | amber. Each accent
+ * tints the icon chip background, the delta pill (for positive deltas),
+ * and the sparkline gradient.
+ */
+import React from 'react';
+import Sparkline from './Sparkline';
+
+const ACCENT = {
+  purple:  { hue: '258 90% 66%',  soft: '252 90% 76%' },
+  pink:    { hue: '352 89% 60%',  soft: '351 95% 71%' },
+  cyan:    { hue: '189 94% 43%',  soft: '187 85% 53%' },
+  emerald: { hue: '160 84% 39%',  soft: '158 64% 52%' },
+  orange:  { hue: '21 90% 53%',   soft: '21 90% 53%' },
+  amber:   { hue: '38 92% 50%',   soft: '38 92% 50%' },
+};
+
+const DeltaPill = ({ delta }) => {
+  if (delta == null || !isFinite(delta)) return null;
+  const up = delta >= 0;
+  const fmt = `${up ? '+' : '−'}${Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0)}%`;
+  const tone = up
+    ? { fg: 'hsl(160 84% 50%)', bg: 'hsl(160 84% 39% / .12)' }
+    : { fg: 'hsl(351 95% 71%)', bg: 'hsl(352 89% 60% / .12)' };
+  return (
+    <span
+      style={{
+        fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 99,
+        color: tone.fg, background: tone.bg, fontVariantNumeric: 'tabular-nums',
+        letterSpacing: '0.01em',
+      }}
+    >
+      {fmt}
+    </span>
+  );
+};
+
+const KpiCard = ({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  delta,
+  sublabel = 'vs 14 Avr — 13 Mai',
+  accent = 'purple',
+  sparklineData,
+  onClick,
+  loading = false,
+  ariaLabel,
+}) => {
+  const palette = ACCENT[accent] || ACCENT.purple;
+  const Tag = onClick ? 'button' : 'div';
+
+  return (
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      aria-label={ariaLabel || `${label}: ${value}${unit || ''}`}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        textAlign: 'left',
+        cursor: onClick ? 'pointer' : 'default',
+        background: 'hsl(228 30% 12%)',
+        border: '1px solid hsl(230 32% 18%)',
+        borderRadius: 18,
+        padding: '14px 14px 0',
+        boxShadow: '0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7)',
+        color: 'hsl(228 23% 97%)',
+        font: 'inherit',
+        transition: 'transform 180ms cubic-bezier(.2,.7,.3,1), border-color 180ms ease',
+      }}
+      onMouseEnter={(e) => {
+        if (onClick) {
+          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.style.borderColor = 'hsl(228 28% 26%)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (onClick) {
+          e.currentTarget.style.transform = '';
+          e.currentTarget.style.borderColor = 'hsl(230 32% 18%)';
+        }
+      }}
+    >
+      {/* Top row: icon chip + delta pill */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        {Icon ? (
+          <div
+            aria-hidden="true"
+            style={{
+              width: 30, height: 30, borderRadius: 9,
+              background: `hsl(${palette.hue} / .15)`,
+              display: 'grid', placeItems: 'center',
+              color: `hsl(${palette.soft})`,
+            }}
+          >
+            <Icon size={15} strokeWidth={2} />
+          </div>
+        ) : <span />}
+        <DeltaPill delta={delta} />
+      </div>
+
+      {/* Label */}
+      <div
+        style={{
+          fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+          color: 'hsl(228 11% 60%)', fontWeight: 500,
+        }}
+      >
+        {label}
+      </div>
+
+      {/* Big number */}
+      <div
+        className="av2-num"
+        style={{
+          fontSize: 24, fontWeight: 500, lineHeight: 1.1, marginTop: 4,
+          color: 'hsl(228 23% 97%)',
+        }}
+      >
+        {loading ? (
+          <span
+            aria-busy="true"
+            style={{
+              display: 'inline-block', width: 64, height: 22, borderRadius: 6,
+              background: 'hsl(228 28% 14%)', verticalAlign: 'middle',
+            }}
+          />
+        ) : (
+          <>
+            {value}
+            {unit ? <span style={{ fontSize: 14, color: 'hsl(228 11% 60%)', marginLeft: 2 }}>{unit}</span> : null}
+          </>
+        )}
+      </div>
+
+      {/* Subline (period) */}
+      <div style={{ fontSize: 10, color: 'hsl(228 11% 41%)', marginTop: 4, marginBottom: 8 }}>
+        {sublabel}
+      </div>
+
+      {/* Sparkline — flush to bottom edge by negative-margin trick */}
+      <div style={{ margin: '0 -14px' }}>
+        <Sparkline data={sparklineData} accent={accent} height={32} ariaLabel={`Tendance — ${label}`} />
+      </div>
+    </Tag>
+  );
+};
+
+export default KpiCard;
