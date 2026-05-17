@@ -1475,3 +1475,129 @@ textarea::placeholder {
 .av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.relative.rounded-2xl.p-6 {
   display: none !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANALYTICS V2 — DARK THEME OVERRIDES FOR THE LEGACY PAGE
+   ───────────────────────────────────────────────────────────────────────
+   The legacy AnalyticsPage uses tailwind utility classes with hard-coded
+   cream/white hexes plus the ColorfulKpiTile component which sets
+   `background: #FDFBF7` INLINE. We override both layers here so the
+   legacy block reads in the same dark navy palette as the V2 mockup.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ColorfulKpiTile — the .ft-lift class is on every tile. Override the
+   inline cream background + the tile's hardcoded teal-blue number ink. */
+.av2-dark-skin .av2-legacy-wrapper .ft-lift {
+  background: hsl(228 30% 12%) !important;
+  border-color: hsl(230 32% 18%) !important;
+  color: hsl(228 23% 97%);
+  box-shadow: 0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7) !important;
+}
+
+/* All white / cream backgrounds inside the legacy block → dark surface. */
+.av2-dark-skin .av2-legacy-wrapper .bg-white,
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FDFBF7]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FBF7EF]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F3EFE7]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F0E8D6]"] {
+  background: hsl(228 30% 12%) !important;
+}
+/* Lighter washes (chips, hovers) → slightly elevated dark. */
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"][class*="border"],
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"][class*="border"] {
+  background: hsl(228 28% 14%) !important;
+}
+
+/* All dark cream ink text → light text. */
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#1C1917]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#1F1B1A]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#2C2A28]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#0F172A]"] {
+  color: hsl(228 23% 97%) !important;
+}
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#57534E]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#3D3431]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#5C544F]"] {
+  color: hsl(228 14% 81%) !important;
+}
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#8B8680]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#7A716C]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="text-[#A8A8A8]"] {
+  color: hsl(228 11% 60%) !important;
+}
+
+/* All cream borders inside the legacy block → dark hairlines. */
+.av2-dark-skin .av2-legacy-wrapper [class*="border-[#E7E5E4]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="border-[#F3EFE7]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="border-[#ECE3D5]"],
+.av2-dark-skin .av2-legacy-wrapper [class*="border-[#ECE3D2]"] {
+  border-color: hsl(230 32% 18%) !important;
+}
+
+/* Inputs and selects inside the legacy block. */
+.av2-dark-skin .av2-legacy-wrapper input[type="text"],
+.av2-dark-skin .av2-legacy-wrapper input[type="number"],
+.av2-dark-skin .av2-legacy-wrapper input[type="date"],
+.av2-dark-skin .av2-legacy-wrapper select,
+.av2-dark-skin .av2-legacy-wrapper textarea {
+  background: hsl(228 28% 14%) !important;
+  border-color: hsl(230 32% 18%) !important;
+  color: hsl(228 23% 97%) !important;
+}
+
+/* Recharts inside the legacy block — flip grid + tick + tooltip colours
+   for any chart that hasn't been styled explicitly. */
+.av2-dark-skin .av2-legacy-wrapper .recharts-cartesian-grid line { stroke: hsl(230 32% 18%) !important; }
+.av2-dark-skin .av2-legacy-wrapper .recharts-cartesian-axis-tick text { fill: hsl(228 11% 60%) !important; }
+.av2-dark-skin .av2-legacy-wrapper .recharts-default-tooltip {
+  background: hsl(228 28% 14%) !important;
+  border-color: hsl(228 30% 21%) !important;
+  color: hsl(228 23% 97%) !important;
+}
+
+/* Send-campaign pill buttons (orange terracotta on cream → orange on dark). */
+.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#B85C38]/10"] {
+  background: hsl(21 90% 53% / .14) !important;
+}
+
+/* ─── REORDER — put charts/visuals at the TOP of the legacy block ─── */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 {
+  display: flex !important;
+  flex-direction: column;
+  gap: 14px;
+}
+/* The legacy AnalyticsPage's children (after we hid #1 header and #2 AI
+   banner) are roughly:
+     #3  Lifetime KPI tiles wrapper
+     #4  Filter A heading
+     #5  SharedTimeFilter
+     #6  Visits + Acquisition charts (grid grid-cols-1 lg:grid-cols-2 gap-3)
+     #7  Donuts (AcquisitionDonut + TierDonut)
+     #8  Customer Tier Distribution + Acquisition Sources full panels (section)
+     #9  CustomerStatusKPI
+     #10 Activité section
+     #11 Recovered Filter section
+     #12 Reviews section
+     #13 Rankings section
+   We move the visual blocks (#6, #7, #8) above the KPI tiles, and keep
+   everything else in original order. */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.space-y-3 > * { margin: 0; }
+/* Charts row */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 1; }
+/* Donuts row */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.md\:grid-cols-2.gap-3 { order: 2; }
+/* Full Tier + Acquisition breakdown — it's a <section> with grid */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section.grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 3; }
+/* Filter A heading + SharedTimeFilter — push down so they live above
+   the KPI tiles, after the charts. */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between.gap-3.flex-wrap { order: 4; }
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .rounded-lg.border.bg-white { order: 5; }
+/* Lifetime KPI tiles wrapper (`<div>` with the heading "Vue d'ensemble") */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div:has(> div > h3) { order: 6; }
+/* Everything else (CustomerStatusKPI, Activité, Recovered, Reviews,
+   Rankings) keeps DOM order via the default `order: 0`. Bump it past
+   the explicit ones we set above so they sit at the end. */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section:not(.grid.grid-cols-1.lg\:grid-cols-2.gap-3) { order: 8; }
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div:not(.flex):not(.grid):not(.rounded-lg) { order: 7; }
