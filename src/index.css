@@ -1584,20 +1584,21 @@ textarea::placeholder {
    We move the visual blocks (#6, #7, #8) above the KPI tiles, and keep
    everything else in original order. */
 .av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.space-y-3 > * { margin: 0; }
-/* Charts row */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 1; }
-/* Donuts row */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.md\:grid-cols-2.gap-3 { order: 2; }
-/* Full Tier + Acquisition breakdown — it's a <section> with grid */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section.grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 3; }
-/* Filter A heading + SharedTimeFilter — push down so they live above
-   the KPI tiles, after the charts. */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between.gap-3.flex-wrap { order: 4; }
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .rounded-lg.border.bg-white { order: 5; }
-/* Lifetime KPI tiles wrapper (`<div>` with the heading "Vue d'ensemble") */
+/* Filter A heading + SharedTimeFilter — sit at the TOP of the legacy
+   block, immediately above the charts they actually control. (Putting
+   them above the lifetime KPIs was wrong — lifetime KPIs don't use a
+   time filter.) */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between.gap-3.flex-wrap { order: 1; }
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .rounded-lg.border.bg-white { order: 2; }
+/* Visits + Acquisition charts row */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 3; }
+/* Donuts row (Top sources d'acquisition + Tier) */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.md\:grid-cols-2.gap-3 { order: 4; }
+/* Full Customer Tier Distribution + Acquisition Sources breakdown */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section.grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 5; }
+/* Lifetime KPI tiles wrapper ("Vue d'ensemble — depuis le début") */
 .av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div:has(> div > h3) { order: 6; }
 /* Everything else (CustomerStatusKPI, Activité, Recovered, Reviews,
-   Rankings) keeps DOM order via the default `order: 0`. Bump it past
-   the explicit ones we set above so they sit at the end. */
+   Rankings) — defaults to a later order so they sit at the end. */
 .av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section:not(.grid.grid-cols-1.lg\:grid-cols-2.gap-3) { order: 8; }
 .av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div:not(.flex):not(.grid):not(.rounded-lg) { order: 7; }

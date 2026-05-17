@@ -385,9 +385,11 @@ export default function AnalyticsPageV2() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <HeaderChip icon={Calendar}>{dateRangeLabel}</HeaderChip>
-            <HeaderChip icon={Filter} label="Filtres" />
-            <HeaderChip icon={Bell}   label="Notifications" badge={3} />
+            {/* The Calendar / Filter / Bell chips were decorative and
+                non-functional — removed per owner feedback. The legacy
+                section below has a real SharedTimeFilter for the charts
+                that need a time window. AI Copilot navigates to the
+                AI Assistant page so it's the only functional button. */}
             <PrimaryButton icon={Sparkles} onClick={() => navigate('/dashboard/ai-assistant')}>
               AI Copilot
             </PrimaryButton>
@@ -396,23 +398,14 @@ export default function AnalyticsPageV2() {
 
         {/* Three-column shell (main + sticky right rail). */}
         <div className="av2-shell">
-          {/* MAIN */}
+          {/* MAIN
+              Order per owner brief: pie charts + visuals FIRST, KPI
+              numbers AFTER. The visual rows live above the 5-card
+              KPI strip so the first impression is charts. */}
           <main className="av2-main">
-            {/* 5 KPI cards */}
-            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-              <KpiCard icon={Activity}    label="Visites totales"    value={fmtNumFR(totalVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
-              <KpiCard icon={Users}       label="Clients uniques"    value={fmtNumFR(totalCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
-              <KpiCard icon={ShoppingBag} label="Panier moyen"       value={avgBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
-              <KpiCard icon={Wallet}      label="Chiffre d'affaires" value={fmtNumFR(Math.round(revenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
-              <KpiCard icon={Repeat}      label="Taux de rétention"  value={repeatRatePct.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
-            </section>
-
-            {/* Visits chart + Channels donut */}
-            <section style={{ display: 'grid', gridTemplateColumns: '1.55fr 1fr', gap: 12 }}>
-              <ChartCard title="Évolution des visites" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 derniers jours</span>}>
-                <VisitsBarLineChart data={visitsChartData} height={210} />
-              </ChartCard>
-              <ChartCard title="Répartition par canal">
+            {/* 1) PIE CHARTS / DONUTS — first impression. */}
+            <section style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 12 }}>
+              <ChartCard title="Répartition par canal" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
                 {channelDonutData.length > 0 ? (
                   <ChannelDonut
                     data={channelDonutData}
@@ -425,40 +418,6 @@ export default function AnalyticsPageV2() {
                     {loading ? 'Chargement…' : 'Aucune source d\'acquisition pour cette branche.'}
                   </div>
                 )}
-              </ChartCard>
-            </section>
-
-            {/* RFM + Revenue + Top products */}
-            <section style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr', gap: 12 }}>
-              <ChartCard title="Analyse RFM">
-                <RfmHeatmap
-                  matrix={rfmMatrix}
-                  rowLabels={['Récemment', 'Modérément', 'Anciennement']}
-                  colLabels={['Faible', 'Moyenne', 'Élevée']}
-                />
-              </ChartCard>
-              <ChartCard title="Évolution du chiffre d'affaires" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 derniers jours</span>} padding={14}>
-                <RevenueAreaChart
-                  total={fmtNumFR(revenueTotal)}
-                  unit="€"
-                  delta={revenueDelta}
-                  data={revenueSeries}
-                  label="Total période"
-                  height={110}
-                />
-              </ChartCard>
-              <ChartCard title="Top produits / services" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Par CA</span>}>
-                <TopProductsList items={topProducts} />
-              </ChartCard>
-            </section>
-
-            {/* Hours heatmap + Weekday bars + New vs Returning */}
-            <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
-              <ChartCard title="Heures de pointe" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
-                <HoursHeatmap matrix={hours.matrix} days={hours.days} hours={hours.hours} />
-              </ChartCard>
-              <ChartCard title="Jours les plus fréquentés" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
-                <WeekdayBars counts={weekdayCounts} days={SHORT_DAYS} height={120} />
               </ChartCard>
               <ChartCard title="Nouveaux vs récurrents" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 jours</span>}>
                 {nvrSegments.length > 0 ? (
@@ -474,6 +433,52 @@ export default function AnalyticsPageV2() {
                   </div>
                 )}
               </ChartCard>
+              <ChartCard title="Analyse RFM" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Segments</span>}>
+                <RfmHeatmap
+                  matrix={rfmMatrix}
+                  rowLabels={['Récemment', 'Modérément', 'Anciennement']}
+                  colLabels={['Faible', 'Moyenne', 'Élevée']}
+                />
+              </ChartCard>
+            </section>
+
+            {/* 2) Time-series charts row. */}
+            <section style={{ display: 'grid', gridTemplateColumns: '1.55fr 1fr', gap: 12 }}>
+              <ChartCard title="Évolution des visites" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 derniers jours</span>}>
+                <VisitsBarLineChart data={visitsChartData} height={210} />
+              </ChartCard>
+              <ChartCard title="Évolution du chiffre d'affaires" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 derniers jours</span>} padding={14}>
+                <RevenueAreaChart
+                  total={fmtNumFR(revenueTotal)}
+                  unit="€"
+                  delta={revenueDelta}
+                  data={revenueSeries}
+                  label="Total période"
+                  height={140}
+                />
+              </ChartCard>
+            </section>
+
+            {/* 3) Heatmap + bars + top products. */}
+            <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
+              <ChartCard title="Heures de pointe" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
+                <HoursHeatmap matrix={hours.matrix} days={hours.days} hours={hours.hours} />
+              </ChartCard>
+              <ChartCard title="Jours les plus fréquentés" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
+                <WeekdayBars counts={weekdayCounts} days={SHORT_DAYS} height={120} />
+              </ChartCard>
+              <ChartCard title="Top produits / services" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Par CA</span>}>
+                <TopProductsList items={topProducts} />
+              </ChartCard>
+            </section>
+
+            {/* 4) KPI strip — numbers AFTER the visuals. */}
+            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+              <KpiCard icon={Activity}    label="Visites totales"    value={fmtNumFR(totalVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
+              <KpiCard icon={Users}       label="Clients uniques"    value={fmtNumFR(totalCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
+              <KpiCard icon={ShoppingBag} label="Panier moyen"       value={avgBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
+              <KpiCard icon={Wallet}      label="Chiffre d'affaires" value={fmtNumFR(Math.round(revenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
+              <KpiCard icon={Repeat}      label="Taux de rétention"  value={repeatRatePct.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
             </section>
 
             {/* Automatisations actives */}
