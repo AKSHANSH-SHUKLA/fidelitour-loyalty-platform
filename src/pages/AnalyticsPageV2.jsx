@@ -52,11 +52,18 @@ import HoursHeatmap from '../components/analytics/HoursHeatmap';
 import WeekdayBars from '../components/analytics/WeekdayBars';
 import AutomationCard from '../components/analytics/AutomationCard';
 import RightAiPanel from '../components/analytics/RightAiPanel';
-import OwnerDashboard from './OwnerDashboard';
 // Legacy Analytics page — the time-windowed Activité tiles, full
 // Tier / Acquisition breakdown panels, Recovered Filter, Reviews &
 // sentiment, and Rankings tabs all live in this component. Render it
 // below so none of that content is lost in the V2 redesign.
+//
+// NOTE: OwnerDashboard is intentionally NOT imported here anymore.
+// Rendering both <OwnerDashboard /> and <LegacyAnalyticsPage /> below
+// the V2 mockup produced visible duplicates (same 8 KPI tiles, same
+// AI banner, same charts). OwnerDashboard already lives at /dashboard;
+// the Analytics route now leans on LegacyAnalyticsPage for the deep-
+// dive content (every lifetime KPI + the time-windowed Activité
+// tiles + Recovered / Reviews / Rankings).
 import LegacyAnalyticsPage from './AnalyticsPage';
 
 const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
@@ -509,19 +516,21 @@ export default function AnalyticsPageV2() {
       </div>
 
       {/* ─── DIVIDER ──────────────────────────────────────────────── */}
-      <SectionDivider>Détails complémentaires &amp; opérations</SectionDivider>
-
-      {/* ─── EXISTING DASHBOARD CONTENT (preserved verbatim) ─────── */}
-      <OwnerDashboard />
-
-      {/* ─── DIVIDER ──────────────────────────────────────────────── */}
       <SectionDivider>Activité dans la période choisie &amp; analyses approfondies</SectionDivider>
 
-      {/* ─── LEGACY ANALYTICS CONTENT — time-windowed Activité tiles,
-            full Tier / Acquisition breakdown panels, Recovered Filter,
-            Reviews & sentiment, Rankings tabs. Restored after they were
-            dropped by the OwnerDashboard route swap. ──────────────── */}
-      <div style={{ padding: '0 18px 24px' }}>
+      {/* ─── LEGACY ANALYTICS CONTENT — full lifetime KPIs (Total
+            Customers / Visits / Repeat Rate / Wallet Passes / Active
+            Cards / Never Added / Deleted Cards / VIP), CustomerStatus,
+            full Tier and Acquisition breakdown charts, all 12 time-
+            windowed Activité tiles, Recovered Filter, Reviews &
+            sentiment, and Rankings tabs. The dark skin propagates
+            from the .av2-dark-skin wrapper.
+
+            The legacy page's OWN header ("Analytics" + LIVE pill) and
+            its own AI banner are hidden via the CSS rule below — the
+            V2 header above and the AI Copilot in the right rail
+            already cover those. ────────────────────────────────── */}
+      <div className="av2-legacy-wrapper" style={{ padding: '0 18px 24px' }}>
         <LegacyAnalyticsPage />
       </div>
     </div>

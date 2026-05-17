@@ -1453,3 +1453,25 @@ textarea::placeholder {
   display: flex; flex-direction: column; gap: 12px;
   position: sticky; top: 86px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANALYTICS V2 — HIDE DUPLICATED HEADER & AI BANNER FROM LEGACY PAGE
+   ───────────────────────────────────────────────────────────────────────
+   The V2 mockup at the top already renders its own "Analytics" title +
+   AI Copilot rail. The legacy AnalyticsPage component, rendered below
+   the divider, also renders an "Analytics · LIVE" header AND a full-
+   width AI Recommendation banner. Both visually duplicate what's
+   already on screen, so we hide them inside the .av2-legacy-wrapper
+   scope — every other section the legacy page renders stays.
+   ═════════════════════════════════════════════════════════════════════ */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between:first-child {
+  display: none !important;
+}
+/* AiRecommendationBanner — its root is the only
+   div.relative.rounded-2xl.p-5 (or p-6) sitting at the top level of
+   the legacy page's .space-y-3 container, so target it structurally
+   without adding a marker class to the component. */
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.relative.rounded-2xl.p-5,
+.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.relative.rounded-2xl.p-6 {
+  display: none !important;
+}
