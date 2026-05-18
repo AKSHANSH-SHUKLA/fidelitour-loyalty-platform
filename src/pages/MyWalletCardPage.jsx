@@ -510,7 +510,13 @@ const MyWalletCardPage = () => {
                 <h3 className="text-sm font-semibold text-[#1C1917]">Aperçu de la notification push</h3>
               </div>
               <div className="bg-[#1C1917]/5 rounded-lg p-3 flex gap-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm" style={{ background: primary, color: textColor }}>
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm"
+                  style={{
+                    background: card?.primary_color || '#B85C38',
+                    color: '#FFFFFF',
+                  }}
+                >
                   {tenant.name?.charAt(0)}
                 </div>
                 <div className="flex-1">
