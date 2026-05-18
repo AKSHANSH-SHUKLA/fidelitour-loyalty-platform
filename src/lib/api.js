@@ -106,6 +106,13 @@ export const ownerAPI = {
   getHighestPaying: (params) => api.get('/owner/analytics/highest-paying', { params }),
   getAcquisitionSources: (params) => api.get('/owner/analytics/acquisition-sources', { params }),
   getAnalyticsSummary: (params) => api.get('/owner/analytics/summary', { params }),
+  // Product / service catalog. Owner edits in Settings → Catalogue.
+  // Staff (and managers/owners) fetch it on the scan page to render
+  // an item picker. The server is the source of truth for prices, so
+  // saving a visit with `items` makes the backend recompute amount_paid
+  // from the catalog — clients cannot inflate revenue by editing prices.
+  getCatalog: () => api.get('/owner/catalog'),
+  putCatalog: (items) => api.put('/owner/catalog', { items }),
   // Single-metric endpoint — drives per-tile period pickers on dashboard/analytics.
   // params: { metric, days, branch_id? }
   getAnalyticsMetric: (params) => api.get('/owner/analytics/metric', { params }),

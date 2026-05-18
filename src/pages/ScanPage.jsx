@@ -25,6 +25,13 @@ const ScanPage = () => {
   const [scanResult, setScanResult] = useState(null); // Enhanced post-scan result
   const [redeemLoading, setRedeemLoading] = useState(false);
   const [redeemDone, setRedeemDone] = useState(false);
+  // Catalog + picker state. When at least one item has qty > 0, the
+  // amount_paid field becomes auto-filled (read-only) and the request
+  // includes items[] so the server can recompute the total from prices
+  // it controls.
+  const [catalog, setCatalog] = useState([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerQty, setPickerQty] = useState({}); // { [item.id]: qty }
   // App-wide branch context (item #18). Picking a branch here also reflects on every other page.
   const { branchId: _branchIdRaw, setBranchId: _setBranchIdGlobal, branches: _branchesCtx, setBranches: _setBranchesCtx } = useBranch();
   const branches = _branchesCtx;
@@ -37,6 +44,13 @@ const ScanPage = () => {
         const r = await ownerAPI.getBranches();
         _setBranchesCtx(r.data || []);
       } catch (e) { /* no branches, plan doesn't support — fine */ }
+    })();
+    // Load the tenant catalog so the staff can pick items at scan time.
+    (async () => {
+      try {
+        const c = await ownerAPI.getCatalog?.();
+        setCatalog(Array.isArray(c?.data?.items) ? c.data.items : []);
+      } catch (_e) { /* empty catalog is fine, picker hides itself */ }
     })();
     // Load the tenant's points rule from the card template.
     (async () => {
@@ -311,6 +325,40 @@ const ScanPage = () => {
     setPointsManuallyEdited(true); // Mark as manually edited
   };
 
+  // Derived: which catalog items currently have a positive qty? + the
+  // total (computed client-side for display; the server recomputes its
+  // own total from prices it controls when items[] is sent).
+  const pickedItems = React.useMemo(() => {
+    if (!catalog?.length) return [];
+    return catalog
+      .map((it) => ({ item: it, qty: Number(pickerQty[it.id]) || 0 }))
+      .filter((row) => row.qty > 0);
+  }, [catalog, pickerQty]);
+  const pickerTotal = pickedItems.reduce(
+    (s, { item, qty }) => s + (Number(item.price) || 0) * qty, 0
+  );
+  const pickerLineItems = pickedItems.map(({ item, qty }) => ({ item_id: item.id, qty }));
+  // When the picker has at least one selection, force amount_paid to the
+  // picker total — the field is shown read-only in that mode so the
+  // cashier can't accidentally type a different number.
+  React.useEffect(() => {
+    if (pickedItems.length > 0) {
+      setAmountPaid(pickerTotal.toFixed(2));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickerTotal, pickedItems.length]);
+
+  const bumpQty = (id, delta) => {
+    setPickerQty((prev) => {
+      const next = { ...prev };
+      const cur = Number(next[id]) || 0;
+      const v = Math.max(0, cur + delta);
+      if (v === 0) delete next[id]; else next[id] = v;
+      return next;
+    });
+  };
+  const clearPicker = () => setPickerQty({});
+
   const handleScan = async (e) => {
     e.preventDefault();
     if (!barcode.trim()) return;
@@ -335,6 +383,10 @@ const ScanPage = () => {
         points: finalPoints > 0 ? finalPoints : undefined,
         amount_paid: parsedAmount,
         branch_id: branchId || undefined,
+        // When the cashier picked items from the catalog, send the list
+        // so the server can recompute the authoritative total + store
+        // the line items on the visit for analytics.
+        items: pickerLineItems.length > 0 ? pickerLineItems : undefined,
       });
 
       // Backend returns full customer object, transform it for UI
@@ -363,6 +415,8 @@ const ScanPage = () => {
       setAmountPaid('');
       setPoints('');
       setPointsManuallyEdited(false);
+      clearPicker();
+      setPickerOpen(false);
     } catch (error) {
       // Verbose diagnostic so we stop guessing what the server actually said.
       console.error('Scan failed:', error);
@@ -630,8 +684,107 @@ const ScanPage = () => {
               <p className="text-xs text-[#57534E] mt-2">Scannez le QR code de la carte du client (ou tapez l'ID FT-XXXXXXXX manuellement).</p>
             </div>
 
+            {/* ──────────────────────────────────────────────────────────
+                CATALOG ITEM PICKER — only renders when the owner has
+                added items in Settings → Catalogue. Cashier taps items
+                with +/- to build the basket; the total auto-fills the
+                Amount Paid field below. The server is the source of
+                truth for prices, so what the cashier sees here is what
+                gets stored.
+                ────────────────────────────────────────────────────── */}
+            {catalog.length > 0 && (
+              <div>
+                <label className="flex items-center justify-between text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">
+                  <span>Catalogue (sélectionnez ce qui a été acheté)</span>
+                  {pickedItems.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearPicker}
+                      className="text-xs font-normal normal-case tracking-normal text-[#B85C38] underline"
+                    >
+                      Vider la sélection
+                    </button>
+                  )}
+                </label>
+                <div
+                  className="rounded-xl border-2 border-[#E7E5E4]"
+                  style={{ background: 'white' }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen((v) => !v)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-left"
+                    style={{ font: 'inherit', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  >
+                    <span className="text-sm text-[#1C1917]">
+                      {pickedItems.length === 0
+                        ? `Aucun article sélectionné · ${catalog.length} articles dans le catalogue`
+                        : `${pickedItems.reduce((s, r) => s + r.qty, 0)} article${pickedItems.reduce((s, r) => s + r.qty, 0) > 1 ? 's' : ''} sélectionné${pickedItems.reduce((s, r) => s + r.qty, 0) > 1 ? 's' : ''} · Total ${pickerTotal.toFixed(2)} €`}
+                    </span>
+                    <span className="text-xs text-[#8B8680]">{pickerOpen ? '▲ Fermer' : '▼ Ouvrir'}</span>
+                  </button>
+                  {pickerOpen && (
+                    <div className="border-t border-[#E7E5E4] max-h-80 overflow-y-auto">
+                      {catalog.map((it) => {
+                        const qty = Number(pickerQty[it.id]) || 0;
+                        return (
+                          <div
+                            key={it.id}
+                            className="flex items-center gap-3 px-4 py-2.5 border-b border-[#F3EFE7] last:border-b-0"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm text-[#1C1917] truncate">{it.name}</div>
+                              {it.category && (
+                                <div className="text-[10.5px] uppercase tracking-wider text-[#8B8680]">{it.category}</div>
+                              )}
+                            </div>
+                            <div className="text-sm font-mono text-[#57534E] w-16 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                              {Number(it.price).toFixed(2)} €
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => bumpQty(it.id, -1)}
+                                aria-label="Retirer"
+                                className="w-8 h-8 rounded-lg border border-[#E7E5E4] text-[#B85C38] font-bold"
+                                style={{ background: 'white', font: 'inherit', cursor: 'pointer' }}
+                              >
+                                −
+                              </button>
+                              <span className="w-8 text-center text-sm font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                {qty}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => bumpQty(it.id, +1)}
+                                aria-label="Ajouter"
+                                className="w-8 h-8 rounded-lg border border-[#E7E5E4] text-[#4F7A36] font-bold"
+                                style={{ background: 'white', font: 'inherit', cursor: 'pointer' }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-[#57534E] mt-2">
+                  Pas dans le catalogue ? Ajoutez vos produits dans <a href="/dashboard/settings#settings-catalog" className="underline text-[#B85C38]">Réglages → Catalogue</a>.
+                </p>
+              </div>
+            )}
+
             <div>
-              <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">Amount Paid (€)</label>
+              <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">
+                Amount Paid (€)
+                {pickedItems.length > 0 && (
+                  <span className="ml-2 normal-case text-xs font-normal text-[#4F7A36]">
+                    · auto-rempli depuis le catalogue
+                  </span>
+                )}
+              </label>
               <div className="relative">
                 <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
                 <input
@@ -641,14 +794,21 @@ const ScanPage = () => {
                   value={amountPaid}
                   onChange={handleAmountPaidChange}
                   placeholder="0.00"
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
-                  disabled={loading}
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors ${
+                    pickedItems.length > 0
+                      ? 'border-[#E3A869] bg-[#FDF8EF] focus:border-[#E3A869]'
+                      : 'border-[#E7E5E4] focus:border-[#B85C38]'
+                  }`}
+                  disabled={loading || pickedItems.length > 0}
+                  readOnly={pickedItems.length > 0}
                 />
               </div>
               <p className="text-xs text-[#57534E] mt-2">{
-                pointsMode === 'per_euro'
-                  ? 'Points calculés automatiquement (montant × taux). Vous pouvez les modifier ci-dessous.'
-                  : 'Le montant ne change pas les points dans ce mode (forfait par visite). Le commerçant peut le changer dans Réglages.'
+                pickedItems.length > 0
+                  ? 'Le montant est calculé automatiquement depuis votre catalogue. Pour le modifier, videz la sélection au-dessus ou ajustez les quantités.'
+                  : pointsMode === 'per_euro'
+                    ? 'Points calculés automatiquement (montant × taux). Vous pouvez les modifier ci-dessous.'
+                    : 'Le montant ne change pas les points dans ce mode (forfait par visite). Le commerçant peut le changer dans Réglages.'
               }</p>
             </div>
 

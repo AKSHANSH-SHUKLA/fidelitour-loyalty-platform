@@ -2808,6 +2808,114 @@ class ScanRequest(BaseModel):
     points: Optional[int] = None
     amount_paid: float = 0.0
     branch_id: Optional[str] = None  # branch where the scan happened
+    # Optional product picker payload — list of { item_id, qty }. When
+    # present, the server looks up each item in the tenant_catalog,
+    # computes total = sum(qty * price), and OVERRIDES amount_paid with
+    # that total. Prices in the request are ignored — server is the
+    # source of truth, so a tampered client cannot inflate revenue.
+    items: Optional[List[Dict[str, Any]]] = None
+
+
+# ============================================================
+# CATALOG — products and services the business sells. Owners enter this
+# at signup (or anytime in Settings → Catalogue) and staff pick from it
+# at scan time. The catalog is the source of truth for prices, so the
+# scan endpoint can compute revenue without trusting client input.
+#
+# Storage shape:
+#   db.tenant_catalog: {
+#     tenant_id: "tenant-...",
+#     items: [
+#       { id: "uuid", name: "Café crème", price: 2.50, category: "Boisson" },
+#       ...
+#     ],
+#     updated_at: datetime
+#   }
+# ============================================================
+class CatalogItemReq(BaseModel):
+    id: Optional[str] = None            # missing on new items
+    name: str
+    price: float
+    category: Optional[str] = None
+
+class CatalogReq(BaseModel):
+    items: List[CatalogItemReq]
+
+
+@app.get("/api/owner/catalog")
+def get_owner_catalog(token_data: TokenData = Depends(require_role(["business_owner", "manager", "staff"]))):
+    """Return the tenant's catalog. Staff need it to render the scan-page
+    item picker; managers/owners use it for editing."""
+    doc = db.tenant_catalog.find_one({"tenant_id": token_data.tenant_id})
+    if not doc:
+        return {"items": [], "updated_at": None}
+    return {
+        "items": doc.get("items", []),
+        "updated_at": doc.get("updated_at"),
+    }
+
+
+@app.put("/api/owner/catalog")
+def put_owner_catalog(
+    req: CatalogReq,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Owner-only: replace the catalog. Server assigns UUIDs to new
+    rows so the IDs are stable across edits."""
+    cleaned: List[Dict[str, Any]] = []
+    for raw in req.items:
+        name = (raw.name or "").strip()
+        if not name:
+            continue
+        if raw.price is None or raw.price < 0:
+            raise HTTPException(status_code=400, detail=f"Prix invalide pour « {name} »")
+        cleaned.append({
+            "id": raw.id or str(uuid.uuid4()),
+            "name": name,
+            "price": round(float(raw.price), 2),
+            "category": (raw.category or "").strip() or None,
+        })
+    db.tenant_catalog.update_one(
+        {"tenant_id": token_data.tenant_id},
+        {"$set": {
+            "tenant_id": token_data.tenant_id,
+            "items": cleaned,
+            "updated_at": datetime.now(timezone.utc),
+        }},
+        upsert=True,
+    )
+    return {"status": "ok", "items": cleaned}
+
+
+def _items_to_amount(tenant_id: str, items: Optional[List[Dict[str, Any]]]) -> tuple[float, List[Dict[str, Any]]]:
+    """Resolve a [{item_id, qty}] list against the tenant catalog and
+    return (total_amount, normalised_line_items). Ignores any client-sent
+    prices — server is the price source of truth."""
+    if not items:
+        return 0.0, []
+    doc = db.tenant_catalog.find_one({"tenant_id": tenant_id})
+    catalog = {it["id"]: it for it in (doc.get("items") if doc else [])} if doc else {}
+    total = 0.0
+    lines: List[Dict[str, Any]] = []
+    for row in items:
+        item_id = str(row.get("item_id") or row.get("id") or "").strip()
+        try:
+            qty = int(row.get("qty") or 1)
+        except (TypeError, ValueError):
+            qty = 1
+        if qty < 1 or not item_id or item_id not in catalog:
+            continue
+        cat_item = catalog[item_id]
+        line_total = round(qty * float(cat_item.get("price") or 0), 2)
+        total += line_total
+        lines.append({
+            "item_id": item_id,
+            "name": cat_item.get("name"),
+            "price": float(cat_item.get("price") or 0),
+            "qty": qty,
+            "line_total": line_total,
+        })
+    return round(total, 2), lines
 
 @app.post("/api/owner/scan")
 def scan_visit(
@@ -2888,6 +2996,18 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
     current_points = int(cust.get("points") or 0)
     current_paid = float(cust.get("total_amount_paid") or 0)
 
+    # If the scan came with a product-picker payload, resolve the items
+    # against the tenant catalog and OVERRIDE amount_paid with the
+    # server-computed total. We never trust client-sent prices.
+    resolved_lines: List[Dict[str, Any]] = []
+    if req.items:
+        computed_amount, resolved_lines = _items_to_amount(token_data.tenant_id, req.items)
+        # Only override if at least one item resolved — otherwise fall
+        # back to the client-sent amount_paid so a typo in an item id
+        # doesn't silently zero out the visit.
+        if resolved_lines:
+            req.amount_paid = computed_amount
+
     # Compute points to add — owner-controlled via card_template.points_mode.
     if req.points is not None:
         points_to_add = int(req.points)
@@ -2942,6 +3062,11 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
             "visit_time": datetime.now(timezone.utc),
             "branch_id": req.branch_id or cust.get("branch_id"),
         }
+        # Stamp the line items on the visit when a catalog-driven picker
+        # was used. This is what powers the real "Top produits" panel
+        # going forward (replacing the DEMO data in analyticsExtra.js).
+        if resolved_lines:
+            visit_doc["items"] = resolved_lines
         db.visits.insert_one(visit_doc)
     except Exception as _e:
         print(f"scan_visit: visit insert failed (non-fatal): {_e}")
