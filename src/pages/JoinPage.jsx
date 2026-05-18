@@ -76,6 +76,11 @@ const JoinPage = () => {
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | requesting | granted | denied | unsupported
   const [geoCoords, setGeoCoords] = useState(null);
   const [success, setSuccess] = useState(null);
+  // Structured error from the join endpoint. Today the meaningful case
+  // is the 403 "plan_limit_reached" — the loyalty programme has hit its
+  // customer cap and we surface a friendly message instead of a generic
+  // alert. All other failures fall back to a single-line error message.
+  const [joinError, setJoinError] = useState(null);
 
   useEffect(() => {
     publicAPI.getJoinInfo(slug).then(res => setTenant(res.data)).catch(console.error);
@@ -137,11 +142,27 @@ const JoinPage = () => {
         chain.push({ source: formData.acquisition_source, ts: new Date().toISOString() });
       }
       payload.touchpoints_history = chain;
+      setJoinError(null);
       const res = await publicAPI.joinProgram(slug, payload);
       clearTouchpoints(slug);  // chain has been persisted server-side, no need to keep it here
       setSuccess(res.data);
     } catch (err) {
-      alert('Error joining program');
+      // Plan-cap hit: the backend returns 403 with a structured detail.
+      // Surface its `message` field directly so the visitor sees the
+      // friendly French explanation instead of a raw "Error" alert.
+      const detail = err?.response?.data?.detail;
+      if (err?.response?.status === 403 && detail && typeof detail === 'object' && detail.code === 'plan_limit_reached') {
+        setJoinError({
+          kind: 'plan_limit_reached',
+          message: detail.message || 'Ce programme de fidélité est complet pour le moment.',
+        });
+      } else {
+        const msg = (typeof detail === 'string' && detail)
+          || (typeof detail === 'object' && detail?.message)
+          || err?.message
+          || "Une erreur est survenue, veuillez réessayer.";
+        setJoinError({ kind: 'other', message: msg });
+      }
     }
   };
 
@@ -251,6 +272,24 @@ const JoinPage = () => {
               )}
               {geoStatus === 'unsupported' && <p className="text-xs text-[#92400E]">Géolocalisation non supportée par ce navigateur.</p>}
             </div>
+
+            {joinError && (
+              <div
+                role="alert"
+                className={`p-3 rounded-lg border text-sm ${
+                  joinError.kind === 'plan_limit_reached'
+                    ? 'bg-[#FFF7ED] border-[#FCD9B6] text-[#92400E]'
+                    : 'bg-[#FEE2E2] border-[#FCA5A5] text-[#7A2E20]'
+                }`}
+              >
+                <p className="font-medium mb-0.5">
+                  {joinError.kind === 'plan_limit_reached'
+                    ? 'Programme complet pour le moment'
+                    : 'Inscription impossible'}
+                </p>
+                <p className="text-xs leading-relaxed">{joinError.message}</p>
+              </div>
+            )}
 
             <button type="submit" className="w-full bg-[#B85C38] text-white py-3 rounded-full font-medium hover:bg-[#9C4E2F] transition-colors mt-6">
               Join Program

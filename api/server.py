@@ -3964,6 +3964,41 @@ def join_program(slug: str, req: JoinRequest):
             )
         return {"barcode_id": existing["barcode_id"], "message": "Already joined"}
 
+    # ─── Plan cap enforcement ───────────────────────────────────────────
+    # Block new customer creation once the tenant reaches the cap defined
+    # in PLAN_FEATURES for their current plan. Soft-deleted customers are
+    # NOT counted, so a business that purges inactives frees up slots.
+    # Existing customers (dedup hit above) bypass this check — never
+    # block someone who's already in the programme from updating their
+    # record.
+    plan = t.get("plan", "basic")
+    plan_cap = PLAN_FEATURES.get(plan, {}).get("max_customers", 500)
+    current_count = db.customers.count_documents({
+        "tenant_id": tid,
+        "$or": [{"deleted_at": {"$exists": False}}, {"deleted_at": None}],
+    })
+    if current_count >= plan_cap:
+        next_plan = {"basic": "gold", "gold": "vip", "vip": "chain", "chain": None}.get(plan)
+        next_plan_cap = PLAN_FEATURES.get(next_plan, {}).get("max_customers") if next_plan else None
+        next_plan_price = PLAN_PRICES.get(next_plan) if next_plan else None
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "plan_limit_reached",
+                "message": (
+                    f"Ce programme de fidélité est temporairement complet "
+                    f"({plan_cap} membres). Le commerçant doit augmenter "
+                    f"sa limite avant que vous puissiez vous inscrire."
+                ),
+                "plan": plan,
+                "plan_cap": plan_cap,
+                "current_count": current_count,
+                "next_plan": next_plan,
+                "next_plan_cap": next_plan_cap,
+                "next_plan_price": next_plan_price,
+            },
+        )
+
     barcode_id = "FT-" + str(uuid.uuid4().hex[:8]).upper()
     c = Customer(
         id=str(uuid.uuid4()),
