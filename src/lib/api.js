@@ -113,6 +113,13 @@ export const ownerAPI = {
   // from the catalog — clients cannot inflate revenue by editing prices.
   getCatalog: () => api.get('/owner/catalog'),
   putCatalog: (items) => api.put('/owner/catalog', { items }),
+  // Vision-LLM OCR of a menu photo. The image is sent base64-encoded
+  // (with the data: prefix); server strips the prefix, calls a vision
+  // model (Groq Llama-3.2-vision free → OpenRouter fallback), parses
+  // the JSON the model returns and gives us [{name, price, category}].
+  // The owner reviews/edits the result before saving via putCatalog.
+  parseMenuFromPhoto: (imageBase64, mime, language = 'fr') =>
+    api.post('/owner/catalog/parse-menu', { image_base64: imageBase64, mime, language }),
   // Single-metric endpoint — drives per-tile period pickers on dashboard/analytics.
   // params: { metric, days, branch_id? }
   getAnalyticsMetric: (params) => api.get('/owner/analytics/metric', { params }),

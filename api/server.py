@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 import uuid
 import random
 import re
+import json
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, status, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -2885,6 +2886,201 @@ def put_owner_catalog(
         upsert=True,
     )
     return {"status": "ok", "items": cleaned}
+
+
+class CatalogParseMenuReq(BaseModel):
+    """Owner uploads a photo of their printed menu (paper, blackboard,
+    PDF page screenshot) and the server pipes it through a vision-
+    capable LLM to extract a structured list of {name, price, category}.
+    The owner can then review/edit before saving via PUT /catalog."""
+    image_base64: str           # raw base64 (no data: prefix needed; we strip)
+    mime: Optional[str] = None  # 'image/jpeg' / 'image/png' / 'image/webp'
+    language: Optional[str] = 'fr'  # 'fr' | 'en' | 'ar' — biases the LLM
+
+
+def _strip_data_url(b64: str) -> str:
+    """Allow either a raw base64 string OR a `data:image/...;base64,XXXX`
+    data URL — both forms come through depending on the frontend's
+    encoder. Returns the bare base64 chunk."""
+    if not b64:
+        return ''
+    if b64.startswith('data:'):
+        comma = b64.find(',')
+        if comma >= 0:
+            return b64[comma + 1:]
+    return b64
+
+
+def _call_vision_groq(image_b64: str, mime: str, prompt: str) -> Optional[str]:
+    """Groq vision (Llama-3.2-11b-vision-preview or 90b — free tier)."""
+    if not GROQ_API_KEY:
+        return None
+    try:
+        import requests as _rq
+        # Llama 3.2 vision models. 11b is on the free tier, generous quota.
+        model = os.environ.get("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview")
+        r = _rq.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {
+                            "url": f"data:{mime or 'image/jpeg'};base64,{image_b64}",
+                        }},
+                    ],
+                }],
+                "temperature": 0.1,
+                "max_tokens": 1500,
+            },
+            timeout=45,
+        )
+        r.raise_for_status()
+        return r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+    except Exception as e:
+        print(f"_call_vision_groq error: {e}")
+        return None
+
+
+def _call_vision_openrouter(image_b64: str, mime: str, prompt: str) -> Optional[str]:
+    """OpenRouter — fallback. Defaults to a free vision-capable model."""
+    if not OPENROUTER_API_KEY:
+        return None
+    try:
+        import requests as _rq
+        model = os.environ.get("OPENROUTER_VISION_MODEL", "meta-llama/llama-3.2-11b-vision-instruct:free")
+        r = _rq.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://fidelitour-deploy.vercel.app",
+                "X-Title": "FidéliTour",
+            },
+            json={
+                "model": model,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {
+                            "url": f"data:{mime or 'image/jpeg'};base64,{image_b64}",
+                        }},
+                    ],
+                }],
+                "temperature": 0.1,
+                "max_tokens": 1500,
+            },
+            timeout=45,
+        )
+        r.raise_for_status()
+        return r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+    except Exception as e:
+        print(f"_call_vision_openrouter error: {e}")
+        return None
+
+
+@app.post("/api/owner/catalog/parse-menu")
+def parse_menu_from_photo(
+    req: CatalogParseMenuReq,
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Vision-LLM OCR of a menu photo → structured catalog items.
+    Falls back across configured providers; if all fail OR no provider
+    is configured, returns a clear 503 the frontend can surface."""
+    image_b64 = _strip_data_url(req.image_base64 or "")
+    if not image_b64 or len(image_b64) < 100:
+        raise HTTPException(status_code=400, detail="Image vide ou invalide.")
+
+    lang_word = {'fr': 'french', 'en': 'english', 'ar': 'arabic'}.get((req.language or 'fr').lower(), 'french')
+    prompt = (
+        f"You are extracting menu items from a photo of a {lang_word} restaurant/cafe menu. "
+        "Return ONLY a JSON array — no prose, no markdown fences. Each item in the array MUST "
+        "have these fields: name (string), price (number in euros, no symbol), category (string, "
+        "one of: Boisson, Pâtisserie, Repas, Snack, Dessert, Café, Autre). If the price is missing "
+        "or unreadable, use 0. Translate item names into the original menu language. "
+        "Skip section headers (e.g. 'Boissons', 'Desserts'). Skip allergen/ingredient notes. "
+        "Example output: "
+        "[{\"name\":\"Café crème\",\"price\":2.50,\"category\":\"Boisson\"},"
+        "{\"name\":\"Pain au chocolat\",\"price\":1.50,\"category\":\"Pâtisserie\"}]"
+    )
+
+    raw = None
+    provider = None
+    for fn, label in [(_call_vision_groq, 'groq-vision'), (_call_vision_openrouter, 'openrouter-vision')]:
+        out = fn(image_b64, req.mime or 'image/jpeg', prompt)
+        if out:
+            raw = out
+            provider = label
+            break
+
+    if not raw:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "vision_llm_unavailable",
+                "message": "Aucun moteur de vision IA n'est configuré ou disponible. Ajoutez GROQ_API_KEY ou OPENROUTER_API_KEY sur Vercel.",
+            },
+        )
+
+    # Strip code fences if the model wrapped its output in ```json ... ```
+    text = raw.strip()
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        if first_newline > 0:
+            text = text[first_newline + 1:]
+        if text.endswith("```"):
+            text = text[:-3]
+    text = text.strip()
+
+    # The model sometimes prefixes JSON with explanatory text; extract
+    # the first balanced JSON array we can find.
+    items: List[Dict[str, Any]] = []
+    try:
+        items = json.loads(text)
+    except Exception:
+        start = text.find('[')
+        end = text.rfind(']')
+        if start >= 0 and end > start:
+            try:
+                items = json.loads(text[start:end + 1])
+            except Exception:
+                items = []
+
+    if not isinstance(items, list):
+        raise HTTPException(
+            status_code=502,
+            detail="Le modèle a renvoyé une réponse non analysable. Réessayez ou éditez manuellement.",
+        )
+
+    # Normalise + clamp
+    cleaned: List[Dict[str, Any]] = []
+    for raw_item in items:
+        if not isinstance(raw_item, dict):
+            continue
+        name = str(raw_item.get('name') or '').strip()
+        if not name:
+            continue
+        try:
+            price = float(raw_item.get('price') or 0)
+        except (TypeError, ValueError):
+            price = 0.0
+        category = str(raw_item.get('category') or '').strip() or None
+        cleaned.append({
+            'name': name[:80],
+            'price': max(0.0, round(price, 2)),
+            'category': category,
+        })
+
+    return {
+        "status": "ok",
+        "provider": provider,
+        "items": cleaned,
+        "count": len(cleaned),
+    }
 
 
 def _items_to_amount(tenant_id: str, items: Optional[List[Dict[str, Any]]]) -> tuple[float, List[Dict[str, Any]]]:

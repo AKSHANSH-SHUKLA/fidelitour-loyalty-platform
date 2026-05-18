@@ -10,8 +10,8 @@
  * The server assigns UUIDs to new rows, so the IDs are stable across
  * edits and visit records can reference items by ID forever.
  */
-import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Save } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Plus, Trash2, Save, Camera } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 
 const blankRow = () => ({ id: null, name: '', price: '', category: '' });
@@ -22,6 +22,10 @@ export default function CatalogManager() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
   const [error, setError] = useState('');
+  // OCR menu-photo upload state
+  const [scanning, setScanning] = useState(false);
+  const [scanInfo, setScanInfo] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     let alive = true;
@@ -46,6 +50,56 @@ export default function CatalogManager() {
       const next = prev.filter((_, idx) => idx !== i);
       return next.length > 0 ? next : [blankRow()];
     });
+  };
+
+  // Photo → menu items. Reads the chosen file as base64, posts it to
+  // the vision endpoint, and PRE-FILLS the catalog rows with what the
+  // model extracted. The owner reviews and clicks "Enregistrer" to
+  // persist — nothing saves automatically, so a misread doesn't ship.
+  const handleMenuPhoto = async (file) => {
+    if (!file) return;
+    setScanning(true);
+    setError('');
+    setScanInfo('');
+    try {
+      const reader = new FileReader();
+      const dataUrl = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Lecture de l'image impossible"));
+        reader.readAsDataURL(file);
+      });
+      const r = await ownerAPI.parseMenuFromPhoto?.(dataUrl, file.type, 'fr');
+      const parsed = Array.isArray(r?.data?.items) ? r.data.items : [];
+      if (parsed.length === 0) {
+        setScanInfo("Aucun article détecté sur la photo. Essayez une photo plus nette ou ajoutez les lignes manuellement.");
+        return;
+      }
+      // Append to existing items (preserve any rows the owner already
+      // typed) rather than wiping them.
+      setItems((prev) => {
+        const meaningful = prev.filter((r) => (r.name || '').trim());
+        const newRows = parsed.map((it) => ({
+          id: null,
+          name: String(it.name || '').trim(),
+          price: String(it.price ?? ''),
+          category: it.category || '',
+        }));
+        const combined = [...meaningful, ...newRows];
+        return combined.length > 0 ? combined : [blankRow()];
+      });
+      setScanInfo(`✓ ${parsed.length} article${parsed.length > 1 ? 's' : ''} détecté${parsed.length > 1 ? 's' : ''}. Vérifiez la liste ci-dessus puis cliquez sur "Enregistrer".`);
+    } catch (e) {
+      const detail = e?.response?.data?.detail;
+      const msg = (typeof detail === 'string' && detail)
+        || (detail && detail.message)
+        || e.message
+        || "Échec de l'analyse de la photo.";
+      setError(msg);
+    } finally {
+      setScanning(false);
+      // Reset the input so picking the same file again re-fires onChange.
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async () => {
@@ -175,6 +229,36 @@ export default function CatalogManager() {
         >
           <Plus size={14} /> Ajouter une ligne
         </button>
+
+        {/* OCR menu upload — single button that opens the camera on
+            mobile and a file picker on desktop. Image is sent to the
+            vision LLM and parsed items are pre-filled into the table
+            above for the owner to review before saving. */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => handleMenuPhoto(e.target.files?.[0])}
+          style={{ display: 'none' }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={scanning}
+          title="Prendre une photo de votre menu pour le scanner avec l'IA"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', borderRadius: 8,
+            border: '1px solid #C9B6E2', background: '#F4ECFA',
+            cursor: scanning ? 'wait' : 'pointer',
+            fontSize: 12.5, fontWeight: 500, color: '#5B3FAB',
+            fontFamily: 'inherit',
+          }}
+        >
+          <Camera size={14} />
+          {scanning ? 'Analyse en cours…' : 'Importer depuis une photo du menu'}
+        </button>
         <button
           type="button"
           onClick={handleSave}
@@ -198,6 +282,14 @@ export default function CatalogManager() {
           background: '#FCE3DC', color: '#7A2E20', fontSize: 12,
         }}>
           ⚠ {error}
+        </div>
+      )}
+      {scanInfo && !error && (
+        <div style={{
+          marginTop: 12, padding: '8px 12px', borderRadius: 8,
+          background: '#E7F5E5', color: '#1E5A2A', fontSize: 12,
+        }}>
+          {scanInfo}
         </div>
       )}
     </div>
