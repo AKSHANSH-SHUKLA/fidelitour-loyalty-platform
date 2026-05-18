@@ -1,8 +1,10 @@
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import NotificationBell from '../components/NotificationBell';
 import BranchPillsBanner from '../components/BranchPillsBanner';
 import BillingBanner from '../components/BillingBanner';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useAuth } from '../contexts/AuthContext';
 import { ownerAPI } from '../lib/api';
 import {
@@ -48,6 +50,7 @@ const SETTINGS_SECTIONS = [
   { anchor: 'settings-welcome',  label: '🎁 Message de bienvenue' },
   { anchor: 'settings-auto-pending', label: '📥 Auto-campagnes en attente' },
   { anchor: 'settings-auto',     label: '🤖 Campagnes automatiques' },
+  { anchor: 'settings-language', label: '🌐 Langue de l\'interface' },
   { anchor: 'settings-catalog',  label: '🧾 Catalogue produits & services' },
   { anchor: 'settings-points',   label: '💰 Règle de points' },
   { anchor: 'settings-team',     label: '👥 Équipe & accès' },
@@ -373,6 +376,7 @@ function UserMenu({ user, theme, role, onLogout }) {
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   // Global search — smart routing.
@@ -584,18 +588,18 @@ const DashboardLayout = () => {
         <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-3'} py-4 space-y-0.5 overflow-y-auto`}>
           {role === 'business_owner' && (
             <>
-              <NavLink to="/dashboard"               icon={Home}         label="Dashboard"        currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/analytics"     icon={BarChart3}    label="Analytics"        currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/settings#settings-status" icon={Shield} label="Customer Status"  currentPath={currentPath} role={role} collapsed={collapsed} badge="Nouveau" />
-              <NavLink to="/dashboard/insights"      icon={Sparkles}     label="Insights"         currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/customers"     icon={Users}        label="Customers"        currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/map"           icon={MapPin}       label="Customer Map"     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard"               icon={Home}         label={t('nav.dashboard')}        currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/analytics"     icon={BarChart3}    label={t('nav.analytics')}        currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/settings#settings-status" icon={Shield} label={t('nav.customer_status')}  currentPath={currentPath} role={role} collapsed={collapsed} badge={t('nav.new_badge')} />
+              <NavLink to="/dashboard/insights"      icon={Sparkles}     label={t('nav.insights')}         currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/customers"     icon={Users}        label={t('nav.customers')}        currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/map"           icon={MapPin}       label={t('nav.customer_map')}     currentPath={currentPath} role={role} collapsed={collapsed} />
               {/* Scan Visit is intentionally NOT in the owner sidebar — that page
                   is the staff workspace. Owners can reach it via direct URL. */}
-              <NavLink to="/dashboard/card-designer" icon={CreditCard}   label="Card Designer" currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label="Campaigns"     currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label="AI Assistant"  currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/history"       icon={History}      label="History"       currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/card-designer" icon={CreditCard}   label={t('nav.card_designer')} currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label={t('nav.campaigns')}     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label={t('nav.ai_assistant')}  currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/history"       icon={History}      label={t('nav.history')}       currentPath={currentPath} role={role} collapsed={collapsed} />
               {/* Settings is expandable — click → dropdown of section anchors */}
               <SettingsNavLink icon={Settings2} currentPath={currentPath} role={role} collapsed={collapsed} />
               <SignOutNavItem onClick={logout} collapsed={collapsed} />
@@ -603,17 +607,17 @@ const DashboardLayout = () => {
           )}
           {role === 'manager' && (
             <>
-              <NavLink to="/dashboard/analytics" icon={BarChart3} label="Analytics"    currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/insights"  icon={Sparkles}  label="Insights"     currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/customers" icon={Users}     label="Customers"    currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/map"       icon={MapPin}    label="Customer Map" currentPath={currentPath} role={role} collapsed={collapsed} />
-              <NavLink to="/dashboard/history"   icon={History}   label="History"      currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/analytics" icon={BarChart3} label={t('nav.analytics')}    currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/insights"  icon={Sparkles}  label={t('nav.insights')}     currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/customers" icon={Users}     label={t('nav.customers')}    currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/map"       icon={MapPin}    label={t('nav.customer_map')} currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/history"   icon={History}   label={t('nav.history')}      currentPath={currentPath} role={role} collapsed={collapsed} />
               <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
           {role === 'staff' && (
             <>
-              <NavLink to="/dashboard/scan" icon={QrCode} label="Scan Visit" currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavLink to="/dashboard/scan" icon={QrCode} label={t('nav.scan_visit')} currentPath={currentPath} role={role} collapsed={collapsed} />
               <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}

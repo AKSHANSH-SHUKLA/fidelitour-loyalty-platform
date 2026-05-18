@@ -2,6 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
+// Initialise the translation layer BEFORE the React tree mounts so the
+// first paint already shows the chosen language. The import has the
+// side effect of bootstrapping i18next with FR/EN/AR resources.
+import './lib/i18n';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

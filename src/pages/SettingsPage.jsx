@@ -18,6 +18,7 @@ import PhonePushPreview from '../components/PhonePushPreview';
 import PendingAutoRunsCard from '../components/PendingAutoRunsCard';
 import BillingCard from '../components/BillingCard';
 import CatalogManager from '../components/CatalogManager';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const SettingsPage = () => {
     const location = useLocation();
@@ -325,6 +326,8 @@ const SettingsPage = () => {
             <div id="settings-auto" className="scroll-mt-24"><AutoCampaignsCard /></div>
 
             {/* Configurable points-per-euro rule, used by the Scan page. */}
+            <div id="settings-language" className="scroll-mt-24"><LanguageSwitcher variant="full" /></div>
+
             <div id="settings-catalog" className="scroll-mt-24"><CatalogManager /></div>
 
             <div id="settings-points" className="scroll-mt-24"><PointsRuleCard /></div>
@@ -358,6 +361,7 @@ function SettingsNavigator() {
     { id: 'settings-welcome',  label: '🎁 Message de bienvenue' },
     { id: 'settings-auto-pending', label: '📥 Auto-campagnes en attente' },
     { id: 'settings-auto',     label: '🤖 Campagnes automatiques' },
+    { id: 'settings-language', label: '🌐 Langue de l\'interface' },
     { id: 'settings-catalog',  label: '🧾 Catalogue produits & services' },
     { id: 'settings-points',   label: '💰 Règle de points' },
     { id: 'settings-team',     label: '👥 Équipe & accès' },
