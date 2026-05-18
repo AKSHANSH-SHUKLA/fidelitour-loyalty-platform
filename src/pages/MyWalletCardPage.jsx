@@ -365,8 +365,47 @@ const MyWalletCardPage = () => {
     );
   }
 
+  // Safety net: every observable path through useEffect either sets
+  // data or sets err and flips loading=false. If we somehow reach
+  // here with both null, render something explicit instead of falling
+  // into a destructure-of-null crash that white-screens the page.
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+          <XCircle className="mx-auto text-[#B85C38] mb-3" size={40} />
+          <p className="text-[#1C1917] font-semibold mb-2">Carte indisponible</p>
+          <p className="text-[#57534E] text-sm">
+            La carte n'a pas pu être chargée. Vérifiez votre connexion ou rechargez la page.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-block mt-5 px-4 py-2 rounded-lg bg-[#B85C38] text-white text-sm font-medium"
+          >
+            Recharger
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const { customer, tenant, card, offers, prefs, notifications } = data;
-  const activeOffer = card.active_offer;
+  // Same belt-and-braces guard for missing sub-objects — keeps the
+  // page rendering even if the backend payload shape changes.
+  if (!customer || !card) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+          <XCircle className="mx-auto text-[#B85C38] mb-3" size={40} />
+          <p className="text-[#1C1917] font-semibold mb-2">Carte incomplète</p>
+          <p className="text-[#57534E] text-sm">
+            Les données reçues du serveur sont incomplètes. Veuillez contacter le commerçant.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  const activeOffer = card.active_offer || {};
   const stampsTarget = card.reward_threshold || 10;
 
   return (

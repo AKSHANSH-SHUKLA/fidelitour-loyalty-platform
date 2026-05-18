@@ -3,6 +3,71 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BranchProvider } from './contexts/BranchContext';
 
+// Top-level error boundary so ANY uncaught render crash on ANY route
+// shows a useful message instead of blank-screening the whole app.
+// Without this, a thrown error inside a component (e.g. a deeply-nested
+// destructure of an unexpected payload shape) bubbles out of React and
+// the browser shows nothing — terrible for debugging on a phone where
+// you can't open DevTools easily.
+class RootErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) {
+    // eslint-disable-next-line no-console
+    console.error('[root] uncaught render crash:', error, info?.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{
+          minHeight: '100vh', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', background: '#FDFBF7',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          padding: '2rem', textAlign: 'center',
+        }}>
+          <div style={{
+            background: 'white', padding: '2rem', borderRadius: 16,
+            border: '1px solid #E7E5E4', maxWidth: 480, width: '100%',
+            boxShadow: '0 10px 30px -10px rgba(0,0,0,.1)',
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>⚠️</div>
+            <h2 style={{ margin: '0 0 8px', fontSize: 18, color: '#1C1917' }}>
+              Une erreur d'affichage est survenue
+            </h2>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#57534E' }}>
+              La page n'a pas pu être affichée correctement.
+            </p>
+            <details style={{ textAlign: 'left', marginBottom: 16 }}>
+              <summary style={{ fontSize: 12, color: '#8B8680', cursor: 'pointer' }}>
+                Détail technique
+              </summary>
+              <code style={{
+                display: 'block', marginTop: 8, padding: 8,
+                background: '#F3EFE7', borderRadius: 6,
+                fontSize: 11, color: '#57534E',
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              }}>
+                {String(this.state.error?.message || this.state.error)}
+              </code>
+            </details>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '10px 20px', borderRadius: 8, border: 'none',
+                background: '#B85C38', color: 'white', cursor: 'pointer',
+                fontSize: 13, fontWeight: 500,
+              }}
+            >
+              Recharger la page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -60,6 +125,7 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   return (
+    <RootErrorBoundary>
     <AuthProvider>
       <BranchProvider>
        <Router>
@@ -155,6 +221,7 @@ function App() {
        </Router>
       </BranchProvider>
     </AuthProvider>
+    </RootErrorBoundary>
   );
 }
 
