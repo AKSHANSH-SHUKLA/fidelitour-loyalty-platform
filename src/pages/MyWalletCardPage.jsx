@@ -117,6 +117,37 @@ const StampVisual = ({ style, filled, total, accent }) => {
   );
 };
 
+// Tiny error boundary scoped to the wallet card render. Without this,
+// any thrown error inside <PremiumLoyaltyCard /> bubbles up and Vercel's
+// runtime turns it into a blank page — terrible debugging UX for the
+// owner who tries the URL on a phone.
+class WalletCardErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) {
+    // eslint-disable-next-line no-console
+    console.error('[wallet card] render crash:', error, info?.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="bg-white rounded-2xl p-6 border border-[#E7E5E4] max-w-md mx-auto text-center my-10">
+          <XCircle className="mx-auto text-[#B85C38] mb-3" size={32} />
+          <p className="text-[#1C1917] font-semibold mb-1">La carte n'a pas pu s'afficher</p>
+          <p className="text-[#57534E] text-sm">
+            Erreur de rendu :{' '}
+            <code style={{ fontSize: 11 }}>{String(this.state.error?.message || this.state.error)}</code>
+          </p>
+          <p className="text-[#8B8680] text-xs mt-2">
+            Ouvrez la console du navigateur pour la trace complète.
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const MyWalletCardPage = () => {
   const { barcodeId } = useParams();
   const [data, setData] = useState(null);
@@ -144,7 +175,20 @@ const MyWalletCardPage = () => {
         const res = await api.get(`/card/${barcodeId}`);
         setData(res.data);
       } catch (e) {
-        setErr(e.response?.data?.detail || 'Card not found');
+        // Surface the real reason — without this every failure became a
+        // generic "Card not found" and the owner couldn't tell whether
+        // it was a 404, 500, network error, or auth issue. Log to
+        // console for DevTools-on-mobile workflows.
+        const status = e?.response?.status;
+        const detail = e?.response?.data?.detail;
+        const msg = status === 404
+          ? `Aucune carte trouvée pour ${barcodeId}. Vérifiez que la carte a bien été créée (côté commerçant : Dashboard → Customers).`
+          : status === 500
+            ? `Erreur serveur (${detail || 'sans détail'}). Le commerçant doit recharger le seed ou contacter le support.`
+            : (detail || e.message || 'Carte indisponible.');
+        // eslint-disable-next-line no-console
+        console.error('[wallet card] load failed', { status, detail, e });
+        setErr(msg);
       } finally {
         setLoading(false);
       }
@@ -339,11 +383,13 @@ const MyWalletCardPage = () => {
               Card Designer's preview. What the patron sees while designing is
               literally the same component the customer sees on their phone. */}
           <section>
-            <PremiumLoyaltyCard
-              customer={customer}
-              tenant={tenant}
-              card={card}
-            />
+            <WalletCardErrorBoundary>
+              <PremiumLoyaltyCard
+                customer={customer}
+                tenant={tenant}
+                card={card}
+              />
+            </WalletCardErrorBoundary>
 
             {/* Save / share actions — the previous "Add to Apple/Google Wallet"
                 buttons were fake because real .pkpass generation needs a paid

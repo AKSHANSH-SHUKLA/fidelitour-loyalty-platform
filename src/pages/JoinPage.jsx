@@ -88,18 +88,50 @@ const JoinPage = () => {
     if (lockedSource) recordTouchpoint(slug, lockedSource);
   }, [slug, lockedSource]);
 
+  // On mount, check the persisted permission state so we render the
+  // right CTA without bothering the user with a prompt that's already
+  // been answered. Without this, a "denied" user kept seeing the
+  // "Share my location" button and clicking it gave them a useless
+  // instant-denied error.
+  useEffect(() => {
+    if (!('geolocation' in navigator)) { setGeoStatus('unsupported'); return; }
+    if (!navigator.permissions?.query) return;  // older browsers — fall through to live request
+    let cancelled = false;
+    navigator.permissions.query({ name: 'geolocation' })
+      .then((perm) => {
+        if (cancelled) return;
+        if (perm.state === 'granted') setGeoStatus('granted');
+        else if (perm.state === 'denied') setGeoStatus('denied');
+        // else 'prompt' — keep status as 'idle' so the button shows
+        perm.onchange = () => { if (!cancelled) setGeoStatus(perm.state); };
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   const requestGeolocation = () => {
     if (!('geolocation' in navigator)) {
       setGeoStatus('unsupported');
       return;
     }
+    // If the user already denied permission in the past, the browser
+    // won't show the prompt again — getCurrentPosition fires the error
+    // callback immediately. Skip the call entirely and surface the
+    // unblock instructions right away.
+    if (geoStatus === 'denied') return;
     setGeoStatus('requesting');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGeoCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         setGeoStatus('granted');
       },
-      () => setGeoStatus('denied'),
+      (err) => {
+        // err.code: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT.
+        // The first one is permanent until the user changes settings;
+        // the other two we can recover from with a retry.
+        if (err && err.code === 1) setGeoStatus('denied');
+        else setGeoStatus('idle');
+      },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
     );
   };
@@ -209,9 +241,9 @@ const JoinPage = () => {
               </div>
             )}
             <div className="p-3 rounded-lg border border-[#E7E5E4] bg-[#F3EFE7]">
-              <p className="text-sm font-medium text-[#1C1917] mb-2">📍 Share your location (optional)</p>
+              <p className="text-sm font-medium text-[#1C1917] mb-2">📍 Partagez votre position (optionnel)</p>
               <p className="text-xs text-[#57534E] mb-3">
-                Helps us send more relevant offers from nearby businesses. Your location is never shared publicly.
+                Nous permet de vous envoyer des offres pertinentes près de chez vous. Votre position n'est jamais publiée.
               </p>
               {geoStatus === 'idle' && (
                 <button
@@ -219,17 +251,47 @@ const JoinPage = () => {
                   onClick={requestGeolocation}
                   className="text-sm px-3 py-1.5 bg-white border border-[#B85C38] text-[#B85C38] rounded-lg font-medium hover:bg-[#B85C38] hover:text-white transition-colors"
                 >
-                  Share my location
+                  Partager ma position
                 </button>
               )}
-              {geoStatus === 'requesting' && <p className="text-xs text-[#57534E]">Requesting location…</p>}
+              {geoStatus === 'requesting' && <p className="text-xs text-[#57534E]">Demande de position en cours…</p>}
               {geoStatus === 'granted' && (
                 <p className="text-xs text-[#065F46] font-medium">
-                  ✓ Location shared ({geoCoords.latitude.toFixed(3)}°, {geoCoords.longitude.toFixed(3)}°)
+                  ✓ Position partagée ({geoCoords.latitude.toFixed(3)}°, {geoCoords.longitude.toFixed(3)}°)
                 </p>
               )}
-              {geoStatus === 'denied' && <p className="text-xs text-[#92400E]">Permission denied. You can still join.</p>}
-              {geoStatus === 'unsupported' && <p className="text-xs text-[#92400E]">Location not supported on this browser.</p>}
+              {geoStatus === 'denied' && (
+                <div className="text-xs text-[#92400E] space-y-2">
+                  <p className="font-medium">⚠ Permission bloquée par votre navigateur.</p>
+                  <p>
+                    Vous pouvez quand même vous inscrire — la position est facultative.
+                    Pour la réactiver plus tard, suivez les étapes selon votre appareil :
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>
+                      <strong>iPhone (Safari)</strong> : Réglages → Safari → Position →
+                      autoriser pour ce site. Puis recharger cette page.
+                    </li>
+                    <li>
+                      <strong>Android (Chrome)</strong> : tapez le 🔒 dans la barre
+                      d'adresse → Autorisations → Position → Autoriser.
+                      Rechargez ensuite la page.
+                    </li>
+                    <li>
+                      <strong>Ordinateur</strong> : cliquez sur le 🔒 dans la barre
+                      d'adresse → Position → Autoriser → recharger.
+                    </li>
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="mt-1 text-[#B85C38] underline"
+                  >
+                    Recharger la page après l'avoir autorisée
+                  </button>
+                </div>
+              )}
+              {geoStatus === 'unsupported' && <p className="text-xs text-[#92400E]">Géolocalisation non supportée par ce navigateur.</p>}
             </div>
 
             <button type="submit" className="w-full bg-[#B85C38] text-white py-3 rounded-full font-medium hover:bg-[#9C4E2F] transition-colors mt-6">
