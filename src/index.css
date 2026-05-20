@@ -8,26 +8,12 @@
 @tailwind utilities;
 
 /* ──────────────────────────────────────────────────────────────────────
-   GoogleTranslateBridge cleanup.
-   The widget injects a top banner, body offset, tooltip popovers, and
-   blue text highlights on every translated string. None of that fits
-   the FidéliTour visual language — strip it all so only the translated
-   text remains visible.
+   Custom translator: lib/translator.js walks the DOM and translates
+   text nodes in place. No widget UI to suppress — but if a developer
+   needs to mark a region as "never translate", give it class="notranslate"
+   or attribute translate="no" and the walker will skip it.
    ────────────────────────────────────────────────────────────────────── */
-.goog-te-banner-frame,
-.goog-te-banner-frame.skiptranslate,
-iframe.goog-te-banner-frame { display: none !important; }
-body { top: 0 !important; position: static !important; }
-#google_translate_element { display: none !important; }
-.goog-tooltip, .goog-tooltip:hover { display: none !important; }
-.goog-text-highlight {
-  background: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-  position: static !important;
-}
-/* Some translated nodes get inline color/background flips — neutralise. */
-font[style*="background"] { background: transparent !important; }
+.notranslate { /* hook for opt-out — no styling, just a marker */ }
 
 @layer base {
   .theme {
