@@ -137,6 +137,57 @@ POSTAL_CODE_OVERRIDES = {
     "67000": (48.5734, 7.7521),
 }
 
+# ---------------------------------------------------------------------------
+# Plan limits — admin-overridable.
+#
+# `PLAN_FEATURES` (from models.py) ships baseline limits for each plan
+# (max_customers, campaigns_per_month, ai_queries_per_day, csv_export, etc.).
+# Super-admins can override any numeric or boolean field per plan via the
+# `plan_settings` collection. This lets us, for instance, lift the basic plan
+# from 500 → 750 max customers without redeploying, or fully change limits
+# across all plans from the admin UI.
+#
+# Schema for a `plan_settings` document:
+#   {
+#     "plan": "basic" | "gold" | "vip" | "chain",
+#     "overrides": { "max_customers": 750, "ai_queries_per_day": 5, ... },
+#     "updated_at": <utc>,
+#     "updated_by": <admin email>,
+#   }
+#
+# `get_plan_features(plan)` is the ONE function every endpoint should call —
+# never read `PLAN_FEATURES` directly anymore. It merges the hardcoded
+# baseline with any DB overrides (overrides win for fields they specify).
+# ---------------------------------------------------------------------------
+_PLAN_LIMIT_FIELDS = (
+    "max_customers",
+    "campaigns_per_month",
+    "ai_queries_per_day",
+    "csv_export",
+    "geo_proximity",
+    "multi_branch",
+)
+
+
+def get_plan_features(plan: str) -> Dict[str, Any]:
+    """Return effective plan limits = baseline + admin overrides.
+
+    Always returns a dict (never None) so callers can `.get(...)` safely.
+    Unknown plans fall back to the basic baseline so we never block joining
+    with a KeyError when the tenant doc has a stale plan name.
+    """
+    baseline = dict(PLAN_FEATURES.get(plan) or PLAN_FEATURES.get("basic") or {})
+    try:
+        doc = db.plan_settings.find_one({"plan": plan}) if db is not None else None
+    except Exception:
+        doc = None
+    if doc and isinstance(doc.get("overrides"), dict):
+        for k, v in doc["overrides"].items():
+            if k in _PLAN_LIMIT_FIELDS and v is not None:
+                baseline[k] = v
+    return baseline
+
+
 def get_postal_coords(postal_code: str):
     """Return (lat, lng) for a French postal code. Falls back through overrides → department → Paris."""
     if not postal_code:
@@ -1784,6 +1835,102 @@ def delete_tenant(
         raise HTTPException(status_code=404, detail="Tenant not found")
 
     return {"message": "Tenant disabled"}
+
+
+# ============================================================
+# ADMIN PLAN LIMITS — DB-backed overrides for PLAN_FEATURES
+#
+# Admins use these endpoints to raise / lower limits on any plan
+# without redeploying. They also see how many tenants are on each
+# plan and how close those tenants are to their current cap. The
+# `/api/join` enforcement, AI quota, and multi-branch checks all
+# pick up the new value on the next request — no cache to bust.
+#
+# To change a single tenant's plan, super-admins use the existing
+# PUT /api/admin/tenants/{tenant_id} endpoint with {"plan": "vip"}.
+# ============================================================
+
+class PlanOverrideReq(BaseModel):
+    """Editable plan limit fields. Send only the ones you want to override.
+
+    Pass an empty dict (or omit fields) to fall back to the hardcoded
+    baseline for that field. Pass `null` for a field to explicitly clear
+    its override (back to baseline).
+    """
+    max_customers: Optional[int] = None
+    campaigns_per_month: Optional[int] = None
+    ai_queries_per_day: Optional[int] = None
+    csv_export: Optional[bool] = None
+    geo_proximity: Optional[bool] = None
+    multi_branch: Optional[bool] = None
+
+
+def _plan_row(plan: str) -> Dict[str, Any]:
+    """Build the row the admin UI renders for one plan: baseline vs effective."""
+    baseline = dict(PLAN_FEATURES.get(plan) or {})
+    effective = get_plan_features(plan)
+    # Diff so the UI can show which fields are overridden vs default.
+    overrides = {k: effective.get(k) for k in _PLAN_LIMIT_FIELDS
+                 if k in baseline and baseline.get(k) != effective.get(k)}
+    # How many tenants are on this plan (and the active ones in the last 30d).
+    tenant_count = 0
+    try:
+        tenant_count = db.tenants.count_documents({"plan": plan, "is_active": {"$ne": False}})
+    except Exception:
+        pass
+    return {
+        "plan": plan,
+        "price": PLAN_PRICES.get(plan),
+        "baseline": baseline,
+        "effective": effective,
+        "overrides": overrides,
+        "tenant_count": tenant_count,
+    }
+
+
+@app.get("/api/admin/plans")
+def admin_list_plans(token_data: TokenData = Depends(require_role(["super_admin"]))):
+    """Return all 4 plans with their baseline, effective (post-override) values,
+    a diff of what's overridden, and how many tenants are on each plan."""
+    return {"plans": [_plan_row(p) for p in ("basic", "gold", "vip", "chain")]}
+
+
+@app.put("/api/admin/plans/{plan}")
+def admin_update_plan(
+    plan: str,
+    req: PlanOverrideReq,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """Upsert per-plan limit overrides. Pass null on any field to clear that
+    field's override and fall back to the hardcoded baseline."""
+    if plan not in PLAN_FEATURES:
+        raise HTTPException(status_code=400, detail=f"Unknown plan '{plan}'")
+
+    # Build the new overrides dict: fields explicitly set to a value override,
+    # fields explicitly set to null clear the override, fields omitted from
+    # the request preserve whatever was already saved.
+    existing = (db.plan_settings.find_one({"plan": plan}) or {}).get("overrides", {}) or {}
+    body = req.model_dump(exclude_unset=True)  # only fields the caller actually sent
+    new_overrides = dict(existing)
+    for k, v in body.items():
+        if v is None:
+            new_overrides.pop(k, None)
+        else:
+            new_overrides[k] = v
+
+    db.plan_settings.update_one(
+        {"plan": plan},
+        {
+            "$set": {
+                "plan": plan,
+                "overrides": new_overrides,
+                "updated_at": datetime.now(timezone.utc),
+                "updated_by": token_data.email,
+            }
+        },
+        upsert=True,
+    )
+    return _plan_row(plan)
 
 @app.get("/api/admin/tenants/{tenant_id}/details")
 def get_tenant_details(
@@ -4047,7 +4194,7 @@ def ai_query(
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start + timedelta(days=1)
 
-    daily_limit = PLAN_FEATURES.get(plan, {}).get("ai_queries_per_day", 0)
+    daily_limit = get_plan_features(plan).get("ai_queries_per_day", 0)
     today_queries = db.ai_queries.count_documents({
         "tenant_id": t_id,
         "created_at": {"$gte": today_start, "$lt": today_end}
@@ -4168,14 +4315,14 @@ def join_program(slug: str, req: JoinRequest):
     # block someone who's already in the programme from updating their
     # record.
     plan = t.get("plan", "basic")
-    plan_cap = PLAN_FEATURES.get(plan, {}).get("max_customers", 500)
+    plan_cap = get_plan_features(plan).get("max_customers", 500)
     current_count = db.customers.count_documents({
         "tenant_id": tid,
         "$or": [{"deleted_at": {"$exists": False}}, {"deleted_at": None}],
     })
     if current_count >= plan_cap:
         next_plan = {"basic": "gold", "gold": "vip", "vip": "chain", "chain": None}.get(plan)
-        next_plan_cap = PLAN_FEATURES.get(next_plan, {}).get("max_customers") if next_plan else None
+        next_plan_cap = get_plan_features(next_plan).get("max_customers") if next_plan else None
         next_plan_price = PLAN_PRICES.get(next_plan) if next_plan else None
         raise HTTPException(
             status_code=403,
@@ -5938,7 +6085,7 @@ def create_branch(
         raise HTTPException(status_code=404, detail="Tenant not found")
 
     plan = tenant.get("plan", "basic")
-    plan_features = PLAN_FEATURES.get(plan, {})
+    plan_features = get_plan_features(plan)
     if not plan_features.get("multi_branch", False):
         raise HTTPException(status_code=403, detail="Plan does not support multi-branch")
 
@@ -8065,14 +8212,14 @@ def get_active_cards(token_data: TokenData = Depends(require_role(["business_own
     active = db.customers.count_documents({"tenant_id": tid, "pass_issued": True})
     total = db.customers.count_documents({"tenant_id": tid})
     plan = tenant.get("plan", "basic")
-    plan_cap = PLAN_FEATURES.get(plan, {}).get("max_customers", 500)
+    plan_cap = get_plan_features(plan).get("max_customers", 500)
 
     usage_pct = round(active / plan_cap * 100, 1) if plan_cap else 0
     near_limit = usage_pct >= 80
 
     # Suggest next plan up
     next_plan = {"basic": "gold", "gold": "vip", "vip": "chain", "chain": None}.get(plan)
-    next_plan_cap = PLAN_FEATURES.get(next_plan, {}).get("max_customers") if next_plan else None
+    next_plan_cap = get_plan_features(next_plan).get("max_customers") if next_plan else None
     next_plan_price = PLAN_PRICES.get(next_plan) if next_plan else None
 
     return {

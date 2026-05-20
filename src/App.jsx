@@ -92,6 +92,7 @@ import HistoryPage from './pages/HistoryPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import AdminTenantsPage from './pages/AdminTenantsPage';
+import AdminPlansPage from './pages/AdminPlansPage';
 import AdminCardDesignerPage from './pages/AdminCardDesignerPage';
 import CardDesignerPage from './pages/CardDesignerPage';
 import AdminAIAssistantPage from './pages/AdminAIAssistantPage';
@@ -213,6 +214,7 @@ function App() {
             <Route path="analytics" element={<AdminAnalyticsPage />} />
             <Route path="insights" element={<AdminInsightsPage />} />
             <Route path="tenants" element={<AdminTenantsPage />} />
+            <Route path="plans" element={<AdminPlansPage />} />
             <Route path="campaigns" element={<AdminCampaignsPage />} />
             <Route path="card-designer" element={<AdminCardDesignerPage />} />
             <Route path="ai" element={<AdminAIAssistantPage />} />

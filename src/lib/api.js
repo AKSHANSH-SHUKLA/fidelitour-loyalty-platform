@@ -70,6 +70,10 @@ export const adminAPI = {
     api.post('/cron/daily-triggers' + (secret ? '?secret=' + encodeURIComponent(secret) : '')),
   // -- Reviews (super admin: global or per-tenant) --
   getReviewAnalytics: (params) => api.get('/admin/analytics/reviews', { params }),
+  // -- Plan limit overrides (admin can raise/lower max_customers per plan,
+  //    plus a handful of other limit fields, without redeploying) --
+  listPlans: () => api.get('/admin/plans'),
+  updatePlan: (plan, data) => api.put('/admin/plans/' + plan, data),
 };
 
 export const ownerAPI = {
