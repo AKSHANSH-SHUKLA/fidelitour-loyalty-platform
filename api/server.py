@@ -4248,7 +4248,11 @@ ALLOWED_ACQUISITION_SOURCES = {"instagram", "facebook", "tiktok", "qr_store", "w
 
 class JoinRequest(BaseModel):
     name: str
-    email: str
+    # Email is OPTIONAL — many walk-in customers don't have one handy,
+    # and forcing it kills conversion. When blank, dedup falls back to
+    # phone-only and email-based campaigns (drips, receipts) silently
+    # skip this customer with no error.
+    email: Optional[str] = ""
     phone: str
     postal_code: str
     birthday: str
@@ -4281,19 +4285,33 @@ def join_program(slug: str, req: JoinRequest):
         raise HTTPException(status_code=404, detail="Tenant not found")
     tid = t["id"]
 
-    # Dedup logic: a person is "the same customer" only when BOTH email and
-    # phone match an existing record in this tenant. Email-only dedup was too
-    # aggressive (couples sharing an inbox got merged; testing with one email
-    # was impossible). Phone-only would collide for customers using shared
-    # store phones during signup. Requiring both is the right balance.
+    # Dedup logic:
+    #   • If both email AND phone are present, require BOTH to match (the
+    #     conservative case — protects against family members sharing one
+    #     phone or one email from being merged).
+    #   • If only phone is present (email left blank, now allowed), match
+    #     on phone alone. We have no second signal, so any signup with the
+    #     same phone number is treated as the same person.
+    # This is the right trade-off now that email is optional: forcing a
+    # double match when only one signal exists would create a duplicate
+    # customer record on every re-join attempt.
     norm_email = (req.email or "").strip().lower()
     norm_phone = "".join(c for c in (req.phone or "") if c.isdigit())
     existing = None
     if norm_email and norm_phone:
+        # Both present → strict double-match (existing behaviour).
         for cand in db.customers.find({
             "tenant_id": tid,
             "email": {"$regex": f"^{re.escape(norm_email)}$", "$options": "i"},
         }):
+            cand_phone = "".join(c for c in (cand.get("phone") or "") if c.isdigit())
+            if cand_phone == norm_phone:
+                existing = cand
+                break
+    elif norm_phone:
+        # Email omitted → phone-only match. Same phone in this tenant is
+        # treated as the same customer; we just refresh their record.
+        for cand in db.customers.find({"tenant_id": tid}):
             cand_phone = "".join(c for c in (cand.get("phone") or "") if c.isdigit())
             if cand_phone == norm_phone:
                 existing = cand

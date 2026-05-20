@@ -95,17 +95,46 @@ const JoinPage = () => {
     if (lockedSource) recordTouchpoint(slug, lockedSource);
   }, [slug, lockedSource]);
 
-  // No permission pre-check. The owner asked for a direct, native
-  // browser prompt the moment the user taps the button — no detection
-  // gymnastics, no per-OS instructions. If the browser has the request
-  // already stored as "denied", the prompt won't show and the error
-  // callback fires immediately; we surface a one-line message in that
-  // case and move on. The form keeps working without coordinates.
-  const requestGeolocation = () => {
+  // Why this is heavier than a one-liner getCurrentPosition: on desktop
+  // browsers (Chrome/Firefox/Edge on a laptop without GPS) the call often
+  // fails with error code 2 (POSITION_UNAVAILABLE) or 3 (TIMEOUT) after
+  // a few seconds. The previous implementation silently reset the UI to
+  // 'idle' on those errors, which made the button look broken — the user
+  // tapped it and nothing visibly changed.
+  //
+  // Now we:
+  //   1. Use the Permissions API (where available) to detect a prior
+  //      "denied" state BEFORE calling getCurrentPosition, so the user
+  //      sees an immediate explanation instead of waiting 10s for the
+  //      silent timeout.
+  //   2. Differentiate all 3 GeolocationPositionError codes so every
+  //      failure path shows a visible message.
+  //   3. Bump the timeout to 15s — desktops without GPS sometimes take
+  //      that long to resolve via Wi-Fi triangulation.
+  //   4. Disable enableHighAccuracy → desktop GPS-less browsers are much
+  //      more reliable with the lower-precision Wi-Fi/IP lookup.
+  const requestGeolocation = async () => {
     if (!('geolocation' in navigator)) {
       setGeoStatus('unsupported');
       return;
     }
+    // Pre-check via Permissions API — fast path for "already denied"
+    // (avoids the 15s timeout) AND lets us surface a "blocked" message
+    // distinct from the user actively tapping "Block" on the prompt.
+    // Safari < 16 doesn't expose navigator.permissions for geolocation,
+    // so we wrap in try/catch and fall through to getCurrentPosition.
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const status = await navigator.permissions.query({ name: 'geolocation' });
+        if (status.state === 'denied') {
+          // Browser remembers a previous deny — the prompt won't appear
+          // again until the user manually re-enables it in site settings.
+          setGeoStatus('denied');
+          return;
+        }
+      }
+    } catch (_e) { /* Permissions API not supported — that's fine */ }
+
     setGeoStatus('requesting');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -113,10 +142,18 @@ const JoinPage = () => {
         setGeoStatus('granted');
       },
       (err) => {
-        if (err && err.code === 1) setGeoStatus('denied');
-        else setGeoStatus('idle');
+        // Map every error code to a visible state so the user always
+        // gets feedback. Code 1 = user denied, 2 = position unavailable
+        // (no GPS, Wi-Fi triangulation failed), 3 = timeout.
+        if (!err) { setGeoStatus('error'); return; }
+        switch (err.code) {
+          case 1: setGeoStatus('denied'); break;
+          case 2: setGeoStatus('unavailable'); break;
+          case 3: setGeoStatus('timeout'); break;
+          default: setGeoStatus('error');
+        }
       },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
     );
   };
 
@@ -206,8 +243,12 @@ const JoinPage = () => {
               <input required type="text" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-[#57534E]">{t('auth.email')}</label>
-              <input required type="email" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+              <label className="block text-sm font-medium mb-1 text-[#57534E]">{t('join.email_optional')}</label>
+              {/* Email is OPTIONAL. We keep type="email" so the browser
+                  validates the format IF the customer fills it, but no
+                  `required` so they can submit without one. Backend
+                  dedup falls back to phone-only when email is blank. */}
+              <input type="email" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-[#57534E]">{t('auth.phone')}</label>
@@ -259,9 +300,18 @@ const JoinPage = () => {
                   {t('join.geo_granted')} ({geoCoords.latitude.toFixed(3)}°, {geoCoords.longitude.toFixed(3)}°)
                 </p>
               )}
-              {geoStatus === 'denied' && (
+              {/* All three failure paths share the same "show a message +
+                  let them try again" pattern. Distinct copy per code so
+                  the user knows whether to re-enable in settings (denied)
+                  or retry the request (unavailable / timeout). */}
+              {(geoStatus === 'denied' || geoStatus === 'unavailable' || geoStatus === 'timeout' || geoStatus === 'error') && (
                 <div className="flex items-center gap-2 text-xs text-[#92400E]">
-                  <span>{t('join.geo_denied')}</span>
+                  <span>
+                    {geoStatus === 'denied'      && t('join.geo_denied')}
+                    {geoStatus === 'unavailable' && t('join.geo_unavailable')}
+                    {geoStatus === 'timeout'     && t('join.geo_timeout')}
+                    {geoStatus === 'error'       && t('join.geo_error')}
+                  </span>
                   <button
                     type="button"
                     onClick={requestGeolocation}
