@@ -32,10 +32,20 @@ const SECTOR_KEYS = [
   { value: 'other',      i18nKey: 'auth.sector_other' },
 ];
 
+// Left-padding is sized for a 16px icon at left-4 (16px). pl-12 = 48px so
+// the placeholder always starts at least 16px clear of the icon's right edge.
+// Earlier value (pl-11 = 44px) left only 12px gap and Chrome's rendering of
+// the lucide stroke icons visually overlapped the first 1–2 characters of
+// the placeholder text on Retina displays.
 const FIELD_BASE =
-  'w-full border border-[#E7E5E4] rounded-xl pl-11 pr-4 py-3 text-sm bg-white ' +
+  'w-full border border-[#E7E5E4] rounded-xl pl-12 pr-4 py-3 text-sm bg-white ' +
   'focus:outline-none focus:ring-2 focus:ring-[#B85C38]/20 focus:border-[#B85C38] ' +
   'placeholder:text-[#A8A29E] transition';
+
+// Shared icon className. `pointer-events-none` so clicking the icon
+// passes through to the input below (otherwise the icon eats clicks on
+// the first few pixels of the field).
+const ICON_CLASS = 'absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38] pointer-events-none';
 
 const RegisterPage = () => {
   const { t } = useTranslation();
@@ -119,13 +129,15 @@ const RegisterPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Business name */}
               <div className="relative md:col-span-2">
-                <Building2 size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
+                <Building2 size={16} className={ICON_CLASS} />
                 <input required type="text" placeholder={t('auth.business_name_placeholder')}
                        className={FIELD_BASE} value={formData.business_name} onChange={set('business_name')} />
               </div>
               {/* Sector */}
               <div className="relative">
-                <Coffee size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38] z-10" />
+                {/* `z-10` on this one only — the native <select> ignores
+                    pointer-events:none so we need the icon above it visually. */}
+                <Coffee size={16} className={ICON_CLASS + ' z-10'} />
                 <select className={FIELD_BASE + ' appearance-none cursor-pointer'} value={formData.sector} onChange={set('sector')}>
                   {SECTOR_KEYS.map((s) => (
                     <option key={s.value} value={s.value}>{t(s.i18nKey)}</option>
@@ -134,7 +146,7 @@ const RegisterPage = () => {
               </div>
               {/* Postal code */}
               <div className="relative">
-                <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
+                <MapPin size={16} className={ICON_CLASS} />
                 <input type="text" inputMode="numeric" maxLength="5" placeholder={t('auth.postal_code_placeholder')}
                        className={FIELD_BASE} value={formData.postal_code} onChange={set('postal_code')} />
               </div>
@@ -149,25 +161,25 @@ const RegisterPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Owner name */}
               <div className="relative md:col-span-2">
-                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
+                <User size={16} className={ICON_CLASS} />
                 <input type="text" placeholder={t('auth.owner_name_placeholder')}
                        className={FIELD_BASE} value={formData.owner_name} onChange={set('owner_name')} />
               </div>
               {/* Email */}
               <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
+                <Mail size={16} className={ICON_CLASS} />
                 <input required type="email" placeholder={t('auth.email_pro_placeholder')}
                        className={FIELD_BASE} value={formData.email} onChange={set('email')} />
               </div>
               {/* Phone */}
               <div className="relative">
-                <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
+                <Phone size={16} className={ICON_CLASS} />
                 <input type="tel" placeholder={t('auth.phone_optional_placeholder')}
                        className={FIELD_BASE} value={formData.phone} onChange={set('phone')} />
               </div>
               {/* Password */}
               <div className="relative md:col-span-2">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
+                <Lock size={16} className={ICON_CLASS} />
                 <input required type="password" placeholder={t('auth.password_placeholder')}
                        className={FIELD_BASE} value={formData.password} onChange={set('password')} />
               </div>
