@@ -7,6 +7,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ──────────────────────────────────────────────────────────────────────
+   GoogleTranslateBridge cleanup.
+   The widget injects a top banner, body offset, tooltip popovers, and
+   blue text highlights on every translated string. None of that fits
+   the FidéliTour visual language — strip it all so only the translated
+   text remains visible.
+   ────────────────────────────────────────────────────────────────────── */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame { display: none !important; }
+body { top: 0 !important; position: static !important; }
+#google_translate_element { display: none !important; }
+.goog-tooltip, .goog-tooltip:hover { display: none !important; }
+.goog-text-highlight {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  position: static !important;
+}
+/* Some translated nodes get inline color/background flips — neutralise. */
+font[style*="background"] { background: transparent !important; }
+
 @layer base {
   .theme {
     --font-heading: var(--font-sans);

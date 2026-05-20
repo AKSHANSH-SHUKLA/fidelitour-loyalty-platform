@@ -10,6 +10,7 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { applyGoogleTranslate } from './GoogleTranslateBridge';
 
 const LANGS = [
   { code: 'fr', flag: '🇫🇷', label: 'Français' },
@@ -21,9 +22,22 @@ export default function LanguageSwitcher({ variant = 'full' }) {
   const { i18n, t } = useTranslation();
   const current = (i18n.resolvedLanguage || i18n.language || 'fr').slice(0, 2);
 
+  // Re-apply the active language on mount so a hard refresh (which boots
+  // the Google bridge fresh) restores the user's chosen translation.
+  React.useEffect(() => {
+    if (current) applyGoogleTranslate(current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const change = (code) => {
     if (code === current) return;
+    // 1) Flip our own t() strings (sidebar, page titles, etc.).
     i18n.changeLanguage(code);
+    // 2) Trigger Google Translate Element to retranslate EVERY remaining
+    //    DOM text node — deep form labels, modal copy, API-rendered
+    //    content, error toasts. This is what makes the language picker
+    //    behave like google.com/translate rather than just a header swap.
+    applyGoogleTranslate(code);
   };
 
   if (variant === 'compact') {

@@ -98,6 +98,7 @@ import CardDesignerPage from './pages/CardDesignerPage';
 import AdminAIAssistantPage from './pages/AdminAIAssistantPage';
 import AdminCampaignsPage from './pages/AdminCampaignsPage';
 import AdminInsightsPage from './pages/AdminInsightsPage';
+import GoogleTranslateBridge from './components/GoogleTranslateBridge';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -130,6 +131,12 @@ function App() {
     <AuthProvider>
       <BranchProvider>
        <Router>
+        {/* Full-page translation bridge. Loads Google Translate Element
+            once, hidden. LanguageSwitcher calls applyGoogleTranslate(lang)
+            on every change → entire DOM (including dynamic API content
+            and modal copy) flips to the chosen language. Layout stays LTR
+            even for Arabic. */}
+        <GoogleTranslateBridge />
         <Routes>
           <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
