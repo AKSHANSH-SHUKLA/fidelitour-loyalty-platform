@@ -57,11 +57,23 @@ else:
 SENDGRID_API_KEY = ""
 SENDGRID_FROM_EMAIL = "noreply@fidelitour.com"
 
-# Item 23 — AI campaign analyzer. Pluggable: first key found wins.
-#   GROQ_API_KEY       → Llama 3 / Llama 3.1 / Mixtral via Groq (super fast, free)
-#   OPENROUTER_API_KEY → many free models (Llama 3, Hermes, etc.)
+# LLM provider chain. Pluggable — first key found in chain order wins.
+# Order matters: PRIMARY tried first, fallbacks only fire if the primary
+# is missing a key, returns nothing, or errors out.
+#
+# Provider order (top = tried first):
+#   NVIDIA_API_KEY     → NVIDIA NIM (build.nvidia.com) — 1000 free credits/mo
+#                        OpenAI-compatible. Catalog: Llama 3.1/3.3, Mixtral,
+#                        Mistral, DeepSeek-R1, Nemotron, Qwen, vision models.
+#   GROQ_API_KEY       → Llama 3 / Llama 3.1 / Mixtral via Groq (extremely
+#                        fast, generous free tier)
+#   OPENROUTER_API_KEY → many free models (Llama 3, Hermes, etc.) under one key
 #   GEMINI_API_KEY     → Google Gemini Flash (1500 req/day free, no card)
 # If none are set, the endpoint serves a deterministic heuristic so testing works.
+NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
+# Sensible default: Llama 3.3 70B Instruct via NVIDIA's hosted NIM. Owner can
+# swap to nemotron, mixtral, deepseek, etc. by setting NVIDIA_MODEL.
+NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
@@ -1675,11 +1687,11 @@ def admin_env_status(token_data: TokenData = Depends(require_role(["super_admin"
             "consequence": "Cron endpoints are unauthenticated (anyone can trigger them). Set this in Vercel — Vercel Cron passes it automatically.",
         },
         {
-            "key": "GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY",
-            "present": bool(GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY),
+            "key": "NVIDIA_API_KEY or GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY",
+            "present": bool(NVIDIA_API_KEY or GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY),
             "feature": "AI insights, AI campaign analyzer, voice-to-campaign",
             "required": False,
-            "consequence": "AI tabs render a 'configure a provider' state. Get a free Groq key at https://console.groq.com/keys.",
+            "consequence": "AI tabs render a 'configure a provider' state. Pick any free tier: NVIDIA NIM (https://build.nvidia.com), Groq (https://console.groq.com/keys), OpenRouter (https://openrouter.ai/keys), or Gemini (https://aistudio.google.com/apikey). Chain tries NVIDIA → Groq → OpenRouter → Gemini in order.",
         },
         {
             "key": "TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM_NUMBER",
@@ -5132,6 +5144,47 @@ def _parse_bullets(text: str) -> list:
     return [ln for ln in lines if len(ln) > 12][:3]
 
 
+def _call_nvidia(prompt: str) -> Optional[list]:
+    """NVIDIA NIM — OpenAI-compatible hosted models at integrate.api.nvidia.com.
+
+    Free tier ships ~1000 credits/month per developer key. Catalog includes
+    Llama 3.1/3.3, Mixtral, DeepSeek-R1, Nemotron, Qwen, plus vision models.
+    The API surface is the standard OpenAI chat completions schema, so we
+    reuse the same payload shape as Groq/OpenRouter — only the URL and
+    bearer token differ.
+    """
+    if not NVIDIA_API_KEY:
+        return None
+    try:
+        import requests as _rq
+        r = _rq.post(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {NVIDIA_API_KEY}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "model": NVIDIA_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "max_tokens": 400,
+                # NVIDIA's NIM endpoint accepts top_p but doesn't require it;
+                # we leave it at the model default. `stream: false` keeps the
+                # response synchronous so we can parse it in one shot.
+                "stream": False,
+            },
+            timeout=20,
+        )
+        r.raise_for_status()
+        text = r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        bullets = _parse_bullets(text)
+        return bullets if bullets else None
+    except Exception as e:
+        print(f"_call_nvidia error: {e}")
+        return None
+
+
 def _call_groq(prompt: str) -> Optional[list]:
     """Groq free tier — extremely fast Llama inference, OpenAI-compatible API."""
     if not GROQ_API_KEY:
@@ -5214,8 +5267,17 @@ def _call_gemini(prompt: str) -> Optional[list]:
 
 
 def _call_llm(prompt: str) -> tuple:
-    """Try every configured provider in order. Returns (bullets, provider_label)."""
+    """Try every configured provider in order. Returns (bullets, provider_label).
+
+    Order is INTENTIONAL: NVIDIA first because the user is on NVIDIA's free
+    tier as primary. Groq is the speed-fallback (lowest latency in the
+    industry). OpenRouter is the breadth-fallback (many free models). Gemini
+    is the volume-fallback (1500 req/day is the most generous free tier).
+    Each provider is tried only if the previous one had no key, returned
+    nothing, or errored. Skipped providers (no key) cost nothing.
+    """
     for fn, label in (
+        (_call_nvidia, f"nvidia/{NVIDIA_MODEL}"),
         (_call_groq, f"groq/{GROQ_MODEL}"),
         (_call_openrouter, f"openrouter/{OPENROUTER_MODEL}"),
         (_call_gemini, f"gemini/{GEMINI_MODEL}"),
