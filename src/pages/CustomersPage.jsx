@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, UserCircle, Filter, MapPin, Award, Hash, X, Download, Map, Clock, Gift, Calendar, TrendingDown, Zap, Megaphone, Smartphone, CreditCard, Trash2, Repeat } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api, { ownerAPI } from '../lib/api';
 import TierBadge from '../components/TierBadge';
 import { PageHeader, C as C_PS } from '../components/PageShell';
@@ -43,6 +44,7 @@ const URL_FILTER_LABELS = {
 };
 
 export default function CustomersPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { branchId } = useBranch();
@@ -438,7 +440,7 @@ export default function CustomersPage() {
   if (loading) {
     return (
       <div className="py-12 px-4">
-        <LoadingDistraction title="Chargement des clients" message="On agrège votre base clients…" />
+        <LoadingDistraction title={t('customers.loading')} message={t('customers.loading')} />
       </div>
     );
   }
@@ -449,7 +451,7 @@ export default function CustomersPage() {
         className="p-8"
         style={{ backgroundColor: '#FDFBF7' }}
       >
-        <p style={{ color: '#B85C38' }}>Error: {error}</p>
+        <p style={{ color: '#B85C38' }}>{t('common.error')}: {error}</p>
       </div>
     );
   }
@@ -458,8 +460,8 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Database"
-        title="Customers"
-        description="Browse, search, segment, and export your loyalty customer base."
+        title={t('customers.title')}
+        description={t('customers.subtitle')}
         role="business_owner"
         actions={
           <div className="flex gap-2">
@@ -468,14 +470,14 @@ export default function CustomersPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all shadow-md hover:-translate-y-0.5"
               style={{ background: `linear-gradient(135deg, ${C_PS.ochre}, ${C_PS.terracotta})` }}
             >
-              <Map size={16} /> Map View
+              <Map size={16} /> {t('nav.customer_map')}
             </button>
             <button
               onClick={exportToCSV}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5"
               style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}
             >
-              <Download size={16} /> Export CSV
+              <Download size={16} /> {t('customers.export_csv')}
             </button>
           </div>
         }
@@ -531,7 +533,7 @@ export default function CustomersPage() {
           <Search size={20} style={{ color: '#57534E' }} />
           <input
             type="text"
-            placeholder="Search by name, email, or barcode ID..."
+            placeholder={t('customers.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-transparent outline-none"

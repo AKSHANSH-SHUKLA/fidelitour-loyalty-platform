@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Building2, User, Mail, Lock, Phone, MapPin, Coffee, ArrowRight } from 'lucide-react';
 
 /**
@@ -14,18 +15,21 @@ import { Building2, User, Mail, Lock, Phone, MapPin, Coffee, ArrowRight } from '
  * After a successful create, we auto-login (so the user lands directly on
  * the dashboard instead of being bounced to /login to type the same
  * credentials again).
+ *
+ * Every visible string flows through `react-i18next` so the form follows
+ * the language selected in Settings (FR / EN / AR).
  */
-const SECTORS = [
-  { value: 'cafe',       label: '☕ Café / salon de thé' },
-  { value: 'restaurant', label: '🍽️ Restaurant' },
-  { value: 'pizzeria',   label: '🍕 Pizzeria' },
-  { value: 'bakery',     label: '🥐 Boulangerie / pâtisserie' },
-  { value: 'bar',        label: '🍷 Bar / cave à vin' },
-  { value: 'spa',        label: '💆 Spa / institut de beauté' },
-  { value: 'salon',      label: '✂️ Salon de coiffure' },
-  { value: 'gym',        label: '💪 Salle de sport' },
-  { value: 'retail',     label: '🛍️ Boutique / commerce' },
-  { value: 'other',      label: '📌 Autre' },
+const SECTOR_KEYS = [
+  { value: 'cafe',       i18nKey: 'auth.sector_cafe' },
+  { value: 'restaurant', i18nKey: 'auth.sector_restaurant' },
+  { value: 'pizzeria',   i18nKey: 'auth.sector_pizzeria' },
+  { value: 'bakery',     i18nKey: 'auth.sector_bakery' },
+  { value: 'bar',        i18nKey: 'auth.sector_bar' },
+  { value: 'spa',        i18nKey: 'auth.sector_spa' },
+  { value: 'salon',      i18nKey: 'auth.sector_salon' },
+  { value: 'gym',        i18nKey: 'auth.sector_gym' },
+  { value: 'retail',     i18nKey: 'auth.sector_retail' },
+  { value: 'other',      i18nKey: 'auth.sector_other' },
 ];
 
 const FIELD_BASE =
@@ -34,6 +38,7 @@ const FIELD_BASE =
   'placeholder:text-[#A8A29E] transition';
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const { register, login } = useAuth();
   const navigate = useNavigate();
 
@@ -57,9 +62,9 @@ const RegisterPage = () => {
     setError('');
 
     // Lightweight client-side validation — clearer than waiting for the API
-    if (!formData.business_name.trim()) return setError('Le nom de l\'entreprise est requis.');
-    if (!formData.email.trim())         return setError('Email requis.');
-    if (formData.password.length < 6)   return setError('Mot de passe trop court (6 caractères minimum).');
+    if (!formData.business_name.trim()) return setError(t('auth.business_name_required'));
+    if (!formData.email.trim())         return setError(t('auth.email_required'));
+    if (formData.password.length < 6)   return setError(t('auth.password_too_short'));
 
     setLoading(true);
     try {
@@ -75,7 +80,7 @@ const RegisterPage = () => {
         navigate('/login');
       }
     } catch (err) {
-      const detail = err?.response?.data?.detail || err?.message || 'Inscription échouée.';
+      const detail = err?.response?.data?.detail || err?.message || t('auth.register_failed');
       setError(detail);
     } finally {
       setLoading(false);
@@ -92,10 +97,10 @@ const RegisterPage = () => {
             FidéliTour
           </Link>
           <h2 className="text-3xl font-bold text-[#1C1917] mt-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Créez votre programme de fidélité
+            {t('auth.register_title')}
           </h2>
           <p className="text-[#57534E] mt-1 text-sm">
-            ✨ Essai gratuit 30 jours · Aucune carte bancaire · Mise en place en 2 minutes
+            {t('auth.register_subtitle')}
           </p>
         </div>
 
@@ -109,28 +114,28 @@ const RegisterPage = () => {
           {/* SECTION 1 — Business identity */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-2">
-              Votre entreprise
+              {t('auth.your_company')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Business name */}
               <div className="relative md:col-span-2">
                 <Building2 size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
-                <input required type="text" placeholder="Nom de l'entreprise · ex. Café Lumière"
+                <input required type="text" placeholder={t('auth.business_name_placeholder')}
                        className={FIELD_BASE} value={formData.business_name} onChange={set('business_name')} />
               </div>
               {/* Sector */}
               <div className="relative">
                 <Coffee size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38] z-10" />
                 <select className={FIELD_BASE + ' appearance-none cursor-pointer'} value={formData.sector} onChange={set('sector')}>
-                  {SECTORS.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
+                  {SECTOR_KEYS.map((s) => (
+                    <option key={s.value} value={s.value}>{t(s.i18nKey)}</option>
                   ))}
                 </select>
               </div>
               {/* Postal code */}
               <div className="relative">
                 <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
-                <input type="text" inputMode="numeric" maxLength="5" placeholder="Code postal · ex. 37000"
+                <input type="text" inputMode="numeric" maxLength="5" placeholder={t('auth.postal_code_placeholder')}
                        className={FIELD_BASE} value={formData.postal_code} onChange={set('postal_code')} />
               </div>
             </div>
@@ -139,31 +144,31 @@ const RegisterPage = () => {
           {/* SECTION 2 — Account */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-2 mt-2">
-              Votre compte
+              {t('auth.your_account')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Owner name */}
               <div className="relative md:col-span-2">
                 <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
-                <input type="text" placeholder="Votre nom · ex. Marie Dupont"
+                <input type="text" placeholder={t('auth.owner_name_placeholder')}
                        className={FIELD_BASE} value={formData.owner_name} onChange={set('owner_name')} />
               </div>
               {/* Email */}
               <div className="relative">
                 <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
-                <input required type="email" placeholder="Email professionnel"
+                <input required type="email" placeholder={t('auth.email_pro_placeholder')}
                        className={FIELD_BASE} value={formData.email} onChange={set('email')} />
               </div>
               {/* Phone */}
               <div className="relative">
                 <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
-                <input type="tel" placeholder="Téléphone (optionnel)"
+                <input type="tel" placeholder={t('auth.phone_optional_placeholder')}
                        className={FIELD_BASE} value={formData.phone} onChange={set('phone')} />
               </div>
               {/* Password */}
               <div className="relative md:col-span-2">
                 <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#B85C38]" />
-                <input required type="password" placeholder="Mot de passe (6 caractères minimum)"
+                <input required type="password" placeholder={t('auth.password_placeholder')}
                        className={FIELD_BASE} value={formData.password} onChange={set('password')} />
               </div>
             </div>
@@ -172,13 +177,13 @@ const RegisterPage = () => {
           <button type="submit" disabled={loading}
                   className="w-full text-white py-3.5 rounded-full font-semibold text-sm mt-6 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
                   style={{ background: 'linear-gradient(135deg, #B85C38 0%, #E8917C 100%)', boxShadow: '0 8px 22px -8px rgba(184,92,56,0.55)' }}>
-            {loading ? 'Création en cours…' : <>Créer mon compte <ArrowRight size={16} /></>}
+            {loading ? t('auth.creating') : <>{t('auth.create_account')} <ArrowRight size={16} /></>}
           </button>
         </form>
 
         <p className="text-center mt-6 text-[#57534E] text-sm">
-          Vous avez déjà un compte ?{' '}
-          <Link to="/login" className="text-[#B85C38] font-semibold hover:underline">Se connecter</Link>
+          {t('auth.have_account')}{' '}
+          <Link to="/login" className="text-[#B85C38] font-semibold hover:underline">{t('auth.sign_in')}</Link>
         </p>
       </div>
     </div>

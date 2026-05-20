@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil, X, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
 import NumberInput from '../components/NumberInput';
@@ -8,6 +9,7 @@ import CampaignAudienceBuilder from '../components/CampaignAudienceBuilder';
 import PhonePushPreview from '../components/PhonePushPreview';
 
 export default function CampaignsPage() {
+  const { t } = useTranslation();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -559,8 +561,8 @@ export default function CampaignsPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Outbound"
-        title="Campaigns"
-        description="Create, schedule, and track loyalty campaigns — wallet pushes, emails, and customer-list sends."
+        title={t('campaigns.title')}
+        description={t('campaigns.subtitle')}
         role="business_owner"
         actions={
           <button

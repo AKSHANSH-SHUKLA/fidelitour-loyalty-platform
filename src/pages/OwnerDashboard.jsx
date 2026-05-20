@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Users, Activity, TrendingUp, Smartphone, BadgeCheck, CreditCard, Trash2, Award,
   Plus, AlertTriangle, Moon, UserPlus, Bell, Sparkles, ChevronRight, X,
@@ -56,6 +57,7 @@ const TIER_COLORS = {
 };
 
 export default function OwnerDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { branchId, setBranchId, branches } = useBranch();
   const [summary, setSummary] = useState(null);
@@ -306,35 +308,35 @@ export default function OwnerDashboard() {
           <div className="fd-h">
             <div>
               <h1 className="fd-title">
-                Welcome back
-                <span className="fd-live">LIVE</span>
+                {t('dashboard.welcome_back')}
+                <span className="fd-live">{t('dashboard.live')}</span>
               </h1>
               <p className="fd-sub">
-                Chaque chiffre est live. Cliquez sur n'importe quel KPI pour voir la liste de clients correspondante.
+                {t('dashboard.live_subtitle')}
               </p>
             </div>
             <button className="fd-btn-primary" onClick={() => openCampaign({})}>
-              <Plus size={14} /> Nouvelle campagne
+              <Plus size={14} /> {t('dashboard.new_campaign')}
             </button>
           </div>
 
           {/* KPI GRID — 8 cards */}
           <div className="fd-kpi-grid">
-            <Kpi color="k-blue"    icon={<Users size={18} />}        label="Total Customers"  value={fmtNum(totalCustomers)} sub="Toute la base"
+            <Kpi color="k-blue"    icon={<Users size={18} />}        label={t('dashboard.kpi_total_customers')}  value={fmtNum(totalCustomers)} sub={t('dashboard.kpi_total_customers_sub') || 'Toute la base'}
                  delta={newCustomers.deltaPct}
                  onClick={() => navigate('/dashboard/customers')} />
-            <Kpi color="k-emerald" icon={<Activity size={18} />}     label="Total Visits"    value={fmtNum(totalVisits)}   sub="Toutes les visites enregistrées"
+            <Kpi color="k-emerald" icon={<Activity size={18} />}     label={t('dashboard.kpi_total_visits')}    value={fmtNum(totalVisits)}   sub={t('dashboard.kpi_total_visits_sub') || 'Toutes les visites enregistrées'}
                  delta={visitsTwin.deltaPct} />
-            <Kpi color="k-orange"  icon={<TrendingUp size={18} />}   label="Repeat Rate"     value={fmtPct(repeatRate)}    sub="Clients revenus au moins 2 fois" />
-            <Kpi color="k-indigo"  icon={<Smartphone size={18} />}   label="Wallet Passes"   value={fmtNum(walletPasses)}  sub={`${pct(walletPasses, totalCustomers)}% des clients`} />
+            <Kpi color="k-orange"  icon={<TrendingUp size={18} />}   label={t('dashboard.kpi_repeat_rate')}     value={fmtPct(repeatRate)}    sub={t('dashboard.kpi_repeat_rate_sub') || 'Clients revenus au moins 2 fois'} />
+            <Kpi color="k-indigo"  icon={<Smartphone size={18} />}   label={t('dashboard.kpi_wallet_passes')}   value={fmtNum(walletPasses)}  sub={`${pct(walletPasses, totalCustomers)}% ${t('dashboard.kpi_of_customers') || 'des clients'}`} />
 
-            <Kpi color="k-emerald" icon={<BadgeCheck size={18} />}   label="Active Cards"    value={fmtNum(activeCards)}   sub="Dans Apple/Google Wallet"
+            <Kpi color="k-emerald" icon={<BadgeCheck size={18} />}   label={t('dashboard.kpi_active_cards')}    value={fmtNum(activeCards)}   sub={t('dashboard.kpi_active_cards_sub') || 'Dans Apple/Google Wallet'}
                  onClick={() => navigate('/dashboard/customers?wallet_state=active')} />
-            <Kpi color="k-amber"   icon={<CreditCard size={18} />}   label="Never Added"     value={fmtNum(neverAdded)}    sub="Inscrits, mais carte non ajoutée"
+            <Kpi color="k-amber"   icon={<CreditCard size={18} />}   label={t('dashboard.kpi_never_added')}     value={fmtNum(neverAdded)}    sub={t('dashboard.kpi_never_added_sub') || 'Inscrits, mais carte non ajoutée'}
                  onClick={() => navigate('/dashboard/customers?wallet_state=never_added')} />
-            <Kpi color="k-red"     icon={<Trash2 size={18} />}       label="Deleted Cards"   value={fmtNum(deletedCards)}  sub="Carte retirée du wallet"
+            <Kpi color="k-red"     icon={<Trash2 size={18} />}       label={t('dashboard.kpi_deleted_cards')}   value={fmtNum(deletedCards)}  sub={t('dashboard.kpi_deleted_cards_sub') || 'Carte retirée du wallet'}
                  onClick={() => navigate('/dashboard/customers?wallet_state=deleted')} />
-            <Kpi color="k-purple"  icon={<Award size={18} />}        label="VIP Customers"   value={fmtNum(vipCount)}      sub="Top tier — 40+ visites ou panier €60+"
+            <Kpi color="k-purple"  icon={<Award size={18} />}        label={t('dashboard.kpi_vip')}             value={fmtNum(vipCount)}      sub={t('dashboard.kpi_vip_sub') || 'Top tier — 40+ visites ou panier €60+'}
                  onClick={() => navigate('/dashboard/customers?tier=vip')} />
           </div>
 
@@ -342,19 +344,19 @@ export default function OwnerDashboard() {
           <div className="fd-panel">
             <div className="fd-panel-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="fd-panel-title">Customer Status</span>
-                <span title="État détaillé de chaque segment client" style={{ width: 16, height: 16, borderRadius: 8, background: '#F4EEE0', color: '#8A8A8A', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
+                <span className="fd-panel-title">{t('dashboard.section_customer_status')}</span>
+                <span title={t('dashboard.status_tooltip') || 'État détaillé de chaque segment client'} style={{ width: 16, height: 16, borderRadius: 8, background: '#F4EEE0', color: '#8A8A8A', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
               </div>
               <button onClick={() => navigate('/dashboard/customers')} style={{ color: 'var(--fd-primary)', fontSize: 13, fontWeight: 500, border: 0, background: 'transparent', cursor: 'pointer' }}>
-                Voir tous les clients →
+                {t('dashboard.view_all_customers')} →
               </button>
             </div>
             <div className="fd-status-row">
               <div className="fd-status-grid">
-                <StatusCell label="Active"          value={activeCustomers}    total={totalCustomers} icon={<Users size={16} />} ink="#2D7A3E" />
-                <StatusCell label="Dormant"         value={dormantCustomers}   total={totalCustomers} icon={<Moon size={16} />}  ink="#A8862D" />
-                <StatusCell label="At Risk"         value={atRiskCustomers}    total={totalCustomers} icon={<AlertTriangle size={16} />} ink="#C84A1F" />
-                <StatusCell label="New (no visits)" value={newWithoutVisits}   total={totalCustomers} icon={<UserPlus size={16} />} ink="#5984AC" />
+                <StatusCell label={t('dashboard.status_active')}    value={activeCustomers}    total={totalCustomers} icon={<Users size={16} />} ink="#2D7A3E" />
+                <StatusCell label={t('dashboard.status_dormant')}   value={dormantCustomers}   total={totalCustomers} icon={<Moon size={16} />}  ink="#A8862D" />
+                <StatusCell label={t('dashboard.status_at_risk')}   value={atRiskCustomers}    total={totalCustomers} icon={<AlertTriangle size={16} />} ink="#C84A1F" />
+                <StatusCell label={t('dashboard.status_new')}       value={newWithoutVisits}   total={totalCustomers} icon={<UserPlus size={16} />} ink="#5984AC" />
               </div>
               <div className="fd-status-donut">
                 <div className="fd-mini-donut">

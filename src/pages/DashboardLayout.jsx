@@ -39,25 +39,27 @@ const isNavActive = (currentPath, target) => {
  * Clicking the parent again collapses the submenu. Auto-opens when the
  * user is already on /dashboard/settings.
  * ─────────────────────────────────────────────────────────────────── */
+// Translation keys, resolved inside the component via useTranslation.
 const SETTINGS_SECTIONS = [
-  { anchor: 'settings-profile',  label: '🏪 Profil de l\'entreprise' },
-  { anchor: 'settings-join',     label: '🔗 Lien d\'inscription' },
-  { anchor: 'settings-geo',      label: '📍 Géolocalisation' },
-  { anchor: 'settings-status',   label: '👥 Statut des clients' },
-  { anchor: 'settings-dayparts', label: '⏰ Périodes de la journée' },
-  { anchor: 'settings-hours',    label: '📅 Horaires & jours fériés' },
-  { anchor: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
-  { anchor: 'settings-welcome',  label: '🎁 Message de bienvenue' },
-  { anchor: 'settings-auto-pending', label: '📥 Auto-campagnes en attente' },
-  { anchor: 'settings-auto',     label: '🤖 Campagnes automatiques' },
-  { anchor: 'settings-language', label: '🌐 Langue de l\'interface' },
-  { anchor: 'settings-catalog',  label: '🧾 Catalogue produits & services' },
-  { anchor: 'settings-points',   label: '💰 Règle de points' },
-  { anchor: 'settings-team',     label: '👥 Équipe & accès' },
-  { anchor: 'settings-cleanup',  label: '🧹 Nettoyer clients inactifs' },
+  { anchor: 'settings-profile',      i18nKey: 'settings.section_profile' },
+  { anchor: 'settings-join',         i18nKey: 'settings.section_join_link' },
+  { anchor: 'settings-geo',          i18nKey: 'settings.section_geo' },
+  { anchor: 'settings-status',       i18nKey: 'settings.section_status' },
+  { anchor: 'settings-dayparts',     i18nKey: 'settings.section_dayparts' },
+  { anchor: 'settings-hours',        i18nKey: 'settings.section_hours' },
+  { anchor: 'settings-tiers',        i18nKey: 'settings.section_tiers' },
+  { anchor: 'settings-welcome',      i18nKey: 'settings.section_welcome' },
+  { anchor: 'settings-auto-pending', i18nKey: 'settings.section_auto_pending' },
+  { anchor: 'settings-auto',         i18nKey: 'settings.section_auto' },
+  { anchor: 'settings-language',     i18nKey: 'settings.section_language' },
+  { anchor: 'settings-catalog',      i18nKey: 'settings.section_catalog' },
+  { anchor: 'settings-points',       i18nKey: 'settings.section_points' },
+  { anchor: 'settings-team',         i18nKey: 'settings.section_team' },
+  { anchor: 'settings-cleanup',      i18nKey: 'settings.section_cleanup' },
 ];
 
 const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
+  const { t } = useTranslation();
   const active = isNavActive(currentPath, '/dashboard/settings');
   const theme = themeForRole(role);
   // The user's manual override (null = follow route default). It resets to
@@ -83,7 +85,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
     return (
       <Link
         to="/dashboard/settings"
-        title="Settings"
+        title={t('nav.settings')}
         className="relative group flex items-center justify-center px-2 py-2 rounded-lg text-[13.5px] transition-all"
         style={{
           color: active ? 'var(--ink)' : 'var(--ink-mute)',
@@ -142,7 +144,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
         >
           <Icon className="w-[18px] h-[18px]" />
         </span>
-        <span className="truncate flex-1 text-left">Settings</span>
+        <span className="truncate flex-1 text-left">{t('nav.settings')}</span>
         <span
           aria-hidden="true"
           className="transition-transform shrink-0"
@@ -161,7 +163,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
             className="block px-2.5 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-widest transition-colors hover:bg-white/70"
             style={{ color: theme.from }}
           >
-            ↗ Open Settings page
+            {t('nav.open_settings_page')}
           </Link>
           {SETTINGS_SECTIONS.map((s) => (
             <Link
@@ -170,7 +172,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
               className="block px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors hover:bg-white/70"
               style={{ color: C.inkSoft }}
             >
-              {s.label}
+              {t(s.i18nKey)}
             </Link>
           ))}
         </div>
@@ -235,11 +237,12 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge })
 // Placed inline within each role's nav so it sits directly under Settings
 // (or last nav item for roles without Settings).
 const SignOutNavItem = ({ onClick, collapsed }) => {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={onClick}
-      title={collapsed ? 'Sign out' : undefined}
+      title={collapsed ? t('nav.sign_out') : undefined}
       className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all w-full text-left`}
       style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
       onMouseOver={(e) => {
@@ -257,7 +260,7 @@ const SignOutNavItem = ({ onClick, collapsed }) => {
       >
         <LogOut className="w-[18px] h-[18px]" />
       </span>
-      {!collapsed && <span className="truncate">Sign out</span>}
+      {!collapsed && <span className="truncate">{t('nav.sign_out')}</span>}
     </button>
   );
 };
@@ -278,6 +281,7 @@ const SignOutNavItem = ({ onClick, collapsed }) => {
  * status dot was decorative noise that the user noticed and asked about.
  * ──────────────────────────────────────────────────────────────────── */
 function UserMenu({ user, theme, role, onLogout }) {
+  const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
 
@@ -293,16 +297,16 @@ function UserMenu({ user, theme, role, onLogout }) {
 
   const initial = (user?.email || '?').charAt(0).toUpperCase();
   const roleLabel =
-    role === 'business_owner' ? 'Business Owner' :
-    role === 'manager' ? 'Manager' :
-    role === 'staff' ? 'Staff' :
-    role === 'super_admin' ? 'Admin' : 'User';
+    role === 'business_owner' ? t('nav.business_owner') :
+    role === 'manager' ? t('nav.manager') :
+    role === 'staff' ? t('nav.staff') :
+    role === 'super_admin' ? t('nav.admin') : t('nav.user');
 
   return (
     <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
-        aria-label="Account menu"
+        aria-label={t('nav.account_menu')}
         onClick={() => setOpen((v) => !v)}
         className="relative w-9 h-9 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
         style={{
@@ -357,7 +361,7 @@ function UserMenu({ user, theme, role, onLogout }) {
             style={{ color: 'var(--ink)' }}
           >
             <Settings2 size={14} style={{ color: 'var(--ink-mute)' }} />
-            Settings
+            {t('nav.settings')}
           </Link>
           <button
             type="button"
@@ -366,7 +370,7 @@ function UserMenu({ user, theme, role, onLogout }) {
             style={{ color: '#8A322B', borderTop: '1px solid var(--hairline, #ECE8E1)' }}
           >
             <LogOut size={14} />
-            Sign out
+            {t('nav.sign_out')}
           </button>
         </div>
       )}
@@ -508,9 +512,9 @@ const DashboardLayout = () => {
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? t('nav.expand_sidebar') : t('nav.collapse_sidebar')}
           aria-expanded={!collapsed}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? t('nav.expand_sidebar') : t('nav.collapse_sidebar')}
           className="absolute -right-3 top-6 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
           style={{
             background: collapsed ? 'white' : '#1F1B1A',
@@ -555,19 +559,19 @@ const DashboardLayout = () => {
             <div
               className="mt-3 px-2.5 py-2 rounded-lg"
               style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid var(--hairline)' }}
-              title={`Compte : ${tenantInfo.name || 'Sans nom'} · slug: ${tenantInfo.slug || '—'}`}
+              title={`${t('nav.account')} : ${tenantInfo.name || t('nav.account_no_name')} · slug: ${tenantInfo.slug || '—'}`}
             >
               <p
                 className="text-[9px] uppercase tracking-[0.16em]"
                 style={{ color: 'var(--ink-mute)', fontWeight: 500 }}
               >
-                Compte
+                {t('nav.account')}
               </p>
               <p
                 className="text-[13px] truncate mt-0.5"
                 style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.01em' }}
               >
-                {tenantInfo.name || 'Sans nom'}
+                {tenantInfo.name || t('nav.account_no_name')}
               </p>
               {tenantInfo.slug && (
                 <p
@@ -687,7 +691,7 @@ const DashboardLayout = () => {
               className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[280px]"
               style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #ECE8E1)' }}
             >
-              <button type="submit" aria-label="Lancer la recherche" className="shrink-0" style={{ lineHeight: 0 }}>
+              <button type="submit" aria-label={t('common.search')} className="shrink-0" style={{ lineHeight: 0 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.3-4.3" />
@@ -697,8 +701,8 @@ const DashboardLayout = () => {
                 type="text"
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Rechercher un client, un code FT-…"
-                aria-label="Rechercher un client"
+                placeholder={t('nav.search_placeholder')}
+                aria-label={t('common.search')}
                 className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
                 style={{ color: 'var(--ink, #1F1B1A)', fontWeight: 400 }}
               />
@@ -706,7 +710,7 @@ const DashboardLayout = () => {
                 <button
                   type="button"
                   onClick={() => setSearchQ('')}
-                  aria-label="Effacer"
+                  aria-label={t('nav.search_clear')}
                   className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F4F2EE]"
                   style={{ color: 'var(--ink-mute, #7A716C)' }}
                 >✕</button>
@@ -719,7 +723,7 @@ const DashboardLayout = () => {
                   border: '1px solid var(--hairline, #ECE8E1)',
                   fontWeight: 500,
                 }}
-                title="Entrée pour rechercher"
+                title={t('nav.search_enter_hint')}
               >
                 ↵
               </kbd>
@@ -738,8 +742,8 @@ const DashboardLayout = () => {
             {/* Help icon */}
             <button
               type="button"
-              aria-label="Aide"
-              title="Aide"
+              aria-label={t('nav.help')}
+              title={t('nav.help')}
               className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
               style={{ background: 'transparent', border: '1px solid var(--hairline, #ECE8E1)', color: 'var(--ink-mute, #7A716C)' }}
               onMouseOver={(e) => { e.currentTarget.style.background = '#F4F2EE'; }}

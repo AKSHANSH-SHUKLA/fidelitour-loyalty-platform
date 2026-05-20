@@ -31,6 +31,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Calendar, Filter, Bell, Sparkles, ShoppingBag, Wallet, Repeat, Activity, Users, Gift, Clock, Crown } from 'lucide-react';
 import { ownerAPI } from '../lib/api';
 import { useBranch } from '../contexts/BranchContext';
@@ -146,6 +147,7 @@ const fmtNumFR = (n) => Number(n || 0).toLocaleString('fr-FR');
 const fmtEUR = (n) => Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
 
 export default function AnalyticsPageV2() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { branchId } = useBranch();
 
@@ -379,9 +381,9 @@ export default function AnalyticsPageV2() {
         {/* Header */}
         <header className="av2-header">
           <div style={{ minWidth: 0 }}>
-            <h1 className="av2-h1" style={{ margin: 0 }}>Analytics</h1>
+            <h1 className="av2-h1" style={{ margin: 0 }}>{t('analytics.title')}</h1>
             <p className="av2-sub" style={{ marginTop: 4 }}>
-              Analysez vos performances, comprenez vos clients et prenez les meilleures décisions.
+              {t('analytics.subtitle')}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -391,7 +393,7 @@ export default function AnalyticsPageV2() {
                 that need a time window. AI Copilot navigates to the
                 AI Assistant page so it's the only functional button. */}
             <PrimaryButton icon={Sparkles} onClick={() => navigate('/dashboard/ai-assistant')}>
-              AI Copilot
+              {t('analytics.ai_copilot')}
             </PrimaryButton>
           </div>
         </header>
@@ -405,7 +407,7 @@ export default function AnalyticsPageV2() {
           <main className="av2-main">
             {/* 1) PIE CHARTS / DONUTS — first impression. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 12 }}>
-              <ChartCard title="Répartition par canal" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
+              <ChartCard title={t('analytics.chart_channels')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
                 {channelDonutData.length > 0 ? (
                   <ChannelDonut
                     data={channelDonutData}
@@ -419,7 +421,7 @@ export default function AnalyticsPageV2() {
                   </div>
                 )}
               </ChartCard>
-              <ChartCard title="Nouveaux vs récurrents" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 jours</span>}>
+              <ChartCard title={t('analytics.chart_new_vs_returning')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
                 {nvrSegments.length > 0 ? (
                   <ChannelDonut
                     data={nvrSegments}
@@ -433,7 +435,7 @@ export default function AnalyticsPageV2() {
                   </div>
                 )}
               </ChartCard>
-              <ChartCard title="Analyse RFM" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Segments</span>}>
+              <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Segments</span>}>
                 <RfmHeatmap
                   matrix={rfmMatrix}
                   rowLabels={['Récemment', 'Modérément', 'Anciennement']}
@@ -444,10 +446,10 @@ export default function AnalyticsPageV2() {
 
             {/* 2) Time-series charts row. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.55fr 1fr', gap: 12 }}>
-              <ChartCard title="Évolution des visites" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 derniers jours</span>}>
+              <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
                 <VisitsBarLineChart data={visitsChartData} height={210} />
               </ChartCard>
-              <ChartCard title="Évolution du chiffre d'affaires" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>30 derniers jours</span>} padding={14}>
+              <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>} padding={14}>
                 <RevenueAreaChart
                   total={fmtNumFR(revenueTotal)}
                   unit="€"
@@ -461,29 +463,29 @@ export default function AnalyticsPageV2() {
 
             {/* 3) Heatmap + bars + top products. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
-              <ChartCard title="Heures de pointe" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
+              <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
                 <HoursHeatmap matrix={hours.matrix} days={hours.days} hours={hours.hours} />
               </ChartCard>
-              <ChartCard title="Jours les plus fréquentés" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Visites</span>}>
+              <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
                 <WeekdayBars counts={weekdayCounts} days={SHORT_DAYS} height={120} />
               </ChartCard>
-              <ChartCard title="Top produits / services" chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Par CA</span>}>
+              <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.by_revenue')}</span>}>
                 <TopProductsList items={topProducts} />
               </ChartCard>
             </section>
 
             {/* 4) KPI strip — numbers AFTER the visuals. */}
             <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-              <KpiCard icon={Activity}    label="Visites totales"    value={fmtNumFR(totalVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
-              <KpiCard icon={Users}       label="Clients uniques"    value={fmtNumFR(totalCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
-              <KpiCard icon={ShoppingBag} label="Panier moyen"       value={avgBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
-              <KpiCard icon={Wallet}      label="Chiffre d'affaires" value={fmtNumFR(Math.round(revenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
-              <KpiCard icon={Repeat}      label="Taux de rétention"  value={repeatRatePct.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
+              <KpiCard icon={Activity}    label={t('analytics.kpi_visits')}          value={fmtNumFR(totalVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
+              <KpiCard icon={Users}       label={t('analytics.kpi_unique_customers')} value={fmtNumFR(totalCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
+              <KpiCard icon={ShoppingBag} label={t('analytics.kpi_avg_basket')}      value={avgBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
+              <KpiCard icon={Wallet}      label={t('analytics.kpi_revenue')}         value={fmtNumFR(Math.round(revenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
+              <KpiCard icon={Repeat}      label={t('analytics.kpi_retention')}       value={repeatRatePct.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
             </section>
 
             {/* Automatisations actives */}
             <ChartCard
-              title="Automatisations actives"
+              title={t('analytics.automations_active')}
               action={
                 <button
                   type="button"

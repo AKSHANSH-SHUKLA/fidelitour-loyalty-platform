@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api, { ownerAPI } from '../lib/api';
 import { Save, Phone, MapPin, Globe, Share2 } from 'lucide-react';
 import LoadingDistraction from '../components/LoadingDistraction';
@@ -350,23 +351,24 @@ const SettingsPage = () => {
  * On mobile it stays at the top; on desktop it appears as a select dropdown.
  * ────────────────────────────────────────────────────────────────── */
 function SettingsNavigator() {
+  const { t } = useTranslation();
   const sections = [
-    { id: 'settings-profile',  label: '🏪 Profil de l\'entreprise' },
-    { id: 'settings-join',     label: '🔗 Lien d\'inscription' },
-    { id: 'settings-geo',      label: '📍 Géolocalisation' },
-    { id: 'settings-status',   label: '👥 Statut des clients' },
-    { id: 'settings-dayparts', label: '⏰ Périodes de la journée' },
-    { id: 'settings-hours',    label: '📅 Horaires & jours fériés' },
-    { id: 'settings-tiers',    label: '🏆 Paliers de fidélité' },
-    { id: 'settings-welcome',  label: '🎁 Message de bienvenue' },
-    { id: 'settings-auto-pending', label: '📥 Auto-campagnes en attente' },
-    { id: 'settings-auto',     label: '🤖 Campagnes automatiques' },
-    { id: 'settings-language', label: '🌐 Langue de l\'interface' },
-    { id: 'settings-catalog',  label: '🧾 Catalogue produits & services' },
-    { id: 'settings-points',   label: '💰 Règle de points' },
-    { id: 'settings-team',     label: '👥 Équipe & accès' },
-    { id: 'settings-cleanup',  label: '🧹 Nettoyer clients inactifs' },
-    { id: 'settings-billing',  label: '💳 Abonnement & facturation' },
+    { id: 'settings-profile',  label: t('settings.section_profile') },
+    { id: 'settings-join',     label: t('settings.section_join_link') },
+    { id: 'settings-geo',      label: t('settings.section_geo') },
+    { id: 'settings-status',   label: t('settings.section_status') },
+    { id: 'settings-dayparts', label: t('settings.section_dayparts') },
+    { id: 'settings-hours',    label: t('settings.section_hours') },
+    { id: 'settings-tiers',    label: t('settings.section_tiers') },
+    { id: 'settings-welcome',  label: t('settings.section_welcome') },
+    { id: 'settings-auto-pending', label: t('settings.section_auto_pending') },
+    { id: 'settings-auto',     label: t('settings.section_auto') },
+    { id: 'settings-language', label: t('settings.section_language') },
+    { id: 'settings-catalog',  label: t('settings.section_catalog') },
+    { id: 'settings-points',   label: t('settings.section_points') },
+    { id: 'settings-team',     label: t('settings.section_team') },
+    { id: 'settings-cleanup',  label: t('settings.section_cleanup') },
+    { id: 'settings-billing',  label: t('settings.section_billing') },
   ];
 
   const jumpTo = (id) => {

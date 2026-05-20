@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ownerAPI } from '../lib/api';
 import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2, Gift } from 'lucide-react';
 import { C as C_SCAN } from '../components/PageShell';
@@ -7,6 +8,7 @@ import { useBranch } from '../contexts/BranchContext';
 const BRANCH_STORAGE_KEY = 'fidelitour_scan_branch_id';
 
 const ScanPage = () => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState('manual'); // 'manual' or 'camera'
   const [barcode, setBarcode] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
@@ -149,13 +151,13 @@ const ScanPage = () => {
       // even open the camera live from the file picker via capture="environment").
       const ua = navigator.userAgent || '';
       const hint = /Firefox/.test(ua)
-        ? "Firefox : autorisez la caméra dans les paramètres du site, ou utilisez « Importer une photo » ci-dessous."
+        ? t('scan.error_camera_firefox')
         : /Android/.test(ua)
-          ? "Sur Android, vérifiez que cette page a accès à la caméra (icône cadenas → Autorisations)."
-          : "Vérifiez les permissions caméra de votre navigateur.";
+          ? t('scan.error_camera_android')
+          : t('scan.error_camera_default');
       setStatus({
         type: 'error',
-        message: `Caméra inaccessible. ${hint} Vous pouvez aussi importer une photo du QR.`,
+        message: t('scan.error_camera_full', { hint }),
       });
       setCameraActive(false);
     }
@@ -168,7 +170,7 @@ const ScanPage = () => {
   // and Firefox installs that refuse getUserMedia.
   const decodeImageFile = async (file) => {
     if (!file) return;
-    setStatus({ type: 'info', message: 'Lecture de l\'image…' });
+    setStatus({ type: 'info', message: t('scan.image_reading') });
     try {
       const jsQR = await ensureJsQR();
       const dataUrl = await new Promise((resolve, reject) => {
@@ -199,7 +201,7 @@ const ScanPage = () => {
         const cleaned = String(result.data).trim();
         if (cleaned) {
           setBarcode(cleaned);
-          setStatus({ type: 'success', message: 'Code détecté depuis l\'image !' });
+          setStatus({ type: 'success', message: t('scan.code_detected_image') });
           setMode('manual');
           return;
         }
@@ -212,7 +214,7 @@ const ScanPage = () => {
           if (found?.length && found[0].rawValue) {
             const cleaned = String(found[0].rawValue).trim();
             setBarcode(cleaned);
-            setStatus({ type: 'success', message: 'Code détecté depuis l\'image !' });
+            setStatus({ type: 'success', message: t('scan.code_detected_image') });
             setMode('manual');
             return;
           }
@@ -220,13 +222,13 @@ const ScanPage = () => {
       }
       setStatus({
         type: 'error',
-        message: 'Aucun code détecté. Essayez une photo plus nette ou saisissez le code manuellement.',
+        message: t('scan.image_no_code'),
       });
     } catch (e) {
       console.debug('decodeImageFile error:', e);
       setStatus({
         type: 'error',
-        message: "Impossible de lire l'image. Saisissez le code manuellement.",
+        message: t('scan.image_unreadable'),
       });
     }
   };
@@ -253,7 +255,7 @@ const ScanPage = () => {
       const cleaned = String(raw).trim();
       if (!cleaned) return false;
       setBarcode(cleaned);
-      setStatus({ type: 'success', message: 'Code détecté !' });
+      setStatus({ type: 'success', message: t('scan.code_detected') });
       stopCamera();
       setMode('manual');
       return true;
@@ -365,7 +367,7 @@ const ScanPage = () => {
 
     const parsedAmount = amountPaid.trim() === '' ? 0.0 : parseFloat(amountPaid);
     if (isNaN(parsedAmount) || parsedAmount < 0) {
-        setStatus({ type: 'error', message: 'Please enter a valid amount paid.' });
+        setStatus({ type: 'error', message: t('scan.error_invalid_amount') });
         return;
     }
 
@@ -410,7 +412,7 @@ const ScanPage = () => {
         tier_upgraded: !!customerData.tier_upgraded,
         branch_id: branchId || customerData.branch_id || null,
       });
-      setStatus({ type: 'success', message: 'Visit recorded successfully!' });
+      setStatus({ type: 'success', message: t('scan.success') });
       setBarcode('');
       setAmountPaid('');
       setPoints('');
@@ -433,9 +435,9 @@ const ScanPage = () => {
       if (detail) {
         msg = detail;
       } else if (status) {
-        msg = `Erreur HTTP ${status} — réponse serveur : ${rawBody || '(vide)'}`;
+        msg = t('scan.error_http', { status, body: rawBody || t('scan.error_http_empty') });
       } else {
-        msg = `Erreur réseau — ${error.message || 'pas de réponse du serveur'}. Vérifiez la connexion / actualisez la page.`;
+        msg = t('scan.error_network', { msg: error.message || t('scan.error_network_no_message') });
       }
       setStatus({ type: 'error', message: msg });
     } finally {
@@ -460,16 +462,16 @@ const ScanPage = () => {
             border: `1px solid ${C_SCAN.sky}33`,
           }}
         >
-          <ScanLine size={12} /> Staff Workspace
+          <ScanLine size={12} /> {t('scan.staff_workspace')}
         </div>
         <h1
           className="relative font-['Cormorant_Garamond'] font-bold leading-[1.1]"
           style={{ color: C_SCAN.inkDeep, fontSize: 44 }}
         >
-          Record a Visit
+          {t('scan.hero_title')}
         </h1>
         <p className="relative mt-3 text-base max-w-md mx-auto" style={{ color: C_SCAN.inkMute }}>
-          Scan the customer's wallet barcode (or type it in) and enter the transaction amount to log loyalty points.
+          {t('scan.hero_subtitle')}
         </p>
 
         {/* Tenant identity banner — gives the staff a clear "you are at X" so
@@ -480,7 +482,7 @@ const ScanPage = () => {
             style={{ background: '#FCE3DC', border: '1px solid #B85C3855', color: '#9C4427' }}
           >
             <Building2 size={12} />
-            Vous travaillez chez : <b>{tenantInfo.name || 'Sans nom'}</b>
+            {t('scan.you_are_at')} <b>{tenantInfo.name || t('scan.no_business_name')}</b>
             <span className="font-mono opacity-70">·  /join/{tenantInfo.slug}</span>
           </div>
         )}
@@ -506,7 +508,7 @@ const ScanPage = () => {
           </div>
           <div className="flex-1 min-w-0">
             <label className="block text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: C_SCAN.inkMute }}>
-              Scanning at branch
+              {t('scan.scanning_at_branch')}
             </label>
             <select
               value={branchId}
@@ -514,7 +516,7 @@ const ScanPage = () => {
               className="w-full mt-1 px-2 py-1 text-sm rounded-lg outline-none"
               style={{ border: `1px solid ${C_SCAN.hairline}`, background: 'white' }}
             >
-              <option value="">— Not tagged —</option>
+              <option value="">{t('scan.branch_not_tagged')}</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name || b.id}</option>
               ))}
@@ -529,8 +531,8 @@ const ScanPage = () => {
         style={{ background: 'white', border: `1px solid ${C_SCAN.hairline}` }}
       >
         {[
-          { key: 'manual', label: 'Manual Entry', icon: ScanLine },
-          { key: 'camera', label: 'Scan with Camera', icon: Camera },
+          { key: 'manual', label: t('scan.mode_manual'), icon: ScanLine },
+          { key: 'camera', label: t('scan.mode_camera'), icon: Camera },
         ].map((tab) => {
           const isActive = mode === tab.key;
           return (
@@ -592,10 +594,10 @@ const ScanPage = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#7B3F00' }}>
-                    Montant payé par ce client
+                    {t('scan.amount_in_advance')}
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: '#57534E' }}>
-                    Saisissez le montant maintenant — il sera enregistré automatiquement à la détection du code-barres.
+                    {t('scan.amount_in_advance_hint')}
                   </p>
                 </div>
               </div>
@@ -617,7 +619,7 @@ const ScanPage = () => {
               </div>
               {amountPaid && parseFloat(amountPaid) > 0 && (
                 <p className="text-[11px] font-semibold" style={{ color: '#4A5D23' }}>
-                  ✓ {computeAutoPoints(amountPaid)} points seront crédités après le scan
+                  ✓ {t('scan.points_will_credit', { count: computeAutoPoints(amountPaid) })}
                 </p>
               )}
             </div>
@@ -627,7 +629,7 @@ const ScanPage = () => {
                 onClick={stopCamera}
                 className="w-full py-3 rounded-xl text-white font-bold bg-[#B85C38] hover:bg-[#9C4E2F] transition-all"
               >
-                Arrêter la caméra
+                {t('scan.stop_camera')}
               </button>
             )}
 
@@ -640,12 +642,12 @@ const ScanPage = () => {
             <div className="rounded-xl border-2 border-dashed p-3"
                  style={{ borderColor: '#E7E5E4', background: '#FAF8F4' }}>
               <p className="text-[11px] font-semibold mb-2 text-[#57534E] uppercase tracking-wider">
-                Caméra qui refuse de s'ouvrir ?
+                {t('scan.camera_blocked')}
               </p>
               <label className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg cursor-pointer text-sm font-semibold border-2 transition-colors"
                      style={{ borderColor: '#4A90E2', color: '#4A90E2', background: 'white' }}>
                 <Camera size={16} />
-                Importer / prendre une photo du QR
+                {t('scan.import_photo')}
                 <input
                   type="file"
                   accept="image/*"
@@ -659,7 +661,7 @@ const ScanPage = () => {
                 />
               </label>
               <p className="text-[10px] text-[#8B8680] mt-2 text-center">
-                Compatible Firefox, anciens Android Chrome, desktops sans webcam.
+                {t('scan.import_photo_compat')}
               </p>
             </div>
           </div>
@@ -669,19 +671,19 @@ const ScanPage = () => {
         {mode === 'manual' && (
           <form onSubmit={handleScan} className="space-y-6 relative z-10">
             <div>
-              <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">Customer Barcode ID</label>
+              <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">{t('scan.barcode_label')}</label>
               <div className="relative">
                 <ScanLine className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
                 <input
                   type="text"
                   value={barcode}
                   onChange={e => setBarcode(e.target.value.toUpperCase())}
-                  placeholder="e.g. FT-A1B2C3D4"
+                  placeholder={t('scan.barcode_placeholder')}
                   className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-mono tracking-widest transition-colors uppercase"
                   disabled={loading}
                 />
               </div>
-              <p className="text-xs text-[#57534E] mt-2">Scannez le QR code de la carte du client (ou tapez l'ID FT-XXXXXXXX manuellement).</p>
+              <p className="text-xs text-[#57534E] mt-2">{t('scan.barcode_hint')}</p>
             </div>
 
             {/* ──────────────────────────────────────────────────────────
@@ -695,14 +697,14 @@ const ScanPage = () => {
             {catalog.length > 0 && (
               <div>
                 <label className="flex items-center justify-between text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">
-                  <span>Catalogue (sélectionnez ce qui a été acheté)</span>
+                  <span>{t('scan.catalog_label')}</span>
                   {pickedItems.length > 0 && (
                     <button
                       type="button"
                       onClick={clearPicker}
                       className="text-xs font-normal normal-case tracking-normal text-[#B85C38] underline"
                     >
-                      Vider la sélection
+                      {t('scan.catalog_clear')}
                     </button>
                   )}
                 </label>
@@ -718,10 +720,10 @@ const ScanPage = () => {
                   >
                     <span className="text-sm text-[#1C1917]">
                       {pickedItems.length === 0
-                        ? `Aucun article sélectionné · ${catalog.length} articles dans le catalogue`
-                        : `${pickedItems.reduce((s, r) => s + r.qty, 0)} article${pickedItems.reduce((s, r) => s + r.qty, 0) > 1 ? 's' : ''} sélectionné${pickedItems.reduce((s, r) => s + r.qty, 0) > 1 ? 's' : ''} · Total ${pickerTotal.toFixed(2)} €`}
+                        ? t('scan.catalog_no_selection_summary', { count: catalog.length })
+                        : t('scan.catalog_total_selected', { count: pickedItems.reduce((s, r) => s + r.qty, 0), total: pickerTotal.toFixed(2) })}
                     </span>
-                    <span className="text-xs text-[#8B8680]">{pickerOpen ? '▲ Fermer' : '▼ Ouvrir'}</span>
+                    <span className="text-xs text-[#8B8680]">{pickerOpen ? t('scan.catalog_close') : t('scan.catalog_open')}</span>
                   </button>
                   {pickerOpen && (
                     <div className="border-t border-[#E7E5E4] max-h-80 overflow-y-auto">
@@ -745,7 +747,7 @@ const ScanPage = () => {
                               <button
                                 type="button"
                                 onClick={() => bumpQty(it.id, -1)}
-                                aria-label="Retirer"
+                                aria-label={t('scan.qty_minus')}
                                 className="w-8 h-8 rounded-lg border border-[#E7E5E4] text-[#B85C38] font-bold"
                                 style={{ background: 'white', font: 'inherit', cursor: 'pointer' }}
                               >
@@ -757,7 +759,7 @@ const ScanPage = () => {
                               <button
                                 type="button"
                                 onClick={() => bumpQty(it.id, +1)}
-                                aria-label="Ajouter"
+                                aria-label={t('scan.qty_plus')}
                                 className="w-8 h-8 rounded-lg border border-[#E7E5E4] text-[#4F7A36] font-bold"
                                 style={{ background: 'white', font: 'inherit', cursor: 'pointer' }}
                               >
@@ -771,17 +773,17 @@ const ScanPage = () => {
                   )}
                 </div>
                 <p className="text-xs text-[#57534E] mt-2">
-                  Pas dans le catalogue ? Ajoutez vos produits dans <a href="/dashboard/settings#settings-catalog" className="underline text-[#B85C38]">Réglages → Catalogue</a>.
+                  {t('scan.catalog_no_items_hint')}
                 </p>
               </div>
             )}
 
             <div>
               <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">
-                Amount Paid (€)
+                {t('scan.amount_label')}
                 {pickedItems.length > 0 && (
                   <span className="ml-2 normal-case text-xs font-normal text-[#4F7A36]">
-                    · auto-rempli depuis le catalogue
+                    {t('scan.catalog_auto_filled')}
                   </span>
                 )}
               </label>
@@ -805,30 +807,30 @@ const ScanPage = () => {
               </div>
               <p className="text-xs text-[#57534E] mt-2">{
                 pickedItems.length > 0
-                  ? 'Le montant est calculé automatiquement depuis votre catalogue. Pour le modifier, videz la sélection au-dessus ou ajustez les quantités.'
+                  ? t('scan.amount_hint_picker')
                   : pointsMode === 'per_euro'
-                    ? 'Points calculés automatiquement (montant × taux). Vous pouvez les modifier ci-dessous.'
-                    : 'Le montant ne change pas les points dans ce mode (forfait par visite). Le commerçant peut le changer dans Réglages.'
+                    ? t('scan.amount_hint_per_euro')
+                    : t('scan.amount_hint_per_visit')
               }</p>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">Points (Optional)</label>
+              <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">{t('scan.points_label')}</label>
               <input
                 type="number"
                 min="0"
                 value={points}
                 onChange={handlePointsChange}
-                placeholder="Auto-calculated from amount paid"
+                placeholder={t('scan.points_placeholder')}
                 className="w-full px-4 py-4 rounded-xl border-2 border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
                 disabled={loading}
               />
               <p className="text-xs text-[#57534E] mt-2">{
                 pointsMode === 'per_euro'
                   ? (points && amountPaid
-                      ? `${computeAutoPoints(amountPaid)} points (${pointsPerEuro} par euro)`
-                      : `Laisser vide pour auto-calculer · ${pointsPerEuro} points par euro`)
-                  : `Forfait par visite · ${pointsPerVisit} points (paramétré par le commerçant)`
+                      ? t('scan.points_hint_per_euro_filled', { points: computeAutoPoints(amountPaid), rate: pointsPerEuro })
+                      : t('scan.points_hint_per_euro_empty', { rate: pointsPerEuro }))
+                  : t('scan.points_hint_per_visit', { points: pointsPerVisit })
               }</p>
             </div>
 
@@ -837,7 +839,7 @@ const ScanPage = () => {
               disabled={loading || !barcode.trim()}
               className="w-full py-4 rounded-xl text-white font-bold text-lg bg-[#B85C38] hover:bg-[#9C4E2F] disabled:opacity-50 transition-all shadow-md mt-4"
             >
-              {loading ? 'Processing Transaction...' : 'Record Visit & Add Points'}
+              {loading ? t('scan.submitting') : t('scan.submit')}
             </button>
           </form>
         )}
@@ -849,7 +851,7 @@ const ScanPage = () => {
                 <div className="flex items-center justify-center gap-3 mb-6">
                   <CheckCircle2 className="w-10 h-10 text-[#E3A869]" />
                   <h3 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">
-                    Visit recorded for {scanResult.customer_name || 'Customer'}
+                    {t('scan.visit_recorded_for', { name: scanResult.customer_name || t('scan.customer_fallback') })}
                   </h3>
                 </div>
 
@@ -857,11 +859,11 @@ const ScanPage = () => {
                 <div className="grid grid-cols-2 gap-4 mb-6 text-center">
                   <div className="bg-white p-4 rounded-lg">
                     <p className="text-3xl font-bold text-[#B85C38]">+{scanResult.points_earned || 0}</p>
-                    <p className="text-sm text-[#57534E]">points</p>
+                    <p className="text-sm text-[#57534E]">{t('scan.label_points')}</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg">
                     <p className="text-3xl font-bold text-[#4A5D23]">+1</p>
-                    <p className="text-sm text-[#57534E]">stamp</p>
+                    <p className="text-sm text-[#57534E]">{t('scan.label_stamp')}</p>
                   </div>
                 </div>
 
@@ -869,7 +871,7 @@ const ScanPage = () => {
                 {scanResult.stamps_current !== undefined && scanResult.stamps_required !== undefined && (
                   <div className="mb-6">
                     <div className="flex justify-between items-center mb-2">
-                      <p className="text-sm font-semibold text-[#1C1917]">Progress to next reward</p>
+                      <p className="text-sm font-semibold text-[#1C1917]">{t('scan.progress_to_reward')}</p>
                       <p className="text-sm font-bold text-[#B85C38]">{scanResult.stamps_current} / {scanResult.stamps_required}</p>
                     </div>
                     <div className="w-full h-3 bg-[#E7E5E4] rounded-full overflow-hidden">
@@ -879,7 +881,7 @@ const ScanPage = () => {
                       />
                     </div>
                     <p className="text-xs text-[#8B8680] mt-2">
-                      {scanResult.stamps_required - scanResult.stamps_current} stamps until next reward
+                      {t('scan.stamps_until_reward', { count: scanResult.stamps_required - scanResult.stamps_current })}
                     </p>
                   </div>
                 )}
@@ -888,15 +890,15 @@ const ScanPage = () => {
                 {scanResult.reward_unlocked && (
                   <div className="bg-[#4A5D23] text-white p-6 rounded-lg mb-6">
                     <div className="text-center mb-4">
-                      <p className="text-2xl font-bold mb-1">🎉 Reward unlocked!</p>
+                      <p className="text-2xl font-bold mb-1">{t('scan.reward_unlocked')}</p>
                       <p className="text-sm opacity-90">
-                        {scanResult.customer_name || 'This customer'} has earned their reward.
+                        {t('scan.reward_subtitle', { name: scanResult.customer_name || t('scan.this_customer') })}
                       </p>
                     </div>
                     {redeemDone ? (
                       <div className="bg-white/10 rounded-lg p-3 text-center">
                         <p className="font-bold flex items-center justify-center gap-2">
-                          <CheckCircle2 size={18} /> Reward redeemed — logged & their card reset.
+                          <CheckCircle2 size={18} /> {t('scan.reward_redeemed')}
                         </p>
                       </div>
                     ) : (
@@ -922,11 +924,11 @@ const ScanPage = () => {
                         className="w-full py-3 rounded-lg bg-white text-[#4A5D23] font-bold hover:bg-[#F3EFE7] transition flex items-center justify-center gap-2 disabled:opacity-60"
                       >
                         <Gift size={18} />
-                        {redeemLoading ? 'Redeeming…' : 'Give reward & mark redeemed'}
+                        {redeemLoading ? t('scan.redeeming') : t('scan.give_reward')}
                       </button>
                     )}
                     <p className="text-xs text-white/80 text-center mt-3">
-                      Logs this redemption to analytics. Their card resets to 0 stamps.
+                      {t('scan.redeem_hint')}
                     </p>
                   </div>
                 )}
@@ -944,10 +946,10 @@ const ScanPage = () => {
                     <div aria-hidden="true" className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50"
                          style={{ background: 'rgba(255,255,255,0.4)' }} />
                     <p className="relative text-2xl font-['Cormorant_Garamond'] font-bold leading-tight">
-                      🎉 Bravo, {scanResult.customer_name?.split(' ')[0]} passe {String(scanResult.tier).toUpperCase()} !
+                      {t('scan.tier_upgraded', { name: scanResult.customer_name?.split(' ')[0] || '', tier: String(scanResult.tier).toUpperCase() })}
                     </p>
                     <p className="relative text-sm mt-1 text-white/85">
-                      They moved up from {String(scanResult.previous_tier || 'their previous tier').toUpperCase()} — a tier-up push notification was already sent.
+                      {t('scan.tier_subtitle', { previous: scanResult.previous_tier ? String(scanResult.previous_tier).toUpperCase() : t('scan.previous_tier_fallback') })}
                     </p>
                   </div>
                 )}
@@ -961,7 +963,7 @@ const ScanPage = () => {
                   }}
                   className="w-full py-4 rounded-lg bg-[#B85C38] text-white font-bold hover:bg-[#9C4E2F] transition"
                 >
-                  Scan next customer
+                  {t('scan.scan_next')}
                 </button>
               </>
             ) : status.type === 'error' ? (

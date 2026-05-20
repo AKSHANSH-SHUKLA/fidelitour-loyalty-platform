@@ -47,19 +47,21 @@ i18n
     },
   });
 
-// Keep <html dir> in sync with the active language so RTL flips even
-// when something changes the language outside the switcher.
+// Keep <html lang> in sync with the active language. We DO NOT flip
+// the document direction to RTL for Arabic — the owner explicitly
+// asked that the layout stays left-to-right in all three languages.
+// Only the displayed text changes.
 i18n.on('languageChanged', (lng) => {
   if (typeof document !== 'undefined') {
     document.documentElement.lang = lng;
-    document.documentElement.dir = lng === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = 'ltr';
   }
 });
 
 // Apply once on initial load.
 if (typeof document !== 'undefined') {
   document.documentElement.lang = i18n.language || 'fr';
-  document.documentElement.dir = (i18n.language === 'ar') ? 'rtl' : 'ltr';
+  document.documentElement.dir = 'ltr';
 }
 
 export default i18n;
