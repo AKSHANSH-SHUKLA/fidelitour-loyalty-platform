@@ -38,6 +38,7 @@
  *   as soon as the select appears (MutationObserver on <body>).
  */
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const SCRIPT_ID = 'google-translate-script';
 const ELEMENT_ID = 'google_translate_element';
@@ -57,26 +58,74 @@ let pendingLang = null;
  * `lang` (one of 'fr', 'en', 'ar'). Safe to call before the script
  * finishes loading — the request will be replayed when ready.
  *
- * Exported so LanguageSwitcher can call it on every language change.
+ * Exported so LanguageSwitcher can call it on every language change AND
+ * RouteAwareRetranslator can call it on every route change.
+ *
+ * `force` (default true) uses a double-toggle trick: set the widget to
+ * the source language first (reverting any prior translation), THEN
+ * set it to the target. This forces Google to re-walk the entire DOM
+ * from scratch — which is the only reliable way to catch React-mounted
+ * subtrees that Google's internal MutationObserver missed (Insights,
+ * deep modals, async-loaded content, etc.).
  */
-export function applyGoogleTranslate(lang) {
+export function applyGoogleTranslate(lang, { force = true } = {}) {
   const target = LANG_MAP[lang] || 'fr';
   pendingLang = target;
+  pendingForce = force;
   tryFlush();
 }
+
+let pendingForce = true;
 
 function tryFlush() {
   if (pendingLang == null) return;
   const select = document.querySelector('select.goog-te-combo');
   if (!select) return; // widget not yet mounted — observer will retry
-  // Only fire if the value actually changes — saves a flicker.
+
+  // Keep layout LTR even when Google flips it to Arabic.
+  document.documentElement.setAttribute('dir', 'ltr');
+
+  // Double-toggle trick: revert to source first, then go to target on
+  // the next tick. Without this, React-mounted subtrees stay in their
+  // original language because Google thinks "it's already translated".
+  if (pendingForce && pendingLang !== 'fr' && select.value !== '') {
+    // Revert to source — this strips Google's <font> wrappers so the
+    // next pass walks fresh text nodes (including any React just
+    // mounted on this route).
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    // Schedule the actual target translation after the revert lands.
+    const target = pendingLang;
+    pendingLang = null;
+    setTimeout(() => {
+      const s = document.querySelector('select.goog-te-combo');
+      if (!s) return;
+      s.value = target;
+      s.dispatchEvent(new Event('change'));
+      document.documentElement.setAttribute('dir', 'ltr');
+    }, 60);
+    return;
+  }
+
+  // Simple path: just set the value if it changed.
   if (select.value !== pendingLang) {
     select.value = pendingLang;
     select.dispatchEvent(new Event('change'));
   }
   pendingLang = null;
-  // Keep layout LTR even when Google flips it to Arabic.
-  document.documentElement.setAttribute('dir', 'ltr');
+}
+
+/**
+ * Get the user's currently-active language from localStorage. Used by
+ * the route-change retranslator to know which language to re-apply
+ * after navigation.
+ */
+export function getActiveLanguage() {
+  try {
+    return localStorage.getItem('fidelitour:lang') || 'fr';
+  } catch {
+    return 'fr';
+  }
 }
 
 export default function GoogleTranslateBridge() {
@@ -166,4 +215,53 @@ export default function GoogleTranslateBridge() {
       }}
     />
   );
+}
+
+/**
+ * RouteAwareRetranslator — sits inside <Router> and re-applies the active
+ * Google Translate language on every route change.
+ *
+ * WHY: when the user navigates from /dashboard/settings to /dashboard/insights,
+ * React mounts a whole new page subtree. Google Translate's internal
+ * MutationObserver does see new nodes, but it skips re-translating them
+ * if it thinks they're "already in the target language" — which is the
+ * default heuristic. The result: deep pages like Insights stay in French
+ * even though the rest of the platform flipped to Arabic.
+ *
+ * FIX: every time the pathname changes, fire applyGoogleTranslate again
+ * with force=true (double-toggle). That strips any prior translation,
+ * waits a frame, then re-translates the new page from source. Cost is
+ * one extra fetch per route change to translate.googleapis.com — Google
+ * caches aggressively so subsequent navigations to the same page are
+ * near-instant.
+ *
+ * Must be mounted INSIDE <Router>. Export it as a sibling component so
+ * App.jsx can drop it right next to <Routes>.
+ */
+export function RouteAwareRetranslator() {
+  const location = useLocation();
+  useEffect(() => {
+    const lang = getActiveLanguage();
+    if (lang && lang !== 'fr') {
+      // Fire the double-toggle several times after route change. 120ms
+      // catches the initial mount, 700ms catches deferred chart/API
+      // renders, 1600ms catches late-loading content (Insights cards,
+      // dashboards with skeletons, AI responses). Each pass costs one
+      // batched POST to translate.googleapis.com; Google caches
+      // translations aggressively so repeats are near-free.
+      //
+      // A brief flicker (~80ms) is visible during the toggle — that's
+      // the cost of guaranteeing every text node, including any React
+      // just mounted, gets re-walked. Without this, deep pages like
+      // Insights stay in French even though the rest of the platform
+      // flipped to Arabic.
+      const ids = [
+        setTimeout(() => applyGoogleTranslate(lang, { force: true }), 120),
+        setTimeout(() => applyGoogleTranslate(lang, { force: true }), 700),
+        setTimeout(() => applyGoogleTranslate(lang, { force: true }), 1600),
+      ];
+      return () => ids.forEach(clearTimeout);
+    }
+  }, [location.pathname]);
+  return null;
 }

@@ -98,7 +98,7 @@ import CardDesignerPage from './pages/CardDesignerPage';
 import AdminAIAssistantPage from './pages/AdminAIAssistantPage';
 import AdminCampaignsPage from './pages/AdminCampaignsPage';
 import AdminInsightsPage from './pages/AdminInsightsPage';
-import GoogleTranslateBridge from './components/GoogleTranslateBridge';
+import GoogleTranslateBridge, { RouteAwareRetranslator } from './components/GoogleTranslateBridge';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -137,6 +137,10 @@ function App() {
             and modal copy) flips to the chosen language. Layout stays LTR
             even for Arabic. */}
         <GoogleTranslateBridge />
+        {/* Re-applies translation on every route change so deep pages
+            (Insights, Card Designer, AI Assistant, etc.) get walked
+            from scratch and don't stay in French after navigation. */}
+        <RouteAwareRetranslator />
         <Routes>
           <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
