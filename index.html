@@ -23,16 +23,57 @@
          race condition where iOS reads the manifest before React mounts. -->
     <link rel="manifest" href="/manifest.json" />
     <script>
+      // ──────────────────────────────────────────────────────────────────
+      // PWA bootstrap — runs SYNCHRONOUSLY in <head>, before any module
+      // loads. Two responsibilities, both critical:
+      //
+      //   1. If we're on /card/FT-XXX:
+      //       a. Rewrite the <link rel="manifest"> to the per-card
+      //          manifest endpoint. (iOS Safari sometimes locks the href
+      //          at parse time and ignores later changes — that's why
+      //          this runs in <head>, not in a React useEffect.)
+      //       b. Persist this barcode to localStorage as the device's
+      //          "last visited card", so the launch failsafe below can
+      //          deep-link future PWA launches that land on "/".
+      //
+      //   2. If we're a standalone PWA that launched at "/" and we
+      //      have a stored last_card:
+      //          history.replaceState to /card/<barcode> BEFORE React
+      //          Router reads the initial location. The customer never
+      //          sees the landing page, not even for one frame.
+      //
+      //   This is the failsafe that works EVEN IF the manifest swap
+      //   above failed and iOS captured start_url=/ at install time.
+      //   Both layers stacked — at least one always succeeds.
+      // ──────────────────────────────────────────────────────────────────
       (function () {
         try {
-          // Match /card/FT-... (case-insensitive, allowing trailing slash
-          // or query string). FT-IDs are 8 hex chars in production but
-          // we accept the longer character set defensively.
-          var m = location.pathname.match(/^\/card\/([A-Za-z0-9_-]+)/);
-          if (!m) return;
-          var bc = m[1].toUpperCase();
-          var link = document.querySelector('link[rel="manifest"]');
-          if (link) link.setAttribute('href', '/api/manifest/' + bc);
+          var pathname = location.pathname || '/';
+
+          // Layer 1 — currently on a card page.
+          var m = pathname.match(/^\/card\/([A-Za-z0-9_-]+)/);
+          if (m) {
+            var bc = m[1].toUpperCase();
+            var link = document.querySelector('link[rel="manifest"]');
+            if (link) link.setAttribute('href', '/api/manifest/' + bc);
+            try { localStorage.setItem('fidelitour:last_card', bc); } catch (_e) {}
+            return; // we're already on the right URL, nothing to redirect
+          }
+
+          // Layer 2 — root URL + standalone display mode → deep-link to
+          // the device's last-known card. Catches the iOS bug where the
+          // home-screen icon ignores manifest start_url and just opens "/".
+          if (pathname !== '/' && pathname !== '') return;
+          var isStandalone =
+            (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+            window.navigator.standalone === true; // iOS Safari legacy flag
+          if (!isStandalone) return;
+          var stored = null;
+          try { stored = localStorage.getItem('fidelitour:last_card'); } catch (_e) {}
+          if (!stored || !/^FT-?[A-Z0-9]+$/i.test(stored)) return;
+          // replaceState, not assign — no extra request, no flash, and
+          // BrowserRouter reads the new pathname on its first render.
+          window.history.replaceState({}, '', '/card/' + stored);
         } catch (_e) { /* never block first paint over a manifest swap */ }
       })();
     </script>
