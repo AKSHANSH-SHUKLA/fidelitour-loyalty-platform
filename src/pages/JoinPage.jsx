@@ -217,11 +217,10 @@ const JoinPage = () => {
           <div className="text-center space-y-6">
             <h2 className="text-2xl font-bold text-[#4A5D23]">{t('join.welcome')}</h2>
             <p className="text-[#57534E]">{t('join.card_ready')}</p>
-            <div className="p-4 bg-white rounded-xl border border-[#E7E5E4] space-y-3">
-              <div className="flex justify-center">
-                <QRCodeSVG value={success.barcode_id} size={200} level="M" />
-              </div>
-              <Code128Barcode value={success.barcode_id} height={60} barWidth={2.2} fontSize={14} />
+            {/* QR only — the Code 128 1D barcode below was removed per
+                owner spec. Modern POS phones/tablets scan QR reliably. */}
+            <div className="p-4 bg-white rounded-xl border border-[#E7E5E4] flex justify-center">
+              <QRCodeSVG value={success.barcode_id} size={200} level="M" />
             </div>
             <p className="font-mono bg-gray-100 p-2 rounded">{success.barcode_id}</p>
             <div className="space-y-3">

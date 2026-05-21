@@ -847,14 +847,14 @@ const WalletPass = ({ customer, tenant, card, activeOffer, onOpenDetails }) => {
           </div>
         )}
 
-        {/* QR + 1D barcode stacked. QR is the primary (modern phone cameras);
-            the Code 128 strip below covers old 1D laser POS scanners. */}
+        {/* QR ONLY. The 1D Code 128 barcode that used to stack below
+            this block was removed per owner spec — modern POS scanners
+            read QR fine, and one code looks much cleaner. To bring back
+            the 1D fallback (for old laser scanners), restore
+            <Code128Barcode value={customer.barcode_id} ... /> here. */}
         <div className="px-6 pb-5 pt-2">
           <div className="bg-white rounded-xl p-4 mx-auto inline-block">
-            <div className="flex items-center justify-center mb-3">
-              <QRCodeSVG value={customer.barcode_id} size={180} level="M" />
-            </div>
-            <Code128Barcode value={customer.barcode_id} height={56} barWidth={2} fontSize={13} />
+            <QRCodeSVG value={customer.barcode_id} size={200} level="M" />
           </div>
           <p className="mt-2 font-mono text-xs opacity-90 text-center">{customer.barcode_id}</p>
         </div>

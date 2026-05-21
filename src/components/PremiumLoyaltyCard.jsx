@@ -346,8 +346,11 @@ export default function PremiumLoyaltyCard({ customer, tenant, card = {}, compac
             </div>
           )}
 
-          {/* Barcode at the bottom */}
-          {showBarcode && (
+          {/* Barcode at the bottom — DISABLED per owner spec (Nov 2026).
+              The 1D Code 128 strip is hidden everywhere on the platform
+              for now; only the QR above is rendered. To restore, replace
+              the `false` below with the original `showBarcode` prop. */}
+          {false && showBarcode && (
             <div className="mt-3 flex flex-col items-center">
               <Code128Barcode
                 value={customer?.barcode_id || ''}
