@@ -3,47 +3,61 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
 from uuid import uuid4
 
+# Three-tier plan catalogue. Silver is the entry tier every new business
+# starts on (post-trial). Each row defines BOTH the quota caps and the
+# feature toggles — the admin /admin/plans editor can override any field
+# on any plan, live, without redeploying (see get_plan_features() in
+# api/server.py). PLAN_PRICES is the monthly euro price shown in the UI.
+#
+# Trial: every new tenant starts with `subscription_status="trialing"` and
+# trial_duration_days = the value in PLAN_TRIAL_DAYS below. After that
+# many days the tenant is reminded; after 3 more days the trial expires
+# and paid features lock until they pick a plan.
 PLAN_FEATURES = {
-    "basic": {
-        "max_customers": 500,
-        "campaigns_per_month": 2,
-        "ai_queries_per_day": 0,
+    "silver": {
+        "max_customers": 1000,
+        "campaigns_per_month": 4,
+        "ai_queries_per_day": 0,       # AI disabled on silver
         "csv_export": False,
-        "geo_proximity": False,
+        "geo_proximity": False,         # geo disabled on silver
         "multi_branch": False,
     },
     "gold": {
-        "max_customers": 2000,
-        "campaigns_per_month": 10,
+        "max_customers": 3000,
+        "campaigns_per_month": 20,
         "ai_queries_per_day": 20,
         "csv_export": True,
-        "geo_proximity": True,
+        "geo_proximity": True,          # geo unlocked on gold
         "multi_branch": False,
     },
     "vip": {
-        "max_customers": 10000,
+        "max_customers": 6000,
         "campaigns_per_month": 100,
-        "ai_queries_per_day": 35,
+        "ai_queries_per_day": 50,       # full AI access
         "csv_export": True,
         "geo_proximity": True,
-        "multi_branch": False,
+        "multi_branch": True,           # everything unlocked
     },
-    "chain": {
-        "max_customers": 50000,
-        "campaigns_per_month": 300,
-        "ai_queries_per_day": 50,
-        "csv_export": True,
-        "geo_proximity": True,
-        "multi_branch": True,
-    }
 }
 
 PLAN_PRICES = {
-    "basic": 29,
+    "silver": 29,
     "gold": 79,
-    "vip": 199,
-    "chain": 349
+    "vip": 109,
 }
+
+# Trial period, per plan, in days. Default 21 (3 weeks). Admin can override
+# any of these from the /admin/plans editor — same DB-backed overrides
+# mechanism as PLAN_FEATURES uses (see plan_settings collection).
+PLAN_TRIAL_DAYS = {
+    "silver": 21,
+    "gold": 21,
+    "vip": 21,
+}
+
+# Number of days BEFORE trial_end that we start surfacing "your trial is
+# ending soon — pick a plan" reminders. Admin-overridable.
+TRIAL_REMINDER_DAYS_BEFORE = 3
 
 class Token(BaseModel):
     access_token: str

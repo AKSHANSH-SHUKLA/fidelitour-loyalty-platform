@@ -10,10 +10,21 @@ from pydantic import BaseModel
 
 from models import (
     UserInDB, UserCreate, Tenant, Customer, Visit, CardTemplate, Campaign, PaymentTransaction, AIQueryRequest,
-    PLAN_FEATURES, PLAN_PRICES, TierDesign,
+    PLAN_FEATURES, PLAN_PRICES, PLAN_TRIAL_DAYS, TRIAL_REMINDER_DAYS_BEFORE, TierDesign,
     CardPromotion, CardDetails, CardTypedNotification,
     Review,
 )
+
+# Canonical plan list. Anything else in the DB (legacy "basic", "chain")
+# gets remapped to "silver" via _canonical_plan() below.
+CANONICAL_PLANS = ("silver", "gold", "vip")
+_LEGACY_PLAN_MAP = {"basic": "silver", "chain": "vip"}
+
+def _canonical_plan(plan: str) -> str:
+    """Map any legacy plan name to one of the 3 canonical plans."""
+    if not plan:
+        return "silver"
+    return _LEGACY_PLAN_MAP.get(plan, plan if plan in CANONICAL_PLANS else "silver")
 from auth import (
     hash_password, verify_password, create_access_token, get_current_user_data,
     require_role, check_plan_feature, TokenData, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -178,6 +189,13 @@ _PLAN_LIMIT_FIELDS = (
     "csv_export",
     "geo_proximity",
     "multi_branch",
+    # Trial knobs — admin can change the trial length per plan from the
+    # /admin/plans editor, same DB-backed override mechanism as the
+    # quota/feature fields above.
+    "trial_duration_days",
+    "trial_reminder_days_before",
+    # Monthly price in euros — admins can re-price plans without a deploy.
+    "price",
 )
 
 
@@ -185,10 +203,17 @@ def get_plan_features(plan: str) -> Dict[str, Any]:
     """Return effective plan limits = baseline + admin overrides.
 
     Always returns a dict (never None) so callers can `.get(...)` safely.
-    Unknown plans fall back to the basic baseline so we never block joining
-    with a KeyError when the tenant doc has a stale plan name.
+    Unknown / legacy plan names ("basic", "chain", typos) are remapped to
+    the canonical 3-tier catalogue (silver/gold/vip) so we never block
+    joining with a KeyError when the tenant doc has a stale plan name.
     """
-    baseline = dict(PLAN_FEATURES.get(plan) or PLAN_FEATURES.get("basic") or {})
+    plan = _canonical_plan(plan)
+    baseline = dict(PLAN_FEATURES.get(plan) or PLAN_FEATURES["silver"])
+    # Fold trial + price baselines in too, so the admin editor and any
+    # consumer that calls get_plan_features() sees a uniform shape.
+    baseline["trial_duration_days"] = PLAN_TRIAL_DAYS.get(plan, 21)
+    baseline["trial_reminder_days_before"] = TRIAL_REMINDER_DAYS_BEFORE
+    baseline["price"] = PLAN_PRICES.get(plan, 0)
     try:
         doc = db.plan_settings.find_one({"plan": plan}) if db is not None else None
     except Exception:
@@ -1593,16 +1618,28 @@ def register(payload: Dict[str, Any]):
             slug = f"{raw_slug}-{n}"
             n += 1
 
+        # Every new business starts on the Silver plan with a free trial.
+        # subscription_status='trialing' is the signal every UI surface uses
+        # to show the trial countdown + upgrade nudge. trial_started_at +
+        # trial_duration_days (read from the plan's PLAN_TRIAL_DAYS, which
+        # admins can override) drive the days-left math everywhere.
+        starting_plan = "silver"
+        trial_days = get_plan_features(starting_plan).get("trial_duration_days", 21)
+        now_utc = datetime.now(timezone.utc)
         t = Tenant(
             id=tenant_id,
             slug=slug,
             name=biz_name,
-            plan="basic",
+            plan=starting_plan,
             sector=(payload.get("sector") or None),
             phone=(payload.get("phone") or ""),
             address="",
         )
         tenant_doc = t.model_dump()
+        tenant_doc["subscription_status"] = "trialing"
+        tenant_doc["trial_started_at"] = now_utc
+        tenant_doc["trial_duration_days"] = int(trial_days)
+        tenant_doc["trial_ends_at"] = now_utc + timedelta(days=int(trial_days))
         # Stamp postal_code + owner_name as extras so they're easy to surface in Settings
         if payload.get("postal_code"):
             tenant_doc["postal_code"] = payload["postal_code"]
@@ -1875,24 +1912,37 @@ class PlanOverrideReq(BaseModel):
     csv_export: Optional[bool] = None
     geo_proximity: Optional[bool] = None
     multi_branch: Optional[bool] = None
+    trial_duration_days: Optional[int] = None
+    trial_reminder_days_before: Optional[int] = None
+    price: Optional[int] = None
 
 
 def _plan_row(plan: str) -> Dict[str, Any]:
     """Build the row the admin UI renders for one plan: baseline vs effective."""
+    plan = _canonical_plan(plan)
+    # Build the full baseline shape, including trial + price fields, so the
+    # UI can render a uniform table for the 3 plans.
     baseline = dict(PLAN_FEATURES.get(plan) or {})
+    baseline["trial_duration_days"] = PLAN_TRIAL_DAYS.get(plan, 21)
+    baseline["trial_reminder_days_before"] = TRIAL_REMINDER_DAYS_BEFORE
+    baseline["price"] = PLAN_PRICES.get(plan, 0)
     effective = get_plan_features(plan)
     # Diff so the UI can show which fields are overridden vs default.
     overrides = {k: effective.get(k) for k in _PLAN_LIMIT_FIELDS
                  if k in baseline and baseline.get(k) != effective.get(k)}
-    # How many tenants are on this plan (and the active ones in the last 30d).
+    # How many tenants are on this plan (active in the last 30d). Counts BOTH
+    # canonical `plan` matches AND legacy plan names that map onto this one
+    # (e.g. silver also counts old "basic" tenants).
+    legacy_matches = [k for k, v in _LEGACY_PLAN_MAP.items() if v == plan]
+    plan_filter = {"plan": {"$in": [plan] + legacy_matches}} if legacy_matches else {"plan": plan}
     tenant_count = 0
     try:
-        tenant_count = db.tenants.count_documents({"plan": plan, "is_active": {"$ne": False}})
+        tenant_count = db.tenants.count_documents({**plan_filter, "is_active": {"$ne": False}})
     except Exception:
         pass
     return {
         "plan": plan,
-        "price": PLAN_PRICES.get(plan),
+        "price": effective.get("price"),
         "baseline": baseline,
         "effective": effective,
         "overrides": overrides,
@@ -1902,9 +1952,10 @@ def _plan_row(plan: str) -> Dict[str, Any]:
 
 @app.get("/api/admin/plans")
 def admin_list_plans(token_data: TokenData = Depends(require_role(["super_admin"]))):
-    """Return all 4 plans with their baseline, effective (post-override) values,
-    a diff of what's overridden, and how many tenants are on each plan."""
-    return {"plans": [_plan_row(p) for p in ("basic", "gold", "vip", "chain")]}
+    """Return the 3 canonical plans (silver/gold/vip) with their baseline,
+    effective (post-override) values, a diff of what's overridden, and how
+    many tenants are on each plan."""
+    return {"plans": [_plan_row(p) for p in CANONICAL_PLANS]}
 
 
 @app.put("/api/admin/plans/{plan}")
@@ -1915,6 +1966,7 @@ def admin_update_plan(
 ):
     """Upsert per-plan limit overrides. Pass null on any field to clear that
     field's override and fall back to the hardcoded baseline."""
+    plan = _canonical_plan(plan)
     if plan not in PLAN_FEATURES:
         raise HTTPException(status_code=400, detail=f"Unknown plan '{plan}'")
 
@@ -1943,6 +1995,135 @@ def admin_update_plan(
         upsert=True,
     )
     return _plan_row(plan)
+
+
+# ============================================================
+# TRIAL STATUS — surfaces the trial countdown to the owner UI.
+#
+# The dashboard's BillingBanner calls this on every page load; when
+# days_left enters the reminder window (<=3 days by default), it
+# escalates from a quiet pill to a full "your trial is ending — pick a
+# plan" banner. When days_left <= 0, the trial is expired and the UI
+# locks paid features until they upgrade.
+# ============================================================
+
+def _compute_trial_state(tenant: Dict[str, Any]) -> Dict[str, Any]:
+    """Compute the trial countdown for a tenant. Pure / side-effect-free.
+
+    Returns a dict the owner UI consumes:
+      is_in_trial          → bool, true while subscription_status='trialing'
+      days_left            → int, days until trial_ends_at (negative if expired)
+      hours_left           → int, finer granularity for the last day
+      trial_ends_at        → ISO 8601 datetime string
+      reminder_window      → bool, true if days_left <= reminder_days_before
+      is_expired           → bool, true if days_left <= 0
+      plan                 → canonical plan name
+      plan_price           → euros / month
+      reminder_days_before → cutoff from PLAN_FEATURES
+    """
+    plan = _canonical_plan(tenant.get("plan"))
+    features = get_plan_features(plan)
+    status = (tenant.get("subscription_status") or "").lower()
+    trial_ends_at = tenant.get("trial_ends_at")
+    # Legacy tenants (no trial_ends_at field): derive it from created_at +
+    # the plan's trial_duration_days so the countdown still makes sense.
+    if not trial_ends_at and tenant.get("created_at"):
+        try:
+            base = tenant["created_at"]
+            if isinstance(base, str):
+                base = datetime.fromisoformat(base.replace("Z", "+00:00"))
+            trial_ends_at = base + timedelta(days=int(features.get("trial_duration_days", 21)))
+        except Exception:
+            trial_ends_at = None
+
+    now_utc = datetime.now(timezone.utc)
+    days_left = None
+    hours_left = None
+    is_expired = False
+    if trial_ends_at:
+        if isinstance(trial_ends_at, str):
+            try:
+                trial_ends_at = datetime.fromisoformat(trial_ends_at.replace("Z", "+00:00"))
+            except Exception:
+                trial_ends_at = None
+    if trial_ends_at:
+        # Ensure UTC for the math.
+        if trial_ends_at.tzinfo is None:
+            trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
+        delta = trial_ends_at - now_utc
+        days_left = int(delta.total_seconds() // 86400)
+        hours_left = int(delta.total_seconds() // 3600)
+        is_expired = delta.total_seconds() <= 0
+
+    reminder_days = int(features.get("trial_reminder_days_before", TRIAL_REMINDER_DAYS_BEFORE))
+    in_reminder = (days_left is not None and 0 < days_left <= reminder_days)
+
+    return {
+        "is_in_trial": status == "trialing" and not is_expired,
+        "is_expired": status == "trialing" and is_expired,
+        "subscription_status": status or "unknown",
+        "days_left": days_left,
+        "hours_left": hours_left,
+        "trial_ends_at": trial_ends_at.isoformat() if trial_ends_at else None,
+        "trial_duration_days": int(features.get("trial_duration_days", 21)),
+        "reminder_window": in_reminder,
+        "reminder_days_before": reminder_days,
+        "plan": plan,
+        "plan_price": features.get("price"),
+        "available_plans": [
+            {
+                "plan": p,
+                "price": get_plan_features(p).get("price"),
+                "max_customers": get_plan_features(p).get("max_customers"),
+                "ai_queries_per_day": get_plan_features(p).get("ai_queries_per_day"),
+                "geo_proximity": get_plan_features(p).get("geo_proximity"),
+            }
+            for p in CANONICAL_PLANS
+        ],
+    }
+
+
+@app.get("/api/owner/trial-status")
+def owner_trial_status(token_data: TokenData = Depends(require_role(["business_owner", "manager"]))):
+    """Returns the current trial countdown for the logged-in owner's tenant.
+
+    The UI (BillingBanner + Settings) polls this on dashboard load and uses
+    the values to render: a discreet pill while there's >3 days left, a
+    full warning banner inside the reminder window (≤3 days), and a
+    blocking modal once `is_expired` flips to true.
+    """
+    tenant = db.tenants.find_one({"id": token_data.tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return _compute_trial_state(tenant)
+
+
+@app.post("/api/owner/upgrade-plan")
+def owner_upgrade_plan(
+    body: Dict[str, Any],
+    token_data: TokenData = Depends(require_role(["business_owner"])),
+):
+    """Self-serve plan switch (no Stripe — for testing or when Stripe isn't
+    configured). Owner picks silver/gold/vip; we flip their plan and mark
+    the subscription active. With Stripe configured, the proper flow is
+    /api/billing/checkout in api/features/billing.py — this endpoint is
+    the no-Stripe fallback so the UI is testable end-to-end."""
+    target = _canonical_plan(body.get("plan"))
+    if target not in CANONICAL_PLANS:
+        raise HTTPException(status_code=400, detail="Pick silver, gold, or vip.")
+    now_utc = datetime.now(timezone.utc)
+    db.tenants.update_one(
+        {"id": token_data.tenant_id},
+        {"$set": {
+            "plan": target,
+            "subscription_status": "active",
+            "subscription_started_at": now_utc,
+            # Keep the original trial dates for record-keeping; just flip status.
+        }},
+    )
+    tenant = db.tenants.find_one({"id": token_data.tenant_id})
+    return _compute_trial_state(tenant)
+
 
 @app.get("/api/admin/tenants/{tenant_id}/details")
 def get_tenant_details(

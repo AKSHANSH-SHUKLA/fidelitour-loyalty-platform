@@ -79,6 +79,11 @@ export const adminAPI = {
 export const ownerAPI = {
   getTenant: () => api.get('/owner/tenant'),
   updateTenant: (data) => api.put('/owner/tenant', data),
+  // Trial countdown + plan catalogue. BillingBanner polls this on every
+  // dashboard load to render the countdown / reminder / expired states.
+  getTrialStatus: () => api.get('/owner/trial-status'),
+  // Self-serve plan switcher (no-Stripe fallback path). Pass plan='silver'|'gold'|'vip'.
+  upgradePlan: (plan) => api.post('/owner/upgrade-plan', { plan }),
   getCustomers: (params) => api.get('/owner/customers', { params }),
   getAnalytics: (params) => api.get('/owner/analytics', { params }),
   scanVisit: (data) => api.post('/owner/scan', data),

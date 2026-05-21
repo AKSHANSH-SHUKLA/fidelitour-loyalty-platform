@@ -23,25 +23,28 @@
  */
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../lib/api';
-import { Crown, Users, Mail, Brain, Download, MapPin, GitBranch, RotateCcw, Save, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Crown, Users, Mail, Brain, Download, MapPin, GitBranch, RotateCcw, Save, AlertCircle, CheckCircle2, Loader2, Clock, Bell, Euro } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 
 // Visual label, helper text, and icon for each editable field — colocated
 // so we can render the rows uniformly without sprinkling copy through JSX.
 const FIELDS = [
-  { key: 'max_customers',       label: 'Max customers',        type: 'number',  unit: '',         icon: Users,    hint: 'Hard cap enforced when a customer tries to join. Soft-deleted customers do not count.' },
-  { key: 'campaigns_per_month', label: 'Campaigns / month',    type: 'number',  unit: '',         icon: Mail,     hint: 'How many campaigns this plan can send each calendar month.' },
-  { key: 'ai_queries_per_day',  label: 'AI queries / day',     type: 'number',  unit: '',         icon: Brain,    hint: '0 disables the AI assistant for this plan. Resets at midnight UTC.' },
-  { key: 'csv_export',          label: 'CSV export',           type: 'boolean', unit: '',         icon: Download, hint: 'Whether owners on this plan can export their customer list.' },
-  { key: 'geo_proximity',       label: 'Geo-proximity',        type: 'boolean', unit: '',         icon: MapPin,   hint: 'Enables radius-targeted push campaigns based on customer location.' },
-  { key: 'multi_branch',        label: 'Multi-branch',         type: 'boolean', unit: '',         icon: GitBranch,hint: 'Lets the tenant define multiple branches and tag visits per branch.' },
+  { key: 'price',                       label: 'Monthly price (€)',         type: 'number',  icon: Euro,     hint: 'What the business sees in the plan picker. Changes take effect on the next page load.' },
+  { key: 'max_customers',               label: 'Max customers',             type: 'number',  icon: Users,    hint: 'Hard cap enforced when a customer tries to join. Soft-deleted customers do not count.' },
+  { key: 'campaigns_per_month',         label: 'Campaigns / month',         type: 'number',  icon: Mail,     hint: 'How many campaigns this plan can send each calendar month.' },
+  { key: 'ai_queries_per_day',          label: 'AI queries / day',          type: 'number',  icon: Brain,    hint: '0 disables the AI Assistant entirely for this plan. Resets at midnight UTC.' },
+  { key: 'csv_export',                  label: 'CSV export',                type: 'boolean', icon: Download, hint: 'Whether owners on this plan can export their customer list.' },
+  { key: 'geo_proximity',               label: 'Geo-proximity',             type: 'boolean', icon: MapPin,   hint: 'Enables radius-targeted push campaigns based on customer location.' },
+  { key: 'multi_branch',                label: 'Multi-branch',              type: 'boolean', icon: GitBranch,hint: 'Lets the tenant define multiple branches and tag visits per branch.' },
+  { key: 'trial_duration_days',         label: 'Free trial (days)',         type: 'number',  icon: Clock,    hint: 'How long every new tenant on this plan gets before they must subscribe. 21 = 3 weeks.' },
+  { key: 'trial_reminder_days_before',  label: 'Trial reminder lead time',  type: 'number',  icon: Bell,     hint: 'How many days BEFORE trial-end the warning banner escalates from quiet to urgent.' },
 ];
 
+// Canonical 3-tier system. Order = the order they render in.
 const PLAN_META = {
-  basic: { label: 'Basic',  tone: '#6FA89C', gradient: 'linear-gradient(135deg, #6FA89C 0%, #98C9BB 100%)' },
-  gold:  { label: 'Gold',   tone: '#D4A574', gradient: 'linear-gradient(135deg, #D4A574 0%, #E8C49A 100%)' },
-  vip:   { label: 'VIP',    tone: '#B85C38', gradient: 'linear-gradient(135deg, #B85C38 0%, #E8917C 100%)' },
-  chain: { label: 'Chain',  tone: '#3F4E73', gradient: 'linear-gradient(135deg, #3F4E73 0%, #6B83B6 100%)' },
+  silver: { label: 'Silver', tone: '#6FA89C', gradient: 'linear-gradient(135deg, #6FA89C 0%, #98C9BB 100%)' },
+  gold:   { label: 'Gold',   tone: '#D4A574', gradient: 'linear-gradient(135deg, #D4A574 0%, #E8C49A 100%)' },
+  vip:    { label: 'VIP',    tone: '#B85C38', gradient: 'linear-gradient(135deg, #B85C38 0%, #E8917C 100%)' },
 };
 
 export default function AdminPlansPage() {
@@ -168,8 +171,8 @@ export default function AdminPlansPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Platform"
-        title="Plan limits"
-        description="Edit per-plan caps and feature flags. Overrides apply instantly to every tenant — no redeploy needed. To change a single business's plan, use the Tenants page."
+        title="Plans &amp; limits"
+        description="Three plans: Silver / Gold / VIP. Edit the price, quota caps, feature flags and free-trial length per plan. Changes apply instantly to every tenant on that plan — no redeploy needed. To switch a single business's plan, use the Tenants page."
         role="super_admin"
       />
 
