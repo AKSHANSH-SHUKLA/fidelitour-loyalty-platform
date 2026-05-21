@@ -4488,9 +4488,12 @@ def per_card_manifest(barcode_id: str):
     return Response(
         content=json.dumps(body),
         media_type="application/manifest+json",
-        # Short cache — owners can rename their business and the PWA name
-        # should follow on next install attempt. 5 minutes is plenty.
-        headers={"Cache-Control": "public, max-age=300"},
+        # NO cache. iOS Safari aggressively caches PWA manifests — if the
+        # browser hands the OS a stale start_url the home-screen icon
+        # opens the wrong page. Forcing a fresh fetch every time the
+        # link is read costs us nothing (it's a tiny JSON blob) and
+        # eliminates the cache-staleness class of bugs entirely.
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
     )
 
 

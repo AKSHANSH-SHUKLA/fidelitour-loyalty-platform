@@ -7,6 +7,42 @@ import './index.css';
 // side effect of bootstrapping i18next with FR/EN/AR resources.
 import './lib/i18n';
 
+// ───────────────────────────────────────────────────────────────────────
+// PWA launch failsafe — runs BEFORE React renders, so it never flashes
+// the landing page.
+//
+// Why: on some iOS versions the home-screen icon ignores the per-card
+// manifest's start_url and just opens the site root ("/"). When that
+// happens, the customer sees the landing page instead of their card —
+// which is exactly the bug the user reported.
+//
+// Recovery: if we're running in standalone display-mode (i.e. launched
+// from a PWA icon, not a browser tab) AND the URL we landed on is the
+// root, AND we previously stored which card this device was used for
+// (MyWalletCardPage writes 'fidelitour:last_card' on visit), then
+// SYNCHRONOUSLY rewrite the URL to /card/<barcode> before React mounts.
+//
+// Uses history.replaceState so React Router picks up the right path on
+// first render and the customer never sees an intermediate flash.
+// ───────────────────────────────────────────────────────────────────────
+(function pwaLaunchFailsafe() {
+  try {
+    const isStandalone =
+      window.matchMedia?.('(display-mode: standalone)').matches ||
+      // iOS Safari-specific. matchMedia returns false for installed PWAs
+      // on older iOS — we have to read this non-standard navigator flag.
+      window.navigator.standalone === true;
+    if (!isStandalone) return;
+    if (window.location.pathname !== '/' && window.location.pathname !== '') return;
+    const lastCard = localStorage.getItem('fidelitour:last_card');
+    if (!lastCard || !/^FT-?[A-Z0-9]+$/i.test(lastCard)) return;
+    // Replace (not push) so the back button doesn't return to "/".
+    window.history.replaceState({}, '', `/card/${lastCard}`);
+  } catch (_e) {
+    // localStorage blocked / no matchMedia — fall through to normal boot.
+  }
+})();
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

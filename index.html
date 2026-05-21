@@ -10,8 +10,32 @@
          Android. This is the only way to get push notifications working on
          iOS (Apple requires standalone PWA install before web push fires).
          Once installed, the card opens fullscreen and silently re-subscribes
-         on launch so we keep working endpoints even if the browser rotated. -->
+         on launch so we keep working endpoints even if the browser rotated.
+
+         IMPORTANT: the `<link rel="manifest">` href below is the DEFAULT
+         (site-wide) manifest. The inline script that follows rewrites it
+         to a per-card manifest BEFORE React boots whenever the user is
+         on /card/FT-XXXXXXXX — so when they "Add to Home Screen", iOS /
+         Android read the per-card manifest with the right start_url
+         (otherwise the home-screen icon opens the landing page, not the
+         actual card). MyWalletCardPage also re-applies the swap on
+         client-side navigation, but doing it here too eliminates the
+         race condition where iOS reads the manifest before React mounts. -->
     <link rel="manifest" href="/manifest.json" />
+    <script>
+      (function () {
+        try {
+          // Match /card/FT-... (case-insensitive, allowing trailing slash
+          // or query string). FT-IDs are 8 hex chars in production but
+          // we accept the longer character set defensively.
+          var m = location.pathname.match(/^\/card\/([A-Za-z0-9_-]+)/);
+          if (!m) return;
+          var bc = m[1].toUpperCase();
+          var link = document.querySelector('link[rel="manifest"]');
+          if (link) link.setAttribute('href', '/api/manifest/' + bc);
+        } catch (_e) { /* never block first paint over a manifest swap */ }
+      })();
+    </script>
     <meta name="theme-color" content="#B85C38" />
     <meta name="application-name" content="FidéliTour" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

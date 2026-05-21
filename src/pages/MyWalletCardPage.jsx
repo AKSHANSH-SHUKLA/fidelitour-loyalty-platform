@@ -176,18 +176,29 @@ const MyWalletCardPage = () => {
   // directly — not the landing page (which is what happens with the
   // default site-wide manifest).
   //
-  // On unmount we restore the original href so navigating off the card
-  // page doesn't leave the per-card manifest active (would confuse any
-  // subsequent install attempt elsewhere on the site).
+  // An inline script in index.html does the SAME swap before React
+  // boots, so iOS Safari (which reads the manifest at page load, not
+  // at install time) sees the correct href even before this hook runs.
+  // We re-apply it here for client-side route changes.
+  //
+  // We ALSO stash this card's barcode in localStorage so the launch
+  // failsafe below can recover the customer's card if the PWA boots
+  // at "/" anyway — which happens on some older iOS versions that
+  // ignore the manifest start_url entirely and just open the site root.
   useEffect(() => {
     if (!barcodeId) return;
     const link = document.querySelector('link[rel="manifest"]');
-    if (!link) return;
-    const original = link.getAttribute('href');
-    link.setAttribute('href', `/api/manifest/${barcodeId}`);
-    return () => {
-      if (original) link.setAttribute('href', original);
-    };
+    if (link) {
+      const original = link.getAttribute('href');
+      link.setAttribute('href', `/api/manifest/${barcodeId}`);
+      // Remember which card the customer is using on this device.
+      // App boot (main.jsx) reads this key to deep-link standalone PWA
+      // launches that landed on "/" back to /card/<barcodeId>.
+      try { localStorage.setItem('fidelitour:last_card', barcodeId); } catch (_e) {}
+      return () => {
+        if (original) link.setAttribute('href', original);
+      };
+    }
   }, [barcodeId]);
 
   useEffect(() => {
