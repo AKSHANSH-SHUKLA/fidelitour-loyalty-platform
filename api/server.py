@@ -4429,6 +4429,71 @@ def ai_query(
 # PUBLIC ENDPOINTS
 # ========================
 
+# ============================================================
+# PER-CARD PWA MANIFEST
+#
+# Why: the static /manifest.webmanifest at the site root has
+# start_url="/" and scope="/". When a customer hits "Add to Home Screen"
+# from /card/FT-XXXXXXXX, iOS/Android read THAT manifest, so tapping the
+# home-screen icon launches the landing page — not the card they
+# actually wanted to bookmark.
+#
+# This endpoint returns a per-card manifest with start_url set to that
+# specific card's URL. The MyWalletCardPage injects a <link rel="manifest"
+# href="/api/manifest/FT-XXXXXXXX"> tag dynamically when the page mounts,
+# so the OS picks up the right start_url at "Add to Home Screen" time.
+#
+# Scope = "/card/" so the installed PWA can navigate between cards if the
+# customer joins multiple programmes. Anything outside /card/ opens in the
+# browser as normal.
+# ============================================================
+@app.get("/api/manifest/{barcode_id}")
+def per_card_manifest(barcode_id: str):
+    bc = (barcode_id or "").strip().upper()
+    # Best-effort enrichment: look up the customer + tenant so we can
+    # personalise the PWA name to the business. If the customer doesn't
+    # exist we still return a valid manifest — just with generic labels.
+    name = "FidéliTour"
+    short_name = "FidéliTour"
+    try:
+        cust = db.customers.find_one({"barcode_id": bc}) if db is not None else None
+        if cust:
+            t = db.tenants.find_one({"id": cust.get("tenant_id")})
+            if t and t.get("name"):
+                name = f"{t['name']} · Fidélité"
+                short_name = t["name"][:12]
+    except Exception:
+        pass
+
+    body = {
+        "name": name,
+        "short_name": short_name,
+        "description": "Votre carte de fidélité.",
+        "start_url": f"/card/{bc}",
+        "scope": "/card/",
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#FDFBF7",
+        "theme_color": "#B85C38",
+        "icons": [
+            {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+            {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"},
+        ],
+        "categories": ["lifestyle", "shopping"],
+        "lang": "fr",
+        "dir": "ltr",
+    }
+    return Response(
+        content=json.dumps(body),
+        media_type="application/manifest+json",
+        # Short cache — owners can rename their business and the PWA name
+        # should follow on next install attempt. 5 minutes is plenty.
+        headers={"Cache-Control": "public, max-age=300"},
+    )
+
+
 @app.get("/api/join/{slug}")
 def get_join_info(slug: str):
     t = db.tenants.find_one({"slug": slug})

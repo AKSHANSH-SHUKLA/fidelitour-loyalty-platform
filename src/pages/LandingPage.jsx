@@ -9,6 +9,50 @@ import {
 import { AuchanPreview, DEFAULT_LAYOUT } from '../components/AuchanCard';
 import HeroPhoneShowcase from '../components/HeroPhoneShowcase';
 import AppleWalletFrame from '../components/AppleWalletFrame';
+// PremiumLoyaltyCard is the same card the Card Designer renders — using it
+// here makes the landing demo card visually identical to what a merchant sees
+// when designing their own card in /dashboard/card-designer.
+import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
+
+/* ───────────────────────────────────────────────────────────────────────
+ * LandingDemoCard — single source of truth for the demo card props used
+ * across the landing page. Wraps PremiumLoyaltyCard with hard-coded
+ * "Sophie" sample data so the same card renders in the bento Wallet
+ * block AND the big hero showcase below. Tweak this one place to update
+ * both surfaces.
+ * ─────────────────────────────────────────────────────────────────── */
+function LandingDemoCard({ compact = true }) {
+  return (
+    <PremiumLoyaltyCard
+      compact={compact}
+      customer={{
+        name: 'Sophie Dupont',
+        first_name: 'Sophie',
+        tier: 'Gold',
+        barcode_id: 'FT-A1B2C3D4',
+        visits: 7,                // 7/10 stamps — same half-filled state the old card showed
+        reward_threshold: 10,
+        offers_count: 1,
+        birthday: '12/05',
+      }}
+      tenant={{ name: 'Café Lumière' }}
+      card={{
+        primary_color: '#B85C38',
+        secondary_color: '#9C4427',
+        accent_color: '#F4D8A8',
+        strip_color: '#1F2937',          // dark navy banner — the "Loyalty program" strip
+        strip_text_color: '#FFFFFF',
+        strip_title: 'Récompense exclusive',
+        strip_subtitle: 'Pour nos membres',
+        bottom_greeting_label: 'Bienvenue',
+        points_per_visit: 10,
+        visits_per_stamp: 1,
+        show_qr: true,
+        qr_size: 90,
+      }}
+    />
+  );
+}
 
 /* =====================================================================
    COLOR SYSTEM — vibrant pastels + saturated accents
@@ -874,18 +918,13 @@ const LandingPage = () => {
                     className="relative origin-center"
                     style={{ filter: 'drop-shadow(0 22px 40px rgba(28,25,23,0.28))' }}
                   >
-                    <AuchanPreview
-                      ctx={{
-                        first_name: 'Sophie',
-                        name: 'Sophie Dupont',
-                        points: '70',
-                        business_name: 'Café Lumière',
-                        birthday: '12 Mai',
-                        stamps_earned: 7,
-                        stamps_target: 10,
-                      }}
-                      width={260}
-                    />
+                    {/* Same card the merchant sees in the Card Designer
+                        — using LandingDemoCard keeps every demo card on
+                        the landing page visually consistent with the
+                        actual product. */}
+                    <div style={{ width: 260 }}>
+                      <LandingDemoCard compact />
+                    </div>
                   </motion.div>
                   {/* "Aperçu réel" tag floating below */}
                   <span className="absolute bottom-1 right-2 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[9px] font-bold uppercase tracking-widest border z-10"
@@ -1263,20 +1302,13 @@ const LandingPage = () => {
                   the merchant sees the SAME card in three places: hero,
                   this "customer's view" section, and inside the dashboard. */}
               <AppleWalletFrame width={400}>
-                {/* No layout overrides — the new champagne+midnight+gold defaults
-                    in AuchanCard.DEFAULT_LAYOUT do all the heavy lifting. */}
-                <AuchanPreview
-                  ctx={{
-                    first_name: 'Sophie',
-                    name: 'Sophie Dupont',
-                    points: '70',
-                    business_name: 'Café Lumière',
-                    birthday: '12 Mai',
-                    stamps_earned: 7,
-                    stamps_target: 10,
-                  }}
-                  width={336}
-                />
+                {/* Same component used by the Card Designer live preview and
+                    by every customer's actual /card/<FT-ID> page — so the
+                    merchant sees the SAME card in three places: this hero,
+                    the bento above, and inside the dashboard. */}
+                <div style={{ width: 336 }}>
+                  <LandingDemoCard compact />
+                </div>
               </AppleWalletFrame>
 
               {/* Floating wallet pill below the card */}

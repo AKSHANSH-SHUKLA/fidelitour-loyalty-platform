@@ -169,6 +169,27 @@ const MyWalletCardPage = () => {
   const [reviewThanks, setReviewThanks] = useState(false);
   const [reviewError, setReviewError] = useState(null);
 
+  // Swap the page's <link rel="manifest"> to the per-card manifest
+  // returned by /api/manifest/{barcodeId}. That manifest has
+  // start_url=/card/{barcodeId} so when the customer taps "Add to Home
+  // Screen" and later launches from the icon, the OS opens THIS card
+  // directly — not the landing page (which is what happens with the
+  // default site-wide manifest).
+  //
+  // On unmount we restore the original href so navigating off the card
+  // page doesn't leave the per-card manifest active (would confuse any
+  // subsequent install attempt elsewhere on the site).
+  useEffect(() => {
+    if (!barcodeId) return;
+    const link = document.querySelector('link[rel="manifest"]');
+    if (!link) return;
+    const original = link.getAttribute('href');
+    link.setAttribute('href', `/api/manifest/${barcodeId}`);
+    return () => {
+      if (original) link.setAttribute('href', original);
+    };
+  }, [barcodeId]);
+
   useEffect(() => {
     (async () => {
       try {
