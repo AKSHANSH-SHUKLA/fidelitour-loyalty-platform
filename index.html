@@ -47,34 +47,88 @@
       //   Both layers stacked — at least one always succeeds.
       // ──────────────────────────────────────────────────────────────────
       (function () {
+        // Debug HUD — visit any URL with ?debug=1 and a black overlay
+        // pops up at the top of the screen showing exactly what the
+        // PWA bootstrap saw. Lets users on an iPhone without a Mac
+        // debug the home-screen icon flow without needing real DevTools.
+        var trace = { steps: [] };
+        function note(s) { trace.steps.push(s); }
+        function showHud() {
+          if (location.search.indexOf('debug=1') === -1) return;
+          var div = document.createElement('div');
+          div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#1F1B1A;color:#FFFFFF;font:12px/1.4 ui-monospace,Consolas,monospace;padding:14px 14px 10px;box-shadow:0 4px 16px rgba(0,0,0,0.5);max-height:60vh;overflow:auto;';
+          var html = '<b style="color:#E8917C">PWA debug</b> <span style="opacity:.55">(append ?debug=1 to any URL)</span><br><br>';
+          for (var i = 0; i < trace.steps.length; i++) html += trace.steps[i] + '<br>';
+          html += '<br><button onclick="this.parentElement.remove()" style="background:#B85C38;color:white;border:none;padding:6px 12px;border-radius:6px;font:inherit;cursor:pointer">Close</button>';
+          div.innerHTML = html;
+          // Append once <body> exists; if we're still in <head>, defer.
+          if (document.body) document.body.appendChild(div);
+          else document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(div); });
+        }
+
         try {
           var pathname = location.pathname || '/';
+          note('pathname = ' + pathname);
 
           // Layer 1 — currently on a card page.
           var m = pathname.match(/^\/card\/([A-Za-z0-9_-]+)/);
           if (m) {
             var bc = m[1].toUpperCase();
+            note('on /card/ page, barcode = ' + bc);
             var link = document.querySelector('link[rel="manifest"]');
-            if (link) link.setAttribute('href', '/api/manifest/' + bc);
-            try { localStorage.setItem('fidelitour:last_card', bc); } catch (_e) {}
+            if (link) {
+              link.setAttribute('href', '/api/manifest/' + bc);
+              note('manifest link swapped to /api/manifest/' + bc);
+            } else {
+              note('NO &lt;link rel="manifest"&gt; tag found — manifest swap skipped');
+            }
+            try {
+              localStorage.setItem('fidelitour:last_card', bc);
+              note('wrote localStorage[fidelitour:last_card] = ' + bc);
+            } catch (e) {
+              note('localStorage.setItem failed: ' + (e.message || e));
+            }
+            showHud();
             return; // we're already on the right URL, nothing to redirect
           }
 
           // Layer 2 — root URL + standalone display mode → deep-link to
           // the device's last-known card. Catches the iOS bug where the
           // home-screen icon ignores manifest start_url and just opens "/".
-          if (pathname !== '/' && pathname !== '') return;
-          var isStandalone =
-            (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-            window.navigator.standalone === true; // iOS Safari legacy flag
-          if (!isStandalone) return;
+          if (pathname !== '/' && pathname !== '') {
+            note('not on root and not on /card/ — no action');
+            showHud();
+            return;
+          }
+          var mm = window.matchMedia && window.matchMedia('(display-mode: standalone)');
+          var mmStandalone = mm ? mm.matches : false;
+          var iosStandalone = window.navigator.standalone === true;
+          var isStandalone = mmStandalone || iosStandalone;
+          note('matchMedia(standalone) = ' + mmStandalone + '; navigator.standalone = ' + iosStandalone);
+          if (!isStandalone) {
+            note('NOT running as standalone PWA — failsafe skipped (this is fine in a regular browser tab)');
+            showHud();
+            return;
+          }
           var stored = null;
-          try { stored = localStorage.getItem('fidelitour:last_card'); } catch (_e) {}
-          if (!stored || !/^FT-?[A-Z0-9]+$/i.test(stored)) return;
+          try { stored = localStorage.getItem('fidelitour:last_card'); } catch (e) {
+            note('localStorage.getItem failed: ' + (e.message || e));
+          }
+          note('localStorage[fidelitour:last_card] = ' + JSON.stringify(stored));
+          if (!stored || !/^FT-?[A-Z0-9]+$/i.test(stored)) {
+            note('no valid last_card stored — cannot deep-link. Visit /card/&lt;FT-...&gt; in Safari once first.');
+            showHud();
+            return;
+          }
           // replaceState, not assign — no extra request, no flash, and
           // BrowserRouter reads the new pathname on its first render.
           window.history.replaceState({}, '', '/card/' + stored);
-        } catch (_e) { /* never block first paint over a manifest swap */ }
+          note('history.replaceState → /card/' + stored + ' ✓');
+          showHud();
+        } catch (e) {
+          note('FATAL: ' + (e.message || e));
+          showHud();
+        }
       })();
     </script>
     <meta name="theme-color" content="#B85C38" />
