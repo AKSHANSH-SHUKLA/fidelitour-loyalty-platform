@@ -4707,7 +4707,14 @@ def join_program(slug: str, req: JoinRequest):
 # ========================
 
 def _derive_offers_for_tenant(tenant_id: str) -> List[dict]:
-    """Offers = active card-template offer + sent campaigns (last 45 days)."""
+    """Offers = active card-template offer + sent campaigns (last 45 days).
+
+    Each campaign-kind offer now also carries `image_url`, `body`, and
+    `link` so the wallet card's tap-to-open detail modal can render the
+    full content (hero image, full message, CTA link) — previously these
+    fields were missing from the payload and the image the merchant
+    uploaded at compose time never reached the customer's screen.
+    """
     offers = []
     tpl = db.card_templates.find_one({"tenant_id": tenant_id})
     if tpl and tpl.get("active_offer_active") and tpl.get("active_offer_title"):
@@ -4715,6 +4722,9 @@ def _derive_offers_for_tenant(tenant_id: str) -> List[dict]:
             "id": "offer-main",
             "title": tpl.get("active_offer_title"),
             "description": tpl.get("active_offer_description") or "",
+            "body": tpl.get("active_offer_description") or "",
+            "image_url": tpl.get("active_offer_image_url"),
+            "link": tpl.get("active_offer_link"),
             "kind": "primary",
             "valid_until": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         })
@@ -4728,6 +4738,11 @@ def _derive_offers_for_tenant(tenant_id: str) -> List[dict]:
             "id": c.get("id"),
             "title": c.get("name"),
             "description": c.get("content", ""),
+            # New fields surfaced for the detail modal.
+            "body": c.get("content", ""),
+            "image_url": c.get("image_url"),
+            "link": c.get("link"),
+            "sent_at": c.get("sent_at").isoformat() if c.get("sent_at") else None,
             "kind": "campaign",
             "valid_until": (c.get("sent_at") + timedelta(days=30)).isoformat() if c.get("sent_at") else None,
         })
@@ -4888,6 +4903,12 @@ def _recent_push_notifications_for(customer_id: str, tenant_id: str) -> List[dic
             "id": c.get("id"),
             "title": c.get("name"),
             "body": c.get("content", ""),
+            # Surface the merchant-uploaded hero image + any CTA link so
+            # the wallet card's detail modal can show them. Previously
+            # these were dropped and the image at compose time was
+            # effectively invisible to customers.
+            "image_url": c.get("image_url"),
+            "link": c.get("link"),
             "sent_at": c.get("sent_at").isoformat() if c.get("sent_at") else None,
             "kind": "campaign",
         })

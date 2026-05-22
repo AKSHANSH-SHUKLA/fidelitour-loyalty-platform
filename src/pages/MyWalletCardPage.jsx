@@ -696,21 +696,57 @@ const MyWalletCardPage = () => {
             <div className="p-4 max-h-[420px] overflow-y-auto space-y-3">
               {tab === 'offers' && (offers.length === 0 ? (
                 <p className="text-sm text-[#8B8680] text-center py-8">Aucune offre active pour le moment.</p>
-              ) : offers.map(o => (
-                <div key={o.id} className="rounded-lg border border-[#E7E5E4] p-3 bg-white">
-                  <div className="flex items-start gap-3">
-                    <Gift size={18} className="text-[#B85C38] mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-[#1C1917] text-sm">{o.title}</p>
-                      <p className="text-xs text-[#57534E] mt-0.5">{o.description}</p>
-                      {o.valid_until && (
-                        <p className="text-[10px] text-[#8B8680] mt-1">Valable jusqu'au {new Date(o.valid_until).toLocaleDateString('fr-FR')}</p>
-                      )}
+              ) : offers.map(o => {
+                // Campaign-kind offers are tappable and open the same detail
+                // modal as the News tab (server-side, both tabs surface the
+                // same campaigns — News calls them "notifications", Offers
+                // calls them "promotions". The customer expects to tap
+                // either to see the full body + image + CTA link.)
+                // The "primary" kind is the standing offer from the card
+                // template and isn't tied to a campaign id — render
+                // statically (non-clickable) so we don't fire a tracking
+                // event for a non-existent campaign.
+                const isClickable = o.kind === 'campaign' && o.id;
+                const Wrapper = isClickable ? 'button' : 'div';
+                return (
+                  <Wrapper
+                    key={o.id}
+                    {...(isClickable ? {
+                      type: 'button',
+                      onClick: () => {
+                        // Reuse the notification detail modal — same UI
+                        // shape (full body + hero image + CTA), same
+                        // tracking endpoints. The offers payload now
+                        // includes body / image_url / link to feed it.
+                        setOpenedNotification({
+                          id: o.id,
+                          title: o.title,
+                          body: o.body || o.description || '',
+                          image_url: o.image_url,
+                          link: o.link,
+                          sent_at: o.sent_at,
+                        });
+                        try {
+                          api.get(`/campaigns/${o.id}/pixel/${customer.id}.png`).catch(() => {});
+                        } catch (_e) {}
+                      },
+                    } : {})}
+                    className={`w-full text-left rounded-lg border border-[#E7E5E4] p-3 bg-white ${isClickable ? 'hover:bg-[#FFF4F1] transition-colors cursor-pointer' : ''}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Gift size={18} className="text-[#B85C38] mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[#1C1917] text-sm">{o.title}</p>
+                        <p className="text-xs text-[#57534E] mt-0.5 line-clamp-2">{o.description}</p>
+                        {o.valid_until && (
+                          <p className="text-[10px] text-[#8B8680] mt-1">Valable jusqu'au {new Date(o.valid_until).toLocaleDateString('fr-FR')}</p>
+                        )}
+                      </div>
+                      {isClickable && <ChevronRight size={16} className="text-[#8B8680]" />}
                     </div>
-                    <ChevronRight size={16} className="text-[#8B8680]" />
-                  </div>
-                </div>
-              )))}
+                  </Wrapper>
+                );
+              }))}
 
               {tab === 'news' && (notifications.length === 0 ? (
                 <p className="text-sm text-[#8B8680] text-center py-8">Aucune actualité récente.</p>
