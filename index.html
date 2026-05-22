@@ -12,16 +12,17 @@
          Once installed, the card opens fullscreen and silently re-subscribes
          on launch so we keep working endpoints even if the browser rotated.
 
-         IMPORTANT: the `<link rel="manifest">` href below is the DEFAULT
-         (site-wide) manifest. The inline script that follows rewrites it
-         to a per-card manifest BEFORE React boots whenever the user is
-         on /card/FT-XXXXXXXX — so when they "Add to Home Screen", iOS /
-         Android read the per-card manifest with the right start_url
-         (otherwise the home-screen icon opens the landing page, not the
-         actual card). MyWalletCardPage also re-applies the swap on
-         client-side navigation, but doing it here too eliminates the
-         race condition where iOS reads the manifest before React mounts. -->
-    <link rel="manifest" href="/manifest.json" />
+         IMPORTANT: NO static <link rel="manifest"> tag here on purpose.
+         iOS Safari reads the FIRST manifest it sees in the HTML and caches
+         the href/contents — so if we shipped <link rel="manifest"
+         href="/manifest.json"> in the HTML, iOS would lock in start_url=/
+         and ignore any later JavaScript that swaps the href to the per-card
+         manifest. By appending the link from script after the URL has been
+         inspected, we guarantee iOS sees ONLY the right manifest:
+            on /card/FT-XXXX → /api/manifest/FT-XXXX (start_url=/card/FT-XXXX)
+            elsewhere       → /manifest.json (default site-wide)
+         This is the difference between the home-screen icon opening the
+         actual card vs opening the landing page. -->
     <script>
       // ──────────────────────────────────────────────────────────────────
       // PWA bootstrap — runs SYNCHRONOUSLY in <head>, before any module
@@ -85,18 +86,24 @@
           var pathname = location.pathname || '/';
           note('pathname = ' + pathname);
 
+          // Helper: append a <link rel="manifest"> to <head>. We use this
+          // because we removed the static tag from the HTML — iOS Safari
+          // caches the FIRST manifest it sees and ignores subsequent
+          // href changes, so we must inject the right one from the start.
+          function addManifest(href) {
+            var link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = href;
+            (document.head || document.documentElement).appendChild(link);
+          }
+
           // Layer 1 — currently on a card page.
           var m = pathname.match(/^\/card\/([A-Za-z0-9_-]+)/);
           if (m) {
             var bc = m[1].toUpperCase();
             note('on /card/ page, barcode = ' + bc);
-            var link = document.querySelector('link[rel="manifest"]');
-            if (link) {
-              link.setAttribute('href', '/api/manifest/' + bc);
-              note('manifest link swapped to /api/manifest/' + bc);
-            } else {
-              note('NO &lt;link rel="manifest"&gt; tag found — manifest swap skipped');
-            }
+            addManifest('/api/manifest/' + bc);
+            note('manifest link injected → /api/manifest/' + bc);
             try {
               localStorage.setItem('fidelitour:last_card', bc);
               note('wrote localStorage[fidelitour:last_card] = ' + bc);
@@ -106,6 +113,10 @@
             showHud();
             return; // we're already on the right URL, nothing to redirect
           }
+
+          // Not on a card page → use the default site-wide manifest.
+          // (Same content as before; we just inject it from here now.)
+          addManifest('/manifest.json');
 
           // Layer 2 — root URL + standalone display mode → deep-link to
           // the device's last-known card. Catches the iOS bug where the
