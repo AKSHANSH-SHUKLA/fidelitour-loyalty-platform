@@ -47,21 +47,36 @@
       //   Both layers stacked — at least one always succeeds.
       // ──────────────────────────────────────────────────────────────────
       (function () {
-        // Debug HUD — visit any URL with ?debug=1 and a black overlay
-        // pops up at the top of the screen showing exactly what the
-        // PWA bootstrap saw. Lets users on an iPhone without a Mac
-        // debug the home-screen icon flow without needing real DevTools.
-        var trace = { steps: [] };
+        // Debug HUD — auto-shown whenever the page is launched as a
+        // standalone PWA (iOS hides the address bar in that mode, so
+        // ?debug=1 wouldn't be reachable). Also shown when the URL
+        // includes ?debug=1 for testing in a normal Safari tab.
+        //
+        // Once the bug is fixed we'll switch HUD back to opt-in.
+        var trace = { steps: [], standalone: false, hasLastCard: false };
         function note(s) { trace.steps.push(s); }
         function showHud() {
-          if (location.search.indexOf('debug=1') === -1) return;
+          // Show in two cases: opt-in via ?debug=1, OR running as a
+          // standalone PWA (the case we cannot manually trigger).
+          var optIn = location.search.indexOf('debug=1') !== -1;
+          if (!optIn && !trace.standalone) return;
           var div = document.createElement('div');
-          div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#1F1B1A;color:#FFFFFF;font:12px/1.4 ui-monospace,Consolas,monospace;padding:14px 14px 10px;box-shadow:0 4px 16px rgba(0,0,0,0.5);max-height:60vh;overflow:auto;';
-          var html = '<b style="color:#E8917C">PWA debug</b> <span style="opacity:.55">(append ?debug=1 to any URL)</span><br><br>';
+          div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#1F1B1A;color:#FFFFFF;font:12px/1.4 ui-monospace,Consolas,monospace;padding:14px 14px 12px;box-shadow:0 4px 16px rgba(0,0,0,0.5);max-height:70vh;overflow:auto;';
+          var html = '<b style="color:#E8917C">PWA debug HUD</b>';
+          if (trace.standalone) html += ' <span style="opacity:.55">(standalone mode auto-show)</span>';
+          html += '<br><br>';
           for (var i = 0; i < trace.steps.length; i++) html += trace.steps[i] + '<br>';
-          html += '<br><button onclick="this.parentElement.remove()" style="background:#B85C38;color:white;border:none;padding:6px 12px;border-radius:6px;font:inherit;cursor:pointer">Close</button>';
+          html += '<br><div style="display:flex;gap:6px;flex-wrap:wrap">';
+          // Manual recovery: if we have a last_card stored, give the
+          // user a one-tap button to jump to it. This works EVEN if the
+          // automatic failsafe failed for whatever reason.
+          if (trace.hasLastCard) {
+            html += '<button onclick="window.location.href=\'/card/\'+localStorage.getItem(\'fidelitour:last_card\')" style="background:#4F7A36;color:white;border:none;padding:8px 14px;border-radius:6px;font:inherit;cursor:pointer;font-weight:600">Open my card →</button>';
+          }
+          html += '<button onclick="window.location.reload()" style="background:#4A90E2;color:white;border:none;padding:8px 14px;border-radius:6px;font:inherit;cursor:pointer">Reload</button>';
+          html += '<button onclick="this.parentElement.parentElement.remove()" style="background:#57534E;color:white;border:none;padding:8px 14px;border-radius:6px;font:inherit;cursor:pointer">Close</button>';
+          html += '</div>';
           div.innerHTML = html;
-          // Append once <body> exists; if we're still in <head>, defer.
           if (document.body) document.body.appendChild(div);
           else document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(div); });
         }
@@ -104,15 +119,20 @@
           var mmStandalone = mm ? mm.matches : false;
           var iosStandalone = window.navigator.standalone === true;
           var isStandalone = mmStandalone || iosStandalone;
+          trace.standalone = isStandalone;
           note('matchMedia(standalone) = ' + mmStandalone + '; navigator.standalone = ' + iosStandalone);
+          // Stash last_card existence early so the HUD can render an
+          // "Open my card" button even on paths where the failsafe bails
+          // (e.g. when not running standalone — they may still want the link).
+          var stored = null;
+          try { stored = localStorage.getItem('fidelitour:last_card'); } catch (e) {
+            note('localStorage.getItem failed: ' + (e.message || e));
+          }
+          trace.hasLastCard = !!(stored && /^FT-?[A-Z0-9]+$/i.test(stored));
           if (!isStandalone) {
             note('NOT running as standalone PWA — failsafe skipped (this is fine in a regular browser tab)');
             showHud();
             return;
-          }
-          var stored = null;
-          try { stored = localStorage.getItem('fidelitour:last_card'); } catch (e) {
-            note('localStorage.getItem failed: ' + (e.message || e));
           }
           note('localStorage[fidelitour:last_card] = ' + JSON.stringify(stored));
           if (!stored || !/^FT-?[A-Z0-9]+$/i.test(stored)) {
@@ -120,10 +140,12 @@
             showHud();
             return;
           }
-          // replaceState, not assign — no extra request, no flash, and
-          // BrowserRouter reads the new pathname on its first render.
-          window.history.replaceState({}, '', '/card/' + stored);
-          note('history.replaceState → /card/' + stored + ' ✓');
+          // DIAGNOSIS MODE — don't auto-redirect, just surface the
+          // "Open my card" button in the HUD so the user can manually
+          // confirm the deep-link works. Once we know the failsafe
+          // path is healthy, this block flips back to:
+          //     window.location.replace('/card/' + stored)
+          note('READY to deep-link. Tap "Open my card →" in the HUD.');
           showHud();
         } catch (e) {
           note('FATAL: ' + (e.message || e));
