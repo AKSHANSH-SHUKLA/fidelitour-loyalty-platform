@@ -285,15 +285,22 @@ PIXEL_PNG_BYTES = base64.b64decode(PIXEL_PNG_BASE64)
 # {points_to_next_reward} points pour une récompense !") work.
 # ============================================================
 def _compute_points_to_next_reward(customer: dict, tenant_id: str) -> int:
-    """How many more visits (≈ points) until the next reward for this customer."""
+    """How many more visits (≈ points) until the next reward for this customer.
+
+    Counts only the visits SINCE the last redemption — `visits` itself is the
+    lifetime counter and never gets reset. So a customer at 47 lifetime
+    visits who redeemed at 40 has `visits - visits_at_last_redemption = 7`
+    stamps on their current card, with `threshold - 7 = 3` to go.
+    """
     try:
         tpl = db.card_templates.find_one({"tenant_id": tenant_id}) or {}
         visits_per_stamp = max(int(tpl.get("visits_per_stamp", 1) or 1), 1)
         reward_threshold_stamps = max(int(tpl.get("reward_threshold_stamps", 10) or 10), 1)
         visits_needed = visits_per_stamp * reward_threshold_stamps
-        visits = int(customer.get("visits", 0) or 0)
-        remaining_visits = visits_needed - (visits % visits_needed)
-        # When exactly on threshold, remaining_visits == visits_needed (fresh card).
+        lifetime_visits = int(customer.get("visits", 0) or 0)
+        last_redemption_visits = int(customer.get("visits_at_last_redemption", 0) or 0)
+        stamps_in_cycle = max(0, lifetime_visits - last_redemption_visits)
+        remaining_visits = max(0, visits_needed - stamps_in_cycle)
         return remaining_visits
     except Exception:
         return 0
@@ -3532,6 +3539,39 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
     current_points = int(cust.get("points") or 0)
     current_paid = float(cust.get("total_amount_paid") or 0)
 
+    # ── ONE-SHOT MIGRATION: heal customers broken by the old redemption
+    # logic.
+    # The old redemption endpoint decremented `visits` by the reward
+    # threshold, which corrupted lifetime visits AND demoted tier on the
+    # next scan. New redemption logic leaves visits intact and tracks
+    # `visits_at_last_redemption` instead. Customers who redeemed BEFORE
+    # the fix have a missing `visits_at_last_redemption` AND a deflated
+    # `visits` count. Detect that situation and restore:
+    #     visits_restored = visits + rewards_redeemed_count * threshold
+    # so their tier comes back to where it should be on this scan.
+    rewards_count = int(cust.get("rewards_redeemed_count") or 0)
+    if rewards_count > 0 and cust.get("visits_at_last_redemption") is None:
+        try:
+            heal_tpl = db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
+            heal_threshold = max(
+                int(heal_tpl.get("reward_threshold_stamps", 10) or 10) *
+                int(heal_tpl.get("visits_per_stamp", 1) or 1),
+                1,
+            )
+            current_visits = current_visits + rewards_count * heal_threshold
+            # Set visits_at_last_redemption to the restored count so
+            # stamps display 0/threshold (they just "redeemed" all their
+            # old cards). They'll start fresh from this scan.
+            db.customers.update_one(
+                {"id": cid},
+                {"$set": {
+                    "visits": current_visits,
+                    "visits_at_last_redemption": current_visits,
+                }},
+            )
+        except Exception:
+            pass  # never let a heal failure block a real scan
+
     # If the scan came with a product-picker payload, resolve the items
     # against the tenant catalog and OVERRIDE amount_paid with the
     # server-computed total. We never trust client-sent prices.
@@ -4755,7 +4795,16 @@ def _serialize_card_payload(cust: dict) -> dict:
     design = tpl.get(f"{tier}_design") or tpl.get("bronze_design") or {}
 
     reward_threshold = tpl.get("reward_threshold_stamps", 10)
-    stamps = min(cust.get("visits", 0), reward_threshold)
+    # Stamps on the wallet card = visits SINCE the last redemption, capped
+    # at the reward threshold. `visits` itself is the lifetime counter and
+    # is never decremented — that's what drives tier promotion. The
+    # `visits_at_last_redemption` field is set by the redemption endpoint
+    # (POST /api/owner/rewards/redeem) and marks where in the visit
+    # history the customer cashed in their last card.
+    lifetime_visits = int(cust.get("visits", 0) or 0)
+    last_redemption_visits = int(cust.get("visits_at_last_redemption", 0) or 0)
+    stamps_in_cycle = max(0, lifetime_visits - last_redemption_visits)
+    stamps = min(stamps_in_cycle, reward_threshold)
 
     return {
         "customer": {
@@ -8229,9 +8278,21 @@ def redeem_reward(
     """Record that a customer cashed in their reward.
 
     Works from either barcode_id (staff typical flow) or customer_id.
-    Emits an entry in db.rewards_redeemed for the KPI + history, and decrements
-    the customer's visit counter by one full-card so subsequent cards fill up
-    from zero again (mirrors the real-world "take the stamp card off the wall").
+    Emits an entry in db.rewards_redeemed for the KPI + history.
+
+    IMPORTANT: lifetime `visits` is NEVER decremented. Previously this
+    endpoint did `$inc: {visits: -threshold}` so a freshly-redeemed
+    customer's stamp counter would reset to 0 visually — but it had a
+    nasty side effect: it ALSO demoted their tier on the next scan
+    (tier is computed from visits, so 10 → 0 → 1 lands them back in
+    bronze even though they should still be silver).
+
+    Fix: keep `visits` as a true lifetime counter, and track WHERE
+    in the visit history the last redemption happened via
+    `visits_at_last_redemption`. The wallet card derives stamps as
+    `min(visits - visits_at_last_redemption, threshold)` so the card
+    visually resets to 0/10 after redemption while the customer keeps
+    every tier they've earned across their lifetime.
     """
     tid = token_data.tenant_id
     if not req.barcode_id and not req.customer_id:
@@ -8270,11 +8331,17 @@ def redeem_reward(
     }
     db.rewards_redeemed.insert_one(reward)
 
-    # Decrement visits by one full-card so their next card starts fresh.
+    # NO LONGER DECREMENT VISITS. Mark where in the lifetime visit count
+    # this redemption happened, so stamps can be derived as
+    # `visits - visits_at_last_redemption` going forward. Tier stays
+    # intact because it's computed from the (untouched) visits field.
     db.customers.update_one(
         {"id": cust["id"]},
-        {"$inc": {"visits": -threshold, "rewards_redeemed_count": 1},
-         "$set": {"last_reward_redeemed_at": reward["redeemed_at"]}},
+        {"$inc": {"rewards_redeemed_count": 1},
+         "$set": {
+             "last_reward_redeemed_at": reward["redeemed_at"],
+             "visits_at_last_redemption": current_visits,
+         }},
     )
     reward.pop("_id", None)
     return reward
