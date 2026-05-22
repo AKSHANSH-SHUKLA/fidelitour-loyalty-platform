@@ -162,6 +162,12 @@ const MyWalletCardPage = () => {
   // We flip this on when the user tries to enable push on iOS without having
   // installed the PWA first — the install flow is the actual fix.
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  // The notification the customer just tapped in the News tab. When set,
+  // the detail modal at the bottom of the page renders showing the full
+  // campaign body, image, and (if present) a CTA link the customer can
+  // tap. The open is tracked the moment they tap the card; the click is
+  // tracked separately when they tap the CTA link.
+  const [openedNotification, setOpenedNotification] = useState(null);
   // Rate-your-visit state
   const [reviewRating, setReviewRating] = useState(8);
   const [reviewText, setReviewText] = useState('');
@@ -709,16 +715,35 @@ const MyWalletCardPage = () => {
               {tab === 'news' && (notifications.length === 0 ? (
                 <p className="text-sm text-[#8B8680] text-center py-8">Aucune actualité récente.</p>
               ) : notifications.map(n => (
-                <div key={n.id} className="rounded-lg border border-[#E7E5E4] p-3 bg-white">
+                // Wrap each notification as a button so the entire card is
+                // tappable. Tapping opens the full-detail modal AND fires
+                // the campaign open-tracking endpoint, so the merchant's
+                // analytics show the right "opens" count and open rate.
+                // ChevronRight on the right hints at tappability.
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => {
+                    setOpenedNotification(n);
+                    // Fire-and-forget open tracking. Uses the existing pixel
+                    // endpoint which is idempotent per (campaign, customer)
+                    // so re-opens don't inflate the counter.
+                    try {
+                      api.get(`/campaigns/${n.id}/pixel/${customer.id}.png`).catch(() => {});
+                    } catch (_e) { /* never block the open over a tracking blip */ }
+                  }}
+                  className="w-full text-left rounded-lg border border-[#E7E5E4] p-3 bg-white hover:bg-[#FFF4F1] transition-colors"
+                >
                   <p className="font-semibold text-[#1C1917] text-sm flex items-center gap-2">
                     <Bell size={14} className="text-[#B85C38]" />
                     {n.title}
+                    <ChevronRight size={14} className="text-[#8B8680] ml-auto" />
                   </p>
-                  <p className="text-xs text-[#57534E] mt-1 leading-snug">{n.body}</p>
+                  <p className="text-xs text-[#57534E] mt-1 leading-snug line-clamp-2">{n.body}</p>
                   {n.sent_at && (
                     <p className="text-[10px] text-[#8B8680] mt-1">{new Date(n.sent_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
                   )}
-                </div>
+                </button>
               )))}
 
               {tab === 'program' && (
@@ -757,9 +782,148 @@ const MyWalletCardPage = () => {
       {detailsOpen && (
         <DetailsDrawer tenant={tenant} card={card} onClose={() => setDetailsOpen(false)} />
       )}
+
+      {/* Notification detail modal — opens when the customer taps any
+          notification in the News tab. Shows the full campaign body and,
+          if present, a CTA link that fires the track-click endpoint
+          before navigating away (so the merchant's analytics show real
+          click-through numbers, not just opens). */}
+      {openedNotification && (
+        <NotificationDetailModal
+          notification={openedNotification}
+          tenant={tenant}
+          card={card}
+          customerId={customer.id}
+          onClose={() => setOpenedNotification(null)}
+        />
+      )}
     </div>
   );
 };
+
+// ───────────────────────────────────────────────────────────────────────
+// NotificationDetailModal — full-screen-ish modal for one notification.
+//
+// Why a modal rather than a route: the customer is on their wallet card
+// (the most important page on the site for them) and we don't want to
+// navigate them away. A modal keeps the card behind it and lets them
+// close with a single tap to get back to scanning.
+//
+// Tracking:
+//   • OPEN  → already recorded by the parent's onClick (pixel endpoint)
+//   • CLICK → recorded here when the customer taps the CTA link. Uses
+//             POST /api/campaigns/{id}/track-click which the existing
+//             campaign analytics pipeline already aggregates.
+// ───────────────────────────────────────────────────────────────────────
+function NotificationDetailModal({ notification, tenant, card, customerId, onClose }) {
+  const accent = card?.primary_color || '#B85C38';
+  // Pluck the first URL from the body so we can offer a tappable CTA.
+  // Merchants usually paste an offer URL into the message; this surfaces
+  // it as a proper button instead of leaving the customer to find it.
+  const urlMatch = (notification.body || '').match(/(https?:\/\/[^\s)]+)/);
+  const ctaUrl = notification.link || (urlMatch ? urlMatch[0] : null);
+
+  const handleCtaClick = (e) => {
+    // Fire the click-tracking endpoint BEFORE navigation. We don't await
+    // it — the customer shouldn't have to wait — but we let it fly off
+    // so the campaign analytics get the increment.
+    try {
+      api.post(`/campaigns/${notification.id}/track-click`, null, {
+        params: { customer_id: customerId },
+      }).catch(() => {});
+    } catch (_e) { /* tracking failure must not block the navigation */ }
+    // Default <a> behaviour handles the navigation — we don't preventDefault.
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(28,25,23,0.55)',
+        zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16, backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'white', borderRadius: 18, padding: '24px 22px 18px',
+          maxWidth: 520, width: '100%', maxHeight: '85vh', overflowY: 'auto',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.25)',
+        }}
+      >
+        {/* Header — business name + close button */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
+          <div
+            style={{
+              width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+              background: accent, color: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, fontSize: 16,
+            }}
+          >
+            {(tenant?.name || '?').charAt(0).toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8B8680' }}>
+              {tenant?.name || 'Notification'}
+            </p>
+            <h3 style={{ margin: '4px 0 0', fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 700, color: '#1C1917', lineHeight: 1.2 }}>
+              {notification.title}
+            </h3>
+            {notification.sent_at && (
+              <p style={{ margin: '4px 0 0', fontSize: 11, color: '#8B8680' }}>
+                {new Date(notification.sent_at).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}
+              </p>
+            )}
+          </div>
+          <button onClick={onClose} aria-label="Fermer" type="button"
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6B6359', padding: 4 }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Image — if the campaign attached a hero image */}
+        {notification.image_url && (
+          <img
+            src={notification.image_url}
+            alt=""
+            style={{ width: '100%', borderRadius: 12, marginBottom: 14, display: 'block' }}
+          />
+        )}
+
+        {/* Full body — preserves line breaks the merchant typed */}
+        <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: '#1C1917', whiteSpace: 'pre-wrap' }}>
+          {notification.body}
+        </p>
+
+        {/* CTA button — if there's a link, surface it prominently */}
+        {ctaUrl && (
+          <a
+            href={ctaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleCtaClick}
+            style={{
+              display: 'block', textAlign: 'center', marginTop: 18,
+              padding: '12px 18px', borderRadius: 99,
+              background: accent, color: 'white',
+              fontWeight: 700, fontSize: 14, textDecoration: 'none',
+            }}
+          >
+            Voir l'offre →
+          </a>
+        )}
+
+        <p style={{ margin: '16px 0 0', fontSize: 10.5, color: '#A8A29E', textAlign: 'center' }}>
+          ID campagne : {notification.id}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Wallet pass — applies the modern card-template schema
