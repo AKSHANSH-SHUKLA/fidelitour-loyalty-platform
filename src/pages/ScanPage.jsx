@@ -602,7 +602,7 @@ const ScanPage = () => {
                 </div>
               </div>
               <div className="relative">
-                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
                 <input
                   type="number"
                   step="0.01"
@@ -611,7 +611,7 @@ const ScanPage = () => {
                   value={amountPaid}
                   onChange={handleAmountPaidChange}
                   placeholder="0,00"
-                  className="w-full pl-12 pr-4 py-3 rounded-lg border-2 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
+                  className="w-full pl-14 pr-4 py-3 rounded-lg border-2 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
                   style={{ borderColor: '#E7E5E4', background: 'white' }}
                   onFocus={(e) => (e.target.style.borderColor = '#B85C38')}
                   onBlur={(e) => (e.target.style.borderColor = '#E7E5E4')}
@@ -673,13 +673,17 @@ const ScanPage = () => {
             <div>
               <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">{t('scan.barcode_label')}</label>
               <div className="relative">
-                <ScanLine className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+                {/* 20px icon (w-5) at left-4 (16px) → icon occupies 16-36px.
+                    pl-14 (56px) leaves a clean ~20px gap before the
+                    placeholder text begins. pointer-events-none so the
+                    icon doesn't eat clicks on the first few pixels. */}
+                <ScanLine className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
                 <input
                   type="text"
                   value={barcode}
                   onChange={e => setBarcode(e.target.value.toUpperCase())}
                   placeholder={t('scan.barcode_placeholder')}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-mono tracking-widest transition-colors uppercase"
+                  className="w-full pl-14 pr-4 py-4 rounded-xl border-2 border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-mono tracking-widest transition-colors uppercase"
                   disabled={loading}
                 />
               </div>
@@ -788,7 +792,7 @@ const ScanPage = () => {
                 )}
               </label>
               <div className="relative">
-                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E]" />
+                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
                 <input
                   type="number"
                   step="0.01"
@@ -796,7 +800,7 @@ const ScanPage = () => {
                   value={amountPaid}
                   onChange={handleAmountPaidChange}
                   placeholder="0.00"
-                  className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors ${
+                  className={`w-full pl-14 pr-4 py-4 rounded-xl border-2 focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors ${
                     pickedItems.length > 0
                       ? 'border-[#E3A869] bg-[#FDF8EF] focus:border-[#E3A869]'
                       : 'border-[#E7E5E4] focus:border-[#B85C38]'
