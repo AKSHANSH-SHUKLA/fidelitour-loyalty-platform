@@ -114,10 +114,24 @@ const JoinPage = () => {
   //   4. Disable enableHighAccuracy → desktop GPS-less browsers are much
   //      more reliable with the lower-precision Wi-Fi/IP lookup.
   const requestGeolocation = async () => {
+    // FIRST THING: flip the UI to "requesting". Two reasons:
+    //   1. Even on a slow desktop browser where the Permissions API or
+    //      getCurrentPosition takes hundreds of ms, the user sees an
+    //      immediate visual change — the button vanishes, "Demande de
+    //      position en cours…" appears. Without this, the button looked
+    //      broken on PC ("I clicked but nothing happened").
+    //   2. Some PC browsers (especially Chrome on Windows behind corporate
+    //      proxies) silently swallow getCurrentPosition with neither
+    //      callback ever firing. The watchdog below catches that case.
+    setGeoStatus('requesting');
+    console.debug('[geo] requestGeolocation() invoked');
+
     if (!('geolocation' in navigator)) {
+      console.warn('[geo] navigator.geolocation missing');
       setGeoStatus('unsupported');
       return;
     }
+
     // Pre-check via Permissions API — fast path for "already denied"
     // (avoids the 15s timeout) AND lets us surface a "blocked" message
     // distinct from the user actively tapping "Block" on the prompt.
@@ -126,6 +140,7 @@ const JoinPage = () => {
     try {
       if (navigator.permissions && navigator.permissions.query) {
         const status = await navigator.permissions.query({ name: 'geolocation' });
+        console.debug('[geo] Permissions API state =', status.state);
         if (status.state === 'denied') {
           // Browser remembers a previous deny — the prompt won't appear
           // again until the user manually re-enables it in site settings.
@@ -133,28 +148,60 @@ const JoinPage = () => {
           return;
         }
       }
-    } catch (_e) { /* Permissions API not supported — that's fine */ }
+    } catch (e) {
+      console.debug('[geo] Permissions API unavailable:', e?.message || e);
+    }
 
-    setGeoStatus('requesting');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGeoCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-        setGeoStatus('granted');
-      },
-      (err) => {
-        // Map every error code to a visible state so the user always
-        // gets feedback. Code 1 = user denied, 2 = position unavailable
-        // (no GPS, Wi-Fi triangulation failed), 3 = timeout.
-        if (!err) { setGeoStatus('error'); return; }
-        switch (err.code) {
-          case 1: setGeoStatus('denied'); break;
-          case 2: setGeoStatus('unavailable'); break;
-          case 3: setGeoStatus('timeout'); break;
-          default: setGeoStatus('error');
-        }
-      },
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
-    );
+    // Watchdog: some Chrome/Edge/Firefox installs silently drop the
+    // getCurrentPosition call (corporate firewalls, privacy extensions,
+    // certain VPNs) without firing either callback. After 20s with no
+    // response, mark the request as errored so the user isn't stuck on
+    // "requesting…" forever. Cleared as soon as either callback fires.
+    let settled = false;
+    const watchdog = setTimeout(() => {
+      if (settled) return;
+      console.warn('[geo] watchdog fired — neither callback responded in 20s');
+      settled = true;
+      setGeoStatus('timeout');
+    }, 20000);
+
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(watchdog);
+          console.debug('[geo] got position', pos.coords);
+          setGeoCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+          setGeoStatus('granted');
+        },
+        (err) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(watchdog);
+          console.warn('[geo] error callback', err);
+          // Map every error code to a visible state so the user always
+          // gets feedback. Code 1 = user denied, 2 = position unavailable
+          // (no GPS, Wi-Fi triangulation failed), 3 = timeout.
+          if (!err) { setGeoStatus('error'); return; }
+          switch (err.code) {
+            case 1: setGeoStatus('denied'); break;
+            case 2: setGeoStatus('unavailable'); break;
+            case 3: setGeoStatus('timeout'); break;
+            default: setGeoStatus('error');
+          }
+        },
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+      );
+    } catch (e) {
+      // Some browsers throw synchronously if the call is blocked entirely
+      // by a Permissions-Policy header. Surface that instead of leaving
+      // the UI stuck on "requesting".
+      clearTimeout(watchdog);
+      settled = true;
+      console.error('[geo] getCurrentPosition threw synchronously:', e);
+      setGeoStatus('error');
+    }
   };
 
   const handleSubmit = async (e) => {
