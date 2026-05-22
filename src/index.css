@@ -1610,3 +1610,59 @@ textarea::placeholder {
    Rankings) — defaults to a later order so they sit at the end. */
 .av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section:not(.grid.grid-cols-1.lg\:grid-cols-2.gap-3) { order: 8; }
 .av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div:not(.flex):not(.grid):not(.rounded-lg) { order: 7; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   VisitsWithCampaignsChart — dark-skin overrides
+   ───────────────────────────────────────────────────────────────────────
+   The component ships inline-styled light-theme colours (C_PS.inkDeep,
+   C_PS.inkMute, white surfaces). Inside .av2-dark-skin the white
+   surfaces become almost-black (#1F1B1A) on the dark navy background,
+   making the campaign drilldown invisible — that's the bug the user
+   reported.
+   Fix: target the .vwcc root and flip the most common offenders with
+   !important so they win over inline styles. Same approach used by the
+   .fd-* card overrides further up. ═══════════════════════════════════════════════════════════════════════ */
+.av2-dark-skin .vwcc {
+  background: hsl(228 30% 12%) !important;
+  border-color: hsl(230 32% 18%) !important;
+  color: hsl(228 23% 97%);
+}
+/* Headers / titles + body copy inside the chart card. */
+.av2-dark-skin .vwcc h2,
+.av2-dark-skin .vwcc h3,
+.av2-dark-skin .vwcc p,
+.av2-dark-skin .vwcc span,
+.av2-dark-skin .vwcc td,
+.av2-dark-skin .vwcc th {
+  color: hsl(228 23% 97%) !important;
+}
+/* Muted secondary text — the small "Sent May 23 · status sent" line,
+   chart-axis ticks, table column headers. Slightly dimmer than primary. */
+.av2-dark-skin .vwcc .text-xs,
+.av2-dark-skin .vwcc p.italic,
+.av2-dark-skin .vwcc .text-\[10px\] {
+  color: hsl(228 14% 81%) !important;
+}
+/* The inner KPI cards (rounded-lg p-2.5 bg-white) — flip the background
+   and keep numbers / labels readable. */
+.av2-dark-skin .vwcc .bg-white,
+.av2-dark-skin .vwcc [class*="bg-white"] {
+  background: hsl(228 28% 16%) !important;
+  border-color: hsl(230 32% 22%) !important;
+}
+/* Day-detail + campaign-detail accent panels — they use a faint
+   colored tint on light. On dark we want a deeper tint of the same
+   accent so the panel is still distinguishable but readable. */
+.av2-dark-skin .vwcc .rounded-xl.p-4[style] {
+  background: hsl(228 28% 16%) !important;
+  border-color: hsl(258 90% 66% / 0.45) !important;
+}
+/* Recipient table rows — divider lines on dark. */
+.av2-dark-skin .vwcc [class*="divide-y"] > * {
+  border-color: hsl(230 32% 22%) !important;
+}
+/* Tier badges + per-row YES/NO chips — preserve their accent colour
+   identity but ensure the surrounding cell is readable. */
+.av2-dark-skin .vwcc .rounded-full {
+  /* leave inline colors alone; they're already accent pills */
+}
