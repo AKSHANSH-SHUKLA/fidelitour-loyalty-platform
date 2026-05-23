@@ -1212,8 +1212,18 @@ textarea::placeholder {
 .av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-label { color: hsl(228 11% 45%) !important; }
 .av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-sub   { color: hsl(228 11% 45%) !important; }
 .av2-light-skin .fd-kpi-foot { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-kpi-delta.pos { color: hsl(160 84% 60%) !important; }
-.av2-light-skin .fd-kpi-delta.neg { color: hsl(355 65% 60%) !important; }
+/* KPI delta pills — darker, saturated colors so they're clearly legible
+   on white card backgrounds. Background tint + bold text together. */
+.av2-light-skin .fd-kpi-delta.pos {
+  background: hsl(150 55% 40% / .14) !important;
+  color: hsl(150 70% 26%) !important;
+  font-weight: 700 !important;
+}
+.av2-light-skin .fd-kpi-delta.neg {
+  background: hsl(355 65% 48% / .14) !important;
+  color: hsl(355 70% 36%) !important;
+  font-weight: 700 !important;
+}
 
 /* Panel headers */
 .av2-light-skin .fd-panel-h     { color: hsl(228 28% 14%); }

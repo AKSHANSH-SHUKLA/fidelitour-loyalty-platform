@@ -167,9 +167,10 @@ export default function OwnerDashboard() {
           }))
           .sort((a, b) => b.value - a.value)
       : [];
-    if (real.length > 0) return real;
-    // Demo fallback — realistic French café acquisition mix so a fresh
-    // tenant sees a populated panel instead of an empty donut.
+    // Show demo whenever real data isn't useful for a donut comparison
+    // (0 or 1 channels). A donut with one segment = a solid circle, no
+    // information value — replace with realistic French café demo mix.
+    if (real.length >= 2) return real;
     return [
       { key: 'direct',    name: 'Sur place',   value: 56, color: 'hsl(215 65% 48%)' },
       { key: 'google',    name: 'Google Maps', value: 22, color: 'hsl(105 30% 42%)' },
@@ -180,24 +181,23 @@ export default function OwnerDashboard() {
   }, [acqSources]);
   const sourcesTotal = sources.reduce((s, p) => s + p.value, 0);
 
-  // Tier donut — falls back to demo distribution when the tenant has
-  // no customers yet so the side rail looks alive in client previews.
+  // Tier donut — same rule as the acquisition panel: needs ≥2 populated
+  // tiers to be a useful comparison. Otherwise fall back to demo so the
+  // side rail always reads as informative, never as broken.
   const realTier = ['gold', 'silver', 'bronze', 'vip']
     .map((k) => ({ key: k, name: k.charAt(0).toUpperCase() + k.slice(1), value: tierDist[k] || 0, color: TIER_COLORS[k] }))
     .filter((t) => t.value > 0);
-  const tierData = realTier.length > 0 ? realTier : [
-    { key: 'bronze', name: 'Bronze', value: 87, color: TIER_COLORS.bronze },
-    { key: 'silver', name: 'Silver', value: 42, color: TIER_COLORS.silver },
-    { key: 'gold',   name: 'Gold',   value: 18, color: TIER_COLORS.gold },
-    { key: 'vip',    name: 'VIP',    value:  9, color: TIER_COLORS.vip },
+  const DEMO_TIER_DIST = { bronze: 87, silver: 42, gold: 18, vip: 9 };
+  const tierData = realTier.length >= 2 ? realTier : [
+    { key: 'bronze', name: 'Bronze', value: DEMO_TIER_DIST.bronze, color: TIER_COLORS.bronze },
+    { key: 'silver', name: 'Silver', value: DEMO_TIER_DIST.silver, color: TIER_COLORS.silver },
+    { key: 'gold',   name: 'Gold',   value: DEMO_TIER_DIST.gold,   color: TIER_COLORS.gold   },
+    { key: 'vip',    name: 'VIP',    value: DEMO_TIER_DIST.vip,    color: TIER_COLORS.vip    },
   ];
   const tiersTotal = tierData.reduce((s, p) => s + p.value, 0);
-  // Build a tierDist-shaped lookup so the JSX below still reads tierDist[k]
-  // and gets the demo numbers when real data is empty.
-  const displayTierDist = (Object.keys(tierDist || {}).length > 0 &&
-    ['gold','silver','bronze','vip'].some((k) => (tierDist[k] || 0) > 0))
-    ? tierDist
-    : { bronze: 87, silver: 42, gold: 18, vip: 9 };
+  // displayTierDist mirrors whichever data tierData used so the rows
+  // and the donut stay in sync.
+  const displayTierDist = realTier.length >= 2 ? tierDist : DEMO_TIER_DIST;
 
   // Visit-time heatmap — { day_of_week: { hour: count } } from the
   // analytics summary. If the backend doesn't return the field for any
