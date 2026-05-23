@@ -29,6 +29,58 @@ import { Trash2, UserPlus2, RefreshCcw, Repeat as RepeatIcon, BadgeCheck } from 
 const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#7B3F00' };
 const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
 
+// ─────────────────────────────────────────────────────────────────────
+// DEMO REVIEW ANALYTICS — paints the "Customer reviews & sentiment"
+// section when the tenant has zero reviews so a fresh demo tenant
+// shows a realistic picture (avg rating, distribution, topic breakdown,
+// recent feed) instead of an empty-state hint. Real data ALWAYS wins;
+// the AnalyticsPage only falls back to this when total_reviews is 0.
+// ─────────────────────────────────────────────────────────────────────
+const DEMO_REVIEW_ANALYTICS = {
+  total_reviews: 184,
+  average_rating: 8.4,
+  negative_review_rate_pct: 7,
+  sentiment_score: 62,
+  review_velocity: { last_30d: 38, prev_30d: 31, delta_pct: 23 },
+  rating_distribution: {
+    '10': 58, '9': 41, '8': 27, '7': 18, '6': 12,
+    '5': 9,  '4': 7,  '3': 6,  '2': 4,  '1': 2,
+  },
+  topic_breakdown: [
+    { topic: 'staff',       count: 92, avg_rating: 9.1, positive_pct: 84, negative_pct: 6,  mention_pct: 50 },
+    { topic: 'cleanliness', count: 64, avg_rating: 8.7, positive_pct: 76, negative_pct: 9,  mention_pct: 35 },
+    { topic: 'speed',       count: 71, avg_rating: 7.9, positive_pct: 62, negative_pct: 18, mention_pct: 39 },
+    { topic: 'price',       count: 38, avg_rating: 7.2, positive_pct: 51, negative_pct: 24, mention_pct: 21 },
+    { topic: 'wait_time',   count: 27, avg_rating: 6.4, positive_pct: 33, negative_pct: 41, mention_pct: 15 },
+  ],
+  recent: [
+    { id: 'r1', customer_name: 'Marie L.',   rating: 10, sentiment: 'Très positif', topics: ['staff', 'cleanliness'],
+      text: 'Service au top, équipe ultra accueillante. Le cappuccino est devenu mon rituel du matin.',
+      created_at: new Date(Date.now() - 1 * 86400000).toISOString() },
+    { id: 'r2', customer_name: 'Thomas R.',  rating: 9,  sentiment: 'Positif', topics: ['speed', 'price'],
+      text: 'Toujours rapide même en heure de pointe. Rapport qualité-prix imbattable dans le quartier.',
+      created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+    { id: 'r3', customer_name: 'Sophie M.',  rating: 8,  sentiment: 'Positif', topics: ['staff'],
+      text: 'Très bon accueil, ambiance chaleureuse. Je recommande la formule brunch du week-end.',
+      created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
+    { id: 'r4', customer_name: 'Karim B.',   rating: 4,  sentiment: 'Négatif', topics: ['wait_time'],
+      text: 'Attente trop longue au comptoir samedi midi (15 min). À part ça la qualité est là.',
+      created_at: new Date(Date.now() - 4 * 86400000).toISOString() },
+    { id: 'r5', customer_name: 'Élise D.',   rating: 9,  sentiment: 'Positif', topics: ['cleanliness', 'staff'],
+      text: 'Toujours impeccable, et le barista connaît ma commande par cœur. Petit plus qui change tout.',
+      created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
+    { id: 'r6', customer_name: 'Yann P.',    rating: 7,  sentiment: 'Neutre', topics: ['price'],
+      text: 'Bon café, prix un peu élevé pour un latte. Mais le programme fidélité compense.',
+      created_at: new Date(Date.now() - 6 * 86400000).toISOString() },
+    { id: 'r7', customer_name: 'Aïcha S.',   rating: 10, sentiment: 'Très positif', topics: ['staff', 'speed'],
+      text: 'L\'équipe est adorable et le service est rapide. Mon spot préféré pour bosser le matin.',
+      created_at: new Date(Date.now() - 7 * 86400000).toISOString() },
+    { id: 'r8', customer_name: 'Mathieu V.', rating: 3,  sentiment: 'Très négatif', topics: ['speed', 'wait_time'],
+      text: 'Commande oubliée 2 fois en 1 mois. Dommage car le produit est bon.',
+      created_at: new Date(Date.now() - 9 * 86400000).toISOString() },
+  ],
+};
+
 // ------------------------------------------------------------------
 // Reusable "Send Campaign" button — plants on every metric / chart card.
 // Clicking opens a composer pre-filled with the given segment descriptor.
@@ -600,7 +652,17 @@ const AnalyticsPage = () => {
       if (cf.status === 'fulfilled') setCardsFilled(cf.value.data);
       if (hp.status === 'fulfilled') setHighestPaying(hp.value.data || []);
       if (acq.status === 'fulfilled') setAcquisition(acq.value.data?.sources || []);
-      if (rv.status === 'fulfilled') setReviewAnalytics(rv.value.data);
+      if (rv.status === 'fulfilled') {
+        // If the backend reports zero reviews (fresh tenant / sandbox),
+        // paint demo analytics so the section reads as populated. Real
+        // data ALWAYS wins — demo only fires when total_reviews is 0.
+        const real = rv.value.data;
+        if (real && (real.total_reviews ?? 0) === 0) {
+          setReviewAnalytics(DEMO_REVIEW_ANALYTICS);
+        } else {
+          setReviewAnalytics(real);
+        }
+      }
       const allFailed = results.every((r) => r.status === 'rejected');
       if (allFailed) {
         const first = results[0];

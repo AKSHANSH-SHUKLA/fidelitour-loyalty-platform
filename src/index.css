@@ -1126,7 +1126,7 @@ textarea::placeholder {
 }
 
 /* Re-map the dashboard's tokens for everything nested inside us. */
-.av2-light-skin .fdt-dash {
+.av2-light-skin.fdt-dash {
   /* Surfaces & chrome */
   --fd-bg-2:     #FBF7EF;
   --fd-surface-2: #FFFFFF;
@@ -1391,29 +1391,32 @@ textarea::placeholder {
     10. LTV                        (.fd-panel:has(.fd-ltv-cards))
     11. Plan usage                 (.fd-panel:has(.fd-plan-grid))
    ═════════════════════════════════════════════════════════════════════ */
-.av2-light-skin .fdt-dash .fd-main {
+.av2-light-skin.fdt-dash .fd-main {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-.av2-light-skin .fdt-dash .fd-main > .fd-h            { order: 1; margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-kpi-grid     { order: 2; margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-status-row)   { order: 3;  margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-charts-grid  { order: 4;  margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-heatmap-wrap) { order: 5;  margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-ai           { order: 6;  margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-actions-head { order: 7;  margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-actions-grid { order: 8;  margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-churn-row)    { order: 9;  margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-ltv-cards)    { order: 10; margin: 0; }
-.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-plan-grid)    { order: 11; margin: 0; }
+/* New order — visuals first, supporting numbers next, action prompts last.
+   Matches the Analytics V2 cadence the owner approved: KPIs → charts →
+   heatmap → status → deep-dives → AI nudge → call-to-action tiles. */
+.av2-light-skin.fdt-dash .fd-main > .fd-h            { order: 1;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-kpi-grid     { order: 2;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-charts-grid  { order: 3;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-panel:has(.fd-heatmap-wrap) { order: 4;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-panel:has(.fd-status-row)   { order: 5;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-panel:has(.fd-churn-row)    { order: 6;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-panel:has(.fd-ltv-cards)    { order: 7;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-panel:has(.fd-plan-grid)    { order: 8;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-ai           { order: 9;  margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-actions-head { order: 10; margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fd-actions-grid { order: 11; margin: 0; }
 /* Fallback for browsers without :has() — keep the panels in their
    original DOM positions (one block) rather than collapsing on top
    of each other. The major engines (Chrome 105+, Safari 15.4+,
    Firefox 121+) all support :has() in 2026, so this is belt-and-
    braces only. */
 @supports not selector(:has(*)) {
-  .av2-light-skin .fdt-dash .fd-main > .fd-panel { order: 5; margin: 0; }
+  .av2-light-skin.fdt-dash .fd-main > .fd-panel { order: 5; margin: 0; }
 }
 
 /* Tighten the "Welcome back" header so the visuals get pulled even

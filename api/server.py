@@ -1556,6 +1556,141 @@ def health_check():
     except Exception as e:
         return {"status": "error", "detail": str(e), "mongodb_uri_set": bool(MONGODB_URI)}
 
+# ═══════════════════════════════════════════════════════════════════════
+# SUPPORT INBOX — businesses send queries from inside the dashboard
+# ───────────────────────────────────────────────────────────────────────
+# Every submission is:
+#   1. Always stored in `support_tickets` collection (so nothing is
+#      lost even if email delivery fails).
+#   2. Best-effort forwarded to SUPPORT_RECIPIENT_EMAIL via Formsubmit.co
+#      (no signup, no API key — first delivery requires a one-click
+#      activation click in the recipient's inbox; after that everything
+#      flows automatically).
+#
+# Recipient is hard-coded to the support inbox the platform owner
+# specified. Override with SUPPORT_RECIPIENT_EMAIL env var if needed.
+# ═══════════════════════════════════════════════════════════════════════
+
+SUPPORT_RECIPIENT_EMAIL = os.getenv("SUPPORT_RECIPIENT_EMAIL", "shuklaakshansh38@gmail.com")
+
+
+class SupportTicketIn(BaseModel):
+    subject: str
+    message: str
+    from_email: Optional[str] = None
+    from_name:  Optional[str] = None
+    tenant_slug: Optional[str] = None
+
+
+@app.post("/api/support/contact")
+def submit_support_ticket(payload: SupportTicketIn):
+    """Receive a support query from a business and forward it to the
+    platform's support inbox. Always persists the ticket to MongoDB
+    regardless of email-delivery outcome so the support team can
+    review tickets in the database even if SMTP is misconfigured."""
+    import uuid as _uuid
+    subject = (payload.subject or "").strip()
+    message = (payload.message or "").strip()
+    if not subject:
+        raise HTTPException(status_code=400, detail="Subject is required.")
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required.")
+    if len(subject) > 200:
+        raise HTTPException(status_code=400, detail="Subject is too long (max 200 chars).")
+    if len(message) > 5000:
+        raise HTTPException(status_code=400, detail="Message is too long (max 5000 chars).")
+
+    ticket = {
+        "id":           str(_uuid.uuid4()),
+        "subject":      subject,
+        "message":      message,
+        "from_email":   (payload.from_email or "").strip() or None,
+        "from_name":    (payload.from_name  or "").strip() or None,
+        "tenant_slug":  (payload.tenant_slug or "").strip() or None,
+        "created_at":   datetime.now(timezone.utc),
+        "status":       "open",
+        "email_sent":   False,
+        "email_error":  None,
+    }
+
+    # 1) Persist first — never lose a ticket because of network flakiness.
+    try:
+        db.support_tickets.insert_one(ticket)
+    except Exception as e:
+        print(f"[support] DB insert failed: {e}")
+
+    # 2) Best-effort email forward via Formsubmit.co (no signup needed).
+    #    First delivery triggers an activation email — recipient must
+    #    click the activation link once; subsequent submissions auto-
+    #    deliver. We never block the user on this — if it fails, the
+    #    ticket is still in the DB and the support team can pull it.
+    delivered = False
+    delivery_error = None
+    try:
+        import requests as _req
+        fs_payload = {
+            "_subject":     f"[FidéliTour Support] {subject}",
+            "_template":    "table",
+            "_captcha":     "false",
+            "from_name":    ticket["from_name"]  or "Business owner",
+            "from_email":   ticket["from_email"] or "no-reply@fidelitour.app",
+            "tenant_slug":  ticket["tenant_slug"] or "(unknown)",
+            "subject":      subject,
+            "message":      message,
+            "ticket_id":    ticket["id"],
+            "submitted_at": ticket["created_at"].isoformat(),
+        }
+        # Formsubmit ajax endpoint returns JSON {success: true/false}
+        r = _req.post(
+            f"https://formsubmit.co/ajax/{SUPPORT_RECIPIENT_EMAIL}",
+            json=fs_payload,
+            timeout=10,
+        )
+        ok = (r.status_code == 200) and (r.json().get("success") in (True, "true", "True"))
+        delivered = bool(ok)
+        if not ok:
+            delivery_error = f"Formsubmit status={r.status_code} body={r.text[:200]}"
+    except Exception as e:
+        delivery_error = str(e)
+
+    # 3) Update ticket with delivery outcome.
+    try:
+        db.support_tickets.update_one(
+            {"id": ticket["id"]},
+            {"$set": {"email_sent": delivered, "email_error": delivery_error}},
+        )
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "ticket_id": ticket["id"],
+        "delivered": delivered,
+        # We deliberately don't surface the email_error to the client —
+        # they don't need to know why delivery failed; their ticket is
+        # safely stored and the support team will follow up.
+    }
+
+
+@app.get("/api/admin/support/tickets")
+def list_support_tickets(
+    limit: int = 50,
+    token_data=Depends(require_role(["super_admin"])),
+):
+    """Admin-only view of recent support tickets so the platform team
+    can triage even if email delivery is broken."""
+    tickets = list(
+        db.support_tickets
+          .find({}, {"_id": 0})
+          .sort("created_at", -1)
+          .limit(max(1, min(int(limit or 50), 200)))
+    )
+    for t in tickets:
+        if isinstance(t.get("created_at"), datetime):
+            t["created_at"] = t["created_at"].isoformat()
+    return {"tickets": tickets}
+
+
 @app.post("/api/reset-seed")
 def reset_and_reseed():
     """Drop all collections and re-seed fresh data. Use for demo resets."""

@@ -10,9 +10,10 @@ import { ownerAPI } from '../lib/api';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
   Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History, ChevronDown,
-  Building2, Menu
+  Building2, Menu, LifeBuoy
 } from 'lucide-react';
 import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
+import SupportModal from '../components/SupportModal';
 
 /* =====================================================================
    DashboardLayout — the shell used by every authenticated page.
@@ -265,6 +266,35 @@ const SignOutNavItem = ({ onClick, collapsed }) => {
   );
 };
 
+// Support nav button — same visual treatment as NavLink, but opens
+// the SupportModal instead of navigating. Lives next to Sign-out so
+// businesses can reach the support inbox from every page.
+const SupportNavItem = ({ onClick, collapsed }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title={collapsed ? 'Support' : undefined}
+    className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all w-full text-left`}
+    style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
+    onMouseOver={(e) => {
+      e.currentTarget.style.background = 'hsl(258 90% 66% / .08)';
+      e.currentTarget.style.color = 'hsl(258 90% 50%)';
+    }}
+    onMouseOut={(e) => {
+      e.currentTarget.style.background = 'transparent';
+      e.currentTarget.style.color = 'var(--ink-mute)';
+    }}
+  >
+    <span
+      className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
+      style={{ color: 'inherit', border: '1px solid transparent' }}
+    >
+      <LifeBuoy className="w-[18px] h-[18px]" />
+    </span>
+    {!collapsed && <span className="truncate">Support</span>}
+  </button>
+);
+
 /* ────────────────────────────────────────────────────────────────────────
  * UserMenu — clickable avatar in the top toolbar.
  *
@@ -383,6 +413,9 @@ const DashboardLayout = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  // Support modal — opened from any role's sidebar; mounted once at
+  // the layout root so it overlays every dashboard page.
+  const [supportOpen, setSupportOpen] = React.useState(false);
   // Global search — smart routing.
   //
   // The owner expects: "card" → Card Designer, "settings" → Settings,
@@ -601,6 +634,7 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/history"       icon={History}      label={t('nav.history')}       currentPath={currentPath} role={role} collapsed={collapsed} />
               {/* Settings is expandable — click → dropdown of section anchors */}
               <SettingsNavLink icon={Settings2} currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SupportNavItem onClick={() => setSupportOpen(true)} collapsed={collapsed} />
               <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
@@ -611,12 +645,14 @@ const DashboardLayout = () => {
               <NavLink to="/dashboard/customers" icon={Users}     label={t('nav.customers')}    currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/dashboard/map"       icon={MapPin}    label={t('nav.customer_map')} currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/dashboard/history"   icon={History}   label={t('nav.history')}      currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SupportNavItem onClick={() => setSupportOpen(true)} collapsed={collapsed} />
               <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
           {role === 'staff' && (
             <>
               <NavLink to="/dashboard/scan" icon={QrCode} label={t('nav.scan_visit')} currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SupportNavItem onClick={() => setSupportOpen(true)} collapsed={collapsed} />
               <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
@@ -630,6 +666,7 @@ const DashboardLayout = () => {
               <NavLink to="/admin/card-designer" icon={Palette}      label="Card Designer"      currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/admin/campaigns"     icon={Megaphone}    label="Campaigns"          currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/admin/ai"            icon={BrainCircuit} label="AI Intelligence"    currentPath={currentPath} role={role} collapsed={collapsed} />
+              <SupportNavItem onClick={() => setSupportOpen(true)} collapsed={collapsed} />
               <SignOutNavItem onClick={logout} collapsed={collapsed} />
             </>
           )}
@@ -761,6 +798,15 @@ const DashboardLayout = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Support modal — opened from any sidebar "Support" item, mounted
+          once here so it overlays every dashboard page consistently. */}
+      <SupportModal
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        defaultEmail={user?.email || ''}
+        tenantSlug={user?.tenant_slug || ''}
+      />
     </div>
   );
 };
