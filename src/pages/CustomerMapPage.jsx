@@ -16,13 +16,27 @@ import LeafletFranceMap from '../components/LeafletFranceMap';
 // Given a set of customers (each with lat/lng) and a reference "city center"
 // point (center_lat, center_lng), classify each customer into N / S / E / W
 // based on which axis dominates the delta. Returns {N,S,E,W, total}.
+//
+// Tolerance fudge: previously the code used 1e-6 (about 11 cm) which is
+// well inside GPS precision. Postal-code geocoding returns ONE coordinate
+// per postal code — so two customers in the same postal code land at
+// EXACTLY the same lat/lng (delta = 0), and a department with N customers
+// in 1 postal code becomes a "single point" relative to the centroid.
+// We use 0.001° (~111m) — anything within 100m of the centroid is "at
+// the center", everything else gets a real direction.
 function computeQuadrants(customers, center) {
-  const out = { N: [], S: [], E: [], W: [] };
+  const out = { N: [], S: [], E: [], W: [], center: [] };
   for (const c of customers) {
     if (c.lat == null || c.lng == null) continue;
     const dLat = c.lat - center.lat;
     const dLng = c.lng - center.lng;
-    if (Math.abs(dLat) < 1e-6 && Math.abs(dLng) < 1e-6) continue; // city-center dwellers
+    // "At the center" — within ~111m of the centroid. Collected separately
+    // so the QuadrantBreakdown can surface them in a 5th tile if the
+    // entire department happens to be a single postal code.
+    if (Math.abs(dLat) < 0.001 && Math.abs(dLng) < 0.001) {
+      out.center.push(c);
+      continue;
+    }
     if (Math.abs(dLat) >= Math.abs(dLng)) {
       if (dLat > 0) out.N.push(c); else out.S.push(c);
     } else {
@@ -958,6 +972,37 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
   }
 
   const total = quads.N.length + quads.S.length + quads.E.length + quads.W.length;
+  const centerCount = (quads.center || []).length;
+
+  // Degenerate case: all customers in this department share (effectively)
+  // the same coordinate — happens any time the postal-code geocoder
+  // collapses everyone onto one point (e.g. you have 3 customers, all at
+  // postal code 37000 → same lat/lng → centroid IS that point → no
+  // quadrant). The previous behaviour was 0/0/0/0 which looks broken.
+  // Now we surface a clear explanation instead.
+  if (total === 0 && centerCount > 0) {
+    return (
+      <div className="p-3 border-t border-[#E7E5E4] bg-[#FDFBF7]">
+        <div className="flex items-center gap-2 mb-2">
+          <Compass size={14} className="text-[#B85C38]" />
+          <p className="text-xs uppercase tracking-wide font-semibold text-[#57534E]">
+            Where customers live (from {label}'s center)
+          </p>
+        </div>
+        <div className="rounded-lg border border-[#E3A869]/40 bg-[#FEF9E7] p-3 text-xs leading-relaxed text-[#7B3F00]">
+          <p className="font-semibold mb-1">
+            {centerCount === 1 ? 'Your single customer' : `All ${centerCount} customers`} in {label} share the same postal code.
+          </p>
+          <p>
+            Quadrant breakdown (N / S / E / W) only kicks in once customers are spread across multiple
+            postal codes within the department. Once you onboard customers from neighbouring areas, this
+            section will fill in.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const tiles = [
     { key: 'N', label: 'North', icon: ArrowUp, color: '#4A5D23' },
     { key: 'E', label: 'East',  icon: ArrowRight, color: '#5B8DEF' },
