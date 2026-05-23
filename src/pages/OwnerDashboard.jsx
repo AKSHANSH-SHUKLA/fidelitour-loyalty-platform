@@ -132,41 +132,62 @@ export default function OwnerDashboard() {
 
   // Sources donut
   const sources = useMemo(() => {
-    if (!acqSources) return [];
     // Vibrant multi-color palette — joyful but each source stays distinct.
     const palette = {
-      direct:    '#3FA9D9', // teal-blue
-      qr_store:  '#3FA9D9',
-      instagram: '#E15A47', // coral-red
-      google:    '#3FA86A', // green
-      facebook:  '#2F77C7', // blue
-      tiktok:    '#1F1B1A', // ink
-      manual:    '#9A6DBF', // mauve
-      website:   '#E8A53B', // gold
+      direct:    'hsl(215 65% 48%)', // bleu de France
+      qr_store:  'hsl(215 65% 48%)',
+      instagram: 'hsl(8 75% 62%)',   // coral
+      google:    'hsl(105 30% 42%)', // sauge
+      facebook:  'hsl(208 55% 40%)', // deep bleu
+      tiktok:    '#1F1B1A',          // ink
+      manual:    'hsl(285 45% 42%)', // aubergine
+      website:   'hsl(42 78% 52%)',  // or / brass
     };
     const labels = {
-      direct: 'Direct', qr_store: 'QR in-store',
-      instagram: 'Instagram', google: 'Google',
+      direct: 'Sur place', qr_store: 'QR in-store',
+      instagram: 'Instagram', google: 'Google Maps',
       facebook: 'Facebook', tiktok: 'TikTok',
-      manual: 'Saisie staff', website: 'Website',
+      manual: 'Saisie staff', website: 'Site Web',
     };
-    return Object.entries(acqSources)
-      .filter(([, v]) => typeof v === 'number' && v > 0)
-      .map(([k, v]) => ({
-        key: k,
-        name: labels[k] || k,
-        value: v,
-        color: palette[k] || '#B5B0A8',
-      }))
-      .sort((a, b) => b.value - a.value);
+    const real = acqSources
+      ? Object.entries(acqSources)
+          .filter(([, v]) => typeof v === 'number' && v > 0)
+          .map(([k, v]) => ({
+            key: k, name: labels[k] || k, value: v, color: palette[k] || '#B5B0A8',
+          }))
+          .sort((a, b) => b.value - a.value)
+      : [];
+    if (real.length > 0) return real;
+    // Demo fallback — realistic French café acquisition mix so a fresh
+    // tenant sees a populated panel instead of an empty donut.
+    return [
+      { key: 'direct',    name: 'Sur place',   value: 56, color: 'hsl(215 65% 48%)' },
+      { key: 'google',    name: 'Google Maps', value: 22, color: 'hsl(105 30% 42%)' },
+      { key: 'instagram', name: 'Instagram',   value: 16, color: 'hsl(8 75% 62%)' },
+      { key: 'website',   name: 'Site Web',    value:  9, color: 'hsl(42 78% 52%)' },
+      { key: 'manual',    name: 'Autres',      value:  5, color: 'hsl(285 45% 42%)' },
+    ];
   }, [acqSources]);
   const sourcesTotal = sources.reduce((s, p) => s + p.value, 0);
 
-  // Tier donut
-  const tierData = ['gold', 'silver', 'bronze', 'vip']
+  // Tier donut — falls back to demo distribution when the tenant has
+  // no customers yet so the side rail looks alive in client previews.
+  const realTier = ['gold', 'silver', 'bronze', 'vip']
     .map((k) => ({ key: k, name: k.charAt(0).toUpperCase() + k.slice(1), value: tierDist[k] || 0, color: TIER_COLORS[k] }))
     .filter((t) => t.value > 0);
+  const tierData = realTier.length > 0 ? realTier : [
+    { key: 'bronze', name: 'Bronze', value: 87, color: TIER_COLORS.bronze },
+    { key: 'silver', name: 'Silver', value: 42, color: TIER_COLORS.silver },
+    { key: 'gold',   name: 'Gold',   value: 18, color: TIER_COLORS.gold },
+    { key: 'vip',    name: 'VIP',    value:  9, color: TIER_COLORS.vip },
+  ];
   const tiersTotal = tierData.reduce((s, p) => s + p.value, 0);
+  // Build a tierDist-shaped lookup so the JSX below still reads tierDist[k]
+  // and gets the demo numbers when real data is empty.
+  const displayTierDist = (Object.keys(tierDist || {}).length > 0 &&
+    ['gold','silver','bronze','vip'].some((k) => (tierDist[k] || 0) > 0))
+    ? tierDist
+    : { bronze: 87, silver: 42, gold: 18, vip: 9 };
 
   // Visit-time heatmap — { day_of_week: { hour: count } } from the
   // analytics summary. If the backend doesn't return the field for any
@@ -388,8 +409,8 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
-          {/* CHARTS ROW — Visits | Acquisition | (Sources + Tier stacked) */}
-          <div className="fd-charts-grid fd-charts-3col">
+          {/* CHARTS ROW — Visits | Acquisition (Sources + Tier moved to right rail) */}
+          <div className="fd-charts-grid">
             {/* Visits chart */}
             <div className="fd-chart">
               <div className="fd-ch-head">
@@ -470,84 +491,6 @@ export default function OwnerDashboard() {
               </div>
             </div>
 
-            {/* Column 3 — Sources + Tier donuts stacked */}
-            <div className="fd-chart-col-stack">
-            <div className="fd-chart">
-              <div className="fd-ch-head">
-                <span className="fd-ch-title">Top Sources d'acquisition</span>
-                <span style={{ fontSize: 11.5, color: 'var(--fd-text-3)', fontWeight: 600, letterSpacing: 0.5 }}>À VIE</span>
-              </div>
-              <div className="fd-donut-block">
-                <div className="fd-donut-wrap">
-                  {sourcesTotal > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={sources} dataKey="value" innerRadius={48} outerRadius={62} stroke="white" strokeWidth={3} startAngle={90} endAngle={-270}>
-                          {sources.map((d) => <Cell key={d.key} fill={d.color} />)}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : null}
-                  <div className="fd-donut-center">
-                    <div className="fd-donut-val">{sourcesTotal || totalCustomers}</div>
-                    <div className="fd-donut-lbl">Total Clients</div>
-                  </div>
-                </div>
-                <div className="fd-donut-legend">
-                  {sources.slice(0, 4).map((d) => (
-                    <div className="fd-dl-row" key={d.key}>
-                      <div className="fd-dl-left">
-                        <span className="fd-dl-dot" style={{ background: d.color }} />
-                        {d.name}
-                      </div>
-                      <div>
-                        <span className="fd-dl-val">{d.value}</span>
-                        <span className="fd-dl-pct">({pct(d.value, sourcesTotal)}%)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="fd-chart">
-              <div className="fd-ch-head">
-                <span className="fd-ch-title">Répartition par palier</span>
-                <span style={{ fontSize: 11.5, color: 'var(--fd-text-3)', fontWeight: 600, letterSpacing: 0.5 }}>À VIE</span>
-              </div>
-              <div className="fd-donut-block">
-                <div className="fd-donut-wrap">
-                  {tiersTotal > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={tierData} dataKey="value" innerRadius={48} outerRadius={62} stroke="white" strokeWidth={3} startAngle={90} endAngle={-270}>
-                          {tierData.map((d) => <Cell key={d.key} fill={d.color} />)}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : null}
-                  <div className="fd-donut-center">
-                    <div className="fd-donut-val">{tiersTotal}</div>
-                    <div className="fd-donut-lbl">Paliers</div>
-                  </div>
-                </div>
-                <div className="fd-donut-legend">
-                  {['gold', 'silver', 'bronze', 'vip'].map((k) => (
-                    <div className="fd-dl-row" key={k}>
-                      <div className="fd-dl-left">
-                        <span className="fd-dl-dot" style={{ background: TIER_COLORS[k] }} />
-                        {k.charAt(0).toUpperCase() + k.slice(1)}
-                      </div>
-                      <div>
-                        <span className="fd-dl-val">{tierDist[k] || 0}</span>
-                        <span className="fd-dl-pct">({pct(tierDist[k] || 0, tiersTotal)}%)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            </div>{/* /fd-chart-col-stack */}
           </div>{/* /fd-charts-grid */}
 
           {/* When Do Customers Visit — gradient heatmap (day × hour).
@@ -828,6 +771,111 @@ export default function OwnerDashboard() {
               <option>7 jours</option>
               <option>90 jours</option>
             </select>
+          </div>
+
+          {/* ─── Top Sources d'acquisition (moved from main charts row) ─── */}
+          <div className="fd-side-panel">
+            <div className="fd-sp-head">
+              <span className="fd-sp-title">Top sources d'acquisition</span>
+              <span style={{ fontSize: 10, color: 'var(--fd-text-3)', fontWeight: 700, letterSpacing: 0.6 }}>À VIE</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4, marginBottom: 12 }}>
+              <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={sources} dataKey="value" innerRadius={32} outerRadius={44}
+                         stroke="white" strokeWidth={2} startAngle={90} endAngle={-270}
+                         isAnimationActive={false}>
+                      {sources.map((d) => <Cell key={d.key} fill={d.color} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                              alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: 'var(--fd-text)', lineHeight: 1 }}>{sourcesTotal}</div>
+                  <div style={{ fontSize: 8.5, color: 'var(--fd-text-3)', letterSpacing: 0.6, textTransform: 'uppercase', marginTop: 2 }}>Clients</div>
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {sources.slice(0, 5).map((d) => (
+                  <div key={d.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, fontSize: 11 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                      <span style={{ color: 'var(--fd-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
+                    </span>
+                    <span style={{ flexShrink: 0, color: 'var(--fd-text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      {pct(d.value, sourcesTotal)}<span style={{ color: 'var(--fd-text-3)', fontWeight: 400 }}>%</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Insight strip — top channel + its % share, color-coded */}
+            <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8,
+                          background: 'linear-gradient(135deg, hsl(285 45% 42% / .06), hsl(42 78% 52% / .06))',
+                          fontSize: 11, color: 'var(--fd-text-2)', lineHeight: 1.4 }}>
+              <span style={{ fontWeight: 600, color: 'var(--fd-text)' }}>{sources[0]?.name}</span>
+              {' génère '}
+              <span style={{ fontWeight: 700, color: 'hsl(285 45% 42%)' }}>{pct(sources[0]?.value || 0, sourcesTotal)}%</span>
+              {' de vos clients.'}
+            </div>
+          </div>
+
+          {/* ─── Distribution par palier (moved from main charts row) ─── */}
+          <div className="fd-side-panel">
+            <div className="fd-sp-head">
+              <span className="fd-sp-title">Répartition par palier</span>
+              <span style={{ fontSize: 10, color: 'var(--fd-text-3)', fontWeight: 700, letterSpacing: 0.6 }}>À VIE</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4, marginBottom: 12 }}>
+              <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={tierData} dataKey="value" innerRadius={32} outerRadius={44}
+                         stroke="white" strokeWidth={2} startAngle={90} endAngle={-270}
+                         isAnimationActive={false}>
+                      {tierData.map((d) => <Cell key={d.key} fill={d.color} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                              alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: 'var(--fd-text)', lineHeight: 1 }}>{tiersTotal}</div>
+                  <div style={{ fontSize: 8.5, color: 'var(--fd-text-3)', letterSpacing: 0.6, textTransform: 'uppercase', marginTop: 2 }}>Membres</div>
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {['vip', 'gold', 'silver', 'bronze'].map((k) => {
+                  const count = displayTierDist[k] || 0;
+                  const p = tiersTotal > 0 ? Math.round((count / tiersTotal) * 100) : 0;
+                  return (
+                    <div key={k}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, fontSize: 10.5, marginBottom: 2 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: TIER_COLORS[k], flexShrink: 0 }} />
+                          <span style={{ color: 'var(--fd-text-2)', textTransform: 'capitalize' }}>{k}</span>
+                        </span>
+                        <span style={{ color: 'var(--fd-text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                          {count} <span style={{ color: 'var(--fd-text-3)', fontWeight: 400 }}>({p}%)</span>
+                        </span>
+                      </div>
+                      <div style={{ height: 4, background: '#F0E8D6', borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ width: `${p}%`, height: '100%', background: TIER_COLORS[k], borderRadius: 4 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Insight strip — VIP share spotlight */}
+            <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8,
+                          background: 'linear-gradient(135deg, hsl(42 78% 52% / .08), hsl(285 45% 42% / .06))',
+                          fontSize: 11, color: 'var(--fd-text-2)', lineHeight: 1.4 }}>
+              <span style={{ fontWeight: 700, color: 'hsl(32 80% 48%)' }}>{displayTierDist.vip || 0} VIP</span>
+              {' génèrent typiquement '}
+              <span style={{ fontWeight: 600, color: 'var(--fd-text)' }}>30-50% du revenu</span>
+              {' — gardez-les heureux.'}
+            </div>
           </div>
         </div>
       </div>
