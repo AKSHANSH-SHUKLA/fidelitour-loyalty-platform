@@ -3258,14 +3258,62 @@ def _strip_data_url(b64: str) -> str:
     return b64
 
 
-def _call_vision_groq(image_b64: str, mime: str, prompt: str) -> Optional[str]:
-    """Groq vision (Llama-3.2-11b-vision-preview or 90b — free tier)."""
-    if not GROQ_API_KEY:
-        return None
+def _call_vision_nvidia(image_b64: str, mime: str, prompt: str) -> tuple:
+    """NVIDIA NIM vision — OpenAI-compatible. Tries the Llama 3.2 11B vision
+    model by default (free tier). Returns (output_text_or_none, error_string).
+    """
+    if not NVIDIA_API_KEY:
+        return None, "NVIDIA_API_KEY not set"
     try:
         import requests as _rq
-        # Llama 3.2 vision models. 11b is on the free tier, generous quota.
-        model = os.environ.get("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview")
+        model = os.environ.get("NVIDIA_VISION_MODEL", "meta/llama-3.2-11b-vision-instruct")
+        r = _rq.post(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {NVIDIA_API_KEY}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "model": model,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {
+                            "url": f"data:{mime or 'image/jpeg'};base64,{image_b64}",
+                        }},
+                    ],
+                }],
+                "temperature": 0.1,
+                "max_tokens": 1500,
+            },
+            timeout=45,
+        )
+        if r.status_code >= 400:
+            body = (r.text or "")[:200]
+            return None, f"nvidia HTTP {r.status_code}: {body}"
+        return r.json().get("choices", [{}])[0].get("message", {}).get("content", ""), None
+    except Exception as e:
+        return None, f"nvidia error: {e}"
+
+
+def _call_vision_groq(image_b64: str, mime: str, prompt: str) -> tuple:
+    """Groq vision. Default model bumped to the current Llama 4 Scout vision
+    model — the previous llama-3.2-11b-vision-preview default was deprecated
+    by Groq months ago and silently returned errors, which the chain then
+    mis-translated as "no provider configured".
+    Returns (output_text_or_none, error_string).
+    """
+    if not GROQ_API_KEY:
+        return None, "GROQ_API_KEY not set"
+    try:
+        import requests as _rq
+        # Current Groq vision-capable models (as of 2026):
+        #   meta-llama/llama-4-scout-17b-16e-instruct  ← good default
+        #   meta-llama/llama-4-maverick-17b-128e-instruct
+        # Owner can override via GROQ_VISION_MODEL env var.
+        model = os.environ.get("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
         r = _rq.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
@@ -3285,17 +3333,18 @@ def _call_vision_groq(image_b64: str, mime: str, prompt: str) -> Optional[str]:
             },
             timeout=45,
         )
-        r.raise_for_status()
-        return r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        if r.status_code >= 400:
+            body = (r.text or "")[:200]
+            return None, f"groq HTTP {r.status_code}: {body}"
+        return r.json().get("choices", [{}])[0].get("message", {}).get("content", ""), None
     except Exception as e:
-        print(f"_call_vision_groq error: {e}")
-        return None
+        return None, f"groq error: {e}"
 
 
-def _call_vision_openrouter(image_b64: str, mime: str, prompt: str) -> Optional[str]:
-    """OpenRouter — fallback. Defaults to a free vision-capable model."""
+def _call_vision_openrouter(image_b64: str, mime: str, prompt: str) -> tuple:
+    """OpenRouter — fallback. Returns (output_text_or_none, error_string)."""
     if not OPENROUTER_API_KEY:
-        return None
+        return None, "OPENROUTER_API_KEY not set"
     try:
         import requests as _rq
         model = os.environ.get("OPENROUTER_VISION_MODEL", "meta-llama/llama-3.2-11b-vision-instruct:free")
@@ -3323,11 +3372,12 @@ def _call_vision_openrouter(image_b64: str, mime: str, prompt: str) -> Optional[
             },
             timeout=45,
         )
-        r.raise_for_status()
-        return r.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        if r.status_code >= 400:
+            body = (r.text or "")[:200]
+            return None, f"openrouter HTTP {r.status_code}: {body}"
+        return r.json().get("choices", [{}])[0].get("message", {}).get("content", ""), None
     except Exception as e:
-        print(f"_call_vision_openrouter error: {e}")
-        return None
+        return None, f"openrouter error: {e}"
 
 
 @app.post("/api/owner/catalog/parse-menu")
@@ -3355,21 +3405,46 @@ def parse_menu_from_photo(
         "{\"name\":\"Pain au chocolat\",\"price\":1.50,\"category\":\"Pâtisserie\"}]"
     )
 
+    # Vision provider chain. NVIDIA NIM first (the owner's primary key),
+    # Groq next (current Llama 4 Scout vision), OpenRouter as last
+    # fallback. Each helper now returns (output, error_string) so we can
+    # surface the ACTUAL upstream error when every provider fails —
+    # before, the message always read "no provider configured" even when
+    # the real problem was a deprecated model or a 401 from a stale key.
     raw = None
     provider = None
-    for fn, label in [(_call_vision_groq, 'groq-vision'), (_call_vision_openrouter, 'openrouter-vision')]:
-        out = fn(image_b64, req.mime or 'image/jpeg', prompt)
+    errors = []  # collected per-provider errors for the failure response
+    for fn, label in [
+        (_call_vision_nvidia,     'nvidia-vision'),
+        (_call_vision_groq,       'groq-vision'),
+        (_call_vision_openrouter, 'openrouter-vision'),
+    ]:
+        out, err = fn(image_b64, req.mime or 'image/jpeg', prompt)
         if out:
             raw = out
             provider = label
             break
+        if err:
+            errors.append(f"[{label}] {err}")
 
     if not raw:
+        # If no key at all is set, give the configure-a-provider message.
+        # Otherwise (at least one key is set but all failed), surface the
+        # actual upstream errors so the owner can see what's wrong (model
+        # deprecated, rate limit, bad key, etc).
+        any_key_set = bool(NVIDIA_API_KEY or GROQ_API_KEY or OPENROUTER_API_KEY)
+        if not any_key_set:
+            msg = ("Aucun moteur de vision IA n'est configuré. Ajoutez NVIDIA_API_KEY, "
+                   "GROQ_API_KEY ou OPENROUTER_API_KEY sur Vercel et redéployez.")
+        else:
+            msg = ("Les fournisseurs de vision IA configurés ont tous échoué. "
+                   "Détails : " + " | ".join(errors[:3] or ["unknown error"]))
         raise HTTPException(
             status_code=503,
             detail={
                 "code": "vision_llm_unavailable",
-                "message": "Aucun moteur de vision IA n'est configuré ou disponible. Ajoutez GROQ_API_KEY ou OPENROUTER_API_KEY sur Vercel.",
+                "message": msg,
+                "errors": errors,
             },
         )
 
