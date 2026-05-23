@@ -109,9 +109,19 @@ export default function OwnerDashboard() {
   const atRiskCustomers = aboutToLose.value || 0;
   const newWithoutVisits = Math.max(0, totalCustomers - activeCustomers - dormantCustomers - atRiskCustomers);
 
-  // Visits twin chart data (last 12 buckets)
-  const visitsTwin = useTileMetric({ metric: 'total_visits', branchId, initial: { value: 30, unit: 'day' }, withSeries: true });
-  const uniquesTwin = useTileMetric({ metric: 'new_customers', branchId, initial: { value: 30, unit: 'day' }, withSeries: true });
+  // ────────────────────────────────────────────────────────────────────
+  // SHARED TIME WINDOW for both Visits + Acquisition charts.
+  // Owner picks a count + unit (e.g. "30 jours", "12 mois", "2 années")
+  // in the master toolbar above the charts row; both charts re-fetch
+  // automatically via the useTileMetric `controlledDays` prop.
+  // ────────────────────────────────────────────────────────────────────
+  const UNIT_DAYS_DASH = { day: 1, week: 7, month: 30, year: 365 };
+  const [dashWindow, setDashWindow] = useState({ count: 30, unit: 'day' });
+  const dashWindowDays = Math.max(1, Math.round(dashWindow.count * (UNIT_DAYS_DASH[dashWindow.unit] || 1)));
+
+  // Visits twin chart data — driven by the shared dashWindow above.
+  const visitsTwin  = useTileMetric({ metric: 'total_visits',  branchId, initial: { value: 30, unit: 'day' }, withSeries: true, controlledDays: dashWindowDays });
+  const uniquesTwin = useTileMetric({ metric: 'new_customers', branchId, initial: { value: 30, unit: 'day' }, withSeries: true, controlledDays: dashWindowDays });
   const visitsChartData = useMemo(() => {
     const vs = visitsTwin.series || [];
     const us = uniquesTwin.series || [];
@@ -123,8 +133,8 @@ export default function OwnerDashboard() {
     }));
   }, [visitsTwin.series, uniquesTwin.series]);
 
-  // Acquisition weekly — 26 buckets
-  const acqWeekly = useTileMetric({ metric: 'new_customers', branchId, initial: { value: 7 * 26, unit: 'day' }, withSeries: true });
+  // Acquisition — same shared window so both charts always stay in sync.
+  const acqWeekly = useTileMetric({ metric: 'new_customers', branchId, initial: { value: 7 * 26, unit: 'day' }, withSeries: true, controlledDays: dashWindowDays });
   const acqChartData = useMemo(() => (acqWeekly.series || []).map((v, i) => ({ idx: i + 1, value: v })), [acqWeekly.series]);
   const acqTotal = acqChartData.reduce((s, p) => s + p.value, 0);
   const acqAvg = acqChartData.length ? acqTotal / acqChartData.length : 0;
@@ -409,16 +419,104 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
+          {/* ─── MASTER TIME-WINDOW TOOLBAR ───────────────────────────────
+              Single source of truth for both charts below. Owner picks
+              a count + unit; both Visits chart and Acquisition chart
+              refetch via useTileMetric's controlledDays prop. */}
+          <div style={{
+            display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10,
+            margin: '0 0 12px',
+          }}>
+            <Calendar size={14} color="hsl(285 45% 42%)" />
+            <span style={{
+              fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
+              fontWeight: 700, color: 'var(--fd-text-3)',
+            }}>
+              Période
+            </span>
+
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 0,
+              background: '#FFFFFF', border: '1px solid var(--fd-border)',
+              borderRadius: 8, overflow: 'hidden', boxShadow: '0 1px 2px rgba(45, 35, 24, .04)',
+            }}>
+              <input
+                type="number" min="1" max="999"
+                value={dashWindow.count}
+                onChange={(e) => {
+                  const v = Math.max(1, Math.min(999, parseInt(e.target.value, 10) || 1));
+                  setDashWindow((p) => ({ ...p, count: v }));
+                }}
+                style={{
+                  width: 56, border: 0, padding: '7px 10px',
+                  fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+                  color: 'var(--fd-text)', textAlign: 'right', outline: 0,
+                  background: 'transparent',
+                }}
+              />
+              <div style={{ width: 1, height: 24, background: 'var(--fd-border)' }} />
+              <select
+                value={dashWindow.unit}
+                onChange={(e) => setDashWindow((p) => ({ ...p, unit: e.target.value }))}
+                style={{
+                  border: 0, padding: '7px 26px 7px 10px',
+                  fontFamily: 'inherit', fontSize: 13, fontWeight: 500,
+                  color: 'var(--fd-text-2)', cursor: 'pointer', outline: 0,
+                  background: 'transparent',
+                }}
+              >
+                <option value="day">jour{dashWindow.count > 1 ? 's' : ''}</option>
+                <option value="week">semaine{dashWindow.count > 1 ? 's' : ''}</option>
+                <option value="month">mois</option>
+                <option value="year">année{dashWindow.count > 1 ? 's' : ''}</option>
+              </select>
+            </div>
+
+            {/* Quick-pick chips — one tap for the most common windows */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { label: '7 j',     count: 7,   unit: 'day' },
+                { label: '30 j',    count: 30,  unit: 'day' },
+                { label: '90 j',    count: 90,  unit: 'day' },
+                { label: '12 mois', count: 12,  unit: 'month' },
+                { label: '1 an',    count: 1,   unit: 'year' },
+              ].map((q) => {
+                const active = dashWindow.count === q.count && dashWindow.unit === q.unit;
+                return (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => setDashWindow({ count: q.count, unit: q.unit })}
+                    style={{
+                      padding: '5px 10px', fontSize: 11.5, fontWeight: 500,
+                      border: `1px solid ${active ? 'hsl(285 45% 42%)' : 'var(--fd-border)'}`,
+                      background: active ? 'hsl(285 45% 42% / .08)' : '#FFFFFF',
+                      color: active ? 'hsl(285 45% 42%)' : 'var(--fd-text-2)',
+                      borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit',
+                      transition: 'all 120ms ease',
+                    }}
+                  >
+                    {q.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Live readout — shows the exact window in days */}
+            <span style={{
+              marginLeft: 'auto', fontSize: 11, color: 'var(--fd-text-3)',
+              fontStyle: 'italic',
+            }}>
+              ≈ {dashWindowDays} jour{dashWindowDays > 1 ? 's' : ''} de données
+            </span>
+          </div>
+
           {/* CHARTS ROW — Visits | Acquisition (Sources + Tier moved to right rail) */}
           <div className="fd-charts-grid">
-            {/* Visits chart */}
+            {/* Visits chart — time window is owned by the master toolbar above */}
             <div className="fd-chart">
               <div className="fd-ch-head">
                 <span className="fd-ch-title">Visites dans le temps</span>
-                <select className="fd-ch-select" defaultValue="30">
-                  <option value="30">30 derniers jours</option>
-                  <option value="90">90 derniers jours</option>
-                </select>
               </div>
               <div className="fd-ch-legend">
                 <span><span className="fd-ch-dot" style={{ background: '#3FA9D9' }} />Visites totales</span>
@@ -450,11 +548,10 @@ export default function OwnerDashboard() {
               </div>
             </div>
 
-            {/* Acquisition weekly */}
+            {/* Acquisition — time window is owned by the master toolbar above */}
             <div className="fd-chart">
               <div className="fd-ch-head">
                 <span className="fd-ch-title">Acquisition de clients</span>
-                <select className="fd-ch-select"><option>26 dernières semaines</option></select>
               </div>
               <div className="fd-chart-stats">
                 <div>
