@@ -155,7 +155,11 @@ const MyWalletCardPage = () => {
   const [err, setErr] = useState(null);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [deleted, setDeleted] = useState(false);
-  const [tab, setTab] = useState('offers'); // offers | news | program
+  // Two tabs only now (offers + program). The old "news" tab was a
+  // duplicate of offers — same backend campaigns shown under a different
+  // name. Merged into a single "Offres & messages" feed on the offers
+  // tab so customers (and merchants) don't see the same items twice.
+  const [tab, setTab] = useState('offers'); // offers | program
   const [toast, setToast] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   // Forces the InstallPwaPrompt to ignore the "dismissed recently" memory.
@@ -446,6 +450,50 @@ const MyWalletCardPage = () => {
   const activeOffer = card.active_offer || {};
   const stampsTarget = card.reward_threshold || 10;
 
+  // ── Merged "Offres" feed ────────────────────────────────────────────
+  // The backend returns two arrays (`offers` and `notifications`) that
+  // overlap — the same campaigns appear in BOTH. We merge them here so
+  // the UI shows each item exactly once, in a single chronological feed,
+  // with the standing card-template offer pinned at the top.
+  const mergedFeed = React.useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    // 1. Standing offer (kind:'primary') first, if present.
+    for (const o of (offers || [])) {
+      if (o.kind === 'primary' && o.id && !seen.has(o.id)) {
+        seen.add(o.id);
+        out.push({ ...o, _ts: 9e15 /* always first */ });
+      }
+    }
+    // 2. Campaign-kind items from offers (already has body/image/link).
+    for (const o of (offers || [])) {
+      if (o.kind === 'campaign' && o.id && !seen.has(o.id)) {
+        seen.add(o.id);
+        out.push({ ...o, _ts: o.sent_at ? Date.parse(o.sent_at) : 0 });
+      }
+    }
+    // 3. Anything in `notifications` that wasn't already in offers (fallback,
+    // future-proofing if backend ever returns extra notifications).
+    for (const n of (notifications || [])) {
+      if (n.id && !seen.has(n.id)) {
+        seen.add(n.id);
+        out.push({
+          id: n.id,
+          kind: 'campaign',
+          title: n.title,
+          description: n.body || '',
+          body: n.body || '',
+          image_url: n.image_url,
+          link: n.link,
+          sent_at: n.sent_at,
+          _ts: n.sent_at ? Date.parse(n.sent_at) : 0,
+        });
+      }
+    }
+    out.sort((a, b) => (b._ts || 0) - (a._ts || 0));
+    return out;
+  }, [offers, notifications]);
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] font-['Manrope'] py-10 px-4">
       <div className="max-w-5xl mx-auto">
@@ -686,101 +734,69 @@ const MyWalletCardPage = () => {
               );
             })()}
 
-            {/* Tabs */}
+            {/* Tabs — Offres now combines the old offers + news lists into
+                one chronological feed. The old "News" tab was a duplicate
+                of the same campaigns shown under offers, which confused
+                both customers and merchants. */}
             <div className="flex border-t border-[#E7E5E4] bg-[#FDFBF7]">
-              <TabBtn active={tab === 'offers'}  onClick={() => setTab('offers')} label="Offres" count={offers.length} />
-              <TabBtn active={tab === 'news'}    onClick={() => setTab('news')}   label="News"   count={notifications.length} />
+              <TabBtn active={tab === 'offers'}  onClick={() => setTab('offers')} label="Offres" count={mergedFeed.length} />
               <TabBtn active={tab === 'program'} onClick={() => setTab('program')} label="Programme" />
             </div>
 
             <div className="p-4 max-h-[420px] overflow-y-auto space-y-3">
-              {tab === 'offers' && (offers.length === 0 ? (
-                <p className="text-sm text-[#8B8680] text-center py-8">Aucune offre active pour le moment.</p>
-              ) : offers.map(o => {
-                // Campaign-kind offers are tappable and open the same detail
-                // modal as the News tab (server-side, both tabs surface the
-                // same campaigns — News calls them "notifications", Offers
-                // calls them "promotions". The customer expects to tap
-                // either to see the full body + image + CTA link.)
-                // The "primary" kind is the standing offer from the card
-                // template and isn't tied to a campaign id — render
-                // statically (non-clickable) so we don't fire a tracking
-                // event for a non-existent campaign.
-                const isClickable = o.kind === 'campaign' && o.id;
+              {/* Single unified feed — standing offers + recent campaigns
+                  in chronological order, deduplicated. Every campaign-kind
+                  item is tappable and opens the detail modal (firing the
+                  pixel open-tracking endpoint). The standing card-template
+                  offer is rendered non-clickable because it has no
+                  campaign id to attach analytics to. */}
+              {tab === 'offers' && (mergedFeed.length === 0 ? (
+                <p className="text-sm text-[#8B8680] text-center py-8">Aucune offre ni message pour le moment.</p>
+              ) : mergedFeed.map(item => {
+                const isClickable = item.kind === 'campaign' && item.id;
                 const Wrapper = isClickable ? 'button' : 'div';
                 return (
                   <Wrapper
-                    key={o.id}
+                    key={item.id}
                     {...(isClickable ? {
                       type: 'button',
                       onClick: () => {
-                        // Reuse the notification detail modal — same UI
-                        // shape (full body + hero image + CTA), same
-                        // tracking endpoints. The offers payload now
-                        // includes body / image_url / link to feed it.
                         setOpenedNotification({
-                          id: o.id,
-                          title: o.title,
-                          body: o.body || o.description || '',
-                          image_url: o.image_url,
-                          link: o.link,
-                          sent_at: o.sent_at,
+                          id: item.id,
+                          title: item.title,
+                          body: item.body || item.description || '',
+                          image_url: item.image_url,
+                          link: item.link,
+                          sent_at: item.sent_at,
                         });
                         try {
-                          api.get(`/campaigns/${o.id}/pixel/${customer.id}.png`).catch(() => {});
-                        } catch (_e) {}
+                          api.get(`/campaigns/${item.id}/pixel/${customer.id}.png`).catch(() => {});
+                        } catch (_e) { /* tracking failure must not block the open */ }
                       },
                     } : {})}
                     className={`w-full text-left rounded-lg border border-[#E7E5E4] p-3 bg-white ${isClickable ? 'hover:bg-[#FFF4F1] transition-colors cursor-pointer' : ''}`}
                   >
                     <div className="flex items-start gap-3">
-                      <Gift size={18} className="text-[#B85C38] mt-0.5" />
+                      <Gift size={18} className="text-[#B85C38] mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#1C1917] text-sm">{o.title}</p>
-                        <p className="text-xs text-[#57534E] mt-0.5 line-clamp-2">{o.description}</p>
-                        {o.valid_until && (
-                          <p className="text-[10px] text-[#8B8680] mt-1">Valable jusqu'au {new Date(o.valid_until).toLocaleDateString('fr-FR')}</p>
+                        <p className="font-semibold text-[#1C1917] text-sm">{item.title}</p>
+                        <p className="text-xs text-[#57534E] mt-0.5 line-clamp-2">{item.description || item.body}</p>
+                        {item.sent_at && item.kind === 'campaign' && (
+                          <p className="text-[10px] text-[#8B8680] mt-1">
+                            {new Date(item.sent_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                          </p>
+                        )}
+                        {item.valid_until && item.kind === 'primary' && (
+                          <p className="text-[10px] text-[#8B8680] mt-1">
+                            Valable jusqu'au {new Date(item.valid_until).toLocaleDateString('fr-FR')}
+                          </p>
                         )}
                       </div>
-                      {isClickable && <ChevronRight size={16} className="text-[#8B8680]" />}
+                      {isClickable && <ChevronRight size={16} className="text-[#8B8680] shrink-0 mt-1" />}
                     </div>
                   </Wrapper>
                 );
               }))}
-
-              {tab === 'news' && (notifications.length === 0 ? (
-                <p className="text-sm text-[#8B8680] text-center py-8">Aucune actualité récente.</p>
-              ) : notifications.map(n => (
-                // Wrap each notification as a button so the entire card is
-                // tappable. Tapping opens the full-detail modal AND fires
-                // the campaign open-tracking endpoint, so the merchant's
-                // analytics show the right "opens" count and open rate.
-                // ChevronRight on the right hints at tappability.
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => {
-                    setOpenedNotification(n);
-                    // Fire-and-forget open tracking. Uses the existing pixel
-                    // endpoint which is idempotent per (campaign, customer)
-                    // so re-opens don't inflate the counter.
-                    try {
-                      api.get(`/campaigns/${n.id}/pixel/${customer.id}.png`).catch(() => {});
-                    } catch (_e) { /* never block the open over a tracking blip */ }
-                  }}
-                  className="w-full text-left rounded-lg border border-[#E7E5E4] p-3 bg-white hover:bg-[#FFF4F1] transition-colors"
-                >
-                  <p className="font-semibold text-[#1C1917] text-sm flex items-center gap-2">
-                    <Bell size={14} className="text-[#B85C38]" />
-                    {n.title}
-                    <ChevronRight size={14} className="text-[#8B8680] ml-auto" />
-                  </p>
-                  <p className="text-xs text-[#57534E] mt-1 leading-snug line-clamp-2">{n.body}</p>
-                  {n.sent_at && (
-                    <p className="text-[10px] text-[#8B8680] mt-1">{new Date(n.sent_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
-                  )}
-                </button>
-              )))}
 
               {tab === 'program' && (
                 <div className="space-y-3 text-sm">

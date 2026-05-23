@@ -4821,6 +4821,27 @@ def _serialize_card_payload(cust: dict) -> dict:
     stamps_in_cycle = max(0, lifetime_visits - last_redemption_visits)
     stamps = min(stamps_in_cycle, reward_threshold)
 
+    # ── Merge brand_fields into the top-level template view ──────────────
+    # The Card Designer save endpoint writes the merchant's design tweaks
+    # under `brand_fields` (a sub-document on the template). It also
+    # mirrors a HANDFUL of those fields to the top level (primary_color,
+    # hero_image_url, etc) for backward-compat — but NOT the strip /
+    # offer-box / greeting / QR fields. Without this merge, every
+    # designer edit to strip_title, strip_subtitle, strip_color,
+    # offer_box_text, etc was being saved but invisibly dropped on the
+    # customer's card.
+    #
+    # Strategy: any key inside brand_fields that isn't already at the
+    # top level wins. Top-level wins where it exists, so existing setups
+    # that wrote top-level fields directly keep working.
+    brand_fields = tpl.get("brand_fields") or {}
+    if isinstance(brand_fields, dict):
+        for k, v in brand_fields.items():
+            if v is None:
+                continue
+            if k not in tpl or tpl.get(k) in (None, "", [], {}):
+                tpl[k] = v
+
     return {
         "customer": {
             "id": cust["id"],
@@ -4884,6 +4905,32 @@ def _serialize_card_payload(cust: dict) -> dict:
             "offer_box_subtext":    tpl.get("offer_box_subtext"),
             "offer_box_color":      tpl.get("offer_box_color"),
             "offer_box_ink_color":  tpl.get("offer_box_ink_color"),
+            # Remaining PremiumLoyaltyCard knobs — without these the
+            # customer card always rendered defaults even though the
+            # merchant configured them in the designer.
+            "logo_position":             tpl.get("logo_position"),
+            "show_points_top_right":     tpl.get("show_points_top_right"),
+            "points_top_right_label":    tpl.get("points_top_right_label"),
+            "bottom_greeting_label":     tpl.get("bottom_greeting_label"),
+            "show_qr":                   tpl.get("show_qr"),
+            "qr_size":                   tpl.get("qr_size"),
+            "show_birthday":             tpl.get("show_birthday"),
+            "birthday_label":            tpl.get("birthday_label"),
+            "show_tier_badge":           tpl.get("show_tier_badge"),
+            "title_label":               tpl.get("title_label"),
+            "points_label":              tpl.get("points_label"),
+            "greeting_label":            tpl.get("greeting_label"),
+            "back_label":                tpl.get("back_label"),
+            "back_value":                tpl.get("back_value"),
+            "title_font":                tpl.get("title_font"),
+            "title_italic":              tpl.get("title_italic"),
+            "text_on_brand":             tpl.get("text_on_brand"),
+            "back_link_color":           tpl.get("back_link_color"),
+            "strip_title":               tpl.get("strip_title"),
+            "strip_subtitle":            tpl.get("strip_subtitle"),
+            "strip_color":               tpl.get("strip_color"),
+            "strip_text_color":          tpl.get("strip_text_color"),
+            "strip_type":                tpl.get("strip_type"),
             # Tell the client whether this card currently has a personalised
             # overlay running (so it can show "Offre spéciale réservée" badge).
             "has_personalised_overlay": bool(override),
