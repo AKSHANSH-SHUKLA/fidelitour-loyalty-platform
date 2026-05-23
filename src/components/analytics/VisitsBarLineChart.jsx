@@ -14,17 +14,17 @@ import {
 } from 'recharts';
 
 const TOOLTIP_STYLE = {
-  background: 'hsl(228 28% 14%)',
-  border: '1px solid hsl(228 30% 21%)',
+  background: '#FFFFFF',
+  border: '1px solid #E7E5E4',
   borderRadius: 10,
-  color: 'hsl(228 23% 97%)',
+  color: 'hsl(228 28% 14%)',
   fontSize: 12,
   padding: '8px 10px',
   boxShadow: '0 12px 30px -12px rgba(0,0,0,.6)',
 };
 
 const LegendDot = ({ color, label }) => (
-  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'hsl(228 14% 81%)', fontSize: 11 }}>
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'hsl(228 14% 35%)', fontSize: 11 }}>
     <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
     {label}
   </span>
@@ -39,7 +39,7 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
 
   if (!data.length) {
     return (
-      <div style={{ height, display: 'grid', placeItems: 'center', color: 'hsl(228 11% 41%)', fontSize: 12 }}>
+      <div style={{ height, display: 'grid', placeItems: 'center', color: 'hsl(228 11% 55%)', fontSize: 12 }}>
         Aucune visite à afficher pour cette période.
       </div>
     );
@@ -60,24 +60,24 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
                 <stop offset="100%" stopColor="hsl(263 70% 50%)" />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="hsl(230 32% 18%)" vertical={false} strokeDasharray="2 4" />
+            <CartesianGrid stroke="#ECE3D2" vertical={false} strokeDasharray="2 4" />
             <XAxis
               dataKey="label"
-              tick={{ fill: 'hsl(228 11% 41%)', fontSize: 10 }}
+              tick={{ fill: 'hsl(228 11% 55%)', fontSize: 10 }}
               tickLine={false}
               axisLine={false}
               interval="preserveStartEnd"
               minTickGap={28}
             />
             <YAxis
-              tick={{ fill: 'hsl(228 11% 41%)', fontSize: 10 }}
+              tick={{ fill: 'hsl(228 11% 55%)', fontSize: 10 }}
               tickLine={false}
               axisLine={false}
               width={32}
             />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
-              labelStyle={{ color: 'hsl(228 11% 60%)', fontSize: 11 }}
+              labelStyle={{ color: 'hsl(228 11% 45%)', fontSize: 11 }}
               cursor={{ fill: 'hsl(228 28% 14% / .55)' }}
             />
             <Bar
@@ -93,7 +93,7 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
               dataKey="uniques"
               stroke="hsl(187 85% 53%)"
               strokeWidth={2}
-              dot={{ r: 2.5, fill: 'hsl(187 85% 53%)', stroke: 'hsl(228 30% 12%)', strokeWidth: 1 }}
+              dot={{ r: 2.5, fill: 'hsl(187 85% 53%)', stroke: '#FFFFFF', strokeWidth: 1 }}
               activeDot={{ r: 4 }}
               name="Uniques"
               isAnimationActive={false}

@@ -72,12 +72,12 @@ const KpiCard = ({
         overflow: 'hidden',
         textAlign: 'left',
         cursor: onClick ? 'pointer' : 'default',
-        background: 'hsl(228 30% 12%)',
-        border: '1px solid hsl(230 32% 18%)',
+        background: '#FFFFFF',
+        border: '1px solid #ECE3D2',
         borderRadius: 18,
         padding: '14px 14px 0',
         boxShadow: '0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7)',
-        color: 'hsl(228 23% 97%)',
+        color: 'hsl(228 28% 14%)',
         font: 'inherit',
         transition: 'transform 180ms cubic-bezier(.2,.7,.3,1), border-color 180ms ease',
       }}
@@ -90,7 +90,7 @@ const KpiCard = ({
       onMouseLeave={(e) => {
         if (onClick) {
           e.currentTarget.style.transform = '';
-          e.currentTarget.style.borderColor = 'hsl(230 32% 18%)';
+          e.currentTarget.style.borderColor = '#ECE3D2';
         }
       }}
     >
@@ -116,7 +116,7 @@ const KpiCard = ({
       <div
         style={{
           fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: 'hsl(228 11% 60%)', fontWeight: 500,
+          color: 'hsl(228 11% 45%)', fontWeight: 500,
         }}
       >
         {label}
@@ -127,7 +127,7 @@ const KpiCard = ({
         className="av2-num"
         style={{
           fontSize: 24, fontWeight: 500, lineHeight: 1.1, marginTop: 4,
-          color: 'hsl(228 23% 97%)',
+          color: 'hsl(228 28% 14%)',
         }}
       >
         {loading ? (
@@ -135,19 +135,19 @@ const KpiCard = ({
             aria-busy="true"
             style={{
               display: 'inline-block', width: 64, height: 22, borderRadius: 6,
-              background: 'hsl(228 28% 14%)', verticalAlign: 'middle',
+              background: '#FFFFFF', verticalAlign: 'middle',
             }}
           />
         ) : (
           <>
             {value}
-            {unit ? <span style={{ fontSize: 14, color: 'hsl(228 11% 60%)', marginLeft: 2 }}>{unit}</span> : null}
+            {unit ? <span style={{ fontSize: 14, color: 'hsl(228 11% 45%)', marginLeft: 2 }}>{unit}</span> : null}
           </>
         )}
       </div>
 
       {/* Subline (period) */}
-      <div style={{ fontSize: 10, color: 'hsl(228 11% 41%)', marginTop: 4, marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: 'hsl(228 11% 55%)', marginTop: 4, marginBottom: 8 }}>
         {sublabel}
       </div>
 

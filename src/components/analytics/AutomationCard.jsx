@@ -42,12 +42,12 @@ const AutomationCard = ({
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       style={{
-        background: 'hsl(228 28% 14%)',
-        border: '1px solid hsl(230 32% 18%)',
+        background: '#FFFFFF',
+        border: '1px solid #ECE3D2',
         borderRadius: 14,
         padding: 12,
         textAlign: 'left',
-        color: 'hsl(228 23% 97%)',
+        color: 'hsl(228 28% 14%)',
         cursor: onClick ? 'pointer' : 'default',
         font: 'inherit',
         transition: 'transform 150ms cubic-bezier(.2,.7,.3,1), border-color 150ms ease',
@@ -61,7 +61,7 @@ const AutomationCard = ({
       onMouseLeave={(e) => {
         if (onClick) {
           e.currentTarget.style.transform = '';
-          e.currentTarget.style.borderColor = 'hsl(230 32% 18%)';
+          e.currentTarget.style.borderColor = '#ECE3D2';
         }
       }}
     >
@@ -80,7 +80,7 @@ const AutomationCard = ({
       </div>
       <div style={{ fontSize: 12, fontWeight: 500, lineHeight: 1.3 }}>{title}</div>
       {subtitle && (
-        <div style={{ fontSize: 10.5, color: 'hsl(228 11% 60%)', marginTop: 2 }}>{subtitle}</div>
+        <div style={{ fontSize: 10.5, color: 'hsl(228 11% 45%)', marginTop: 2 }}>{subtitle}</div>
       )}
     </Tag>
   );

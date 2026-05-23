@@ -173,7 +173,7 @@ const VisitsWithCampaignsChart = () => {
     // ships light-theme colours inline, so when it renders inside the dark
     // Analytics V2 skin, the dark theme overrides in index.css use this
     // class to swap surface + text colours to remain readable on a navy
-    // background. The class is a no-op outside .av2-dark-skin.
+    // background. The class is a no-op outside .av2-light-skin.
     <div className="rounded-xl bg-white p-6 mt-6 vwcc" style={{ border: `1px solid ${C_PS.hairline}` }}>
       <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
         <div className="flex items-start gap-3">

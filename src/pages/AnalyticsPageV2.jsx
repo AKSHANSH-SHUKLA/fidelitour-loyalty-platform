@@ -1,9 +1,9 @@
 /**
- * AnalyticsPageV2 — dark Analytics page.
+ * AnalyticsPageV2 — Analytics page (light theme, v2 layout).
  *
  * Layout:
  *   1. NEW V2 mockup block at the top:
- *        - Header (title + subtitle + date pill + filter + bell + AI Copilot)
+ *        - Header (title + subtitle + AI Copilot CTA)
  *        - 5 KPI cards with sparklines
  *        - Visits chart + Channels donut row
  *        - RFM + Revenue + Top products row
@@ -12,22 +12,13 @@
  *        - Sticky right rail (AI Copilot score + Insights IA + Quick actions
  *          + Assistant IA)
  *   2. EXISTING dashboard content beneath, untouched — every section the
- *      owner already had stays where it always was:
- *        - AI recommendation banner
- *        - Idées & actions recommandées (4 cards)
- *        - Welcome back + 8-tile KPI grid
- *        - Customer Status & breakdown
- *        - Visits + Acquisition + Sources + Tier (original charts row)
- *        - Hours heatmap (original)
- *        - Churn & rétention
- *        - LTV
- *        - Plan usage
- *      Plus the right rail (Alertes + Résumé rapide + Filtre temps) the
- *      dashboard already renders.
+ *      owner already had stays where it always was.
  *
- * The entire page is wrapped in `.av2-dark-skin` so the existing dashboard
- * CSS variables flip to the v2 dark palette without touching the JSX of
- * any sub-component.
+ * The page is wrapped in `.av2-light-skin` — the same skin OwnerDashboard
+ * uses so the two pages look like one cohesive product. The skin rebinds
+ * the dashboard's --fd-* CSS variables to the FidéliTour warm-white
+ * palette and gives every panel the elevated card look without touching
+ * any sub-component JSX.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -75,10 +66,10 @@ const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
       padding: children ? '7px 12px' : 0,
       width: children ? undefined : 36, height: 36,
       justifyContent: 'center',
-      background: 'hsl(228 30% 12%)',
-      border: '1px solid hsl(230 32% 18%)',
+      background: '#FFFFFF',
+      border: '1px solid #ECE3D2',
       borderRadius: children ? 99 : 10,
-      color: 'hsl(228 14% 81%)',
+      color: 'hsl(228 14% 35%)',
       fontSize: 12.5, fontWeight: 500,
       cursor: 'pointer', position: 'relative',
       font: 'inherit',
@@ -93,7 +84,7 @@ const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
           minWidth: 17, height: 17, padding: '0 4px',
           borderRadius: 99,
           background: 'hsl(352 89% 60%)',
-          color: 'hsl(228 23% 97%)', fontSize: 9, fontWeight: 700,
+          color: '#FFFFFF', fontSize: 9, fontWeight: 700,
           display: 'grid', placeItems: 'center',
         }}
       >
@@ -113,7 +104,7 @@ const PrimaryButton = ({ icon: Icon, children, onClick }) => (
       background: 'linear-gradient(135deg, hsl(258 90% 66%), hsl(263 70% 50%))',
       border: '1px solid hsl(258 90% 66%)',
       borderRadius: 10,
-      color: 'hsl(228 23% 97%)',
+      color: '#FFFFFF',
       fontSize: 12.5, fontWeight: 500,
       cursor: 'pointer',
       boxShadow: '0 6px 18px -8px hsl(258 90% 66% / .55)',
@@ -132,14 +123,14 @@ const SectionDivider = ({ children }) => (
       margin: '24px 0 6px',
     }}
   >
-    <div style={{ height: 1, flex: 1, background: 'hsl(230 32% 18%)' }} />
+    <div style={{ height: 1, flex: 1, background: '#ECE3D2' }} />
     <span style={{
       fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
-      color: 'hsl(228 11% 60%)', fontWeight: 500, whiteSpace: 'nowrap',
+      color: 'hsl(228 11% 45%)', fontWeight: 500, whiteSpace: 'nowrap',
     }}>
       {children}
     </span>
-    <div style={{ height: 1, flex: 1, background: 'hsl(230 32% 18%)' }} />
+    <div style={{ height: 1, flex: 1, background: '#ECE3D2' }} />
   </div>
 );
 
@@ -548,7 +539,7 @@ export default function AnalyticsPageV2() {
   }, []);
 
   return (
-    <div className="av2-dark-skin">
+    <div className="av2-light-skin">
       {/* ─── V2 MOCKUP BLOCK ───────────────────────────────────────── */}
       <div className="av2-mockup">
 
@@ -598,10 +589,10 @@ export default function AnalyticsPageV2() {
 
             {/* 2) Évolution des visites (wide) + Répartition par canal (donut). */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
+              <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.30_days')}</span>}>
                 <VisitsBarLineChart data={displayVisitsChart} height={230} />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_channels')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
+              <ChartCard title={t('analytics.chart_channels')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.kpi_visits')}</span>}>
                 {displayChannelDonut.length > 0 ? (
                   <ChannelDonut
                     data={displayChannelDonut}
@@ -610,7 +601,7 @@ export default function AnalyticsPageV2() {
                     size={150}
                   />
                 ) : (
-                  <div style={{ display: 'grid', placeItems: 'center', height: 200, color: 'hsl(228 11% 41%)', fontSize: 12 }}>
+                  <div style={{ display: 'grid', placeItems: 'center', height: 200, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
                     {loading ? 'Chargement…' : 'Aucune source d\'acquisition pour cette branche.'}
                   </div>
                 )}
@@ -619,14 +610,14 @@ export default function AnalyticsPageV2() {
 
             {/* 3) RFM | Revenue trend | Top products. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Segments</span>}>
+              <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>Segments</span>}>
                 <RfmHeatmap
                   matrix={displayRfmMatrix}
                   rowLabels={['Récemment', 'Modérément', 'Anciennement']}
                   colLabels={['Faible', 'Moyenne', 'Élevée']}
                 />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>} padding={14}>
+              <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.30_days')}</span>} padding={14}>
                 <RevenueAreaChart
                   total={fmtNumFR(displayRevenueTotal)}
                   unit="€"
@@ -636,20 +627,20 @@ export default function AnalyticsPageV2() {
                   height={150}
                 />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.by_revenue')}</span>}>
+              <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.by_revenue')}</span>}>
                 <TopProductsList items={displayTopProducts} />
               </ChartCard>
             </section>
 
             {/* 4) Heatmap + weekday bars + new vs returning donut. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
+              <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.kpi_visits')}</span>}>
                 <HoursHeatmap matrix={displayHours.matrix} days={displayHours.days} hours={displayHours.hours} />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
+              <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.kpi_visits')}</span>}>
                 <WeekdayBars counts={displayWeekday} days={SHORT_DAYS} height={120} />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_new_vs_returning')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
+              <ChartCard title={t('analytics.chart_new_vs_returning')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.30_days')}</span>}>
                 {displayNvrSegments.length > 0 ? (
                   <ChannelDonut
                     data={displayNvrSegments}
@@ -658,7 +649,7 @@ export default function AnalyticsPageV2() {
                     size={130}
                   />
                 ) : (
-                  <div style={{ display: 'grid', placeItems: 'center', height: 130, color: 'hsl(228 11% 41%)', fontSize: 12 }}>
+                  <div style={{ display: 'grid', placeItems: 'center', height: 130, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
                     Aucune donnée.
                   </div>
                 )}
@@ -674,7 +665,7 @@ export default function AnalyticsPageV2() {
                   onClick={() => navigate('/dashboard/campaigns')}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'hsl(252 95% 85%)', fontSize: 11.5, fontWeight: 500,
+                    color: 'hsl(258 90% 50%)', fontSize: 11.5, fontWeight: 500,
                     padding: 0, font: 'inherit',
                   }}
                 >
@@ -748,7 +739,7 @@ export default function AnalyticsPageV2() {
             full Tier and Acquisition breakdown charts, all 12 time-
             windowed Activité tiles, Recovered Filter, Reviews &
             sentiment, and Rankings tabs. The dark skin propagates
-            from the .av2-dark-skin wrapper.
+            from the .av2-light-skin wrapper.
 
             The legacy page's OWN header ("Analytics" + LIVE pill) and
             its own AI banner are hidden via the CSS rule below — the

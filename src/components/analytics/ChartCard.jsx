@@ -29,7 +29,7 @@ const ChartCard = ({ title, chip, action, children, padding = 16, glow = false }
             margin: 0,
             fontSize: 13,
             fontWeight: 500,
-            color: 'hsl(228 23% 97%)',
+            color: 'hsl(228 28% 14%)',
             letterSpacing: '-0.005em',
           }}
         >

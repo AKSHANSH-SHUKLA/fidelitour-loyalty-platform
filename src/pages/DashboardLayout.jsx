@@ -475,35 +475,30 @@ const DashboardLayout = () => {
     return () => { alive = false; };
   }, [user?.email]);
 
-  // Analytics v2 has a dark theme. When the current route is the Analytics
-  // page, mark the dashboard root so the sidebar can flip its surface to
-  // the dark token palette. The flag is a data-attribute (not a class) so
-  // it never collides with the existing layout state classes.
-  const isAnalyticsDark = currentPath.startsWith('/dashboard/analytics');
+  // Analytics moved to the unified light theme (av2-light-skin) — same
+  // palette as the rest of the dashboard so navigating Analytics ↔
+  // Customers ↔ Campaigns no longer flips colour modes. Keeping the
+  // variable as `false` so a future per-route theme toggle has a single
+  // place to wire in without re-introducing the dead branches.
+  const isAnalyticsDark = false;
 
   return (
     <div
       className="relative flex min-h-screen fdt-dash"
-      data-route-dark={isAnalyticsDark ? 'true' : undefined}
       style={{
-        background: isAnalyticsDark
-          ? 'hsl(226 30% 7%)'  /* matches --bg in the v2 dark palette */
-          : 'linear-gradient(180deg, #FBF7EE 0%, #F5EFE0 100%)',
+        background: 'linear-gradient(180deg, #FBF7EE 0%, #F5EFE0 100%)',
         transition: 'background 200ms ease',
       }}
     >
-      {!isAnalyticsDark && <AmbientBackdrop role={role} />}
+      <AmbientBackdrop role={role} />
 
       <aside
         className={`sticky top-0 z-10 ${collapsed ? 'w-[72px]' : 'w-64'} h-screen flex flex-col shrink-0 transition-[width,background-color] duration-200 ease-out fd-aside fd-sidebar-host`}
         style={{
-          background: isAnalyticsDark
-            ? 'hsl(228 30% 9%)'  /* --sidebar-dark */
-            : 'rgba(255,255,255,0.78)',
+          background: 'rgba(255,255,255,0.78)',
           backdropFilter: 'blur(14px)',
-          borderRight: `1px solid ${isAnalyticsDark ? 'hsl(230 32% 18%)' : C.hairline}`,
+          borderRight: `1px solid ${C.hairline}`,
           alignSelf: 'flex-start',
-          color: isAnalyticsDark ? 'hsl(228 23% 97%)' : undefined,
         }}
       >
         {/* Collapse toggle — three-line hamburger pinned to the right edge.

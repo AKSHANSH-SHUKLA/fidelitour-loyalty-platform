@@ -13,10 +13,10 @@ import React from 'react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 
 const TOOLTIP_STYLE = {
-  background: 'hsl(228 28% 14%)',
-  border: '1px solid hsl(228 30% 21%)',
+  background: '#FFFFFF',
+  border: '1px solid #E7E5E4',
   borderRadius: 10,
-  color: 'hsl(228 23% 97%)',
+  color: 'hsl(228 28% 14%)',
   fontSize: 12,
   padding: '6px 10px',
   boxShadow: '0 12px 30px -12px rgba(0,0,0,.6)',
@@ -28,12 +28,12 @@ const RevenueAreaChart = ({ total, unit = '€', delta, data = [], height = 80, 
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
         <div>
-          <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'hsl(228 11% 60%)', fontWeight: 500 }}>
+          <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'hsl(228 11% 45%)', fontWeight: 500 }}>
             {label}
           </div>
-          <div className="av2-num" style={{ fontSize: 26, fontWeight: 500, color: 'hsl(228 23% 97%)', lineHeight: 1.05, marginTop: 2 }}>
+          <div className="av2-num" style={{ fontSize: 26, fontWeight: 500, color: 'hsl(228 28% 14%)', lineHeight: 1.05, marginTop: 2 }}>
             {total ?? '—'}
-            {unit ? <span style={{ fontSize: 14, color: 'hsl(228 11% 60%)', marginLeft: 4 }}>{unit}</span> : null}
+            {unit ? <span style={{ fontSize: 14, color: 'hsl(228 11% 45%)', marginLeft: 4 }}>{unit}</span> : null}
           </div>
         </div>
         {delta != null && isFinite(delta) ? (
@@ -70,13 +70,13 @@ const RevenueAreaChart = ({ total, unit = '€', delta, data = [], height = 80, 
               />
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                labelStyle={{ color: 'hsl(228 11% 60%)', fontSize: 11 }}
+                labelStyle={{ color: 'hsl(228 11% 45%)', fontSize: 11 }}
                 cursor={{ stroke: 'hsl(252 90% 76% / .3)', strokeWidth: 1 }}
               />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ display: 'grid', placeItems: 'center', height: '100%', fontSize: 11, color: 'hsl(228 11% 41%)' }}>
+          <div style={{ display: 'grid', placeItems: 'center', height: '100%', fontSize: 11, color: 'hsl(228 11% 55%)' }}>
             Pas assez de données pour tracer la tendance.
           </div>
         )}

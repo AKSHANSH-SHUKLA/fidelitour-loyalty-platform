@@ -7,7 +7,7 @@ import React from 'react';
 const WeekdayBars = ({ counts = [], days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'], height = 110 }) => {
   if (!counts.length) {
     return (
-      <div style={{ display: 'grid', placeItems: 'center', height, color: 'hsl(228 11% 41%)', fontSize: 12 }}>
+      <div style={{ display: 'grid', placeItems: 'center', height, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
         Aucune donnée par jour.
       </div>
     );
@@ -47,12 +47,12 @@ const WeekdayBars = ({ counts = [], days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'], 
       <div
         style={{
           display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 5, marginTop: 6, fontSize: 9.5, color: 'hsl(228 11% 60%)',
+          gap: 5, marginTop: 6, fontSize: 9.5, color: 'hsl(228 11% 45%)',
           textAlign: 'center',
         }}
       >
         {days.map((d, i) => (
-          <span key={i} style={{ color: i === peakIdx ? 'hsl(252 95% 85%)' : undefined, fontWeight: i === peakIdx ? 500 : 400 }}>
+          <span key={i} style={{ color: i === peakIdx ? 'hsl(258 90% 50%)' : undefined, fontWeight: i === peakIdx ? 500 : 400 }}>
             {d}
           </span>
         ))}

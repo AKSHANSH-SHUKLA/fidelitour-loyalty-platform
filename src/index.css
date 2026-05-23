@@ -956,34 +956,31 @@ textarea::placeholder {
 .card-designer-preview-pane::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }
 
 /* ═════════════════════════════════════════════════════════════════════════
-   ANALYTICS DARK REDESIGN (v2)
+   ANALYTICS V2 — TOKEN PALETTE (light)
    ─────────────────────────────────────────────────────────────────────────
-   Scoped to .fdt-analytics-v2. Applies only inside the Analytics page so
-   the rest of the app keeps the existing cream theme. The sidebar also
-   adopts these tokens when the dashboard root has data-route-dark="true"
-   (set by DashboardLayout when location.pathname starts with
-   /dashboard/analytics).
-
-   All colors are HSL triplets so Tailwind opacity modifiers (bg-purple/20)
-   work in the JSX when we get there.
+   The v2 chart primitives (av2-card, KpiCard, ChartCard, RightAiPanel)
+   read these CSS variables. Originally a dark navy palette; flipped to
+   the FidéliTour warm-white palette so Analytics matches the rest of
+   the dashboard. All colors are HSL triplets so Tailwind opacity
+   modifiers (bg-purple/20) keep working.
    ═════════════════════════════════════════════════════════════════════════ */
 .fdt-analytics-v2,
-[data-route-dark="true"] .fd-sidebar-host {
+.av2-light-skin {
   /* Surfaces */
-  --bg: 226 30% 7%;
-  --bg-2: 228 30% 9%;
-  --surface: 228 30% 12%;
-  --surface-2: 228 28% 14%;
-  --surface-3: 230 32% 18%;
-  --sidebar-dark: 228 30% 9%;
-  --hairline: 230 32% 18%;
-  --av2-border: 228 30% 21%;
-  --av2-border-strong: 228 28% 26%;
+  --bg: 35 50% 96%;            /* page bg cream */
+  --bg-2: 35 40% 98%;
+  --surface: 0 0% 100%;        /* card white */
+  --surface-2: 0 0% 100%;
+  --surface-3: 35 25% 92%;
+  --sidebar-dark: 35 40% 98%;  /* legacy name; now light */
+  --hairline: 35 25% 88%;      /* warm border */
+  --av2-border: 35 25% 88%;
+  --av2-border-strong: 35 18% 82%;
   /* Text */
-  --av2-text: 228 23% 97%;
-  --av2-text-dim: 228 14% 81%;
-  --av2-text-muted: 228 11% 60%;
-  --av2-text-faint: 228 11% 41%;
+  --av2-text: 228 28% 14%;     /* near-black */
+  --av2-text-dim: 228 14% 35%; /* secondary text */
+  --av2-text-muted: 228 11% 45%; /* muted */
+  --av2-text-faint: 228 11% 55%; /* very muted */
   /* Brand */
   --av2-purple-300: 252 95% 85%;
   --av2-purple-400: 252 90% 76%;
@@ -1033,14 +1030,16 @@ textarea::placeholder {
 .fdt-analytics-v2 .av2-rail { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 80px; }
 
 /* Base card primitive */
-.fdt-analytics-v2 .av2-card {
+.fdt-analytics-v2 .av2-card,
+.av2-light-skin .av2-card {
   background: hsl(var(--surface));
   border: 1px solid hsl(var(--hairline));
   border-radius: var(--av2-radius-lg);
-  box-shadow: 0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7);
+  box-shadow: 0 1px 2px 0 rgba(45, 35, 24, .04), 0 8px 24px -16px rgba(45, 35, 24, .12);
 }
-.fdt-analytics-v2 .av2-card.av2-glow {
-  box-shadow: 0 0 0 1px hsl(var(--av2-purple) / .25), 0 12px 40px -12px hsl(var(--av2-purple) / .45);
+.fdt-analytics-v2 .av2-card.av2-glow,
+.av2-light-skin .av2-card.av2-glow {
+  box-shadow: 0 0 0 1px hsl(var(--av2-purple) / .25), 0 12px 40px -16px hsl(var(--av2-purple) / .35);
   border-color: hsl(var(--av2-purple) / .35);
 }
 
@@ -1099,11 +1098,11 @@ textarea::placeholder {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ANALYTICS V2 — DARK SKIN OVERRIDES
+   ANALYTICS V2 — LIGHT SKIN OVERRIDES
    ───────────────────────────────────────────────────────────────────────
    Wraps the existing OwnerDashboard component. Flips every cream/white
    surface to the new dark navy palette while leaving the JSX, data
-   hooks, and behaviour entirely untouched. Scoped to .av2-dark-skin
+   hooks, and behaviour entirely untouched. Scoped to .av2-light-skin
    so the real Dashboard (/dashboard) stays on the cream theme.
 
    Strategy:
@@ -1116,27 +1115,27 @@ textarea::placeholder {
 
 /* Outer page background — kill the cream gradient, switch to solid dark. */
 [data-route-dark="true"] {
-  background: hsl(226 30% 7%) !important;
+  background: #FBF7EF !important;
 }
 
-.av2-dark-skin {
-  background: hsl(226 30% 7%);
+.av2-light-skin {
+  background: #FBF7EF;
   min-height: calc(100vh - 64px);
   padding: 0;
-  color: hsl(228 23% 97%);
+  color: hsl(228 28% 14%);
 }
 
 /* Re-map the dashboard's tokens for everything nested inside us. */
-.av2-dark-skin .fdt-dash {
+.av2-light-skin .fdt-dash {
   /* Surfaces & chrome */
-  --fd-bg-2:     hsl(228 30% 9%);
-  --fd-surface-2: hsl(228 28% 14%);
-  --fd-border:   hsl(230 32% 18%);
-  --fd-divider:  hsl(228 30% 21%);
+  --fd-bg-2:     #FBF7EF;
+  --fd-surface-2: #FFFFFF;
+  --fd-border:   #ECE3D2;
+  --fd-divider:  #E7E5E4;
   /* Text */
-  --fd-text:     hsl(228 23% 97%);
-  --fd-text-2:   hsl(228 14% 81%);
-  --fd-text-3:   hsl(228 11% 60%);
+  --fd-text:     hsl(228 28% 14%);
+  --fd-text-2:   hsl(228 14% 35%);
+  --fd-text-3:   hsl(228 11% 45%);
   /* Brand & semantics — bias toward the v2 purple while keeping
      the green / red / amber semantic accents readable. */
   --fd-primary:   hsl(258 90% 66%);
@@ -1144,227 +1143,227 @@ textarea::placeholder {
   --fd-pos:       hsl(160 84% 50%);
   --fd-neg:       hsl(351 95% 71%);
   --fd-warn:      hsl(38 92% 60%);
-  color: hsl(228 23% 97%);
+  color: hsl(228 28% 14%);
 }
 
 /* ─── Cards / panels — every white surface becomes the v2 surface. */
-.av2-dark-skin .fd-panel,
-.av2-dark-skin .fd-chart,
-.av2-dark-skin .fd-action,
-.av2-dark-skin .fd-side-panel,
-.av2-dark-skin .fd-status-row,
-.av2-dark-skin .fd-churn-card,
-.av2-dark-skin .fd-ltv-card,
-.av2-dark-skin .fd-plan-gauge,
-.av2-dark-skin .fd-plan-aside,
-.av2-dark-skin .fd-pt-cell {
-  background: hsl(228 30% 12%) !important;
-  border-color: hsl(230 32% 18%) !important;
-  color: hsl(228 23% 97%);
-  box-shadow: 0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7) !important;
+.av2-light-skin .fd-panel,
+.av2-light-skin .fd-chart,
+.av2-light-skin .fd-action,
+.av2-light-skin .fd-side-panel,
+.av2-light-skin .fd-status-row,
+.av2-light-skin .fd-churn-card,
+.av2-light-skin .fd-ltv-card,
+.av2-light-skin .fd-plan-gauge,
+.av2-light-skin .fd-plan-aside,
+.av2-light-skin .fd-pt-cell {
+  background: #FFFFFF !important;
+  border-color: #ECE3D2 !important;
+  color: hsl(228 28% 14%);
+  box-shadow: 0 1px 2px 0 rgba(45, 35, 24, .04), 0 8px 24px -16px rgba(45, 35, 24, .12) !important;
 }
 
 /* AI recommendation strip — keep purple identity but on dark surface. */
-.av2-dark-skin .fd-ai {
+.av2-light-skin .fd-ai {
   background: hsl(258 90% 66% / .08) !important;
   border-color: hsl(258 90% 66% / .35) !important;
-  color: hsl(228 23% 97%);
+  color: hsl(228 28% 14%);
 }
-.av2-dark-skin .fd-ai-eyebrow { color: hsl(252 95% 85%) !important; }
-.av2-dark-skin .fd-ai-title   { color: hsl(228 23% 97%) !important; }
-.av2-dark-skin .fd-ai-text    { color: hsl(228 14% 81%) !important; }
-.av2-dark-skin .fd-ai-close   { color: hsl(252 95% 85%) !important; }
-.av2-dark-skin .fd-ai-close:hover { background: hsl(258 90% 66% / .15) !important; }
+.av2-light-skin .fd-ai-eyebrow { color: hsl(258 90% 50%) !important; }
+.av2-light-skin .fd-ai-title   { color: hsl(228 28% 14%) !important; }
+.av2-light-skin .fd-ai-text    { color: hsl(228 14% 35%) !important; }
+.av2-light-skin .fd-ai-close   { color: hsl(258 90% 50%) !important; }
+.av2-light-skin .fd-ai-close:hover { background: hsl(258 90% 66% / .15) !important; }
 
 /* Page title + LIVE pill */
-.av2-dark-skin .fd-title { color: hsl(228 23% 97%) !important; }
-.av2-dark-skin .fd-live {
+.av2-light-skin .fd-title { color: hsl(228 28% 14%) !important; }
+.av2-light-skin .fd-live {
   background: hsl(160 84% 39% / .15) !important;
-  color: hsl(160 84% 60%) !important;
+  color: hsl(160 84% 30%) !important;
 }
-.av2-dark-skin .fd-sub { color: hsl(228 11% 60%) !important; }
+.av2-light-skin .fd-sub { color: hsl(228 11% 45%) !important; }
 
-/* Primary buttons — switch to v2 purple gradient. */
-.av2-dark-skin .fd-btn-primary {
+/* Primary buttons — purple gradient stays; text MUST be white on saturated bg. */
+.av2-light-skin .fd-btn-primary {
   background: linear-gradient(135deg, hsl(258 90% 66%), hsl(263 70% 50%)) !important;
-  color: hsl(228 23% 97%) !important;
+  color: #FFFFFF !important;
   border-color: transparent !important;
 }
-.av2-dark-skin .fd-btn-primary:hover {
+.av2-light-skin .fd-btn-primary:hover {
   background: linear-gradient(135deg, hsl(263 70% 50%), hsl(258 90% 66%)) !important;
 }
-.av2-dark-skin .fd-btn-purple {
+.av2-light-skin .fd-btn-purple {
   background: hsl(258 90% 66%) !important;
-  color: hsl(228 23% 97%) !important;
+  color: #FFFFFF !important;
 }
-.av2-dark-skin .fd-btn-purple:hover { background: hsl(263 70% 50%) !important; }
+.av2-light-skin .fd-btn-purple:hover { background: hsl(263 70% 50%) !important; }
 
 /* KPI grid — flip pastel surfaces to dark, keep colored icon chips. */
-.av2-dark-skin .fd-kpi[class*="k-"] {
-  background: hsl(228 30% 12%) !important;
-  border: 1px solid hsl(230 32% 18%) !important;
+.av2-light-skin .fd-kpi[class*="k-"] {
+  background: #FFFFFF !important;
+  border: 1px solid #ECE3D2 !important;
 }
-.av2-dark-skin .fd-kpi[class*="k-"] .fd-kpi-value { color: hsl(228 23% 97%) !important; }
-.av2-dark-skin .fd-kpi[class*="k-"] .fd-kpi-label { color: hsl(228 11% 60%) !important; }
-.av2-dark-skin .fd-kpi[class*="k-"] .fd-kpi-sub   { color: hsl(228 11% 60%) !important; }
-.av2-dark-skin .fd-kpi-foot { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-kpi-delta.pos { color: hsl(160 84% 60%) !important; }
-.av2-dark-skin .fd-kpi-delta.neg { color: hsl(351 95% 71%) !important; }
+.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-value { color: hsl(228 28% 14%) !important; }
+.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-label { color: hsl(228 11% 45%) !important; }
+.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-sub   { color: hsl(228 11% 45%) !important; }
+.av2-light-skin .fd-kpi-foot { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-kpi-delta.pos { color: hsl(160 84% 60%) !important; }
+.av2-light-skin .fd-kpi-delta.neg { color: hsl(351 95% 71%) !important; }
 
 /* Panel headers */
-.av2-dark-skin .fd-panel-h     { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-panel-sub   { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-panel-title { color: hsl(228 11% 60%); }
+.av2-light-skin .fd-panel-h     { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-panel-sub   { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-panel-title { color: hsl(228 11% 45%); }
 
 /* Customer Status & breakdown — the stacked colour bar keeps its hues. */
-.av2-dark-skin .fd-status-bar {
-  background: hsl(228 30% 21%) !important;
-  border-color: hsl(228 30% 21%) !important;
+.av2-light-skin .fd-status-bar {
+  background: #E7E5E4 !important;
+  border-color: #E7E5E4 !important;
 }
-.av2-dark-skin .fd-sc-label   { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-sc-value   { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-sc-sub     { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-mini-val   { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-mini-lbl   { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-mini-name  { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-mini-val   { color: hsl(228 23% 97%); }
+.av2-light-skin .fd-sc-label   { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-sc-value   { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-sc-sub     { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-mini-val   { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-mini-lbl   { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-mini-name  { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-mini-val   { color: hsl(228 28% 14%); }
 
 /* Charts row — titles, dropdowns, footers. */
-.av2-dark-skin .fd-ch-title  { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-ch-select {
-  background: hsl(228 28% 14%) !important;
-  border-color: hsl(230 32% 18%) !important;
-  color: hsl(228 14% 81%) !important;
+.av2-light-skin .fd-ch-title  { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-ch-select {
+  background: #FFFFFF !important;
+  border-color: #ECE3D2 !important;
+  color: hsl(228 14% 35%) !important;
 }
-.av2-dark-skin .fd-ch-legend { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-ch-foot   {
+.av2-light-skin .fd-ch-legend { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-ch-foot   {
   background: hsl(258 90% 66% / .08) !important;
-  color: hsl(228 14% 81%) !important;
+  color: hsl(228 14% 35%) !important;
 }
-.av2-dark-skin .fd-cs-lbl { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-cs-val { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-cs-sub { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-pt-lbl { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-pt-val { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-pt-delta      { color: hsl(160 84% 60%); }
-.av2-dark-skin .fd-pt-delta.neg  { color: hsl(351 95% 71%); }
+.av2-light-skin .fd-cs-lbl { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-cs-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-cs-sub { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-pt-lbl { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-pt-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-pt-delta      { color: hsl(160 84% 60%); }
+.av2-light-skin .fd-pt-delta.neg  { color: hsl(351 95% 71%); }
 
 /* Donuts — center text and legend rows. */
-.av2-dark-skin .fd-donut-val { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-donut-lbl { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-dl-row    { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-dl-pct    { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-dl-val    { color: hsl(228 23% 97%); }
+.av2-light-skin .fd-donut-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-donut-lbl { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-dl-row    { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-dl-pct    { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-dl-val    { color: hsl(228 28% 14%); }
 
 /* Heatmap — the visit-time gradient grid lives in fd-heatmap*. */
-.av2-dark-skin .fd-heatmap-wrap { border-color: hsl(230 32% 18%) !important; background: hsl(228 30% 12%); }
-.av2-dark-skin .fd-heatmap thead th {
-  background: hsl(228 28% 14%) !important;
-  color: hsl(228 11% 60%) !important;
+.av2-light-skin .fd-heatmap-wrap { border-color: #ECE3D2 !important; background: #FFFFFF; }
+.av2-light-skin .fd-heatmap thead th {
+  background: #FFFFFF !important;
+  color: hsl(228 11% 45%) !important;
 }
-.av2-dark-skin .fd-heatmap .fd-hm-hour {
-  background: hsl(228 28% 14%) !important;
-  color: hsl(228 14% 81%) !important;
+.av2-light-skin .fd-heatmap .fd-hm-hour {
+  background: #FFFFFF !important;
+  color: hsl(228 14% 35%) !important;
 }
-.av2-dark-skin .fd-heatmap td { border-top-color: hsl(230 32% 18%) !important; }
-.av2-dark-skin .fd-hm-legend-lbl  { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-hm-legend-ramp { border-color: hsl(230 32% 18%); }
+.av2-light-skin .fd-heatmap td { border-top-color: #ECE3D2 !important; }
+.av2-light-skin .fd-hm-legend-lbl  { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-hm-legend-ramp { border-color: #ECE3D2; }
 
 /* Action tiles (Idées & actions recommandées) */
-.av2-dark-skin .fd-action { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-at-title { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-at-desc  { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-at-btn   { color: white; }
-.av2-dark-skin .fd-actions-head .fd-panel-h { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-actions-head .fd-panel-sub { color: hsl(228 14% 81%); }
+.av2-light-skin .fd-action { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-at-title { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-at-desc  { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-at-btn   { color: white; }
+.av2-light-skin .fd-actions-head .fd-panel-h { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-actions-head .fd-panel-sub { color: hsl(228 14% 35%); }
 
 /* Churn cards */
-.av2-dark-skin .fd-cc-lbl { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-cc-val { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-cc-val.warn { color: hsl(38 92% 60%) !important; }
-.av2-dark-skin .fd-cc-sub { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-ml-row  { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-ml-name { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-ml-val  { color: hsl(228 23% 97%); }
+.av2-light-skin .fd-cc-lbl { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-cc-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-cc-val.warn { color: hsl(38 92% 60%) !important; }
+.av2-light-skin .fd-cc-sub { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-ml-row  { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-ml-name { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-ml-val  { color: hsl(228 28% 14%); }
 
 /* LTV */
-.av2-dark-skin .fd-lc-lbl { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-lc-val { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-ltv-card.high {
+.av2-light-skin .fd-lc-lbl { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-lc-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-ltv-card.high {
   background: hsl(258 90% 66% / .12) !important;
   border-color: hsl(258 90% 66% / .35) !important;
 }
-.av2-dark-skin .fd-ltv-table { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-ltv-table th { color: hsl(228 11% 60%); border-bottom-color: hsl(230 32% 18%) !important; }
-.av2-dark-skin .fd-ltv-table td { border-top-color: hsl(230 32% 18%) !important; color: hsl(228 14% 81%); }
+.av2-light-skin .fd-ltv-table { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-ltv-table th { color: hsl(228 11% 45%); border-bottom-color: #ECE3D2 !important; }
+.av2-light-skin .fd-ltv-table td { border-top-color: #ECE3D2 !important; color: hsl(228 14% 35%); }
 
 /* Plan usage */
-.av2-dark-skin .fd-plan-num       { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-plan-num-total { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-plan-chip {
+.av2-light-skin .fd-plan-num       { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-plan-num-total { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-plan-chip {
   background: hsl(258 90% 66% / .15) !important;
-  color: hsl(252 95% 85%) !important;
+  color: hsl(258 90% 50%) !important;
   border-color: hsl(258 90% 66% / .35) !important;
 }
-.av2-dark-skin .fd-plan-pct { color: hsl(228 11% 60%); }
-.av2-dark-skin .fd-pa-h     { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-pa-list  { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-pa-list li b { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-pa-btn   {
-  background: hsl(228 28% 14%) !important;
-  border-color: hsl(230 32% 18%) !important;
-  color: hsl(228 14% 81%) !important;
+.av2-light-skin .fd-plan-pct { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-pa-h     { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-pa-list  { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-pa-list li b { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-pa-btn   {
+  background: #FFFFFF !important;
+  border-color: #ECE3D2 !important;
+  color: hsl(228 14% 35%) !important;
 }
 
 /* Right rail — Alertes + Résumé rapide */
-.av2-dark-skin .fd-sp-head    { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-sp-title   { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-sp-count   {
+.av2-light-skin .fd-sp-head    { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-sp-title   { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-sp-count   {
   background: hsl(258 90% 66% / .15) !important;
-  color: hsl(252 95% 85%) !important;
+  color: hsl(258 90% 50%) !important;
 }
-.av2-dark-skin .fd-sp-cta {
-  color: hsl(252 95% 85%) !important;
+.av2-light-skin .fd-sp-cta {
+  color: hsl(258 90% 50%) !important;
   background: transparent !important;
 }
-.av2-dark-skin .fd-sp-cta:hover { background: hsl(258 90% 66% / .08) !important; }
+.av2-light-skin .fd-sp-cta:hover { background: hsl(258 90% 66% / .08) !important; }
 
 /* Alert items inside the right rail */
-.av2-dark-skin .fd-alert {
-  background: hsl(228 28% 14%) !important;
-  border-color: hsl(230 32% 18%) !important;
-  color: hsl(228 14% 81%);
+.av2-light-skin .fd-alert {
+  background: #FFFFFF !important;
+  border-color: #ECE3D2 !important;
+  color: hsl(228 14% 35%);
 }
-.av2-dark-skin .fd-alert-title { color: hsl(228 23% 97%); }
-.av2-dark-skin .fd-alert-sub   { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-alert-time  { color: hsl(228 11% 60%); }
+.av2-light-skin .fd-alert-title { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-alert-sub   { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-alert-time  { color: hsl(228 11% 45%); }
 
 /* Summary rows (Résumé rapide) */
-.av2-dark-skin .fd-sr-row { color: hsl(228 14% 81%); border-bottom-color: hsl(230 32% 18%) !important; }
-.av2-dark-skin .fd-sr-label { color: hsl(228 14% 81%); }
-.av2-dark-skin .fd-sr-value { color: hsl(228 23% 97%); }
+.av2-light-skin .fd-sr-row { color: hsl(228 14% 35%); border-bottom-color: #ECE3D2 !important; }
+.av2-light-skin .fd-sr-label { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-sr-value { color: hsl(228 28% 14%); }
 
 /* Generic links / hint text that may sit on white in places we missed. */
-.av2-dark-skin a { color: hsl(252 95% 85%); }
+.av2-light-skin a { color: hsl(258 90% 50%); }
 
 /* Stat-bar separators that used to be on cream surfaces. */
-.av2-dark-skin .fd-status-grid > * { border-color: hsl(230 32% 18%); }
-.av2-dark-skin .fd-churn-row,
-.av2-dark-skin .fd-plan-grid { border-color: hsl(230 32% 18%); }
+.av2-light-skin .fd-status-grid > * { border-color: #ECE3D2; }
+.av2-light-skin .fd-churn-row,
+.av2-light-skin .fd-plan-grid { border-color: #ECE3D2; }
 
 /* Recharts axes / grid lines inside any chart on this skin should read
    on dark — Recharts inlines stroke colours from props so we use a
    tinted CartesianGrid backdrop instead. Tooltip already handled in
    the chart components. */
-.av2-dark-skin .recharts-cartesian-grid line { stroke: hsl(230 32% 18%) !important; }
-.av2-dark-skin .recharts-cartesian-axis-tick text { fill: hsl(228 11% 60%) !important; }
-.av2-dark-skin .recharts-default-tooltip {
-  background: hsl(228 28% 14%) !important;
-  border-color: hsl(228 30% 21%) !important;
-  color: hsl(228 23% 97%) !important;
+.av2-light-skin .recharts-cartesian-grid line { stroke: #ECE3D2 !important; }
+.av2-light-skin .recharts-cartesian-axis-tick text { fill: hsl(228 11% 45%) !important; }
+.av2-light-skin .recharts-default-tooltip {
+  background: #FFFFFF !important;
+  border-color: #E7E5E4 !important;
+  color: hsl(228 28% 14%) !important;
 }
-.av2-dark-skin .recharts-tooltip-label { color: hsl(228 11% 60%) !important; }
-.av2-dark-skin .recharts-tooltip-item  { color: hsl(228 23% 97%) !important; }
+.av2-light-skin .recharts-tooltip-label { color: hsl(228 11% 45%) !important; }
+.av2-light-skin .recharts-tooltip-item  { color: hsl(228 28% 14%) !important; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    ANALYTICS V2 — SECTION REORDER FOR FIRST-VIEWPORT IMPACT
@@ -1392,42 +1391,42 @@ textarea::placeholder {
     10. LTV                        (.fd-panel:has(.fd-ltv-cards))
     11. Plan usage                 (.fd-panel:has(.fd-plan-grid))
    ═════════════════════════════════════════════════════════════════════ */
-.av2-dark-skin .fdt-dash .fd-main {
+.av2-light-skin .fdt-dash .fd-main {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-.av2-dark-skin .fdt-dash .fd-main > .fd-h            { order: 1; margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-kpi-grid     { order: 2; margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-status-row)   { order: 3;  margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-charts-grid  { order: 4;  margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-heatmap-wrap) { order: 5;  margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-ai           { order: 6;  margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-actions-head { order: 7;  margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-actions-grid { order: 8;  margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-churn-row)    { order: 9;  margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-ltv-cards)    { order: 10; margin: 0; }
-.av2-dark-skin .fdt-dash .fd-main > .fd-panel:has(.fd-plan-grid)    { order: 11; margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-h            { order: 1; margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-kpi-grid     { order: 2; margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-status-row)   { order: 3;  margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-charts-grid  { order: 4;  margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-heatmap-wrap) { order: 5;  margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-ai           { order: 6;  margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-actions-head { order: 7;  margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-actions-grid { order: 8;  margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-churn-row)    { order: 9;  margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-ltv-cards)    { order: 10; margin: 0; }
+.av2-light-skin .fdt-dash .fd-main > .fd-panel:has(.fd-plan-grid)    { order: 11; margin: 0; }
 /* Fallback for browsers without :has() — keep the panels in their
    original DOM positions (one block) rather than collapsing on top
    of each other. The major engines (Chrome 105+, Safari 15.4+,
    Firefox 121+) all support :has() in 2026, so this is belt-and-
    braces only. */
 @supports not selector(:has(*)) {
-  .av2-dark-skin .fdt-dash .fd-main > .fd-panel { order: 5; margin: 0; }
+  .av2-light-skin .fdt-dash .fd-main > .fd-panel { order: 5; margin: 0; }
 }
 
 /* Tighten the "Welcome back" header so the visuals get pulled even
    higher into the first viewport. */
-.av2-dark-skin .fd-h        { padding-bottom: 0; }
-.av2-dark-skin .fd-title    { font-size: 26px !important; letter-spacing: -0.02em; line-height: 1.05; }
-.av2-dark-skin .fd-sub      { margin-top: 4px !important; font-size: 12.5px !important; }
+.av2-light-skin .fd-h        { padding-bottom: 0; }
+.av2-light-skin .fd-title    { font-size: 26px !important; letter-spacing: -0.02em; line-height: 1.05; }
+.av2-light-skin .fd-sub      { margin-top: 4px !important; font-size: 12.5px !important; }
 
 /* Compact the AI banner once it's been moved down so it doesn't eat
    too much vertical room a second time. */
-.av2-dark-skin .fd-ai           { padding: 14px 16px !important; gap: 14px !important; }
-.av2-dark-skin .fd-ai-title     { font-size: 14.5px !important; margin: 2px 0 !important; }
-.av2-dark-skin .fd-ai-text      { font-size: 12px !important; line-height: 1.45 !important; }
+.av2-light-skin .fd-ai           { padding: 14px 16px !important; gap: 14px !important; }
+.av2-light-skin .fd-ai-title     { font-size: 14.5px !important; margin: 2px 0 !important; }
+.av2-light-skin .fd-ai-text      { font-size: 12px !important; line-height: 1.45 !important; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    ANALYTICS V2 — MOCKUP LAYOUT (header + grid + sticky right rail)
@@ -1436,28 +1435,28 @@ textarea::placeholder {
    The existing OwnerDashboard renders below this block and keeps its
    own .fd-page grid (main + side). Both blocks share the dark skin.
    ═════════════════════════════════════════════════════════════════════ */
-.av2-dark-skin .av2-mockup {
+.av2-light-skin .av2-mockup {
   padding: 18px 18px 24px;
 }
-.av2-dark-skin .av2-header {
+.av2-light-skin .av2-header {
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 18px; flex-wrap: wrap; margin-bottom: 18px;
 }
-.av2-dark-skin .av2-shell {
+.av2-light-skin .av2-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 304px;
   gap: 16px;
   align-items: start;
 }
 @media (max-width: 1500px) {
-  .av2-dark-skin .av2-shell { grid-template-columns: minmax(0, 1fr) 288px; gap: 14px; }
+  .av2-light-skin .av2-shell { grid-template-columns: minmax(0, 1fr) 288px; gap: 14px; }
 }
 @media (max-width: 1280px) {
-  .av2-dark-skin .av2-shell { grid-template-columns: 1fr; }
-  .av2-dark-skin .av2-rail  { position: static; }
+  .av2-light-skin .av2-shell { grid-template-columns: 1fr; }
+  .av2-light-skin .av2-rail  { position: static; }
 }
-.av2-dark-skin .av2-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.av2-dark-skin .av2-rail {
+.av2-light-skin .av2-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.av2-light-skin .av2-rail {
   display: flex; flex-direction: column; gap: 12px;
   position: sticky; top: 86px;
 }
@@ -1472,15 +1471,15 @@ textarea::placeholder {
    already on screen, so we hide them inside the .av2-legacy-wrapper
    scope — every other section the legacy page renders stays.
    ═════════════════════════════════════════════════════════════════════ */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between:first-child {
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between:first-child {
   display: none !important;
 }
 /* AiRecommendationBanner — its root is the only
    div.relative.rounded-2xl.p-5 (or p-6) sitting at the top level of
    the legacy page's .space-y-3 container, so target it structurally
    without adding a marker class to the component. */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.relative.rounded-2xl.p-5,
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.relative.rounded-2xl.p-6 {
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div.relative.rounded-2xl.p-5,
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div.relative.rounded-2xl.p-6 {
   display: none !important;
 }
 
@@ -1495,83 +1494,83 @@ textarea::placeholder {
 
 /* ColorfulKpiTile — the .ft-lift class is on every tile. Override the
    inline cream background + the tile's hardcoded teal-blue number ink. */
-.av2-dark-skin .av2-legacy-wrapper .ft-lift {
-  background: hsl(228 30% 12%) !important;
-  border-color: hsl(230 32% 18%) !important;
-  color: hsl(228 23% 97%);
+.av2-light-skin .av2-legacy-wrapper .ft-lift {
+  background: #FFFFFF !important;
+  border-color: #ECE3D2 !important;
+  color: hsl(228 28% 14%);
   box-shadow: 0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7) !important;
 }
 
 /* All white / cream backgrounds inside the legacy block → dark surface. */
-.av2-dark-skin .av2-legacy-wrapper .bg-white,
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FDFBF7]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FBF7EF]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F3EFE7]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F0E8D6]"] {
-  background: hsl(228 30% 12%) !important;
+.av2-light-skin .av2-legacy-wrapper .bg-white,
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#FDFBF7]"],
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#FBF7EF]"],
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#F3EFE7]"],
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"],
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"],
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#F0E8D6]"] {
+  background: #FFFFFF !important;
 }
 /* Lighter washes (chips, hovers) → slightly elevated dark. */
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"][class*="border"],
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"][class*="border"] {
-  background: hsl(228 28% 14%) !important;
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"][class*="border"],
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"][class*="border"] {
+  background: #FFFFFF !important;
 }
 
 /* All dark cream ink text → light text. */
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#1C1917]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#1F1B1A]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#2C2A28]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#0F172A]"] {
-  color: hsl(228 23% 97%) !important;
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#1C1917]"],
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#1F1B1A]"],
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#2C2A28]"],
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#0F172A]"] {
+  color: hsl(228 28% 14%) !important;
 }
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#57534E]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#3D3431]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#5C544F]"] {
-  color: hsl(228 14% 81%) !important;
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#57534E]"],
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#3D3431]"],
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#5C544F]"] {
+  color: hsl(228 14% 35%) !important;
 }
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#8B8680]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#7A716C]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="text-[#A8A8A8]"] {
-  color: hsl(228 11% 60%) !important;
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#8B8680]"],
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#7A716C]"],
+.av2-light-skin .av2-legacy-wrapper [class*="text-[#A8A8A8]"] {
+  color: hsl(228 11% 45%) !important;
 }
 
 /* All cream borders inside the legacy block → dark hairlines. */
-.av2-dark-skin .av2-legacy-wrapper [class*="border-[#E7E5E4]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="border-[#F3EFE7]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="border-[#ECE3D5]"],
-.av2-dark-skin .av2-legacy-wrapper [class*="border-[#ECE3D2]"] {
-  border-color: hsl(230 32% 18%) !important;
+.av2-light-skin .av2-legacy-wrapper [class*="border-[#E7E5E4]"],
+.av2-light-skin .av2-legacy-wrapper [class*="border-[#F3EFE7]"],
+.av2-light-skin .av2-legacy-wrapper [class*="border-[#ECE3D5]"],
+.av2-light-skin .av2-legacy-wrapper [class*="border-[#ECE3D2]"] {
+  border-color: #ECE3D2 !important;
 }
 
 /* Inputs and selects inside the legacy block. */
-.av2-dark-skin .av2-legacy-wrapper input[type="text"],
-.av2-dark-skin .av2-legacy-wrapper input[type="number"],
-.av2-dark-skin .av2-legacy-wrapper input[type="date"],
-.av2-dark-skin .av2-legacy-wrapper select,
-.av2-dark-skin .av2-legacy-wrapper textarea {
-  background: hsl(228 28% 14%) !important;
-  border-color: hsl(230 32% 18%) !important;
-  color: hsl(228 23% 97%) !important;
+.av2-light-skin .av2-legacy-wrapper input[type="text"],
+.av2-light-skin .av2-legacy-wrapper input[type="number"],
+.av2-light-skin .av2-legacy-wrapper input[type="date"],
+.av2-light-skin .av2-legacy-wrapper select,
+.av2-light-skin .av2-legacy-wrapper textarea {
+  background: #FFFFFF !important;
+  border-color: #ECE3D2 !important;
+  color: hsl(228 28% 14%) !important;
 }
 
 /* Recharts inside the legacy block — flip grid + tick + tooltip colours
    for any chart that hasn't been styled explicitly. */
-.av2-dark-skin .av2-legacy-wrapper .recharts-cartesian-grid line { stroke: hsl(230 32% 18%) !important; }
-.av2-dark-skin .av2-legacy-wrapper .recharts-cartesian-axis-tick text { fill: hsl(228 11% 60%) !important; }
-.av2-dark-skin .av2-legacy-wrapper .recharts-default-tooltip {
-  background: hsl(228 28% 14%) !important;
-  border-color: hsl(228 30% 21%) !important;
-  color: hsl(228 23% 97%) !important;
+.av2-light-skin .av2-legacy-wrapper .recharts-cartesian-grid line { stroke: #ECE3D2 !important; }
+.av2-light-skin .av2-legacy-wrapper .recharts-cartesian-axis-tick text { fill: hsl(228 11% 45%) !important; }
+.av2-light-skin .av2-legacy-wrapper .recharts-default-tooltip {
+  background: #FFFFFF !important;
+  border-color: #E7E5E4 !important;
+  color: hsl(228 28% 14%) !important;
 }
 
 /* Send-campaign pill buttons (orange terracotta on cream → orange on dark). */
-.av2-dark-skin .av2-legacy-wrapper [class*="bg-[#B85C38]/10"] {
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#B85C38]/10"] {
   background: hsl(21 90% 53% / .14) !important;
 }
 
 /* ─── REORDER — put charts/visuals at the TOP of the legacy block ─── */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 {
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 {
   display: flex !important;
   flex-direction: column;
   gap: 14px;
@@ -1591,78 +1590,78 @@ textarea::placeholder {
      #13 Rankings section
    We move the visual blocks (#6, #7, #8) above the KPI tiles, and keep
    everything else in original order. */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div.space-y-3 > * { margin: 0; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div.space-y-3 > * { margin: 0; }
 /* Filter A heading + SharedTimeFilter — sit at the TOP of the legacy
    block, immediately above the charts they actually control. (Putting
    them above the lifetime KPIs was wrong — lifetime KPIs don't use a
    time filter.) */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between.gap-3.flex-wrap { order: 1; }
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .rounded-lg.border.bg-white { order: 2; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between.gap-3.flex-wrap { order: 1; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .rounded-lg.border.bg-white { order: 2; }
 /* Visits + Acquisition charts row */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 3; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 3; }
 /* Donuts row (Top sources d'acquisition + Tier) */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.md\:grid-cols-2.gap-3 { order: 4; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.md\:grid-cols-2.gap-3 { order: 4; }
 /* Full Customer Tier Distribution + Acquisition Sources breakdown */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section.grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 5; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > section.grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 5; }
 /* Lifetime KPI tiles wrapper ("Vue d'ensemble — depuis le début") */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div:has(> div > h3) { order: 6; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div:has(> div > h3) { order: 6; }
 /* Everything else (CustomerStatusKPI, Activité, Recovered, Reviews,
    Rankings) — defaults to a later order so they sit at the end. */
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > section:not(.grid.grid-cols-1.lg\:grid-cols-2.gap-3) { order: 8; }
-.av2-dark-skin .av2-legacy-wrapper > div.space-y-3 > div:not(.flex):not(.grid):not(.rounded-lg) { order: 7; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > section:not(.grid.grid-cols-1.lg\:grid-cols-2.gap-3) { order: 8; }
+.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div:not(.flex):not(.grid):not(.rounded-lg) { order: 7; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    VisitsWithCampaignsChart — dark-skin overrides
    ───────────────────────────────────────────────────────────────────────
    The component ships inline-styled light-theme colours (C_PS.inkDeep,
-   C_PS.inkMute, white surfaces). Inside .av2-dark-skin the white
+   C_PS.inkMute, white surfaces). Inside .av2-light-skin the white
    surfaces become almost-black (#1F1B1A) on the dark navy background,
    making the campaign drilldown invisible — that's the bug the user
    reported.
    Fix: target the .vwcc root and flip the most common offenders with
    !important so they win over inline styles. Same approach used by the
    .fd-* card overrides further up. ═══════════════════════════════════════════════════════════════════════ */
-.av2-dark-skin .vwcc {
-  background: hsl(228 30% 12%) !important;
-  border-color: hsl(230 32% 18%) !important;
-  color: hsl(228 23% 97%);
+.av2-light-skin .vwcc {
+  background: #FFFFFF !important;
+  border-color: #ECE3D2 !important;
+  color: hsl(228 28% 14%);
 }
 /* Headers / titles + body copy inside the chart card. */
-.av2-dark-skin .vwcc h2,
-.av2-dark-skin .vwcc h3,
-.av2-dark-skin .vwcc p,
-.av2-dark-skin .vwcc span,
-.av2-dark-skin .vwcc td,
-.av2-dark-skin .vwcc th {
-  color: hsl(228 23% 97%) !important;
+.av2-light-skin .vwcc h2,
+.av2-light-skin .vwcc h3,
+.av2-light-skin .vwcc p,
+.av2-light-skin .vwcc span,
+.av2-light-skin .vwcc td,
+.av2-light-skin .vwcc th {
+  color: hsl(228 28% 14%) !important;
 }
 /* Muted secondary text — the small "Sent May 23 · status sent" line,
    chart-axis ticks, table column headers. Slightly dimmer than primary. */
-.av2-dark-skin .vwcc .text-xs,
-.av2-dark-skin .vwcc p.italic,
-.av2-dark-skin .vwcc .text-\[10px\] {
-  color: hsl(228 14% 81%) !important;
+.av2-light-skin .vwcc .text-xs,
+.av2-light-skin .vwcc p.italic,
+.av2-light-skin .vwcc .text-\[10px\] {
+  color: hsl(228 14% 35%) !important;
 }
 /* The inner KPI cards (rounded-lg p-2.5 bg-white) — flip the background
    and keep numbers / labels readable. */
-.av2-dark-skin .vwcc .bg-white,
-.av2-dark-skin .vwcc [class*="bg-white"] {
+.av2-light-skin .vwcc .bg-white,
+.av2-light-skin .vwcc [class*="bg-white"] {
   background: hsl(228 28% 16%) !important;
   border-color: hsl(230 32% 22%) !important;
 }
 /* Day-detail + campaign-detail accent panels — they use a faint
    colored tint on light. On dark we want a deeper tint of the same
    accent so the panel is still distinguishable but readable. */
-.av2-dark-skin .vwcc .rounded-xl.p-4[style] {
+.av2-light-skin .vwcc .rounded-xl.p-4[style] {
   background: hsl(228 28% 16%) !important;
   border-color: hsl(258 90% 66% / 0.45) !important;
 }
 /* Recipient table rows — divider lines on dark. */
-.av2-dark-skin .vwcc [class*="divide-y"] > * {
+.av2-light-skin .vwcc [class*="divide-y"] > * {
   border-color: hsl(230 32% 22%) !important;
 }
 /* Tier badges + per-row YES/NO chips — preserve their accent colour
    identity but ensure the surrounding cell is readable. */
-.av2-dark-skin .vwcc .rounded-full {
+.av2-light-skin .vwcc .rounded-full {
   /* leave inline colors alone; they're already accent pills */
 }

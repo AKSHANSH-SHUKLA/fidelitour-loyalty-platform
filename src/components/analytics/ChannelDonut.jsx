@@ -24,10 +24,10 @@ const DEFAULT_PALETTE = [
 ];
 
 const TOOLTIP_STYLE = {
-  background: 'hsl(228 28% 14%)',
-  border: '1px solid hsl(228 30% 21%)',
+  background: '#FFFFFF',
+  border: '1px solid #E7E5E4',
   borderRadius: 10,
-  color: 'hsl(228 23% 97%)',
+  color: 'hsl(228 28% 14%)',
   fontSize: 12,
   padding: '8px 10px',
   boxShadow: '0 12px 30px -12px rgba(0,0,0,.6)',
@@ -53,7 +53,7 @@ const ChannelDonut = ({
 
   if (!segs.length) {
     return (
-      <div style={{ display: 'grid', placeItems: 'center', height: size, color: 'hsl(228 11% 41%)', fontSize: 12 }}>
+      <div style={{ display: 'grid', placeItems: 'center', height: size, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
         Aucune donnée.
       </div>
     );
@@ -81,7 +81,7 @@ const ChannelDonut = ({
               cy="50%"
               innerRadius={size * 0.34}
               outerRadius={size * 0.46}
-              stroke="hsl(228 30% 12%)"
+              stroke="#FFFFFF"
               strokeWidth={3}
               startAngle={90}
               endAngle={-270}
@@ -110,12 +110,12 @@ const ChannelDonut = ({
             }}
           >
             {centerNum !== undefined && (
-              <div className="av2-num" style={{ fontSize: 18, fontWeight: 500, color: 'hsl(228 23% 97%)' }}>
+              <div className="av2-num" style={{ fontSize: 18, fontWeight: 500, color: 'hsl(228 28% 14%)' }}>
                 {centerNum}
               </div>
             )}
             {centerLabel && (
-              <div style={{ fontSize: 9.5, color: 'hsl(228 11% 60%)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 9.5, color: 'hsl(228 11% 45%)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 {centerLabel}
               </div>
             )}
@@ -130,14 +130,14 @@ const ChannelDonut = ({
             key={i}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 8, fontSize: 11, color: 'hsl(228 14% 81%)',
+              gap: 8, fontSize: 11, color: 'hsl(228 14% 35%)',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: s._from, flexShrink: 0 }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
             </span>
-            <span className="av2-num" style={{ color: 'hsl(228 11% 60%)', flexShrink: 0 }}>
+            <span className="av2-num" style={{ color: 'hsl(228 11% 45%)', flexShrink: 0 }}>
               {s._pct}%
             </span>
           </div>

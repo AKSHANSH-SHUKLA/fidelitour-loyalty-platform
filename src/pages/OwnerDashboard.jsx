@@ -221,7 +221,11 @@ export default function OwnerDashboard() {
   ];
 
   return (
-    <div className="fdt-dash">
+    // .av2-light-skin gives the Dashboard the same elevated card look,
+    // typography, and color palette as the Analytics V2 page so the two
+    // surfaces read as one product. No JSX or data flow changes — this
+    // is a pure visual layer (see index.css `.av2-light-skin` block).
+    <div className="av2-light-skin fdt-dash">
       <div className="fd-page">
 
         {/* ═════════════ MAIN COLUMN ═════════════ */}

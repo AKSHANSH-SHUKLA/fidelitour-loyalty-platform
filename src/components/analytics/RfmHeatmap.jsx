@@ -44,7 +44,7 @@ const RfmHeatmap = ({
               fontSize: 10,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              color: 'hsl(228 11% 60%)',
+              color: 'hsl(228 11% 45%)',
               textAlign: 'center',
               fontWeight: 500,
             }}
@@ -60,7 +60,7 @@ const RfmHeatmap = ({
                 fontSize: 10,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: 'hsl(228 11% 60%)',
+                color: 'hsl(228 11% 45%)',
                 fontWeight: 500,
                 writingMode: 'vertical-rl',
                 transform: 'rotate(180deg)',
@@ -73,7 +73,7 @@ const RfmHeatmap = ({
             {row.map((v, ci) => {
               const intensity = (Number(v) || 0) / max;
               const alpha = (0.12 + intensity * 0.68).toFixed(2);
-              const txtCol = intensity > 0.55 ? 'hsl(228 23% 97%)' : 'hsl(228 14% 81%)';
+              const txtCol = intensity > 0.55 ? 'hsl(228 28% 14%)' : 'hsl(228 14% 35%)';
               return (
                 <div
                   key={ci}
