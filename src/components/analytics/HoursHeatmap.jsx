@@ -93,7 +93,7 @@ const HoursHeatmap = ({ matrix = [], days = [], hours = [], peak }) => {
                     aspectRatio: '1 / 1',
                     borderRadius: 3,
                     background: `rgba(139, 92, 246, ${alpha})`,
-                    outline: isPeak ? '1px solid hsl(258 90% 50%)' : 'none',
+                    outline: isPeak ? '1px solid hsl(285 45% 35%)' : 'none',
                     transition: 'transform 150ms cubic-bezier(.2,.7,.3,1)',
                   }}
                 />

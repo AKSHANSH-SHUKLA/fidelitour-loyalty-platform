@@ -18,12 +18,12 @@ import React from 'react';
 import Sparkline from './Sparkline';
 
 const ACCENT = {
-  purple:  { hue: '258 90% 66%',  soft: '252 90% 76%' },
-  pink:    { hue: '352 89% 60%',  soft: '351 95% 71%' },
-  cyan:    { hue: '189 94% 43%',  soft: '187 85% 53%' },
-  emerald: { hue: '160 84% 39%',  soft: '158 64% 52%' },
-  orange:  { hue: '21 90% 53%',   soft: '21 90% 53%' },
-  amber:   { hue: '38 92% 50%',   soft: '38 92% 50%' },
+  purple:  { hue: '285 45% 42%',  soft: '285 38% 55%' },
+  pink:    { hue: '355 60% 48%',  soft: '355 65% 60%' },
+  cyan:    { hue: '215 65% 48%',  soft: '208 55% 55%' },
+  emerald: { hue: '105 30% 38%',  soft: '95 32% 50%' },
+  orange:  { hue: '32 80% 50%',   soft: '32 80% 55%' },
+  amber:   { hue: '42 78% 52%',   soft: '42 78% 52%' },
 };
 
 const DeltaPill = ({ delta }) => {
@@ -31,8 +31,8 @@ const DeltaPill = ({ delta }) => {
   const up = delta >= 0;
   const fmt = `${up ? '+' : '−'}${Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0)}%`;
   const tone = up
-    ? { fg: 'hsl(160 84% 50%)', bg: 'hsl(160 84% 39% / .12)' }
-    : { fg: 'hsl(351 95% 71%)', bg: 'hsl(352 89% 60% / .12)' };
+    ? { fg: 'hsl(160 84% 50%)', bg: 'hsl(105 30% 38% / .12)' }
+    : { fg: 'hsl(355 65% 60%)', bg: 'hsl(355 60% 48% / .12)' };
   return (
     <span
       style={{

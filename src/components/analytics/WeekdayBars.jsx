@@ -35,9 +35,9 @@ const WeekdayBars = ({ counts = [], days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'], 
                 height: `${pct * 100}%`,
                 borderRadius: 4,
                 background: isPeak
-                  ? 'linear-gradient(180deg, hsl(258 90% 66%), hsl(258 90% 66% / .5))'
-                  : `hsl(258 90% 66% / ${(0.22 + pct * 0.36).toFixed(2)})`,
-                boxShadow: isPeak ? '0 0 12px hsl(258 90% 66% / .35)' : 'none',
+                  ? 'linear-gradient(180deg, hsl(285 45% 42%), hsl(285 45% 42% / .5))'
+                  : `hsl(285 45% 42% / ${(0.22 + pct * 0.36).toFixed(2)})`,
+                boxShadow: isPeak ? '0 0 12px hsl(285 45% 42% / .35)' : 'none',
                 transition: 'height 250ms cubic-bezier(.2,.7,.3,1)',
               }}
             />
@@ -52,7 +52,7 @@ const WeekdayBars = ({ counts = [], days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'], 
         }}
       >
         {days.map((d, i) => (
-          <span key={i} style={{ color: i === peakIdx ? 'hsl(258 90% 50%)' : undefined, fontWeight: i === peakIdx ? 500 : 400 }}>
+          <span key={i} style={{ color: i === peakIdx ? 'hsl(285 45% 35%)' : undefined, fontWeight: i === peakIdx ? 500 : 400 }}>
             {d}
           </span>
         ))}

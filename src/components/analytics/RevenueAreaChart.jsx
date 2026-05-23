@@ -40,8 +40,8 @@ const RevenueAreaChart = ({ total, unit = '€', delta, data = [], height = 80, 
           <span
             style={{
               fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 99,
-              color: up ? 'hsl(160 84% 50%)' : 'hsl(351 95% 71%)',
-              background: up ? 'hsl(160 84% 39% / .12)' : 'hsl(352 89% 60% / .12)',
+              color: up ? 'hsl(160 84% 50%)' : 'hsl(355 65% 60%)',
+              background: up ? 'hsl(105 30% 38% / .12)' : 'hsl(355 60% 48% / .12)',
               fontVariantNumeric: 'tabular-nums',
             }}
           >
@@ -55,8 +55,8 @@ const RevenueAreaChart = ({ total, unit = '€', delta, data = [], height = 80, 
             <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="av2-rev-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="hsl(258 90% 66%)" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="hsl(258 90% 66%)" stopOpacity={0} />
+                  <stop offset="0%"   stopColor="hsl(285 45% 42%)" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="hsl(285 45% 42%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <Area

@@ -1119,7 +1119,12 @@ textarea::placeholder {
 }
 
 .av2-light-skin {
-  background: #FBF7EF;
+  /* Soft Provençal cream backdrop — warm gold + aubergine corner washes give
+     the page subtle dimension without ever interfering with chart legibility. */
+  background:
+    radial-gradient(900px 600px at 100% -20%, rgba(201, 162, 39, 0.07), transparent 60%),
+    radial-gradient(800px 600px at -10% 110%, rgba(107, 46, 90, 0.05), transparent 65%),
+    #FBF7EF;
   min-height: calc(100vh - 64px);
   padding: 0;
   color: hsl(228 28% 14%);
@@ -1138,11 +1143,11 @@ textarea::placeholder {
   --fd-text-3:   hsl(228 11% 45%);
   /* Brand & semantics — bias toward the v2 purple while keeping
      the green / red / amber semantic accents readable. */
-  --fd-primary:   hsl(258 90% 66%);
-  --fd-primary-2: hsl(263 70% 50%);
+  --fd-primary:   hsl(285 45% 42%);
+  --fd-primary-2: hsl(295 50% 32%);
   --fd-pos:       hsl(160 84% 50%);
-  --fd-neg:       hsl(351 95% 71%);
-  --fd-warn:      hsl(38 92% 60%);
+  --fd-neg:       hsl(355 65% 60%);
+  --fd-warn:      hsl(42 78% 58%);
   color: hsl(228 28% 14%);
 }
 
@@ -1165,38 +1170,38 @@ textarea::placeholder {
 
 /* AI recommendation strip — keep purple identity but on dark surface. */
 .av2-light-skin .fd-ai {
-  background: hsl(258 90% 66% / .08) !important;
-  border-color: hsl(258 90% 66% / .35) !important;
+  background: hsl(285 45% 42% / .08) !important;
+  border-color: hsl(285 45% 42% / .35) !important;
   color: hsl(228 28% 14%);
 }
-.av2-light-skin .fd-ai-eyebrow { color: hsl(258 90% 50%) !important; }
+.av2-light-skin .fd-ai-eyebrow { color: hsl(285 45% 35%) !important; }
 .av2-light-skin .fd-ai-title   { color: hsl(228 28% 14%) !important; }
 .av2-light-skin .fd-ai-text    { color: hsl(228 14% 35%) !important; }
-.av2-light-skin .fd-ai-close   { color: hsl(258 90% 50%) !important; }
-.av2-light-skin .fd-ai-close:hover { background: hsl(258 90% 66% / .15) !important; }
+.av2-light-skin .fd-ai-close   { color: hsl(285 45% 35%) !important; }
+.av2-light-skin .fd-ai-close:hover { background: hsl(285 45% 42% / .15) !important; }
 
 /* Page title + LIVE pill */
 .av2-light-skin .fd-title { color: hsl(228 28% 14%) !important; }
 .av2-light-skin .fd-live {
-  background: hsl(160 84% 39% / .15) !important;
+  background: hsl(105 30% 38% / .15) !important;
   color: hsl(160 84% 30%) !important;
 }
 .av2-light-skin .fd-sub { color: hsl(228 11% 45%) !important; }
 
 /* Primary buttons — purple gradient stays; text MUST be white on saturated bg. */
 .av2-light-skin .fd-btn-primary {
-  background: linear-gradient(135deg, hsl(258 90% 66%), hsl(263 70% 50%)) !important;
+  background: linear-gradient(135deg, hsl(285 45% 42%), hsl(295 50% 32%)) !important;
   color: #FFFFFF !important;
   border-color: transparent !important;
 }
 .av2-light-skin .fd-btn-primary:hover {
-  background: linear-gradient(135deg, hsl(263 70% 50%), hsl(258 90% 66%)) !important;
+  background: linear-gradient(135deg, hsl(295 50% 32%), hsl(285 45% 42%)) !important;
 }
 .av2-light-skin .fd-btn-purple {
-  background: hsl(258 90% 66%) !important;
+  background: hsl(285 45% 42%) !important;
   color: #FFFFFF !important;
 }
-.av2-light-skin .fd-btn-purple:hover { background: hsl(263 70% 50%) !important; }
+.av2-light-skin .fd-btn-purple:hover { background: hsl(295 50% 32%) !important; }
 
 /* KPI grid — flip pastel surfaces to dark, keep colored icon chips. */
 .av2-light-skin .fd-kpi[class*="k-"] {
@@ -1208,7 +1213,7 @@ textarea::placeholder {
 .av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-sub   { color: hsl(228 11% 45%) !important; }
 .av2-light-skin .fd-kpi-foot { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-kpi-delta.pos { color: hsl(160 84% 60%) !important; }
-.av2-light-skin .fd-kpi-delta.neg { color: hsl(351 95% 71%) !important; }
+.av2-light-skin .fd-kpi-delta.neg { color: hsl(355 65% 60%) !important; }
 
 /* Panel headers */
 .av2-light-skin .fd-panel-h     { color: hsl(228 28% 14%); }
@@ -1237,7 +1242,7 @@ textarea::placeholder {
 }
 .av2-light-skin .fd-ch-legend { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-ch-foot   {
-  background: hsl(258 90% 66% / .08) !important;
+  background: hsl(285 45% 42% / .08) !important;
   color: hsl(228 14% 35%) !important;
 }
 .av2-light-skin .fd-cs-lbl { color: hsl(228 11% 45%); }
@@ -1246,7 +1251,7 @@ textarea::placeholder {
 .av2-light-skin .fd-pt-lbl { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-pt-val { color: hsl(228 28% 14%); }
 .av2-light-skin .fd-pt-delta      { color: hsl(160 84% 60%); }
-.av2-light-skin .fd-pt-delta.neg  { color: hsl(351 95% 71%); }
+.av2-light-skin .fd-pt-delta.neg  { color: hsl(355 65% 60%); }
 
 /* Donuts — center text and legend rows. */
 .av2-light-skin .fd-donut-val { color: hsl(228 28% 14%); }
@@ -1280,7 +1285,7 @@ textarea::placeholder {
 /* Churn cards */
 .av2-light-skin .fd-cc-lbl { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-cc-val { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-cc-val.warn { color: hsl(38 92% 60%) !important; }
+.av2-light-skin .fd-cc-val.warn { color: hsl(42 78% 58%) !important; }
 .av2-light-skin .fd-cc-sub { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-ml-row  { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-ml-name { color: hsl(228 14% 35%); }
@@ -1290,8 +1295,8 @@ textarea::placeholder {
 .av2-light-skin .fd-lc-lbl { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-lc-val { color: hsl(228 28% 14%); }
 .av2-light-skin .fd-ltv-card.high {
-  background: hsl(258 90% 66% / .12) !important;
-  border-color: hsl(258 90% 66% / .35) !important;
+  background: hsl(285 45% 42% / .12) !important;
+  border-color: hsl(285 45% 42% / .35) !important;
 }
 .av2-light-skin .fd-ltv-table { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-ltv-table th { color: hsl(228 11% 45%); border-bottom-color: #ECE3D2 !important; }
@@ -1301,9 +1306,9 @@ textarea::placeholder {
 .av2-light-skin .fd-plan-num       { color: hsl(228 28% 14%); }
 .av2-light-skin .fd-plan-num-total { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-plan-chip {
-  background: hsl(258 90% 66% / .15) !important;
-  color: hsl(258 90% 50%) !important;
-  border-color: hsl(258 90% 66% / .35) !important;
+  background: hsl(285 45% 42% / .15) !important;
+  color: hsl(285 45% 35%) !important;
+  border-color: hsl(285 45% 42% / .35) !important;
 }
 .av2-light-skin .fd-plan-pct { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-pa-h     { color: hsl(228 14% 35%); }
@@ -1319,14 +1324,14 @@ textarea::placeholder {
 .av2-light-skin .fd-sp-head    { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-sp-title   { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-sp-count   {
-  background: hsl(258 90% 66% / .15) !important;
-  color: hsl(258 90% 50%) !important;
+  background: hsl(285 45% 42% / .15) !important;
+  color: hsl(285 45% 35%) !important;
 }
 .av2-light-skin .fd-sp-cta {
-  color: hsl(258 90% 50%) !important;
+  color: hsl(285 45% 35%) !important;
   background: transparent !important;
 }
-.av2-light-skin .fd-sp-cta:hover { background: hsl(258 90% 66% / .08) !important; }
+.av2-light-skin .fd-sp-cta:hover { background: hsl(285 45% 42% / .08) !important; }
 
 /* Alert items inside the right rail */
 .av2-light-skin .fd-alert {
@@ -1344,7 +1349,7 @@ textarea::placeholder {
 .av2-light-skin .fd-sr-value { color: hsl(228 28% 14%); }
 
 /* Generic links / hint text that may sit on white in places we missed. */
-.av2-light-skin a { color: hsl(258 90% 50%); }
+.av2-light-skin a { color: hsl(285 45% 35%); }
 
 /* Stat-bar separators that used to be on cream surfaces. */
 .av2-light-skin .fd-status-grid > * { border-color: #ECE3D2; }
@@ -1657,7 +1662,7 @@ textarea::placeholder {
    accent so the panel is still distinguishable but readable. */
 .av2-light-skin .vwcc .rounded-xl.p-4[style] {
   background: hsl(228 28% 16%) !important;
-  border-color: hsl(258 90% 66% / 0.45) !important;
+  border-color: hsl(285 45% 42% / 0.45) !important;
 }
 /* Recipient table rows — divider lines on dark. */
 .av2-light-skin .vwcc [class*="divide-y"] > * {

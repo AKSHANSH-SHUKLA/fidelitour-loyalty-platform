@@ -48,16 +48,16 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
   return (
     <>
       <div style={{ display: 'flex', gap: 14, marginBottom: 4 }}>
-        <LegendDot color="hsl(258 90% 66%)" label="Visites totales" />
-        <LegendDot color="hsl(187 85% 53%)" label="Clients uniques" />
+        <LegendDot color="hsl(285 45% 42%)" label="Visites totales" />
+        <LegendDot color="hsl(208 55% 40%)" label="Clients uniques" />
       </div>
       <div role="img" aria-label={ariaLabel || summary} style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -22 }}>
             <defs>
               <linearGradient id="av2-vis-bar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stopColor="hsl(258 90% 66%)" />
-                <stop offset="100%" stopColor="hsl(263 70% 50%)" />
+                <stop offset="0%"   stopColor="hsl(285 45% 42%)" />
+                <stop offset="100%" stopColor="hsl(295 50% 32%)" />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="#ECE3D2" vertical={false} strokeDasharray="2 4" />
@@ -91,9 +91,9 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
             <Line
               type="monotone"
               dataKey="uniques"
-              stroke="hsl(187 85% 53%)"
+              stroke="hsl(208 55% 40%)"
               strokeWidth={2}
-              dot={{ r: 2.5, fill: 'hsl(187 85% 53%)', stroke: '#FFFFFF', strokeWidth: 1 }}
+              dot={{ r: 2.5, fill: 'hsl(208 55% 40%)', stroke: '#FFFFFF', strokeWidth: 1 }}
               activeDot={{ r: 4 }}
               name="Uniques"
               isAnimationActive={false}

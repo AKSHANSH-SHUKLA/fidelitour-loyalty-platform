@@ -112,8 +112,8 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 36, height: 36, borderRadius: 10,
-              background: 'linear-gradient(135deg, hsl(258 90% 66% / .15), hsl(263 70% 50% / .15))',
-              color: 'hsl(258 90% 50%)',
+              background: 'linear-gradient(135deg, hsl(285 45% 42% / .15), hsl(295 50% 32% / .15))',
+              color: 'hsl(285 45% 35%)',
               display: 'grid', placeItems: 'center',
             }}>
               <LifeBuoy size={18} />
@@ -147,7 +147,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
           <div style={{ padding: 28, textAlign: 'center' }}>
             <div style={{
               width: 56, height: 56, borderRadius: 99, margin: '0 auto 14px',
-              background: 'hsl(160 84% 39% / .12)', color: 'hsl(160 84% 30%)',
+              background: 'hsl(105 30% 38% / .12)', color: 'hsl(160 84% 30%)',
               display: 'grid', placeItems: 'center',
             }}>
               <CheckCircle2 size={28} />
@@ -162,7 +162,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
               type="button"
               onClick={onClose}
               style={{
-                background: 'linear-gradient(135deg, hsl(258 90% 66%), hsl(263 70% 50%))',
+                background: 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)',
                 color: '#FFFFFF', border: 'none', borderRadius: 10,
                 padding: '10px 22px', fontSize: 13, fontWeight: 500,
                 cursor: 'pointer',
@@ -216,7 +216,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                   color: '#1C1917', fontSize: 13.5, font: 'inherit',
                   outline: 'none',
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(258 90% 66%)'; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(285 45% 42%)'; }}
                 onBlur={(e)  => { e.currentTarget.style.borderColor = C.hairline; }}
               />
             </div>
@@ -245,7 +245,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                   font: 'inherit', resize: 'vertical', minHeight: 120,
                   outline: 'none',
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(258 90% 66%)'; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(285 45% 42%)'; }}
                 onBlur={(e)  => { e.currentTarget.style.borderColor = C.hairline; }}
               />
             </div>
@@ -255,7 +255,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: 10, borderRadius: 8, marginBottom: 12,
-                background: 'hsl(352 89% 60% / .08)', color: 'hsl(352 70% 40%)',
+                background: 'hsl(355 60% 48% / .08)', color: 'hsl(352 70% 40%)',
                 fontSize: 12.5,
               }}>
                 <AlertTriangle size={14} />
@@ -285,14 +285,14 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                 disabled={!canSend}
                 style={{
                   background: canSend
-                    ? 'linear-gradient(135deg, hsl(258 90% 66%), hsl(263 70% 50%))'
+                    ? 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)'
                     : '#D6D3D1',
                   color: '#FFFFFF', border: 'none', borderRadius: 10,
                   padding: '9px 18px', fontSize: 13, fontWeight: 500,
                   cursor: canSend ? 'pointer' : 'not-allowed',
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   font: 'inherit',
-                  boxShadow: canSend ? '0 6px 18px -8px hsl(258 90% 66% / .55)' : 'none',
+                  boxShadow: canSend ? '0 6px 18px -8px hsl(285 45% 42% / .55)' : 'none',
                 }}
               >
                 <Send size={14} />

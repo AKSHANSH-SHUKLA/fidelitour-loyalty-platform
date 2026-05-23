@@ -83,7 +83,7 @@ const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
           position: 'absolute', top: -3, right: -3,
           minWidth: 17, height: 17, padding: '0 4px',
           borderRadius: 99,
-          background: 'hsl(352 89% 60%)',
+          background: 'hsl(355 60% 48%)',
           color: '#FFFFFF', fontSize: 9, fontWeight: 700,
           display: 'grid', placeItems: 'center',
         }}
@@ -101,13 +101,13 @@ const PrimaryButton = ({ icon: Icon, children, onClick }) => (
     style={{
       display: 'inline-flex', alignItems: 'center', gap: 7,
       padding: '8px 14px',
-      background: 'linear-gradient(135deg, hsl(258 90% 66%), hsl(263 70% 50%))',
-      border: '1px solid hsl(258 90% 66%)',
+      background: 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)',
+      border: '1px solid hsl(285 50% 36%)',
       borderRadius: 10,
       color: '#FFFFFF',
       fontSize: 12.5, fontWeight: 500,
       cursor: 'pointer',
-      boxShadow: '0 6px 18px -8px hsl(258 90% 66% / .55)',
+      boxShadow: '0 6px 18px -8px hsl(285 45% 42% / .55), 0 0 0 1px hsl(42 78% 52% / .15) inset',
       font: 'inherit',
     }}
   >
@@ -399,9 +399,9 @@ export default function AnalyticsPageV2() {
   // New vs Returning segments for the donut.
   const nvrSegments = (nvr.newPct > 0 || nvr.returningPct > 0) ? [
     { name: 'Récurrents', value: Number(nvr.returningPct) || 0,
-      gradientFrom: 'hsl(258 90% 66%)', gradientTo: 'hsl(263 70% 50%)' },
+      gradientFrom: 'hsl(285 45% 42%)', gradientTo: 'hsl(295 50% 32%)' },
     { name: 'Nouveaux',   value: Number(nvr.newPct) || 0,
-      gradientFrom: 'hsl(187 85% 53%)', gradientTo: 'hsl(189 94% 43%)' },
+      gradientFrom: 'hsl(208 55% 40%)', gradientTo: 'hsl(215 65% 48%)' },
   ] : [];
 
   // Loyalty score — same blend as before.
@@ -522,9 +522,9 @@ export default function AnalyticsPageV2() {
   const displayNvrSegments = (nvrSegments.length > 0) ? nvrSegments
     : (isEmpty ? [
         { name: 'Récurrents', value: DEMO.newVsReturning.returningPct,
-          gradientFrom: 'hsl(258 90% 66%)', gradientTo: 'hsl(263 70% 50%)' },
+          gradientFrom: 'hsl(285 45% 42%)', gradientTo: 'hsl(295 50% 32%)' },
         { name: 'Nouveaux',   value: DEMO.newVsReturning.newPct,
-          gradientFrom: 'hsl(187 85% 53%)', gradientTo: 'hsl(189 94% 43%)' },
+          gradientFrom: 'hsl(208 55% 40%)', gradientTo: 'hsl(215 65% 48%)' },
       ] : []);
 
   // Today's date in French — for the "14 Mai – 14 Juin 2026" pill.
@@ -665,7 +665,7 @@ export default function AnalyticsPageV2() {
                   onClick={() => navigate('/dashboard/campaigns')}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'hsl(258 90% 50%)', fontSize: 11.5, fontWeight: 500,
+                    color: 'hsl(285 45% 35%)', fontSize: 11.5, fontWeight: 500,
                     padding: 0, font: 'inherit',
                   }}
                 >

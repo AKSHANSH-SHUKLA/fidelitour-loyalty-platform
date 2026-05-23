@@ -14,16 +14,16 @@ import React from 'react';
 
 const ACCENT = {
   purple:  'hsl(252 90% 76%)',
-  cyan:    'hsl(187 85% 53%)',
-  pink:    'hsl(351 95% 71%)',
-  emerald: 'hsl(158 64% 52%)',
-  orange:  'hsl(21 90% 53%)',
-  amber:   'hsl(38 92% 50%)',
+  cyan:    'hsl(208 55% 40%)',
+  pink:    'hsl(355 65% 60%)',
+  emerald: 'hsl(95 32% 50%)',
+  orange:  'hsl(32 80% 50%)',
+  amber:   'hsl(42 78% 52%)',
 };
 
 const STATUS_PILL = {
-  active:  { fg: 'hsl(160 84% 50%)', bg: 'hsl(160 84% 39% / .14)', label: 'Actif' },
-  paused:  { fg: 'hsl(38 92% 60%)',  bg: 'hsl(38 92% 50% / .14)',  label: 'Pause' },
+  active:  { fg: 'hsl(160 84% 50%)', bg: 'hsl(105 30% 38% / .14)', label: 'Actif' },
+  paused:  { fg: 'hsl(42 78% 58%)',  bg: 'hsl(38 92% 50% / .14)',  label: 'Pause' },
   draft:   { fg: 'hsl(228 11% 70%)', bg: 'hsl(228 30% 21% / .55)', label: 'Brouillon' },
 };
 

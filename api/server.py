@@ -1562,16 +1562,173 @@ def health_check():
 # Every submission is:
 #   1. Always stored in `support_tickets` collection (so nothing is
 #      lost even if email delivery fails).
-#   2. Best-effort forwarded to SUPPORT_RECIPIENT_EMAIL via Formsubmit.co
-#      (no signup, no API key — first delivery requires a one-click
-#      activation click in the recipient's inbox; after that everything
-#      flows automatically).
+#   2. Forwarded to SUPPORT_RECIPIENT_EMAIL via the first configured
+#      delivery channel. We try in order:
+#        a. SMTP (most reliable)        → set SUPPORT_SMTP_USER + SUPPORT_SMTP_PASS
+#        b. Resend (modern transactional) → set RESEND_API_KEY
+#        c. Formsubmit.co (no signup)    → automatic fallback, but the
+#           free tier requires the recipient inbox to activate by
+#           clicking a link in an activation email Formsubmit sends.
+#           Gmail spam filters sometimes eat that activation email,
+#           which is why SMTP / Resend is preferred.
 #
-# Recipient is hard-coded to the support inbox the platform owner
-# specified. Override with SUPPORT_RECIPIENT_EMAIL env var if needed.
+# Configure SMTP via Vercel env vars to make this just work:
+#    SUPPORT_SMTP_HOST = smtp.gmail.com    (default)
+#    SUPPORT_SMTP_PORT = 587               (default)
+#    SUPPORT_SMTP_USER = <your gmail>
+#    SUPPORT_SMTP_PASS = <16-char App Password from
+#                         Google Account → Security → App passwords>
 # ═══════════════════════════════════════════════════════════════════════
 
 SUPPORT_RECIPIENT_EMAIL = os.getenv("SUPPORT_RECIPIENT_EMAIL", "shuklaakshansh38@gmail.com")
+
+
+def _support_email_html(subject: str, message: str, ticket: dict) -> str:
+    """Render the support ticket as a branded HTML email body."""
+    safe_msg = (message or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+    safe_sub = (subject or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return f"""
+<div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;background:#FBF7EE;padding:24px;color:#1C1917;">
+  <div style="background:#FFFFFF;border-radius:12px;padding:24px;border:1px solid #E8DEC8;">
+    <div style="border-bottom:2px solid #6B2E5A;padding-bottom:10px;margin-bottom:18px;">
+      <p style="margin:0;font-size:11px;letter-spacing:.18em;color:#6B2E5A;text-transform:uppercase;font-weight:600;">FidéliTour · Support</p>
+      <h2 style="margin:6px 0 0;font-size:18px;color:#1C1917;">New support query</h2>
+    </div>
+    <table style="width:100%;font-size:13px;color:#57534E;margin-bottom:14px;">
+      <tr><td style="padding:3px 0;color:#8B8680;width:110px;">From</td><td style="padding:3px 0;color:#1C1917;">{ticket.get('from_email') or '(not provided)'}</td></tr>
+      <tr><td style="padding:3px 0;color:#8B8680;">Tenant</td><td style="padding:3px 0;color:#1C1917;">{ticket.get('tenant_slug') or '(unknown)'}</td></tr>
+      <tr><td style="padding:3px 0;color:#8B8680;">Submitted</td><td style="padding:3px 0;color:#1C1917;">{ticket['created_at'].isoformat()}</td></tr>
+      <tr><td style="padding:3px 0;color:#8B8680;">Ticket ID</td><td style="padding:3px 0;color:#1C1917;font-family:'JetBrains Mono',monospace;font-size:11px;">{ticket['id']}</td></tr>
+    </table>
+    <div style="background:#FBF7EE;border-left:3px solid #C9A227;padding:14px 16px;border-radius:6px;margin-bottom:14px;">
+      <p style="margin:0 0 6px;font-size:11px;letter-spacing:.1em;color:#8B8680;text-transform:uppercase;">Subject</p>
+      <p style="margin:0;font-size:15px;color:#1C1917;font-weight:600;">{safe_sub}</p>
+    </div>
+    <div>
+      <p style="margin:0 0 8px;font-size:11px;letter-spacing:.1em;color:#8B8680;text-transform:uppercase;">Message</p>
+      <p style="margin:0;font-size:14px;color:#1C1917;line-height:1.55;white-space:pre-wrap;">{safe_msg}</p>
+    </div>
+    <p style="margin:18px 0 0;padding-top:12px;border-top:1px solid #ECE3D2;font-size:11px;color:#8B8680;">
+      Reply directly to this email to respond to the business.
+    </p>
+  </div>
+</div>"""
+
+
+def _support_send_smtp(subject: str, message: str, ticket: dict) -> tuple[bool, str | None]:
+    """Send the ticket via SMTP. Returns (sent, error_or_none).
+    Reads SUPPORT_SMTP_HOST/PORT/USER/PASS from env. Returns (False,
+    'not_configured') if env vars missing — caller can fall through."""
+    smtp_user = os.getenv("SUPPORT_SMTP_USER", "").strip()
+    smtp_pass = os.getenv("SUPPORT_SMTP_PASS", "").strip()
+    if not smtp_user or not smtp_pass:
+        return (False, "not_configured")
+    smtp_host = os.getenv("SUPPORT_SMTP_HOST", "smtp.gmail.com").strip()
+    smtp_port = int(os.getenv("SUPPORT_SMTP_PORT", "587"))
+    smtp_from = os.getenv("SUPPORT_SMTP_FROM", smtp_user).strip()
+
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from email.utils import formataddr
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"[FidéliTour Support] {subject}"
+        msg["From"]    = formataddr(("FidéliTour Support", smtp_from))
+        msg["To"]      = SUPPORT_RECIPIENT_EMAIL
+        # Set Reply-To to the business's email so support can hit reply.
+        reply_to = ticket.get("from_email") or smtp_from
+        msg["Reply-To"] = reply_to
+
+        # Plain-text fallback for clients that block HTML.
+        plain = (
+            f"New FidéliTour support query\n\n"
+            f"From: {ticket.get('from_email') or '(not provided)'}\n"
+            f"Tenant: {ticket.get('tenant_slug') or '(unknown)'}\n"
+            f"Submitted: {ticket['created_at'].isoformat()}\n"
+            f"Ticket ID: {ticket['id']}\n\n"
+            f"Subject: {subject}\n\n"
+            f"{message}\n"
+        )
+        msg.attach(MIMEText(plain, "plain", "utf-8"))
+        msg.attach(MIMEText(_support_email_html(subject, message, ticket), "html", "utf-8"))
+
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as srv:
+            srv.ehlo()
+            srv.starttls()
+            srv.ehlo()
+            srv.login(smtp_user, smtp_pass)
+            srv.send_message(msg)
+        return (True, None)
+    except Exception as e:
+        return (False, f"smtp_error: {type(e).__name__}: {e}")
+
+
+def _support_send_resend(subject: str, message: str, ticket: dict) -> tuple[bool, str | None]:
+    """Send the ticket via Resend API. Returns (sent, error_or_none).
+    Returns (False, 'not_configured') if RESEND_API_KEY missing."""
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    if not api_key:
+        return (False, "not_configured")
+    from_addr = os.getenv("RESEND_FROM", "FidéliTour Support <onboarding@resend.dev>").strip()
+    try:
+        import requests as _req
+        reply_to = ticket.get("from_email") or None
+        body = {
+            "from":     from_addr,
+            "to":       [SUPPORT_RECIPIENT_EMAIL],
+            "subject":  f"[FidéliTour Support] {subject}",
+            "html":     _support_email_html(subject, message, ticket),
+        }
+        if reply_to:
+            body["reply_to"] = reply_to
+        r = _req.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=body,
+            timeout=15,
+        )
+        if r.status_code in (200, 201, 202):
+            return (True, None)
+        return (False, f"resend_error: status={r.status_code} body={r.text[:200]}")
+    except Exception as e:
+        return (False, f"resend_error: {type(e).__name__}: {e}")
+
+
+def _support_send_formsubmit(subject: str, message: str, ticket: dict) -> tuple[bool, str | None]:
+    """Fallback delivery via Formsubmit.co. Requires the recipient
+    inbox to activate first by clicking a link in an activation email
+    Formsubmit sends — Gmail spam filters sometimes eat that, which
+    is why SMTP / Resend is preferred."""
+    try:
+        import requests as _req
+        fs_payload = {
+            "_subject":     f"[FidéliTour Support] {subject}",
+            "_template":    "table",
+            "_captcha":     "false",
+            "_replyto":     ticket.get("from_email") or "no-reply@fidelitour.app",
+            "from_email":   ticket.get("from_email") or "no-reply@fidelitour.app",
+            "tenant_slug":  ticket.get("tenant_slug") or "(unknown)",
+            "subject":      subject,
+            "message":      message,
+            "ticket_id":    ticket["id"],
+            "submitted_at": ticket["created_at"].isoformat(),
+        }
+        r = _req.post(
+            f"https://formsubmit.co/ajax/{SUPPORT_RECIPIENT_EMAIL}",
+            json=fs_payload,
+            timeout=10,
+        )
+        try:
+            ok = (r.status_code == 200) and (r.json().get("success") in (True, "true", "True"))
+        except Exception:
+            ok = False
+        if ok:
+            return (True, None)
+        return (False, f"formsubmit_error: status={r.status_code} body={r.text[:200]}")
+    except Exception as e:
+        return (False, f"formsubmit_error: {type(e).__name__}: {e}")
 
 
 class SupportTicketIn(BaseModel):
@@ -1619,45 +1776,42 @@ def submit_support_ticket(payload: SupportTicketIn):
     except Exception as e:
         print(f"[support] DB insert failed: {e}")
 
-    # 2) Best-effort email forward via Formsubmit.co (no signup needed).
-    #    First delivery triggers an activation email — recipient must
-    #    click the activation link once; subsequent submissions auto-
-    #    deliver. We never block the user on this — if it fails, the
-    #    ticket is still in the DB and the support team can pull it.
+    # 2) Try delivery channels in priority order. First success wins.
+    #    Each helper returns (sent: bool, error_or_none: str|None).
+    #    Errors are accumulated so the admin can see which channel
+    #    failed and why in the ticket record.
     delivered = False
-    delivery_error = None
-    try:
-        import requests as _req
-        fs_payload = {
-            "_subject":     f"[FidéliTour Support] {subject}",
-            "_template":    "table",
-            "_captcha":     "false",
-            "from_name":    ticket["from_name"]  or "Business owner",
-            "from_email":   ticket["from_email"] or "no-reply@fidelitour.app",
-            "tenant_slug":  ticket["tenant_slug"] or "(unknown)",
-            "subject":      subject,
-            "message":      message,
-            "ticket_id":    ticket["id"],
-            "submitted_at": ticket["created_at"].isoformat(),
-        }
-        # Formsubmit ajax endpoint returns JSON {success: true/false}
-        r = _req.post(
-            f"https://formsubmit.co/ajax/{SUPPORT_RECIPIENT_EMAIL}",
-            json=fs_payload,
-            timeout=10,
-        )
-        ok = (r.status_code == 200) and (r.json().get("success") in (True, "true", "True"))
-        delivered = bool(ok)
-        if not ok:
-            delivery_error = f"Formsubmit status={r.status_code} body={r.text[:200]}"
-    except Exception as e:
-        delivery_error = str(e)
+    delivery_via = None
+    delivery_errors = []
+    for channel_name, fn in (
+        ("smtp",       _support_send_smtp),
+        ("resend",     _support_send_resend),
+        ("formsubmit", _support_send_formsubmit),
+    ):
+        try:
+            sent, err = fn(subject, message, ticket)
+        except Exception as e:
+            sent, err = False, f"{channel_name}_uncaught: {type(e).__name__}: {e}"
+        if sent:
+            delivered = True
+            delivery_via = channel_name
+            print(f"[support] Delivered via {channel_name} (ticket {ticket['id']})")
+            break
+        if err and err != "not_configured":
+            delivery_errors.append(f"{channel_name}: {err}")
+    delivery_error = "; ".join(delivery_errors) if (delivery_errors and not delivered) else None
+    if not delivered:
+        print(f"[support] All channels failed for ticket {ticket['id']}: {delivery_error}")
 
-    # 3) Update ticket with delivery outcome.
+    # 3) Update ticket with delivery outcome + which channel succeeded.
     try:
         db.support_tickets.update_one(
             {"id": ticket["id"]},
-            {"$set": {"email_sent": delivered, "email_error": delivery_error}},
+            {"$set": {
+                "email_sent":   delivered,
+                "email_via":    delivery_via,
+                "email_error":  delivery_error,
+            }},
         )
     except Exception:
         pass
@@ -1667,8 +1821,8 @@ def submit_support_ticket(payload: SupportTicketIn):
         "ticket_id": ticket["id"],
         "delivered": delivered,
         # We deliberately don't surface the email_error to the client —
-        # they don't need to know why delivery failed; their ticket is
-        # safely stored and the support team will follow up.
+        # their ticket is safely stored regardless. The support team
+        # can read errors via /api/admin/support/tickets.
     }
 
 

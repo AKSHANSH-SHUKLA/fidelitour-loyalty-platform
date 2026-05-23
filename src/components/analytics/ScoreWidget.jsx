@@ -18,8 +18,8 @@ const ScoreWidget = ({ score = 0, max = 100, delta, denominator = '100' }) => {
       <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
         <defs>
           <linearGradient id="av2-score-grad" x1="0" x2="1">
-            <stop offset="0%"   stopColor="hsl(258 90% 66%)" />
-            <stop offset="100%" stopColor="hsl(351 95% 71%)" />
+            <stop offset="0%"   stopColor="hsl(285 45% 42%)" />
+            <stop offset="100%" stopColor="hsl(355 65% 60%)" />
           </linearGradient>
         </defs>
         <circle cx="32" cy="32" r={radius} fill="none" stroke="#ECE3D2" strokeWidth="6" />
@@ -48,7 +48,7 @@ const ScoreWidget = ({ score = 0, max = 100, delta, denominator = '100' }) => {
       </svg>
       <div style={{ fontSize: 11, color: 'hsl(228 14% 35%)', lineHeight: 1.45 }}>
         {delta != null && isFinite(delta) ? (
-          <div style={{ color: delta >= 0 ? 'hsl(160 84% 60%)' : 'hsl(351 95% 71%)' }}>
+          <div style={{ color: delta >= 0 ? 'hsl(160 84% 60%)' : 'hsl(355 65% 60%)' }}>
             {delta >= 0 ? '+' : '−'}{Math.abs(delta)} vs sem. dernière
           </div>
         ) : <div style={{ color: 'hsl(228 11% 45%)' }}>—</div>}

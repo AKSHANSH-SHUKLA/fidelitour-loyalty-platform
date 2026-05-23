@@ -26,9 +26,9 @@ const AutomationEmpty = ({ onClick, label = 'Créer' }) => (
       transition: 'border-color 180ms ease, color 180ms ease, background 180ms ease',
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.borderColor = 'hsl(258 90% 66% / .55)';
-      e.currentTarget.style.color = 'hsl(258 90% 50%)';
-      e.currentTarget.style.background = 'hsl(258 90% 66% / .04)';
+      e.currentTarget.style.borderColor = 'hsl(285 45% 42% / .55)';
+      e.currentTarget.style.color = 'hsl(285 45% 35%)';
+      e.currentTarget.style.background = 'hsl(285 45% 42% / .04)';
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.borderColor = 'hsl(228 30% 26%)';
