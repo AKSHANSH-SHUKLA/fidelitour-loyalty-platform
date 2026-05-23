@@ -401,12 +401,32 @@ export default function AnalyticsPageV2() {
         {/* Three-column shell (main + sticky right rail). */}
         <div className="av2-shell">
           {/* MAIN
-              Order per owner brief: pie charts + visuals FIRST, KPI
-              numbers AFTER. The visual rows live above the 5-card
-              KPI strip so the first impression is charts. */}
+              Layout re-ordered to match the mockup the owner approved:
+
+                Row 1  — 5 KPI tiles with sparklines (numbers FIRST)
+                Row 2  — Évolution des visites (wide) | Répartition par canal (donut)
+                Row 3  — Analyse RFM | Évolution du chiffre d'affaires | Top produits
+                Row 4  — Heures de pointe | Jours les plus fréquentés | Nouveaux vs récurrents
+                Row 5  — Automatisations actives (full width)
+
+              Every chart card, datum, and component is the SAME as before
+              — only the parent <section> ordering and grid templates
+              changed. Zero data flow rewrites. */}
           <main className="av2-main">
-            {/* 1) PIE CHARTS / DONUTS — first impression. */}
-            <section style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 12 }}>
+            {/* 1) KPI STRIP — top of page, first impression. */}
+            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+              <KpiCard icon={Activity}    label={t('analytics.kpi_visits')}          value={fmtNumFR(totalVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
+              <KpiCard icon={Users}       label={t('analytics.kpi_unique_customers')} value={fmtNumFR(totalCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
+              <KpiCard icon={ShoppingBag} label={t('analytics.kpi_avg_basket')}      value={avgBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
+              <KpiCard icon={Wallet}      label={t('analytics.kpi_revenue')}         value={fmtNumFR(Math.round(revenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
+              <KpiCard icon={Repeat}      label={t('analytics.kpi_retention')}       value={repeatRatePct.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
+            </section>
+
+            {/* 2) Évolution des visites (wide) + Répartition par canal (donut). */}
+            <section style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 12 }}>
+              <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
+                <VisitsBarLineChart data={visitsChartData} height={230} />
+              </ChartCard>
               <ChartCard title={t('analytics.chart_channels')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
                 {channelDonutData.length > 0 ? (
                   <ChannelDonut
@@ -420,6 +440,40 @@ export default function AnalyticsPageV2() {
                     {loading ? 'Chargement…' : 'Aucune source d\'acquisition pour cette branche.'}
                   </div>
                 )}
+              </ChartCard>
+            </section>
+
+            {/* 3) RFM | Revenue trend | Top products. */}
+            <section style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 1fr', gap: 12 }}>
+              <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Segments</span>}>
+                <RfmHeatmap
+                  matrix={rfmMatrix}
+                  rowLabels={['Récemment', 'Modérément', 'Anciennement']}
+                  colLabels={['Faible', 'Moyenne', 'Élevée']}
+                />
+              </ChartCard>
+              <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>} padding={14}>
+                <RevenueAreaChart
+                  total={fmtNumFR(revenueTotal)}
+                  unit="€"
+                  delta={revenueDelta}
+                  data={revenueSeries}
+                  label="Total période"
+                  height={150}
+                />
+              </ChartCard>
+              <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.by_revenue')}</span>}>
+                <TopProductsList items={topProducts} />
+              </ChartCard>
+            </section>
+
+            {/* 4) Heatmap + weekday bars + new vs returning donut. */}
+            <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
+              <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
+                <HoursHeatmap matrix={hours.matrix} days={hours.days} hours={hours.hours} />
+              </ChartCard>
+              <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
+                <WeekdayBars counts={weekdayCounts} days={SHORT_DAYS} height={120} />
               </ChartCard>
               <ChartCard title={t('analytics.chart_new_vs_returning')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
                 {nvrSegments.length > 0 ? (
@@ -435,52 +489,6 @@ export default function AnalyticsPageV2() {
                   </div>
                 )}
               </ChartCard>
-              <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Segments</span>}>
-                <RfmHeatmap
-                  matrix={rfmMatrix}
-                  rowLabels={['Récemment', 'Modérément', 'Anciennement']}
-                  colLabels={['Faible', 'Moyenne', 'Élevée']}
-                />
-              </ChartCard>
-            </section>
-
-            {/* 2) Time-series charts row. */}
-            <section style={{ display: 'grid', gridTemplateColumns: '1.55fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
-                <VisitsBarLineChart data={visitsChartData} height={210} />
-              </ChartCard>
-              <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>} padding={14}>
-                <RevenueAreaChart
-                  total={fmtNumFR(revenueTotal)}
-                  unit="€"
-                  delta={revenueDelta}
-                  data={revenueSeries}
-                  label="Total période"
-                  height={140}
-                />
-              </ChartCard>
-            </section>
-
-            {/* 3) Heatmap + bars + top products. */}
-            <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
-                <HoursHeatmap matrix={hours.matrix} days={hours.days} hours={hours.hours} />
-              </ChartCard>
-              <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
-                <WeekdayBars counts={weekdayCounts} days={SHORT_DAYS} height={120} />
-              </ChartCard>
-              <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.by_revenue')}</span>}>
-                <TopProductsList items={topProducts} />
-              </ChartCard>
-            </section>
-
-            {/* 4) KPI strip — numbers AFTER the visuals. */}
-            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-              <KpiCard icon={Activity}    label={t('analytics.kpi_visits')}          value={fmtNumFR(totalVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
-              <KpiCard icon={Users}       label={t('analytics.kpi_unique_customers')} value={fmtNumFR(totalCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
-              <KpiCard icon={ShoppingBag} label={t('analytics.kpi_avg_basket')}      value={avgBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
-              <KpiCard icon={Wallet}      label={t('analytics.kpi_revenue')}         value={fmtNumFR(Math.round(revenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
-              <KpiCard icon={Repeat}      label={t('analytics.kpi_retention')}       value={repeatRatePct.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
             </section>
 
             {/* Automatisations actives */}
