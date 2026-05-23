@@ -643,6 +643,41 @@ const MyWalletCardPage = () => {
                 onToggle={() => togglePref('push_enabled')}
                 disabled={savingPrefs}
               />
+              {/* Self-service push test. Hitting POST /api/card/<bc>/test-push
+                  fires a "FidéliTour — test push ✓" notification to all of
+                  this customer's subscribed devices. Surfaces the actual
+                  failure reason in a toast (no_subscription, vapid_not_configured,
+                  endpoint expired, etc) so the customer can debug without
+                  needing the owner to send a campaign. */}
+              <div className="p-4 bg-[#F3EFE7] border-t border-[#E7E5E4]">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await api.post(`/card/${customer.barcode_id}/test-push`);
+                      const d = res.data || {};
+                      if (d.sent > 0) {
+                        showToast(`Push envoyé à ${d.sent} appareil${d.sent > 1 ? 's' : ''}. Regardez votre écran de verrouillage.`);
+                      } else if (d.error === 'no_subscription') {
+                        showToast("Notifications pas encore activées — basculez le bouton ci-dessus puis réessayez.");
+                      } else if (d.error === 'vapid_not_configured') {
+                        showToast("Serveur non configuré pour les notifications (VAPID).");
+                      } else {
+                        showToast(`Échec: ${d.error || 'inconnu'} (${d.subs_total || 0} abonnement${(d.subs_total || 0) > 1 ? 's' : ''})`);
+                      }
+                    } catch (e) {
+                      showToast('Erreur réseau lors du test push.');
+                    }
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white border border-[#B85C38] text-[#B85C38] font-semibold text-sm hover:bg-[#B85C38] hover:text-white transition-colors"
+                >
+                  <Bell size={14} />
+                  Envoyer une notification test
+                </button>
+                <p className="text-[10px] text-[#8B8680] mt-1.5 text-center">
+                  Vérifie que les notifications atteignent bien votre téléphone.
+                </p>
+              </div>
               <button
                 onClick={deleteCard}
                 className="w-full text-left p-4 flex items-center gap-3 hover:bg-[#FFF4F1] transition-colors text-[#B85C38]"

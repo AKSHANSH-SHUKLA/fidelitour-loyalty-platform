@@ -400,6 +400,11 @@ export default function CustomersPage() {
     const headers = ['Name', 'Email', 'Phone', 'Postal Code', 'Tier', 'Total Visits', 'Points', 'Total Spent', 'Source', 'Join Date'];
     const rows = filteredCustomers.map((c) => {
       const sourceBadge = getSourceBadge(c.acquisition_source);
+      // Join Date — the backend customer object has `created_at`
+      // (the field set when a customer joins). The previous code looked
+      // for `c.join_date` which doesn't exist, so the column was always
+      // blank. Accept both names so future schema renames don't break it.
+      const joinedAt = c.created_at || c.join_date || c.member_since;
       return [
         c.name,
         c.email,
@@ -410,7 +415,7 @@ export default function CustomersPage() {
         c.points || (c.visits || 0) * 10,
         (c.total_amount_paid || 0).toFixed(2),
         sourceBadge.label,
-        c.join_date ? new Date(c.join_date).toLocaleDateString() : '',
+        joinedAt ? new Date(joinedAt).toLocaleDateString() : '',
       ];
     });
 

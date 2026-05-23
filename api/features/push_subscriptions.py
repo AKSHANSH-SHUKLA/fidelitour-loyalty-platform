@@ -137,6 +137,58 @@ def test_push(
     return {"sent": sent, "subs_total": len(subs), "expired_cleaned": len(expired)}
 
 
+@router.post("/api/card/{barcode_id}/test-push")
+def customer_self_test_push(barcode_id: str):
+    """Customer-initiated test push, no auth — they can only fire to their
+    own device(s). Lets the customer verify push is actually working from
+    their wallet card without needing the owner to send a campaign.
+
+    Returns a structured result the wallet card surfaces in a toast so the
+    customer sees exactly why a push failed if it does (no subscription
+    registered, VAPID not configured, endpoint expired, etc).
+    """
+    from services.web_push import send_push, is_configured            # noqa: WPS433
+    if _db is None:
+        return {"sent": 0, "error": "db_not_initialised"}
+    if not is_configured():
+        return {"sent": 0, "error": "vapid_not_configured",
+                "hint": "Server missing VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY."}
+    bc = (barcode_id or "").strip().upper()
+    customer = _db.customers.find_one({"barcode_id": bc})
+    if not customer:
+        return {"sent": 0, "error": "customer_not_found"}
+    subs = list(_db.push_subscriptions.find({"customer_id": customer["id"]}))
+    if not subs:
+        return {
+            "sent": 0,
+            "error": "no_subscription",
+            "hint": "Open the card, toggle 'Autoriser les notifications' on, then tap Test again.",
+        }
+    sent = 0
+    expired = []
+    errors = []
+    for s in subs:
+        result = send_push(
+            s["subscription"],
+            "FidéliTour — test push ✓",
+            "If you see this, push notifications are working. Tap to open your card.",
+        )
+        if result.get("sent"):
+            sent += 1
+        elif result.get("expired"):
+            expired.append(s["endpoint"])
+        elif result.get("error"):
+            errors.append(result["error"])
+    if expired:
+        _db.push_subscriptions.delete_many({"endpoint": {"$in": expired}})
+    return {
+        "sent": sent,
+        "subs_total": len(subs),
+        "expired_cleaned": len(expired),
+        "errors": errors[:3],
+    }
+
+
 def fan_out_to_customer(tenant_id: str, customer_id: str, title: str, body: str) -> Dict[str, Any]:
     """Helper: send a push to all of one customer's subscribed devices.
     Called by auto_campaigns._dispatch_message."""
