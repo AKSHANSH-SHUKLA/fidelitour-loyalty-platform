@@ -146,6 +146,100 @@ const SectionDivider = ({ children }) => (
 const fmtNumFR = (n) => Number(n || 0).toLocaleString('fr-FR');
 const fmtEUR = (n) => Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
 
+// ─────────────────────────────────────────────────────────────────────
+// DEMO PREVIEW DATA
+// Fills the page when the tenant has no real data yet (fresh
+// install, sandbox account, screenshot for a sales demo). Numbers
+// mirror the mockup the owner approved so the page looks alive even
+// before the first scan. The fallback is opt-in per metric — real
+// backend data ALWAYS takes precedence; demo only paints holes.
+// ─────────────────────────────────────────────────────────────────────
+const DEMO_DAYS  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DEMO_HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+
+const DEMO = {
+  totals: {
+    visits: 2450,
+    customers: 1280,
+    basket: 18.40,
+    revenue: 45920,
+    retentionPct: 68,
+  },
+  visitsByDay: (() => {
+    // 30 days of synthetic visits — gentle uptrend with weekend lift.
+    const map = {};
+    const today = new Date();
+    let s = 9999;
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const iso = d.toISOString().slice(0, 10);
+      s = (s * 1664525 + 1013904223) >>> 0;
+      const r = (s & 0xffffffff) / 0x100000000;
+      const dow = d.getDay(); // 0=Sun
+      const weekendBoost = (dow === 5 || dow === 6) ? 35 : 0;
+      const trend = 55 + i * 1.8;
+      const noise = (r - 0.5) * 40;
+      map[iso] = Math.max(20, Math.round(trend + weekendBoost + noise));
+    }
+    return map;
+  })(),
+  channels: [
+    { name: 'Sur place',   value: 1274 },
+    { name: 'Google Maps', value:  490 },
+    { name: 'Instagram',   value:  368 },
+    { name: 'Site Web',    value:  196 },
+    { name: 'Autres',      value:  122 },
+  ],
+  rfm: [
+    [ 8, 13, 24],
+    [ 6, 17, 20],
+    [ 4, 12, 16],
+  ],
+  topProducts: (() => {
+    // pct is share of TOP item's revenue (per TopProductsList contract).
+    const raw = [
+      { name: 'Cappuccino',     revenue: 12450 },
+      { name: 'Formule Brunch', revenue:  9200 },
+      { name: 'Latte',          revenue:  7150 },
+      { name: 'Pâtisserie',     revenue:  5890 },
+      { name: 'Thé Glacé',      revenue:  4230 },
+    ];
+    const top = raw[0].revenue;
+    return raw.map((r) => ({ ...r, pct: r.revenue / top }));
+  })(),
+  weekday: [280, 320, 290, 340, 450, 500, 270], // Lun..Dim
+  newVsReturning: { newPct: 32, returningPct: 68 },
+  hoursMatrix: (() => {
+    // Mon..Sun × 6..21h — morning rush, lunch peak, evening dinner,
+    // weekend brunch lift. Each cell ~= visit count.
+    return DEMO_DAYS.map((_d, dIdx) => DEMO_HOURS.map((h) => {
+      let v = 1;
+      if (h === 7)               v = 4;
+      if (h === 8)               v = 7;
+      if (h === 9)               v = 6;
+      if (h === 10)              v = 4;
+      if (h === 11)              v = 6;
+      if (h === 12)              v = 9;
+      if (h === 13)              v = 10;
+      if (h === 14)              v = 6;
+      if (h === 15 || h === 16)  v = 3;
+      if (h === 17)              v = 5;
+      if (h === 18)              v = 8;
+      if (h === 19)              v = 9;
+      if (h === 20)              v = 7;
+      if (h === 21)              v = 4;
+      // Weekend brunch lift (Sat=5, Sun=6).
+      if ((dIdx === 5 || dIdx === 6) && h >= 10 && h <= 14) v += 3;
+      // Friday evening lift.
+      if (dIdx === 4 && h >= 18 && h <= 21) v += 2;
+      // Monday quieter.
+      if (dIdx === 0 && (h === 12 || h === 13)) v -= 2;
+      return Math.max(0, v);
+    }));
+  })(),
+};
+
 export default function AnalyticsPageV2() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -362,6 +456,86 @@ export default function AnalyticsPageV2() {
     return arr.slice(0, 3);
   }, [hours, totalCustomers, navigate]);
 
+  // ──────────────────────────────────────────────────────────────────
+  // DEMO-AWARE DISPLAY VALUES
+  // The tenant is "empty" when total_visits is 0 (fresh install, no
+  // scans yet). When empty, every card falls back to the DEMO numbers
+  // so the page mirrors the approved mockup and the owner can show a
+  // client what their dashboard will look like once data flows.
+  //
+  // Real values ALWAYS win. We only paint demo into holes. As soon as
+  // a single scan lands, the real number replaces the demo one for
+  // that card independently of the others.
+  // ──────────────────────────────────────────────────────────────────
+  const isEmpty = !loading && totalVisits === 0;
+
+  const displayVisits     = totalVisits     > 0 ? totalVisits     : (isEmpty ? DEMO.totals.visits       : 0);
+  const displayCustomers  = totalCustomers  > 0 ? totalCustomers  : (isEmpty ? DEMO.totals.customers    : 0);
+  const displayBasket     = isEmpty ? DEMO.totals.basket    : avgBasket;
+  const displayRevenue    = isEmpty ? DEMO.totals.revenue   : revenue;
+  const displayRetention  = repeatRatePct > 0 ? repeatRatePct : (isEmpty ? DEMO.totals.retentionPct : 0);
+
+  const displayVisitsChart = useMemo(() => {
+    if (visitsChartData.length > 0) return visitsChartData;
+    if (!isEmpty) return [];
+    const keys = Object.keys(DEMO.visitsByDay).sort();
+    return keys.map((iso) => {
+      const visits = DEMO.visitsByDay[iso];
+      const uniques = Math.max(0, Math.round(visits * 0.65));
+      const d = new Date(iso + 'T00:00:00');
+      const label = isFinite(d) ? `${d.getDate()}/${d.getMonth() + 1}` : iso;
+      return { label, visits, uniques };
+    });
+  }, [visitsChartData, isEmpty]);
+
+  const displayChannelDonut = (channelDonutData.length > 0) ? channelDonutData
+    : (isEmpty ? DEMO.channels : []);
+  const displayChannelsTotal = displayChannelDonut.reduce((s, r) => s + r.value, 0);
+
+  const displayRfmMatrix = useMemo(() => {
+    const sum = (rfmMatrix || []).flat().reduce((a, b) => a + b, 0);
+    if (sum > 0) return rfmMatrix;
+    return isEmpty ? DEMO.rfm : rfmMatrix;
+  }, [rfmMatrix, isEmpty]);
+
+  const displayRevenueSeries = useMemo(() => {
+    if (revenueSeries.length > 0) return revenueSeries;
+    if (!isEmpty) return [];
+    const keys = Object.keys(DEMO.visitsByDay).sort();
+    return keys.map((iso) => ({
+      x: iso,
+      value: Math.round(DEMO.visitsByDay[iso] * 18.40),
+    }));
+  }, [revenueSeries, isEmpty]);
+  const displayRevenueTotal = displayRevenueSeries.reduce((s, p) => s + (p.value || 0), 0);
+  const displayRevenueDelta = (() => {
+    if (revenueDelta !== null) return revenueDelta;
+    if (!isEmpty) return null;
+    return 22; // matches the mockup ↑22%
+  })();
+
+  const displayTopProducts = (topProducts && topProducts.length > 0) ? topProducts
+    : (isEmpty ? DEMO.topProducts : []);
+
+  const displayHours = (hours.matrix && hours.matrix.length > 0) ? hours
+    : (isEmpty
+        ? { matrix: DEMO.hoursMatrix, days: DEMO_DAYS, hours: DEMO_HOURS }
+        : hours);
+
+  const displayWeekday = useMemo(() => {
+    const sum = (weekdayCounts || []).reduce((a, b) => a + b, 0);
+    if (sum > 0) return weekdayCounts;
+    return isEmpty ? DEMO.weekday : weekdayCounts;
+  }, [weekdayCounts, isEmpty]);
+
+  const displayNvrSegments = (nvrSegments.length > 0) ? nvrSegments
+    : (isEmpty ? [
+        { name: 'Récurrents', value: DEMO.newVsReturning.returningPct,
+          gradientFrom: 'hsl(258 90% 66%)', gradientTo: 'hsl(263 70% 50%)' },
+        { name: 'Nouveaux',   value: DEMO.newVsReturning.newPct,
+          gradientFrom: 'hsl(187 85% 53%)', gradientTo: 'hsl(189 94% 43%)' },
+      ] : []);
+
   // Today's date in French — for the "14 Mai – 14 Juin 2026" pill.
   const dateRangeLabel = useMemo(() => {
     const now = new Date();
@@ -415,23 +589,23 @@ export default function AnalyticsPageV2() {
           <main className="av2-main">
             {/* 1) KPI STRIP — top of page, first impression. */}
             <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-              <KpiCard icon={Activity}    label={t('analytics.kpi_visits')}          value={fmtNumFR(totalVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
-              <KpiCard icon={Users}       label={t('analytics.kpi_unique_customers')} value={fmtNumFR(totalCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
-              <KpiCard icon={ShoppingBag} label={t('analytics.kpi_avg_basket')}      value={avgBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
-              <KpiCard icon={Wallet}      label={t('analytics.kpi_revenue')}         value={fmtNumFR(Math.round(revenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
-              <KpiCard icon={Repeat}      label={t('analytics.kpi_retention')}       value={repeatRatePct.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
+              <KpiCard icon={Activity}    label={t('analytics.kpi_visits')}          value={fmtNumFR(displayVisits)}   accent="purple" sparklineData={sparks.visits}    loading={loading} delta={18} />
+              <KpiCard icon={Users}       label={t('analytics.kpi_unique_customers')} value={fmtNumFR(displayCustomers)} accent="cyan"   sparklineData={sparks.customers} loading={loading} delta={12} />
+              <KpiCard icon={ShoppingBag} label={t('analytics.kpi_avg_basket')}      value={displayBasket.toFixed(2).replace('.', ',')} unit="€" accent="orange" sparklineData={sparks.basket}    loading={loading} delta={8} />
+              <KpiCard icon={Wallet}      label={t('analytics.kpi_revenue')}         value={fmtNumFR(Math.round(displayRevenue))} unit="€"   accent="emerald" sparklineData={sparks.revenue}   loading={loading} delta={22} />
+              <KpiCard icon={Repeat}      label={t('analytics.kpi_retention')}       value={displayRetention.toFixed(1)} unit="%"      accent="pink"    sparklineData={sparks.retention} loading={loading} delta={6} />
             </section>
 
             {/* 2) Évolution des visites (wide) + Répartition par canal (donut). */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 12 }}>
               <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
-                <VisitsBarLineChart data={visitsChartData} height={230} />
+                <VisitsBarLineChart data={displayVisitsChart} height={230} />
               </ChartCard>
               <ChartCard title={t('analytics.chart_channels')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
-                {channelDonutData.length > 0 ? (
+                {displayChannelDonut.length > 0 ? (
                   <ChannelDonut
-                    data={channelDonutData}
-                    centerNum={fmtNumFR(channelsTotal)}
+                    data={displayChannelDonut}
+                    centerNum={fmtNumFR(displayChannelsTotal)}
                     centerLabel="Visites"
                     size={150}
                   />
@@ -447,39 +621,39 @@ export default function AnalyticsPageV2() {
             <section style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 1fr', gap: 12 }}>
               <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>Segments</span>}>
                 <RfmHeatmap
-                  matrix={rfmMatrix}
+                  matrix={displayRfmMatrix}
                   rowLabels={['Récemment', 'Modérément', 'Anciennement']}
                   colLabels={['Faible', 'Moyenne', 'Élevée']}
                 />
               </ChartCard>
               <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>} padding={14}>
                 <RevenueAreaChart
-                  total={fmtNumFR(revenueTotal)}
+                  total={fmtNumFR(displayRevenueTotal)}
                   unit="€"
-                  delta={revenueDelta}
-                  data={revenueSeries}
+                  delta={displayRevenueDelta}
+                  data={displayRevenueSeries}
                   label="Total période"
                   height={150}
                 />
               </ChartCard>
               <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.by_revenue')}</span>}>
-                <TopProductsList items={topProducts} />
+                <TopProductsList items={displayTopProducts} />
               </ChartCard>
             </section>
 
             {/* 4) Heatmap + weekday bars + new vs returning donut. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
               <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
-                <HoursHeatmap matrix={hours.matrix} days={hours.days} hours={hours.hours} />
+                <HoursHeatmap matrix={displayHours.matrix} days={displayHours.days} hours={displayHours.hours} />
               </ChartCard>
               <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.kpi_visits')}</span>}>
-                <WeekdayBars counts={weekdayCounts} days={SHORT_DAYS} height={120} />
+                <WeekdayBars counts={displayWeekday} days={SHORT_DAYS} height={120} />
               </ChartCard>
               <ChartCard title={t('analytics.chart_new_vs_returning')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 60%)' }}>{t('analytics.30_days')}</span>}>
-                {nvrSegments.length > 0 ? (
+                {displayNvrSegments.length > 0 ? (
                   <ChannelDonut
-                    data={nvrSegments}
-                    centerNum={fmtNumFR(totalCustomers)}
+                    data={displayNvrSegments}
+                    centerNum={fmtNumFR(displayCustomers)}
                     centerLabel="Clients uniques"
                     size={130}
                   />
