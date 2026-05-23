@@ -391,12 +391,18 @@ const ScanPage = () => {
         items: pickerLineItems.length > 0 ? pickerLineItems : undefined,
       });
 
-      // Backend returns full customer object, transform it for UI
+      // Backend returns full customer object + cycle-aware stamp math.
+      // We no longer derive stamps from `visits` directly — that field is
+      // the LIFETIME counter and would falsely re-fire "Reward unlocked!"
+      // every scan after a redemption (a customer at 12 lifetime visits
+      // who already redeemed at 10 would show "12/10 → reward unlocked"
+      // forever). The server now ships stamps_in_cycle + reward_threshold
+      // + reward_unlocked computed from (visits - visits_at_last_redemption).
       const customerData = res.data;
-      const pointsEarned = finalPoints > 0 ? finalPoints : 10; // default 10 points per visit
-      const stampsCurrent = Math.floor(customerData.visits);
-      const stampsRequired = 10; // matches default card template
-      const canRedeem = stampsCurrent >= stampsRequired;
+      const pointsEarned = finalPoints > 0 ? finalPoints : 10;
+      const stampsCurrent = customerData.stamps_in_cycle ?? 0;
+      const stampsRequired = customerData.reward_threshold ?? 10;
+      const canRedeem = !!customerData.reward_unlocked;
 
       setScanResult({
         customer_id: customerData.id,

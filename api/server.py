@@ -3751,6 +3751,28 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
 
     # Build success response — tier-up flag for UI celebration.
     tier_rank = {"bronze": 0, "silver": 1, "gold": 2, "vip": 3}
+
+    # Stamps-in-current-cycle math — the staff page used to compute
+    # `stampsCurrent = floor(visits)` which, after the visits-never-reset
+    # change, kept showing 12/10 / 13/10 etc and re-fired the reward
+    # banner on every scan past the first redemption. Now the server
+    # computes the right number (visits - visits_at_last_redemption,
+    # capped at the threshold) and ships `stamps_in_cycle`,
+    # `reward_threshold`, `reward_unlocked` so the frontend just renders.
+    last_red_visits = int((db.customers.find_one({"id": cid}) or {}).get("visits_at_last_redemption") or 0)
+    try:
+        scan_tpl = db.card_templates.find_one({"tenant_id": token_data.tenant_id}) or {}
+    except Exception:
+        scan_tpl = {}
+    reward_threshold = max(
+        int(scan_tpl.get("reward_threshold_stamps", 10) or 10) *
+        int(scan_tpl.get("visits_per_stamp", 1) or 1),
+        1,
+    )
+    stamps_in_cycle = max(0, new_visits - last_red_visits)
+    stamps_capped = min(stamps_in_cycle, reward_threshold)
+    reward_unlocked = stamps_in_cycle >= reward_threshold
+
     return {
         "id": cid,
         "barcode_id": cust.get("barcode_id"),
@@ -3763,6 +3785,11 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
         "previous_tier": previous_tier,
         "tier_upgraded": tier_rank.get(new_tier, 0) > tier_rank.get(previous_tier, 0),
         "branch_id": req.branch_id or cust.get("branch_id"),
+        # Cycle-aware stamps math — the staff page renders these directly.
+        "stamps_in_cycle":  stamps_capped,
+        "reward_threshold": reward_threshold,
+        "reward_unlocked":  reward_unlocked,
+        "visits_at_last_redemption": last_red_visits,
     }
 
 
