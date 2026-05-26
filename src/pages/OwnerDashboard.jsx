@@ -200,19 +200,55 @@ export default function OwnerDashboard() {
   const displayTierDist = realTier.length >= 2 ? tierDist : DEMO_TIER_DIST;
 
   // Visit-time heatmap — { day_of_week: { hour: count } } from the
-  // analytics summary. If the backend doesn't return the field for any
-  // reason, fall back to a 7-day x 13-hour skeleton (Mon-Sun, 7am-7pm)
-  // with all zeros so the panel always renders and the owner can see
-  // the schedule grid even before any visits land.
+  // analytics summary. If the backend has no real data yet (fresh
+  // tenant / sandbox), we paint a realistic French café pattern so
+  // the owner sees what the chart looks like populated. Real data
+  // ALWAYS wins — demo only fires when the heatmap is missing OR all
+  // values sum to zero.
   const HEATMAP_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const HEATMAP_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
-  const heatmapEmpty = HEATMAP_DAYS.reduce((acc, d) => {
-    acc[d] = HEATMAP_HOURS.reduce((h, hr) => { h[String(hr)] = 0; return h; }, {});
-    return acc;
-  }, {});
-  const heatmap = (summary?.visit_time_heatmap && Object.keys(summary.visit_time_heatmap).length > 0)
-    ? summary.visit_time_heatmap
-    : heatmapEmpty;
+
+  // Realistic French café visit pattern — morning espresso rush,
+  // lunch peak, afternoon lull, evening dinner uptick, weekend brunch
+  // lift, Monday quieter, Friday-evening boost.
+  const DEMO_HEATMAP = (() => {
+    const out = {};
+    HEATMAP_DAYS.forEach((d, dIdx) => {
+      out[d] = {};
+      HEATMAP_HOURS.forEach((h) => {
+        let v = 1;
+        if (h === 7)              v = 4;
+        if (h === 8)              v = 9;
+        if (h === 9)              v = 7;
+        if (h === 10)             v = 4;
+        if (h === 11)             v = 6;
+        if (h === 12)             v = 11;
+        if (h === 13)             v = 12;
+        if (h === 14)             v = 7;
+        if (h === 15 || h === 16) v = 3;
+        if (h === 17)             v = 5;
+        if (h === 18)             v = 9;
+        if (h === 19)             v = 10;
+        // Weekend brunch lift (Sat=5, Sun=6)
+        if ((dIdx === 5 || dIdx === 6) && h >= 10 && h <= 14) v += 4;
+        // Friday evening lift
+        if (dIdx === 4 && h >= 18 && h <= 19) v += 3;
+        // Monday quieter overall
+        if (dIdx === 0) v = Math.max(1, v - 2);
+        out[d][String(h)] = v;
+      });
+    });
+    return out;
+  })();
+
+  const realHeatmap = summary?.visit_time_heatmap;
+  const realHeatmapSum = realHeatmap
+    ? Object.values(realHeatmap).reduce(
+        (s, row) => s + Object.values(row || {}).reduce((a, b) => a + (Number(b) || 0), 0),
+        0,
+      )
+    : 0;
+  const heatmap = (realHeatmap && realHeatmapSum > 0) ? realHeatmap : DEMO_HEATMAP;
 
   // Plan usage
   const planName = (tenant?.plan || 'gold').toUpperCase();
