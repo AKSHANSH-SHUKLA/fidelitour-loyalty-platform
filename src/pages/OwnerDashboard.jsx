@@ -119,6 +119,24 @@ export default function OwnerDashboard() {
   const [dashWindow, setDashWindow] = useState({ count: 30, unit: 'day' });
   const dashWindowDays = Math.max(1, Math.round(dashWindow.count * (UNIT_DAYS_DASH[dashWindow.unit] || 1)));
 
+  // ─── Notification reach stats — right-rail KPI panel ───────────────
+  // Tells the owner what % of customers can actually receive push
+  // campaigns. Drives Strategy 2 (SMS re-enable) decision-making.
+  const [notifStats, setNotifStats] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/owner/notifications/subscription-stats', {
+      headers: (() => {
+        const tok = (typeof localStorage !== 'undefined') ? localStorage.getItem('fdt_token') : null;
+        return tok ? { Authorization: `Bearer ${tok}` } : {};
+      })(),
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((s) => { if (alive && s) setNotifStats(s); })
+      .catch(() => { /* silent — panel falls back to demo */ });
+    return () => { alive = false; };
+  }, []);
+
   // Visits twin chart data — driven by the shared dashWindow above.
   const visitsTwin  = useTileMetric({ metric: 'total_visits',  branchId, initial: { value: 30, unit: 'day' }, withSeries: true, controlledDays: dashWindowDays });
   const uniquesTwin = useTileMetric({ metric: 'new_customers', branchId, initial: { value: 30, unit: 'day' }, withSeries: true, controlledDays: dashWindowDays });
@@ -1010,6 +1028,84 @@ export default function OwnerDashboard() {
               {' — gardez-les heureux.'}
             </div>
           </div>
+
+          {/* ─── Notification Reach — push-recovery KPI ────────────────── */}
+          {(() => {
+            // Demo fallback when stats not loaded yet (or fresh tenant).
+            const s = notifStats || { total: 156, subscribed: 108, not_subscribed: 48, subscribed_pct: 69.2 };
+            const pct = Math.round(s.subscribed_pct || 0);
+            const tone = pct >= 80 ? 'good' : pct >= 60 ? 'ok' : 'warn';
+            const toneColor = tone === 'good' ? 'hsl(150 70% 26%)' : tone === 'ok' ? 'hsl(42 78% 38%)' : 'hsl(355 70% 38%)';
+            const toneBg    = tone === 'good' ? 'hsl(150 55% 40% / .12)' : tone === 'ok' ? 'hsl(42 78% 52% / .14)' : 'hsl(355 60% 48% / .12)';
+            return (
+              <div className="fd-side-panel">
+                <div className="fd-sp-head">
+                  <span className="fd-sp-title">Notifications activées</span>
+                  <span style={{ fontSize: 10, color: 'var(--fd-text-3)', fontWeight: 700, letterSpacing: 0.6 }}>RÉCEPTION</span>
+                </div>
+                {/* Big number + ring */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4, marginBottom: 12 }}>
+                  <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
+                    {/* Background ring */}
+                    <svg width="92" height="92" viewBox="0 0 92 92" style={{ position: 'absolute', inset: 0 }}>
+                      <circle cx="46" cy="46" r="38" fill="none" stroke="#F0E8D6" strokeWidth="10"/>
+                      <circle cx="46" cy="46" r="38" fill="none" stroke={toneColor} strokeWidth="10"
+                              strokeDasharray={`${(pct / 100) * 238.76} 999`}
+                              strokeLinecap="round"
+                              transform="rotate(-90 46 46)"/>
+                    </svg>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                                  alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                      <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: 'var(--fd-text)', lineHeight: 1 }}>{pct}%</div>
+                      <div style={{ fontSize: 8.5, color: 'var(--fd-text-3)', letterSpacing: 0.6, textTransform: 'uppercase', marginTop: 2 }}>Reçoivent</div>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'hsl(150 70% 26%)' }} />
+                        <span style={{ color: 'var(--fd-text-2)' }}>Abonnés</span>
+                      </span>
+                      <span style={{ color: 'var(--fd-text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {s.subscribed}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'hsl(355 60% 48%)' }} />
+                        <span style={{ color: 'var(--fd-text-2)' }}>Sans push</span>
+                      </span>
+                      <span style={{ color: 'var(--fd-text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {s.not_subscribed}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Action insight */}
+                <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8,
+                              background: toneBg, fontSize: 11, color: 'var(--fd-text-2)', lineHeight: 1.4 }}>
+                  {s.not_subscribed > 0 ? (
+                    <>
+                      <span style={{ fontWeight: 700, color: toneColor }}>{s.not_subscribed} clients</span>
+                      {' ratent vos campagnes — '}
+                      <button
+                        type="button"
+                        onClick={() => navigate('/dashboard/campaigns?action=re-enable')}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                                 color: toneColor, fontWeight: 700, textDecoration: 'underline',
+                                 font: 'inherit' }}>
+                        relancer par SMS →
+                      </button>
+                    </>
+                  ) : (
+                    <span style={{ color: toneColor, fontWeight: 600 }}>
+                      Excellent — tous vos clients reçoivent vos campagnes.
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

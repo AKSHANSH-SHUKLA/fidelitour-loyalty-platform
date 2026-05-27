@@ -76,6 +76,11 @@ export default function CustomersPage() {
   const [postalCode, setPostalCode] = useState('');
   const [minTotalSpent, setMinTotalSpent] = useState('');
   const [sourceFilter, setSourceFilter] = useState('All');
+  // Subscription filter — added to target customers who can/can't receive push.
+  // 'All' | 'Subscribed' | 'NotSubscribed'
+  const [subscriptionFilter, setSubscriptionFilter] = useState('All');
+  // Map of customer_id → bool (has push subscription) — fetched once on mount.
+  const [subscriptionMap, setSubscriptionMap] = useState({});
   const [activeQuickSegment, setActiveQuickSegment] = useState(null); // which pill is pressed
   // Saved segments (owner's custom combos)
   const [savedSegments, setSavedSegments] = useState([]);
@@ -334,8 +339,34 @@ export default function CustomersPage() {
       filtered = filtered.filter((customer) => customer.acquisition_source === sourceValue);
     }
 
+    // Subscription filter — push notification status (drives re-enable campaigns).
+    if (subscriptionFilter !== 'All') {
+      const wantSubscribed = subscriptionFilter === 'Subscribed';
+      filtered = filtered.filter((customer) => {
+        const has = !!subscriptionMap[customer.id];
+        return wantSubscribed ? has : !has;
+      });
+    }
+
     setFilteredCustomers(filtered);
-  }, [allCustomers, searchQuery, tierFilter, minVisits, maxVisits, minAmountPaid, postalCode, minTotalSpent, sourceFilter]);
+  }, [allCustomers, searchQuery, tierFilter, minVisits, maxVisits, minAmountPaid, postalCode, minTotalSpent, sourceFilter, subscriptionFilter, subscriptionMap]);
+
+  // Fetch the subscription map once on mount. Backend exposes per-customer
+  // subscription status via /api/owner/notifications/subscription-map.
+  // If endpoint doesn't exist (older backend), filter just shows all.
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/owner/notifications/subscription-map', {
+      headers: (() => {
+        const tok = (typeof localStorage !== 'undefined') ? localStorage.getItem('fdt_token') : null;
+        return tok ? { Authorization: `Bearer ${tok}` } : {};
+      })(),
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (alive && d?.map) setSubscriptionMap(d.map); })
+      .catch(() => { /* silent — filter is just not useful */ });
+    return () => { alive = false; };
+  }, []);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -697,6 +728,36 @@ export default function CustomersPage() {
               <option>Silver</option>
               <option>Gold</option>
               <option>VIP</option>
+            </select>
+          </div>
+
+          {/* Subscription Filter — push notifications status */}
+          <div>
+            <label
+              className="block text-sm mb-2"
+              style={{
+                color: '#57534E',
+                fontFamily: 'Manrope',
+                fontSize: '12px',
+              }}
+            >
+              🔔 Notifications
+            </label>
+            <select
+              value={subscriptionFilter}
+              onChange={(e) => setSubscriptionFilter(e.target.value)}
+              className="w-full px-3 py-2 rounded border text-sm outline-none"
+              style={{
+                backgroundColor: '#FDFBF7',
+                borderColor: '#E7E5E4',
+                color: '#1C1917',
+                fontFamily: 'Manrope',
+              }}
+              title="Filter customers by whether they receive push notifications"
+            >
+              <option value="All">All</option>
+              <option value="Subscribed">Reçoivent (subscribed)</option>
+              <option value="NotSubscribed">Sans push (not subscribed)</option>
             </select>
           </div>
 

@@ -1883,6 +1883,24 @@ def notification_subscription_stats(token_data=Depends(require_role(["business_o
     }
 
 
+@app.get("/api/owner/notifications/subscription-map")
+def notification_subscription_map(token_data=Depends(require_role(["business_owner", "manager"]))):
+    """Returns {customer_id: True} for every customer in this tenant that
+    has at least one active push subscription. Used by the CustomersPage
+    filter to surface "Sans push" (not subscribed) segment quickly."""
+    t_id = token_data.tenant_id
+    out = {}
+    try:
+        cursor = db.push_subscriptions.find({"tenant_id": t_id}, {"customer_id": 1})
+        for s in cursor:
+            cid = s.get("customer_id")
+            if cid:
+                out[cid] = True
+    except Exception:
+        pass
+    return {"map": out, "count": len(out)}
+
+
 class ReEnablementRequest(BaseModel):
     message: Optional[str] = None  # Defaults to platform template if not set
 
