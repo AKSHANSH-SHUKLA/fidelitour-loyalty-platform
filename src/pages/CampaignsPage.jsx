@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil, X, Sparkles } from 'lucide-react';
+import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil, X, Sparkles, BellRing } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ownerAPI } from '../lib/api';
 import api from '../lib/api';
@@ -7,6 +7,196 @@ import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CampaignAudienceBuilder from '../components/CampaignAudienceBuilder';
 import PhonePushPreview from '../components/PhonePushPreview';
+
+/**
+ * ReEnableNotificationsButton — Strategy 2 (SMS re-enablement campaign).
+ *
+ * Opens a confirmation modal showing the current notification-subscription
+ * stats for this tenant. If the owner confirms, fires SMS to every
+ * customer without an active push subscription, asking them to enable.
+ * Uses the backend endpoint /api/owner/notifications/re-enablement.
+ */
+function ReEnableNotificationsButton() {
+  const [open, setOpen]   = useState(false);
+  const [stats, setStats] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [result, setResult]   = useState(null);
+
+  // Fetch stats lazily — only when the modal opens.
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    setStats(null); setResult(null);
+    api.get('/api/owner/notifications/subscription-stats')
+      .then((r) => { if (alive) setStats(r.data); })
+      .catch(() => { if (alive) setStats({ error: true }); });
+    return () => { alive = false; };
+  }, [open]);
+
+  const send = async () => {
+    setSending(true); setResult(null);
+    try {
+      const r = await api.post('/api/owner/notifications/re-enablement', {});
+      setResult(r.data);
+    } catch (e) {
+      setResult({ error: e?.response?.data?.detail || 'Send failed' });
+    } finally { setSending(false); }
+  };
+
+  const estCost = stats ? (stats.not_subscribed * 0.06).toFixed(2) : '0.00';
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm hover:-translate-y-0.5"
+        style={{ background: '#FFFFFF', color: 'hsl(285 45% 42%)', border: '1px solid hsl(285 45% 42% / .35)' }}
+        title="Send SMS to customers who don't receive push notifications, asking them to enable"
+      >
+        <BellRing size={14} /> Re-enable notifications
+      </button>
+
+      {open && (
+        <div
+          role="dialog" aria-modal="true"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(28,25,23,.45)', backdropFilter: 'blur(2px)',
+            display: 'grid', placeItems: 'center', padding: 16,
+          }}
+        >
+          <div style={{
+            background: '#FFFFFF', borderRadius: 16,
+            width: 'min(520px, 100%)', maxHeight: 'calc(100vh - 32px)', overflow: 'auto',
+            border: '1px solid #ECE3D2',
+            boxShadow: '0 24px 60px -20px rgba(28,25,23,.25)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '18px 22px', borderBottom: '1px solid #ECE3D2' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10,
+                              background: 'hsl(285 45% 42% / .12)', color: 'hsl(285 45% 42%)',
+                              display: 'grid', placeItems: 'center' }}>
+                  <BellRing size={18} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1C1917', fontFamily: 'Manrope' }}>
+                    Re-enable notifications
+                  </h2>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8B8680' }}>
+                    SMS to customers without push enabled
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setOpen(false)} aria-label="Close"
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer',
+                         color: '#57534E', padding: 6 }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: 22 }}>
+              {result?.error && (
+                <div style={{ padding: 12, borderRadius: 8,
+                              background: 'hsl(355 60% 48% / .08)', color: 'hsl(355 70% 38%)',
+                              fontSize: 13, marginBottom: 12 }}>
+                  {result.error}
+                </div>
+              )}
+              {result && !result.error ? (
+                <div>
+                  <div style={{
+                    padding: 16, borderRadius: 10, marginBottom: 14,
+                    background: 'hsl(150 55% 40% / .10)', border: '1px solid hsl(150 55% 40% / .25)',
+                  }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'hsl(150 70% 26%)' }}>
+                      ✓ {result.sent} SMS envoyés
+                    </p>
+                    <p style={{ margin: '6px 0 0', fontSize: 12.5, color: '#3F3A36', lineHeight: 1.5 }}>
+                      Coût estimé : <strong>€{result.estimated_cost_eur}</strong><br/>
+                      {result.skipped_no_phone > 0 && <>Ignorés (pas de numéro) : {result.skipped_no_phone}<br/></>}
+                      {result.failed_count > 0 && <>Échecs : {result.failed_count}</>}
+                    </p>
+                  </div>
+                  <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#57534E', lineHeight: 1.5 }}>
+                    Conversion attendue : 25-40% des SMS livrés activeront les notifications dans les 7 prochains jours.
+                    Vous pouvez relancer dans 30-60 jours.
+                  </p>
+                  <button onClick={() => setOpen(false)} style={{
+                    width: '100%', padding: '10px 16px', borderRadius: 10,
+                    background: 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)',
+                    color: '#FFFFFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Manrope',
+                  }}>
+                    Fermer
+                  </button>
+                </div>
+              ) : stats === null ? (
+                <p style={{ margin: 0, fontSize: 13, color: '#8B8680' }}>Chargement des statistiques…</p>
+              ) : stats.error ? (
+                <p style={{ margin: 0, fontSize: 13, color: '#B85C38' }}>Impossible de charger les statistiques.</p>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
+                    <div style={{ padding: 12, borderRadius: 8, background: '#FBF7EF', border: '1px solid #ECE3D2' }}>
+                      <p style={{ margin: 0, fontSize: 10, color: '#8B8680', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Total clients</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 700, color: '#1C1917', fontFamily: 'Georgia, serif' }}>{stats.total}</p>
+                    </div>
+                    <div style={{ padding: 12, borderRadius: 8, background: 'hsl(150 55% 40% / .08)', border: '1px solid hsl(150 55% 40% / .25)' }}>
+                      <p style={{ margin: 0, fontSize: 10, color: 'hsl(150 70% 26%)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Abonnés push</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 700, color: 'hsl(150 70% 26%)', fontFamily: 'Georgia, serif' }}>{stats.subscribed}</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 10, color: '#57534E' }}>{stats.subscribed_pct}%</p>
+                    </div>
+                    <div style={{ padding: 12, borderRadius: 8, background: 'hsl(355 60% 48% / .08)', border: '1px solid hsl(355 60% 48% / .25)' }}>
+                      <p style={{ margin: 0, fontSize: 10, color: 'hsl(355 70% 38%)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Sans push</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 700, color: 'hsl(355 70% 38%)', fontFamily: 'Georgia, serif' }}>{stats.not_subscribed}</p>
+                    </div>
+                  </div>
+
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: '#3F3A36', lineHeight: 1.55 }}>
+                    Envoyer un SMS aux <strong>{stats.not_subscribed} clients sans notifications</strong> avec un lien pour activer
+                    leurs notifications. Conversion attendue : 25-40%.
+                  </p>
+                  <div style={{
+                    padding: 10, borderRadius: 8, marginBottom: 14,
+                    background: 'hsl(42 78% 52% / .10)', border: '1px solid hsl(42 78% 52% / .25)',
+                    fontSize: 12.5, color: '#3F3A36',
+                  }}>
+                    <strong>Coût estimé : €{estCost}</strong> ({stats.not_subscribed} × €0.06 par SMS)
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button onClick={() => setOpen(false)} disabled={sending} style={{
+                      background: 'transparent', border: '1px solid #ECE3D2',
+                      color: '#57534E', borderRadius: 10,
+                      padding: '9px 16px', fontSize: 13, fontWeight: 500,
+                      cursor: sending ? 'not-allowed' : 'pointer', fontFamily: 'Manrope',
+                    }}>
+                      Annuler
+                    </button>
+                    <button onClick={send} disabled={sending || stats.not_subscribed === 0} style={{
+                      background: stats.not_subscribed > 0
+                        ? 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)'
+                        : '#D6D3D1',
+                      color: '#FFFFFF', border: 'none', borderRadius: 10,
+                      padding: '9px 18px', fontSize: 13, fontWeight: 600,
+                      cursor: stats.not_subscribed > 0 && !sending ? 'pointer' : 'not-allowed',
+                      display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: 'Manrope',
+                      boxShadow: stats.not_subscribed > 0 ? '0 6px 18px -8px hsl(285 45% 42% / .55)' : 'none',
+                    }}>
+                      <Send size={14} />
+                      {sending ? 'Envoi en cours…' : `Envoyer ${stats.not_subscribed} SMS`}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function CampaignsPage() {
   const { t } = useTranslation();
@@ -565,13 +755,16 @@ export default function CampaignsPage() {
         description={t('campaigns.subtitle')}
         role="business_owner"
         actions={
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-all shadow-md hover:-translate-y-0.5"
-            style={{ background: `linear-gradient(135deg, ${C_PS.ochre} 0%, ${C_PS.terracotta} 100%)` }}
-          >
-            <Plus size={16} /> New Campaign
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <ReEnableNotificationsButton />
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-all shadow-md hover:-translate-y-0.5"
+              style={{ background: `linear-gradient(135deg, ${C_PS.ochre} 0%, ${C_PS.terracotta} 100%)` }}
+            >
+              <Plus size={16} /> New Campaign
+            </button>
+          </div>
         }
       />
 

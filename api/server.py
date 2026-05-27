@@ -1845,6 +1845,115 @@ def list_support_tickets(
     return {"tickets": tickets}
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# PUSH-RECOVERY — keeping the notification loop alive
+# ───────────────────────────────────────────────────────────────────────
+# Three endpoints powering the 3 nudge strategies:
+#   1. /api/owner/notifications/subscription-stats — KPI tile + filter
+#   2. /api/owner/notifications/re-enablement — SMS campaign to non-subs
+#   3. (notification-status on /api/card/{bc}/... lives in
+#       push_subscriptions.py for the in-card banner)
+# ═══════════════════════════════════════════════════════════════════════
+
+@app.get("/api/owner/notifications/subscription-stats")
+def notification_subscription_stats(token_data=Depends(require_role(["business_owner", "manager"]))):
+    """Counts of subscribed vs not-subscribed customers for this tenant.
+    Powers the 'Notification Enabled %' KPI tile and the Customers page filter."""
+    t_id = token_data.tenant_id
+    total = db.customers.count_documents({"tenant_id": t_id})
+    if total == 0:
+        return {"total": 0, "subscribed": 0, "not_subscribed": 0, "subscribed_pct": 0}
+    # Get distinct customer_ids that have at least one push subscription.
+    subscribed_ids = set()
+    try:
+        cursor = db.push_subscriptions.find({"tenant_id": t_id}, {"customer_id": 1})
+        for s in cursor:
+            cid = s.get("customer_id")
+            if cid:
+                subscribed_ids.add(cid)
+    except Exception:
+        pass
+    subscribed = len(subscribed_ids)
+    not_subscribed = max(0, total - subscribed)
+    return {
+        "total": total,
+        "subscribed": subscribed,
+        "not_subscribed": not_subscribed,
+        "subscribed_pct": round((subscribed / total) * 100, 1) if total else 0,
+    }
+
+
+class ReEnablementRequest(BaseModel):
+    message: Optional[str] = None  # Defaults to platform template if not set
+
+
+@app.post("/api/owner/notifications/re-enablement")
+def send_re_enablement_sms(
+    req: ReEnablementRequest,
+    token_data=Depends(require_role(["business_owner"])),
+):
+    """Sends an SMS to all customers without an active push subscription,
+    encouraging them to enable notifications by re-opening their card.
+    Returns counts so the frontend can show the result."""
+    from services.sms import send_sms, is_configured as sms_configured
+    if not sms_configured():
+        raise HTTPException(status_code=400, detail="SMS not configured (Twilio env vars missing).")
+
+    t_id = token_data.tenant_id
+    tenant_doc = db.tenants.find_one({"id": t_id}) or {}
+    biz_name = tenant_doc.get("name") or "votre boutique"
+    slug = tenant_doc.get("slug") or ""
+    # Build the URL the SMS will deep-link to. The card page reads the
+    # `?notify=1` param and auto-triggers the notification permission flow.
+    base = os.getenv("PUBLIC_APP_URL", "").rstrip("/") or "https://fidelitour-deploy.vercel.app"
+
+    # Find subscribed customer IDs (to exclude) and the rest of customers.
+    subscribed_ids = set()
+    try:
+        for s in db.push_subscriptions.find({"tenant_id": t_id}, {"customer_id": 1}):
+            cid = s.get("customer_id")
+            if cid:
+                subscribed_ids.add(cid)
+    except Exception:
+        pass
+    candidates = list(db.customers.find(
+        {"tenant_id": t_id, "id": {"$nin": list(subscribed_ids)}},
+        {"id": 1, "name": 1, "phone": 1, "barcode_id": 1},
+    ))
+
+    default_body = (
+        f"Bonjour, {biz_name} a des offres exclusives pour vous, "
+        "envoyées par notification. Activez-les en ouvrant votre carte: "
+    )
+    body_prefix = (req.message or default_body).strip()
+
+    sent = 0
+    skipped_no_phone = 0
+    failed = []
+    for c in candidates:
+        phone = (c.get("phone") or "").strip()
+        if not phone:
+            skipped_no_phone += 1
+            continue
+        link = f"{base}/card/{c.get('barcode_id', '').upper()}?notify=1"
+        body = f"{body_prefix} {link}"
+        result = send_sms(phone, body)
+        if result.get("sent"):
+            sent += 1
+        else:
+            failed.append({"customer_id": c["id"], "error": result.get("error", "unknown")})
+
+    # Estimated cost (informational).
+    estimated_cost_eur = round(sent * 0.06, 2)
+    return {
+        "targeted": len(candidates),
+        "sent": sent,
+        "skipped_no_phone": skipped_no_phone,
+        "failed_count": len(failed),
+        "estimated_cost_eur": estimated_cost_eur,
+    }
+
+
 @app.post("/api/reset-seed")
 def reset_and_reseed():
     """Drop all collections and re-seed fresh data. Use for demo resets."""
@@ -4062,6 +4171,16 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
     stamps_capped = min(stamps_in_cycle, reward_threshold)
     reward_unlocked = stamps_in_cycle >= reward_threshold
 
+    # Notification subscription status — drives the staff scan-page prompt
+    # ("This customer isn't receiving offers — show enable QR?"). We check
+    # the push_subscriptions collection for any active row for this customer.
+    notification_status = "subscribed"
+    try:
+        has_sub = db.push_subscriptions.count_documents({"customer_id": cid}) > 0
+        notification_status = "subscribed" if has_sub else "not_subscribed"
+    except Exception:
+        notification_status = "unknown"
+
     return {
         "id": cid,
         "barcode_id": cust.get("barcode_id"),
@@ -4079,6 +4198,8 @@ def _scan_visit_impl(req: "ScanRequest", token_data: "TokenData"):
         "reward_threshold": reward_threshold,
         "reward_unlocked":  reward_unlocked,
         "visits_at_last_redemption": last_red_visits,
+        # Notification status — drives staff prompt to encourage enable.
+        "notification_status": notification_status,
     }
 
 

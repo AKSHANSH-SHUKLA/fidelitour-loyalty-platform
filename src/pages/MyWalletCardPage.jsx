@@ -176,6 +176,15 @@ const MyWalletCardPage = () => {
   const [reviewRating, setReviewRating] = useState(8);
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
+  // ─── Strategy 1 + 3 — Push-recovery state ────────────────────────────
+  // We fetch /api/card/{bc}/notification-status on load. If the customer
+  // has no active push subscription AND has missed ≥1 campaign in the
+  // last 30 days, we show a prominent banner offering to enable. If
+  // they arrive via the staff QR (?notify=1), we auto-trigger the prompt.
+  const [notifStatus, setNotifStatus] = useState(null);
+  // {subscribed: bool, missed_count: int, since_days: int}
+  const [showMissedBanner, setShowMissedBanner] = useState(true);
   const [reviewThanks, setReviewThanks] = useState(false);
   const [reviewError, setReviewError] = useState(null);
 
@@ -250,6 +259,56 @@ const MyWalletCardPage = () => {
     if (!tenantSlug || !barcodeId) return;
     ensureSubscribed(tenantSlug, barcodeId).catch(() => { /* silent */ });
   }, [data?.prefs?.push_enabled, data?.tenant?.slug, barcodeId]);
+
+  // ─── Strategy 1 — fetch notification status + missed-offer count ───
+  // Runs whenever the wallet card loads. Tells us if the customer needs
+  // a re-enable banner (subscribed=false AND missed_count>0).
+  useEffect(() => {
+    if (!barcodeId) return;
+    let alive = true;
+    fetch(`/api/card/${encodeURIComponent(barcodeId)}/notification-status`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((s) => { if (alive && s) setNotifStatus(s); })
+      .catch(() => { /* silent — banner just won't show */ });
+    return () => { alive = false; };
+  }, [barcodeId, data?.customer?.id]);
+
+  // ─── Strategy 3 link target — auto-trigger notification prompt ─────
+  // When customer arrives at this page via the staff QR (URL has ?notify=1),
+  // we fire the browser permission prompt as soon as the page is ready.
+  // The card MUST have rendered first (loading=false) for the user gesture
+  // to be considered "in response to a tap" — otherwise iOS blocks it.
+  useEffect(() => {
+    if (loading || !data?.tenant?.slug || !barcodeId) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('notify') !== '1') return;
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission === 'granted') {
+      // Already enabled — just clean the URL and show a confirmation.
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      // Browser already blocked — can't re-prompt, must go through settings.
+      showToast("Activez les notifications dans les paramètres de votre navigateur.");
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+    // Permission === 'default' — trigger the prompt now.
+    const t = setTimeout(() => {
+      ensureSubscribed(data.tenant.slug, barcodeId).then((r) => {
+        if (r && r.ok) {
+          showToast('Notifications activées — merci !');
+          setNotifStatus({ subscribed: true, missed_count: 0 });
+        }
+        window.history.replaceState({}, '', window.location.pathname);
+      }).catch(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+      });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [loading, data?.tenant?.slug, barcodeId]);
 
   // iOS standalone-mode auto-prompt:
   //
@@ -501,6 +560,85 @@ const MyWalletCardPage = () => {
           <Link to="/" className="text-[#B85C38] text-sm">← Retour</Link>
           <TierBadge tier={customer.tier} size="sm" />
         </div>
+
+        {/* ─── Strategy 1 — Missed-offers banner ────────────────────────
+            Shows when customer is NOT subscribed to push AND has missed
+            ≥1 campaign in the last 30 days. Tap → triggers browser
+            permission prompt. Dismissable for this session. */}
+        {notifStatus && !notifStatus.subscribed && notifStatus.missed_count > 0 && showMissedBanner && (
+          <div
+            style={{
+              marginBottom: 18,
+              padding: '14px 16px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, hsl(42 78% 52% / .12), hsl(285 45% 42% / .08))',
+              border: '1px solid hsl(42 78% 52% / .35)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+            }}
+            role="alert"
+          >
+            <div style={{
+              flexShrink: 0, width: 40, height: 40, borderRadius: 10,
+              background: 'hsl(42 78% 52% / .20)', color: 'hsl(32 80% 35%)',
+              display: 'grid', placeItems: 'center', fontSize: 20,
+            }}>
+              🔔
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C1917' }}>
+                {notifStatus.missed_count === 1
+                  ? "Vous avez raté 1 offre exclusive"
+                  : `Vous avez raté ${notifStatus.missed_count} offres exclusives`}
+              </p>
+              <p style={{ margin: '2px 0 10px', fontSize: 12.5, color: '#57534E', lineHeight: 1.45 }}>
+                Activez les notifications pour ne plus rien manquer de {tenant?.name || 'cette boutique'}.
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  const slug = data?.tenant?.slug;
+                  if (!slug || !barcodeId) return;
+                  try {
+                    const r = await ensureSubscribed(slug, barcodeId);
+                    if (r && r.ok) {
+                      showToast('Notifications activées — merci !');
+                      setNotifStatus({ subscribed: true, missed_count: 0 });
+                    } else if (r?.status === 'permission_denied') {
+                      showToast('Activez les notifications dans les paramètres de votre navigateur.');
+                    } else {
+                      showToast("Impossible d'activer les notifications.");
+                    }
+                  } catch {
+                    showToast("Impossible d'activer les notifications.");
+                  }
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, hsl(32 80% 48%), hsl(38 80% 42%))',
+                  color: '#FFFFFF', border: 'none', borderRadius: 8,
+                  padding: '8px 14px', fontSize: 12.5, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  boxShadow: '0 6px 14px -6px hsl(32 80% 48% / .55)',
+                }}
+              >
+                Activer les notifications
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMissedBanner(false)}
+              aria-label="Fermer"
+              style={{
+                flexShrink: 0, background: 'transparent', border: 'none',
+                color: '#8B8680', cursor: 'pointer', padding: 4,
+                fontSize: 16,
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-[1fr,360px] gap-8">
           {/* LEFT: Wallet card.

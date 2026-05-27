@@ -1,11 +1,109 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ownerAPI } from '../lib/api';
-import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2, Gift } from 'lucide-react';
+import { ScanLine, CheckCircle2, AlertCircle, Euro, Camera, Building2, Gift, BellRing, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { C as C_SCAN } from '../components/PageShell';
 import { useBranch } from '../contexts/BranchContext';
 
 const BRANCH_STORAGE_KEY = 'fidelitour_scan_branch_id';
+
+/**
+ * NotificationEnablePrompt — Strategy 3 (staff scan prompt).
+ *
+ * Shown to staff after scanning a customer whose phone has NO active push
+ * subscription. Staff sees a friendly yellow prompt + can show the
+ * customer a QR code that, when scanned, opens their wallet card with
+ * an auto-trigger param (?notify=1) that immediately prompts for
+ * notification permission.
+ *
+ * Why the QR approach: the customer's phone, not the staff tablet, must
+ * trigger the browser permission dialog (browser security model). The QR
+ * is the fastest way to hand the URL across.
+ */
+function NotificationEnablePrompt({ customerName, barcodeId }) {
+  const [showQR, setShowQR] = useState(false);
+  const firstName = (customerName || '').split(' ')[0] || 'votre client';
+  // Public URL that opens the wallet card with the notification prompt
+  // auto-trigger. MyWalletCardPage reads ?notify=1 and shows the prompt
+  // banner the moment the page loads.
+  const cardUrl = `${window.location.origin}/card/${(barcodeId || '').toUpperCase()}?notify=1`;
+
+  return (
+    <div
+      style={{
+        background: 'linear-gradient(135deg, hsl(42 78% 52% / .10), hsl(285 45% 42% / .06))',
+        border: '1px solid hsl(42 78% 52% / .35)',
+        borderRadius: 12,
+        padding: '14px 16px',
+        marginTop: 14,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <div style={{
+          flexShrink: 0, width: 36, height: 36, borderRadius: 10,
+          background: 'hsl(42 78% 52% / .18)', color: 'hsl(32 80% 38%)',
+          display: 'grid', placeItems: 'center',
+        }}>
+          <BellRing size={18} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: '#1C1917' }}>
+            {firstName} ne reçoit pas vos offres
+          </p>
+          <p style={{ margin: '2px 0 8px', fontSize: 12, color: '#57534E', lineHeight: 1.45 }}>
+            Voulez-vous lui proposer d'activer les notifications ? 10 secondes, et il/elle ne ratera plus aucune campagne.
+          </p>
+          {!showQR ? (
+            <button
+              type="button"
+              onClick={() => setShowQR(true)}
+              style={{
+                background: 'hsl(32 80% 48%)', color: '#FFFFFF',
+                border: 'none', borderRadius: 8,
+                padding: '7px 12px', fontSize: 12, fontWeight: 600,
+                cursor: 'pointer', font: 'inherit',
+              }}
+            >
+              Afficher le QR code à scanner
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {showQR && (
+        <div style={{
+          marginTop: 12, padding: 14, background: '#FFFFFF',
+          borderRadius: 10, border: '1px solid #ECE3D2',
+          display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+        }}>
+          <div style={{ flexShrink: 0, padding: 8, background: '#FFFFFF', borderRadius: 6 }}>
+            <QRCodeSVG value={cardUrl} size={120} level="M" />
+          </div>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <p style={{ margin: 0, fontSize: 12.5, color: '#1C1917', fontWeight: 600, marginBottom: 4 }}>
+              📱 {firstName}, scannez ce QR
+            </p>
+            <p style={{ margin: 0, fontSize: 11.5, color: '#57534E', lineHeight: 1.5 }}>
+              Votre carte s'ouvrira et vous demandera d'activer les notifications. Cliquez « Autoriser ».
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowQR(false)}
+              style={{
+                marginTop: 8, background: 'transparent', border: 'none',
+                color: '#8B8680', fontSize: 11, cursor: 'pointer', font: 'inherit',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              <X size={11} /> Fermer
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const ScanPage = () => {
   const { t } = useTranslation();
@@ -417,6 +515,10 @@ const ScanPage = () => {
         previous_tier: customerData.previous_tier || null,
         tier_upgraded: !!customerData.tier_upgraded,
         branch_id: branchId || customerData.branch_id || null,
+        // Notification subscription status — drives the "encourage enable
+        // notifications" prompt staff sees post-scan. Customers without
+        // push subscriptions get a QR code they can scan to enable.
+        notification_status: customerData.notification_status || 'unknown',
       });
       setStatus({ type: 'success', message: t('scan.success') });
       setBarcode('');
@@ -962,6 +1064,18 @@ const ScanPage = () => {
                       {t('scan.tier_subtitle', { previous: scanResult.previous_tier ? String(scanResult.previous_tier).toUpperCase() : t('scan.previous_tier_fallback') })}
                     </p>
                   </div>
+                )}
+
+                {/* ─── NOTIFICATION ENABLE PROMPT — Strategy 3 ─────────────
+                    When the just-scanned customer doesn't have an active
+                    push subscription, show staff a friendly prompt + a QR
+                    code the customer can scan to enable notifications on
+                    the spot. Highest-conversion recovery path (70-85%). */}
+                {scanResult.notification_status === 'not_subscribed' && (
+                  <NotificationEnablePrompt
+                    customerName={scanResult.customer_name}
+                    barcodeId={scanResult.barcode_id}
+                  />
                 )}
 
                 <button

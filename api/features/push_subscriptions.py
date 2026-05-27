@@ -137,6 +137,42 @@ def test_push(
     return {"sent": sent, "subs_total": len(subs), "expired_cleaned": len(expired)}
 
 
+@router.get("/api/card/{barcode_id}/notification-status")
+def get_notification_status(barcode_id: str):
+    """Returns whether the customer has an active push subscription, and if
+    not, how many campaigns they've missed in the last 30 days. Powers the
+    in-card 'missed offers' banner — see MyWalletCardPage."""
+    from datetime import timedelta
+    if _db is None:
+        return {"subscribed": False, "missed_count": 0}
+    bc = (barcode_id or "").strip().upper()
+    customer = _db.customers.find_one({"barcode_id": bc})
+    if not customer:
+        return {"subscribed": False, "missed_count": 0, "error": "customer_not_found"}
+    has_sub = _db.push_subscriptions.count_documents({"customer_id": customer["id"]}) > 0
+    if has_sub:
+        return {"subscribed": True, "missed_count": 0}
+    # Count campaigns sent to this customer in the last 30 days while they
+    # were unsubscribed. We use the `notifications` collection (where every
+    # outgoing campaign push gets logged) as the source of truth.
+    since = datetime.now(timezone.utc) - timedelta(days=30)
+    missed = 0
+    try:
+        missed = _db.notifications.count_documents({
+            "tenant_id": customer.get("tenant_id"),
+            "customer_id": customer["id"],
+            "created_at": {"$gte": since},
+            "type": {"$in": ["campaign", "offer", "flash_sale", "news", "voucher_expiry"]},
+        })
+    except Exception:
+        missed = 0
+    return {
+        "subscribed": False,
+        "missed_count": int(missed),
+        "since_days": 30,
+    }
+
+
 @router.post("/api/card/{barcode_id}/test-push")
 def customer_self_test_push(barcode_id: str):
     """Customer-initiated test push, no auth — they can only fire to their
