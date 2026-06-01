@@ -27,7 +27,7 @@ function ReEnableNotificationsButton() {
     if (!open) return;
     let alive = true;
     setStats(null); setResult(null);
-    api.get('/api/owner/notifications/subscription-stats')
+    api.get('/owner/notifications/subscription-stats')
       .then((r) => { if (alive) setStats(r.data); })
       .catch(() => { if (alive) setStats({ error: true }); });
     return () => { alive = false; };
@@ -36,7 +36,7 @@ function ReEnableNotificationsButton() {
   const send = async () => {
     setSending(true); setResult(null);
     try {
-      const r = await api.post('/api/owner/notifications/re-enablement', {});
+      const r = await api.post('/owner/notifications/re-enablement', {});
       setResult(r.data);
     } catch (e) {
       setResult({ error: e?.response?.data?.detail || 'Send failed' });
