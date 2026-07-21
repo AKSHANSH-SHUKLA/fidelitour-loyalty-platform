@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import Code128Barcode from '../components/Code128Barcode';
-import { Bell, RefreshCw, Trash2, Gift, Sparkles, ChevronRight, Store, MapPin, Phone, Globe, CheckCircle2, XCircle, Clock, ChevronDown, X } from 'lucide-react';
+import { Bell, RefreshCw, Trash2, Gift, Sparkles, ChevronRight, Store, MapPin, Phone, Globe, CheckCircle2, XCircle, Clock, ChevronDown, X, Download, ShieldCheck } from 'lucide-react';
 import api, { publicAPI } from '../lib/api';
 import { ensureSubscribed, unsubscribe as unsubscribePush, isSupported as isPushSupported } from '../lib/webpush';
 import InstallPwaPrompt from '../components/InstallPwaPrompt';
@@ -155,6 +155,9 @@ const MyWalletCardPage = () => {
   const [err, setErr] = useState(null);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  // RGPD forget-me completed — distinct from `deleted` (card removed from
+  // wallet, data kept) because here the DATA itself is gone.
+  const [erased, setErased] = useState(false);
   // Two tabs only now (offers + program). The old "news" tab was a
   // duplicate of offers — same backend campaigns shown under a different
   // name. Merged into a single "Offres & messages" feed on the offers
@@ -438,6 +441,40 @@ const MyWalletCardPage = () => {
     }
   };
 
+  // ─── RGPD self-service ────────────────────────────────────────────
+  // Art. 15/20 — download everything we hold as a JSON file.
+  const downloadMyData = async () => {
+    try {
+      const res = await api.get(`/card/${barcodeId}/my-data`);
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mes-donnees-${barcodeId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Vos données ont été téléchargées.');
+    } catch (e) {
+      showToast('Impossible de télécharger vos données.');
+    }
+  };
+
+  // Art. 17 — irreversible erasure. Double confirmation because there is
+  // no undo: window.confirm + a typed keyword would be overkill on mobile,
+  // two distinct confirms is the accepted pattern.
+  const forgetMe = async () => {
+    if (!window.confirm('Supprimer définitivement toutes vos données personnelles ? Cette action est IRRÉVERSIBLE — votre carte, vos points et votre historique seront perdus.')) return;
+    if (!window.confirm('Dernière confirmation : vos données seront effacées et cette carte ne fonctionnera plus. Continuer ?')) return;
+    try {
+      await api.post(`/card/${barcodeId}/forget-me`, { confirm: true });
+      setErased(true);
+    } catch (e) {
+      showToast('La suppression a échoué. Réessayez ou contactez le commerçant.');
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center text-[#57534E]">Chargement de votre carte…</div>;
   }
@@ -448,6 +485,22 @@ const MyWalletCardPage = () => {
           <XCircle className="mx-auto text-[#B85C38] mb-3" size={40} />
           <p className="text-[#1C1917] font-semibold mb-2">Carte introuvable</p>
           <p className="text-[#57534E] text-sm">{err}</p>
+          <Link to="/" className="inline-block mt-5 text-[#B85C38] underline">Retour à l'accueil</Link>
+        </div>
+      </div>
+    );
+  }
+  if (erased) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+          <ShieldCheck className="mx-auto text-[#4A5D23] mb-3" size={40} />
+          <p className="text-[#1C1917] font-semibold mb-2">Données supprimées</p>
+          <p className="text-[#57534E] text-sm">
+            Vos données personnelles ont été effacées conformément au RGPD.
+            Cette carte n'est plus utilisable. Vous pouvez vous réinscrire à
+            tout moment auprès du commerçant.
+          </p>
           <Link to="/" className="inline-block mt-5 text-[#B85C38] underline">Retour à l'accueil</Link>
         </div>
       </div>
@@ -826,6 +879,36 @@ const MyWalletCardPage = () => {
                   <p className="text-xs opacity-80">Retire la carte de votre wallet</p>
                 </div>
               </button>
+
+              {/* ─── RGPD — Confidentialité ─────────────────────────────
+                  Self-service data rights: export (Art. 15/20) and full
+                  erasure (Art. 17). Both barcode-keyed, no login needed —
+                  same auth model as the rest of the card page. */}
+              <div className="p-4 bg-[#F8F6F1]">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-3 flex items-center gap-1.5">
+                  <ShieldCheck size={12} /> Confidentialité (RGPD)
+                </p>
+                <button
+                  onClick={downloadMyData}
+                  className="w-full text-left py-2.5 flex items-center gap-3 text-[#1C1917] hover:text-[#B85C38] transition-colors"
+                >
+                  <Download size={16} className="shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm">Télécharger mes données</p>
+                    <p className="text-xs text-[#8B8680]">Profil, visites, notifications — fichier JSON</p>
+                  </div>
+                </button>
+                <button
+                  onClick={forgetMe}
+                  className="w-full text-left py-2.5 flex items-center gap-3 text-[#9B2C2C] hover:opacity-80 transition-opacity"
+                >
+                  <XCircle size={16} className="shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm">Supprimer mes données personnelles</p>
+                    <p className="text-xs opacity-70">Effacement définitif et irréversible (droit à l'oubli)</p>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Rate your visit — only shown right after a visit (<= 14 days). */}

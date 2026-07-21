@@ -77,6 +77,9 @@ const JoinPage = () => {
   });
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | requesting | granted | denied | unsupported
   const [geoCoords, setGeoCoords] = useState(null);
+  // RGPD: explicit, unticked-by-default consent checkbox (Art. 7 — consent
+  // must be a positive action, pre-ticked boxes are illegal per CJUE Planet49).
+  const [consentChecked, setConsentChecked] = useState(false);
   const [success, setSuccess] = useState(null);
   // Structured error from the join endpoint. Today the meaningful case
   // is the 403 "plan_limit_reached" — the loyalty programme has hit its
@@ -228,6 +231,9 @@ const JoinPage = () => {
         chain.push({ source: formData.acquisition_source, ts: new Date().toISOString() });
       }
       payload.touchpoints_history = chain;
+      // RGPD consent proof — backend refuses new signups without it.
+      payload.consent = consentChecked;
+      payload.consent_policy_version = '2026-07-21';
       setJoinError(null);
       const res = await publicAPI.joinProgram(slug, payload);
       clearTouchpoints(slug);  // chain has been persisted server-side, no need to keep it here
@@ -369,6 +375,27 @@ const JoinPage = () => {
               )}
               {geoStatus === 'unsupported' && <p className="text-xs text-[#92400E]">{t('join.geo_unsupported')}</p>}
             </div>
+
+            {/* RGPD consent — required, unticked by default. The <label>
+                wraps the checkbox so the whole text row is tappable (44px+
+                hit area on mobile). `required` gives free browser-level
+                blocking with a native message if left unticked. */}
+            <label className="flex items-start gap-3 p-3 rounded-lg border border-[#E7E5E4] bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                required
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                className="mt-0.5 w-5 h-5 shrink-0 accent-[#B85C38] cursor-pointer"
+              />
+              <span className="text-xs text-[#57534E] leading-relaxed">
+                J'accepte que <strong>{tenant.name}</strong> utilise mes données
+                (nom, contact, visites) pour gérer ma carte de fidélité et
+                m'envoyer des offres. Je peux à tout moment télécharger ou
+                supprimer mes données depuis ma carte, conformément au RGPD.
+                <span className="text-[#B85C38]"> *</span>
+              </span>
+            </label>
 
             {joinError && (
               <div

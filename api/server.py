@@ -63,6 +63,57 @@ else:
     client = pymongo.MongoClient(tz_aware=True)
     db = client.fidelitour_db
 
+# ─────────────────────────────────────────────────────────────────────
+# RGPD / GDPR — Audit trail (Sprint 1)
+# Every privacy-sensitive action gets one immutable row in db.audit_logs:
+# logins, plan changes, data exports, erasure requests, card deletions,
+# SMS re-enablement blasts. This is the "accountability" pillar of GDPR
+# (Art. 5.2) — when CNIL asks "who accessed this customer's data and
+# when", this collection IS the answer.
+#
+# NEVER raises: audit logging must not break the endpoint it observes.
+# ─────────────────────────────────────────────────────────────────────
+CURRENT_PRIVACY_POLICY_VERSION = "2026-07-21"
+
+def _client_ip(request) -> str:
+    """Best-effort client IP behind Vercel's proxy chain."""
+    try:
+        if request is None:
+            return ""
+        fwd = request.headers.get("x-forwarded-for", "")
+        if fwd:
+            return fwd.split(",")[0].strip()
+        return request.client.host if request.client else ""
+    except Exception:
+        return ""
+
+def log_audit(action: str, actor: str = "", actor_type: str = "system",
+              tenant_id: str = None, target: str = None,
+              request=None, meta: dict = None):
+    """Insert one audit row. Silently swallows every failure.
+
+    action     — machine key, e.g. 'auth.login', 'gdpr.export',
+                 'gdpr.forget_me', 'admin.plan_update', 'card.delete',
+                 'sms.re_enablement'
+    actor      — email (owner/admin) or barcode_id (customer)
+    actor_type — 'user' | 'customer' | 'system'
+    target     — the object acted on (customer id, plan name, …)
+    """
+    try:
+        db.audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "ts": datetime.now(timezone.utc),
+            "action": action,
+            "actor": actor or "",
+            "actor_type": actor_type,
+            "tenant_id": tenant_id,
+            "target": target,
+            "ip": _client_ip(request),
+            "meta": meta or {},
+        })
+    except Exception:
+        pass
+
 # Email channel REMOVED — kept as empty constants so any leftover reference
 # compiles. send_email_to_customer() is now a no-op shim. See line ~237.
 SENDGRID_API_KEY = ""
@@ -1504,12 +1555,19 @@ def seed_extended_tenants():
 
 
 # Seed data on every cold start (Vercel serverless workaround)
+# RGPD/security: set DISABLE_SEED=1 in Vercel env to stop demo accounts +
+# demo credentials from being (re)created — REQUIRED before production
+# launch with real customer data. Default stays ON so current demos keep
+# working without any env change.
+SEED_DISABLED = os.environ.get("DISABLE_SEED", "") == "1"
 _seeded = False
 _seed_error = None
 
 @app.middleware("http")
 async def ensure_seed_data(request: Request, call_next):
     global _seeded, _seed_error
+    if SEED_DISABLED:
+        _seeded = True
     if not _seeded:
         try:
             mock_seed_data()
@@ -1525,6 +1583,8 @@ async def ensure_seed_data(request: Request, call_next):
 
 @app.on_event("startup")
 async def startup_event():
+    if SEED_DISABLED:
+        return
     try:
         mock_seed_data()
     except Exception as e:
@@ -2080,14 +2140,23 @@ def register(payload: Dict[str, Any]):
     return {"message": "Success", "tenant_id": tenant_id}
 
 @app.post("/api/auth/login")
-def login(req: LoginRequest, response: Response):
+def login(req: LoginRequest, response: Response, request: Request = None):
     user_dict = db.users.find_one({"email": req.email})
     if not user_dict:
+        log_audit("auth.login_failed", actor=req.email, actor_type="user",
+                  request=request, meta={"reason": "unknown_email"})
         raise HTTPException(status_code=400, detail="Incorrect credentials")
 
     user = UserInDB(**user_dict)
     if not verify_password(req.password, user.hashed_password):
+        log_audit("auth.login_failed", actor=req.email, actor_type="user",
+                  tenant_id=user.tenant_id, request=request,
+                  meta={"reason": "bad_password"})
         raise HTTPException(status_code=400, detail="Incorrect credentials")
+
+    log_audit("auth.login", actor=user.email, actor_type="user",
+              tenant_id=user.tenant_id, request=request,
+              meta={"role": user.role})
 
     access_token = create_access_token(data={"sub": user.email, "role": user.role, "tenant_id": user.tenant_id})
     response.set_cookie(
@@ -2417,7 +2486,33 @@ def admin_update_plan(
         },
         upsert=True,
     )
+    log_audit("admin.plan_update", actor=token_data.email, actor_type="user",
+              target=plan, meta={"overrides": new_overrides})
     return _plan_row(plan)
+
+
+@app.get("/api/admin/audit-logs")
+def admin_list_audit_logs(
+    limit: int = 100,
+    action: Optional[str] = None,
+    tenant_id: Optional[str] = None,
+    token_data: TokenData = Depends(require_role(["super_admin"]))
+):
+    """RGPD accountability trail. Filterable by action prefix (e.g. 'gdpr.')
+    and tenant. Newest first, capped at 500 rows per call."""
+    q = {}
+    if action:
+        q["action"] = {"$regex": f"^{re.escape(action)}"}
+    if tenant_id:
+        q["tenant_id"] = tenant_id
+    limit = max(1, min(int(limit or 100), 500))
+    rows = []
+    for r in db.audit_logs.find(q).sort("ts", -1).limit(limit):
+        r.pop("_id", None)
+        if isinstance(r.get("ts"), datetime):
+            r["ts"] = r["ts"].isoformat()
+        rows.append(r)
+    return {"logs": rows, "count": len(rows)}
 
 
 # ============================================================
@@ -5094,9 +5189,15 @@ class JoinRequest(BaseModel):
     # before signing up, in chronological order. Frontend collects via
     # localStorage and sends the full chain on submit.
     touchpoints_history: Optional[list] = None
+    # RGPD consent (Art. 6/7): must be explicitly True for NEW signups.
+    # Optional+False default keeps old cached frontends from 500ing on
+    # the dedup path (existing customers), but new customer creation is
+    # refused without it.
+    consent: Optional[bool] = False
+    consent_policy_version: Optional[str] = None
 
 @app.post("/api/join/{slug}")
-def join_program(slug: str, req: JoinRequest):
+def join_program(slug: str, req: JoinRequest, request: Request = None):
     # Normalize acquisition_source to exactly the 5 allowed values
     if req.acquisition_source:
         src = (req.acquisition_source or "").strip().lower().replace(" ", "_")
@@ -5191,6 +5292,20 @@ def join_program(slug: str, req: JoinRequest):
             },
         )
 
+    # ─── RGPD consent gate (Art. 7 — proof of consent) ─────────────────
+    # New customer creation REQUIRES an explicit consent tick. The consent
+    # record (timestamp, policy version, IP, source) is stored on the
+    # customer document — that record is the CNIL-facing proof.
+    if not req.consent:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "consent_required",
+                "message": ("Vous devez accepter l'utilisation de vos données "
+                            "pour le programme de fidélité avant de vous inscrire."),
+            },
+        )
+
     barcode_id = "FT-" + str(uuid.uuid4().hex[:8]).upper()
     c = Customer(
         id=str(uuid.uuid4()),
@@ -5227,7 +5342,18 @@ def join_program(slug: str, req: JoinRequest):
             cust_doc["touchpoints_history"] = clean_chain
             cust_doc["first_touch_source"] = clean_chain[0]["source"]
             cust_doc["last_touch_source"] = clean_chain[-1]["source"]
+    # RGPD consent proof — immutable record of what was accepted and when.
+    cust_doc["consent"] = {
+        "accepted": True,
+        "ts": datetime.now(timezone.utc),
+        "policy_version": req.consent_policy_version or CURRENT_PRIVACY_POLICY_VERSION,
+        "source": "join_page",
+        "ip": _client_ip(request),
+    }
     db.customers.insert_one(cust_doc)
+    log_audit("gdpr.consent_given", actor=barcode_id, actor_type="customer",
+              tenant_id=tid, target=cust_doc["id"], request=request,
+              meta={"policy_version": cust_doc["consent"]["policy_version"]})
     return {"barcode_id": barcode_id, "message": "Welcome!"}
 
 # ========================
@@ -5569,6 +5695,141 @@ def mark_wallet_readded(barcode_id: str):
         {"$set": {"pass_issued": True}, "$unset": {"card_deleted_at": ""}},
     )
     return {"status": "ok"}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# RGPD — Droits des personnes (Sprint 1)
+# Barcode-keyed like every other /api/card/* endpoint: possessing the
+# barcode IS the customer's authentication (same model as prefs/delete).
+# ─────────────────────────────────────────────────────────────────────
+
+def _strip_mongo(doc: dict) -> dict:
+    """Remove _id and make datetimes JSON-serializable."""
+    if not doc:
+        return {}
+    doc = dict(doc)
+    doc.pop("_id", None)
+    for k, v in list(doc.items()):
+        if isinstance(v, datetime):
+            doc[k] = v.isoformat()
+        elif isinstance(v, dict):
+            doc[k] = _strip_mongo(v)
+    return doc
+
+
+@app.get("/api/card/{barcode_id}/my-data")
+def export_my_data(barcode_id: str, request: Request = None):
+    """RGPD Art. 15 (accès) + Art. 20 (portabilité).
+
+    Returns EVERYTHING we hold on this customer as one JSON document:
+    profile, consent proof, visits, notifications received, reviews left,
+    rewards redeemed, card prefs, and push-subscription count (endpoints
+    themselves are secrets — we expose the count, not the URLs).
+    """
+    cust = db.customers.find_one({"barcode_id": barcode_id})
+    if not cust:
+        raise HTTPException(status_code=404, detail="Card not found")
+    cid, tid = cust["id"], cust["tenant_id"]
+    t = db.tenants.find_one({"id": tid}) or {}
+
+    visits = [_strip_mongo(v) for v in
+              db.visits.find({"customer_id": cid}).sort("visit_time", -1)]
+    notifications = [_strip_mongo(n) for n in
+                     db.notifications.find({"customer_id": cid}).sort("created_at", -1).limit(500)]
+    reviews = [_strip_mongo(r) for r in db.reviews.find({"customer_id": cid})]
+    redemptions = [_strip_mongo(r) for r in db.rewards_redeemed.find({"customer_id": cid})]
+    prefs = _card_prefs_for(cid)
+    push_count = db.push_subscriptions.count_documents({"customer_id": cid})
+
+    log_audit("gdpr.export", actor=barcode_id, actor_type="customer",
+              tenant_id=tid, target=cid, request=request,
+              meta={"visits": len(visits), "notifications": len(notifications)})
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "format_version": "1.0",
+        "business": {"name": t.get("name"), "slug": t.get("slug")},
+        "profile": _strip_mongo(cust),
+        "consent": _strip_mongo(cust.get("consent") or {}),
+        "visits": visits,
+        "notifications_received": notifications,
+        "reviews": reviews,
+        "rewards_redeemed": redemptions,
+        "card_preferences": prefs,
+        "push_subscriptions_count": push_count,
+        "rights_notice": (
+            "Conformément au RGPD, vous pouvez demander la rectification ou "
+            "la suppression de vos données à tout moment depuis votre carte "
+            "(section Confidentialité) ou auprès du commerçant."
+        ),
+    }
+
+
+class ForgetMeRequest(BaseModel):
+    confirm: bool = False
+
+
+@app.post("/api/card/{barcode_id}/forget-me")
+def forget_me(barcode_id: str, req: ForgetMeRequest, request: Request = None):
+    """RGPD Art. 17 (droit à l'effacement).
+
+    Anonymizes all personal data while keeping the aggregate business
+    stats (visit counts, amounts) that the merchant may retain under
+    legitimate interest — the visit rows carry no personal data once the
+    customer document is anonymized.
+
+    Irreversible. Requires confirm=true.
+    """
+    if not req.confirm:
+        raise HTTPException(status_code=422, detail={
+            "code": "confirmation_required",
+            "message": "Confirmation requise pour supprimer vos données.",
+        })
+    cust = db.customers.find_one({"barcode_id": barcode_id})
+    if not cust:
+        raise HTTPException(status_code=404, detail="Card not found")
+    cid, tid = cust["id"], cust["tenant_id"]
+    now = datetime.now(timezone.utc)
+
+    # 1) Anonymize the customer document — PII wiped, aggregates kept.
+    db.customers.update_one({"id": cid}, {
+        "$set": {
+            "name": "Client supprimé",
+            "email": "",
+            "phone": "",
+            "postal_code": "",
+            "birthday": "",
+            "gdpr_erased_at": now,
+            "deleted_at": now,          # frees a plan-cap slot too
+            "pass_issued": False,
+        },
+        "$unset": {
+            "latitude": "", "longitude": "",
+            "touchpoints_history": "", "first_touch_source": "",
+            "last_touch_source": "",
+        },
+    })
+    # 2) Kill every push channel to this person's devices.
+    push_deleted = db.push_subscriptions.delete_many({"customer_id": cid}).deleted_count
+    # 3) Per-customer notification log = personal data → delete.
+    notif_deleted = db.notifications.delete_many({"customer_id": cid}).deleted_count
+    # 4) Free-text reviews may identify the author → delete.
+    reviews_deleted = db.reviews.delete_many({"customer_id": cid}).deleted_count
+    # 5) Card prefs + overrides cleanup.
+    db.card_prefs.delete_many({"customer_id": cid})
+    db.customer_card_overrides.delete_many({"customer_id": cid})
+
+    log_audit("gdpr.forget_me", actor=barcode_id, actor_type="customer",
+              tenant_id=tid, target=cid, request=request,
+              meta={"push_deleted": push_deleted,
+                    "notifications_deleted": notif_deleted,
+                    "reviews_deleted": reviews_deleted})
+
+    return {
+        "status": "erased",
+        "message": ("Vos données personnelles ont été supprimées. "
+                    "Cette carte n'est plus utilisable."),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────
