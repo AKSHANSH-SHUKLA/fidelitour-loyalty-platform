@@ -94,6 +94,26 @@ class TenantBase(BaseModel):
     parent_tenant_id: Optional[str] = None
     sector: Optional[str] = None  # restaurant, pizzeria, spa, gym, etc. — drives reactivation templates
     campaign_sender_name: Optional[str] = None  # custom "from" name for push notifications/emails
+    # --- Facturation module (French e-invoicing). All optional / default-off so
+    #     existing loyalty-only tenants are completely unaffected. A tenant only
+    #     sees the Facturation module when facturation_enabled is True (set when
+    #     they buy it — standalone or as an add-on to CRM+Loyalty). ---
+    facturation_enabled: bool = False
+    facturation_plan: Optional[str] = None      # "standalone" | "addon" | None
+    # Legal identity used for e-invoicing (captured at onboarding, editable in Settings)
+    legal_name: Optional[str] = None
+    siren: Optional[str] = None                 # 9 digits
+    siret: Optional[str] = None                 # 14 digits (head establishment)
+    vat_number: Optional[str] = None            # FR + 2-digit key + SIREN
+    naf_code: Optional[str] = None              # 2-digit NAF/APE (drives DGFiP process code)
+    enterprise_size: Optional[str] = None       # "micro" | "pme" | "eti" | "ge"
+    # VAT regime drives the e-reporting calendar frequency (decade/monthly/bimonthly)
+    vat_regime: Optional[str] = None            # "reel_normal_mensuel" | "rsi" | "franchise" | ...
+    # DGFiP / PA activation state (set when compliance is activated via PdpConnector)
+    dgfip_activated: bool = False
+    dgfip_start_date: Optional[str] = None       # ISO date the obligation starts
+    annuaire_status: Optional[str] = None        # None | "pending" | "registered"
+    pdp_account_id: Optional[str] = None         # the PA-side account id for this tenant
 
 class Tenant(TenantBase):
     id: str
@@ -338,4 +358,121 @@ class PaymentTransaction(BaseModel):
     tenant_id: str
     plan: str
     status: str = "pending"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ===========================================================================
+# FACTURATION ÉLECTRONIQUE (French e-invoicing) — new module models.
+# All are PA-agnostic (they never carry a vendor's raw fields); the
+# PdpConnector maps to/from the actual PA. Mongo collections:
+#   fact_invoices · fact_received_invoices · fact_ereports ·
+#   fact_credit_notes · fact_coherence_checks
+# `extra="allow"` everywhere so we can evolve without migrations.
+# ===========================================================================
+
+class FactLine(BaseModel):
+    """One line of an invoice."""
+    model_config = ConfigDict(extra="allow")
+    description: str
+    quantity: float = 1
+    unit_price: float = 0.0            # HT (before VAT)
+    vat_rate: float = 20.0             # percent
+    vat_category: str = "S"            # S=standard, E=exempt, O=out-of-scope
+    line_total_ht: float = 0.0         # quantity * unit_price (server recomputes)
+
+
+class FactParty(BaseModel):
+    """A seller or buyer on an invoice."""
+    model_config = ConfigDict(extra="allow")
+    name: str = ""
+    siren: Optional[str] = None
+    siret: Optional[str] = None
+    vat_number: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: str = "fr"
+    email: Optional[str] = None
+    is_company: bool = True            # False => B2C (routes to e-reporting, not e-invoicing)
+
+
+class FactInvoice(BaseModel):
+    """An issued invoice. `state` uses the PdpConnector normalized vocabulary
+    (draft/sent/received/accepted/refused/paid/error)."""
+    model_config = ConfigDict(extra="allow")
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    number: str                         # human invoice number (unique per tenant → idempotency key)
+    buyer: FactParty
+    lines: List[FactLine] = Field(default_factory=list)
+    date: Optional[str] = None          # ISO issue date
+    due_date: Optional[str] = None
+    total_ht: float = 0.0
+    total_vat: float = 0.0
+    total_ttc: float = 0.0
+    state: str = "draft"
+    channel: str = "e-invoicing"        # "e-invoicing" (B2B) | "e-reporting" (B2C)
+    pdp_invoice_id: Optional[str] = None  # id returned by the PA
+    reject_code: Optional[str] = None     # AFNOR-ish code if refused/error
+    reject_reason: Optional[str] = None   # plain-French message for the UI
+    lifecycle: List[Dict[str, Any]] = Field(default_factory=list)  # [{state, at}]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class FactReceivedInvoice(BaseModel):
+    """A supplier invoice that arrived for this tenant (feeds the purchases side
+    of the Fiscal Shield coherence check)."""
+    model_config = ConfigDict(extra="allow")
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    supplier: FactParty
+    number: Optional[str] = None
+    total_ht: float = 0.0
+    total_vat: float = 0.0
+    total_ttc: float = 0.0
+    state: str = "received"             # received | accepted | refused | paid
+    pdp_invoice_id: Optional[str] = None
+    received_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class FactEReport(BaseModel):
+    """A B2C / cross-border e-reporting transmission (aggregated by VAT rate)."""
+    model_config = ConfigDict(extra="allow")
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    totals_by_vat: Dict[str, float] = Field(default_factory=dict)  # {"20": 5000.0, "10": 2000.0}
+    state: str = "pending"             # pending | queued | sent | registered | error
+    pdp_report_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class FactCreditNote(BaseModel):
+    """A credit note (avoir) that corrects/cancels a prior invoice."""
+    model_config = ConfigDict(extra="allow")
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    original_invoice_id: str            # the FactInvoice being corrected
+    number: str
+    amount_ht: float = 0.0              # negative or the amount being credited
+    amount_vat: float = 0.0
+    reason: Optional[str] = None
+    state: str = "draft"
+    pdp_invoice_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class FactCoherenceCheck(BaseModel):
+    """A stored result of the Fiscal Shield / Bouclier Fiscal coherence run.
+    NOTE: this is an informational consistency indicator, NOT tax advice / not
+    an ECF (Examen de Conformité Fiscale) — the UI must carry that disclaimer."""
+    model_config = ConfigDict(extra="allow")
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    tenant_id: str
+    period: Optional[str] = None
+    score: int = 100                    # 0..100 (paired with the colour band)
+    band: str = "green"                # "green" | "amber" | "red"
+    alerts: List[Dict[str, Any]] = Field(default_factory=list)  # [{level, message, fix_action}]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
