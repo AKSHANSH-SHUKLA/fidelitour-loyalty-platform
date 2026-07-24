@@ -207,6 +207,7 @@ export const facturationAPI = {
   sendInvoice: (id) => api.post('/owner/facturation/invoices/' + id + '/send'),
   getInvoice: (id) => api.get('/owner/facturation/invoices/' + id),
   creditNote: (id, data) => api.post('/owner/facturation/invoices/' + id + '/credit-note', data),
+  listCreditNotes: () => api.get('/owner/facturation/credit-notes'),
   listReceived: () => api.get('/owner/facturation/received'),
   markReceived: (id, data) => api.post('/owner/facturation/received/' + id + '/mark', data),
   seedReceived: (data) => api.post('/owner/facturation/received/seed-test', data || {}),

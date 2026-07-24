@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ReceiptText, ShieldCheck, ArrowLeft, Plus, Send, RefreshCw, AlertTriangle,
+  ReceiptText, ShieldCheck, ArrowLeft, Plus, Send, RefreshCw, AlertTriangle, Copy,
 } from 'lucide-react';
 import { facturationAPI } from '../lib/api';
 
@@ -35,9 +35,11 @@ export default function FacturationHome() {
   const [showCreate, setShowCreate] = useState(false);
   const [acctEmail, setAcctEmail] = useState('');
   const [acctMsg, setAcctMsg] = useState('');
+  const [acctPw, setAcctPw] = useState(null);       // { email, pw } shown once, copyable
   // Visible feedback for the test/action buttons so a click is never silent.
   const [flash, setFlash] = useState(null);        // { type:'ok'|'err', text }
   const [avoired, setAvoired] = useState({});       // { [invoiceId]: creditNoteNumber }
+  const [creditNotes, setCreditNotes] = useState([]);
   const [lastReport, setLastReport] = useState(null); // { period, state }
   const [busy, setBusy] = useState('');             // which action is running
 
@@ -48,14 +50,19 @@ export default function FacturationHome() {
   }, []);
 
   const loadDashboard = useCallback(async () => {
-    const [st, co, inv] = await Promise.all([
+    const [st, co, inv, cn] = await Promise.all([
       facturationAPI.status().catch(() => null),
       facturationAPI.coherence().catch(() => null),
       facturationAPI.listInvoices().catch(() => null),
+      facturationAPI.listCreditNotes().catch(() => null),
     ]);
     setStatus(st?.data || null);
     setCoh(co?.data || null);
     setInvoices(inv?.data?.invoices || []);
+    const notes = cn?.data?.credit_notes || [];
+    setCreditNotes(notes);
+    // rebuild the "which invoice already has an avoir" map from the server
+    setAvoired(Object.fromEntries(notes.map((n) => [n.original_invoice_id, n.number])));
   }, []);
 
   const boot = useCallback(async () => {
@@ -121,22 +128,31 @@ export default function FacturationHome() {
       const r = await facturationAPI.creditNote(inv.id, { reason: 'Correction (test)' });
       const num = r.data?.credit_note?.number || ('AV-' + inv.number);
       setAvoired((m) => ({ ...m, [inv.id]: num }));
-      showFlash('ok', `Avoir ${num} créé pour ${inv.number} ✓ — la facture d’origine est corrigée par une note de crédit.`);
+      await loadDashboard();
+      const wasRefused = ['refused', 'error'].includes(inv.state);
+      showFlash('ok', `Avoir ${num} créé pour ${inv.number} ✓ — note de crédit qui corrige la facture d’origine.${wasRefused ? ' La facture refusée n’est plus comptée : le score du Bouclier remonte.' : ''}`);
     } catch (e) {
       showFlash('err', `Échec de la création de l’avoir pour ${inv.number}.`);
     } finally { setBusy(''); }
   };
   const inviteAccountant = async () => {
-    setAcctMsg('');
+    setAcctMsg(''); setAcctPw(null);
     try {
       const r = await facturationAPI.inviteAccountant(acctEmail);
       const tp = r.data?.temp_password;
-      setAcctMsg(tp
-        ? `Comptable invité. Mot de passe temporaire : ${tp} (à transmettre une seule fois)`
-        : 'Comptable lié à votre dossier.');
+      if (tp) setAcctPw({ email: r.data?.email || acctEmail, pw: tp });
+      else setAcctMsg('Comptable déjà relié à votre dossier — il utilise son mot de passe existant.');
       setAcctEmail('');
     } catch (e) {
-      setAcctMsg("Échec de l'invitation (email déjà utilisé ?).");
+      setAcctMsg("Échec de l'invitation (email déjà utilisé par un autre type de compte ?).");
+    }
+  };
+  const copyPw = async () => {
+    try {
+      await navigator.clipboard.writeText(acctPw.pw);
+      showFlash('ok', 'Mot de passe copié dans le presse-papiers.');
+    } catch (_) {
+      showFlash('err', 'Copie impossible — sélectionnez le mot de passe manuellement.');
     }
   };
 
@@ -196,6 +212,37 @@ export default function FacturationHome() {
                 ))}
               </ul>
             )}
+
+            {/* Why this score? — transparent breakdown so 75/100 is never a black box */}
+            {(coh?.breakdown || []).length > 0 && (
+              <div className="mt-3 rounded-xl border p-3" style={{ borderColor: '#F2ECE0', background: '#FCFAF5' }}>
+                <div className="text-[11px] font-semibold text-[#8B8680] mb-1.5 uppercase tracking-wide">
+                  Pourquoi ce score ?
+                </div>
+                <ul className="space-y-1">
+                  <li className="flex items-center justify-between text-xs">
+                    <span className="text-[#57534E]">Base</span>
+                    <span className="font-semibold text-[#1C1917]">100</span>
+                  </li>
+                  {coh.breakdown.map((r, i) => (
+                    <li key={i} className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5" style={{ color: BAND[r.level]?.c || '#57534E' }}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: BAND[r.level]?.c || '#8B8680' }} />
+                        {r.label}
+                      </span>
+                      <span className="font-semibold" style={{ color: r.points < 0 ? '#C0392B' : '#2F7A52' }}>
+                        {r.points < 0 ? r.points : (r.points === 0 ? '±0' : '+' + r.points)}
+                      </span>
+                    </li>
+                  ))}
+                  <li className="flex items-center justify-between text-xs pt-1 mt-1 border-t" style={{ borderColor: '#EFE7D7' }}>
+                    <span className="font-bold text-[#1C1917]">Score</span>
+                    <span className="font-bold" style={{ color: band.c }}>{coh?.score ?? '—'}/100</span>
+                  </li>
+                </ul>
+              </div>
+            )}
+
             <p className="text-[11px] text-[#A8A29E] mt-3 italic">
               Indicateur informatif de cohérence — ni conseil fiscal, ni ECF.
             </p>
@@ -204,12 +251,19 @@ export default function FacturationHome() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <Kpi label="Factures émises" value={status?.counts?.issued ?? 0} />
-        <Kpi label="Factures reçues" value={status?.counts?.received ?? 0} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+        <Kpi label="e-invoicing (B2B)" value={status?.counts?.einvoicing ?? 0}
+             sub="factures vers entreprises" />
+        <Kpi label="e-reporting (B2C)" value={status?.counts?.ereporting ?? 0}
+             sub="ventes aux particuliers" />
+        <Kpi label="Factures reçues" value={status?.counts?.received ?? 0}
+             sub="fournisseurs" />
         <Kpi label="Conformité DGFiP" value={status?.dgfip_activated ? 'Activée' : 'Non activée'}
              tone={status?.dgfip_activated ? '#2F7A52' : '#B8860B'} />
       </div>
+      <p className="text-[11px] text-[#A8A29E] mb-5">
+        e-invoicing = factures B2B envoyées via la plateforme (PA). e-reporting = données de vente B2C transmises à la DGFiP (pas de facture électronique pour les particuliers).
+      </p>
 
       {/* Actions & tests */}
       <div className="flex flex-wrap gap-2 mb-5">
@@ -257,7 +311,9 @@ export default function FacturationHome() {
             {invoices.map((inv) => (
               <div key={inv.id} className="px-5 py-3 flex items-center gap-3 text-sm">
                 <span className="font-semibold text-[#1C1917] w-28">{inv.number}</span>
-                <span className="flex-1 text-[#57534E] truncate">{inv.buyer?.name || '—'}</span>
+                <span className="flex-1 text-[#57534E] truncate flex items-center gap-2">
+                  {inv.buyer?.name || '—'} <ChannelTag channel={inv.channel} />
+                </span>
                 <span className="text-[#1C1917] w-24 text-right">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
                 <StatePill state={inv.state} />
                 {avoired[inv.id] ? (
@@ -278,6 +334,31 @@ export default function FacturationHome() {
         )}
       </div>
 
+      {/* Avoirs émis (credit notes) — shown as real, negative-amount entries */}
+      {creditNotes.length > 0 && (
+        <div className="rounded-3xl bg-white border mt-5" style={{ borderColor: '#ECE3D2' }}>
+          <div className="px-5 py-4 border-b" style={{ borderColor: '#F2ECE0' }}>
+            <h3 className="font-bold text-[#1C1917]">Avoirs émis</h3>
+            <p className="text-xs text-[#8B8680] mt-0.5">
+              Un avoir (note de crédit) annule ou corrige une facture déjà envoyée — on ne supprime jamais une facture, on l’annule par un avoir.
+            </p>
+          </div>
+          <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+            {creditNotes.map((cn) => (
+              <div key={cn.id} className="px-5 py-3 flex items-center gap-3 text-sm">
+                <span className="font-semibold text-[#1C1917] w-32">{cn.number}</span>
+                <span className="flex-1 text-[#57534E] truncate">
+                  corrige <b>{cn.original_number}</b>{cn.buyer?.name ? ` · ${cn.buyer.name}` : ''}
+                </span>
+                <span className="w-24 text-right font-semibold" style={{ color: '#C0392B' }}>
+                  −{Math.abs(cn.amount_ttc ?? 0).toFixed(2)} €
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Mon comptable */}
       <div className="rounded-3xl bg-white border mt-5 p-5" style={{ borderColor: '#ECE3D2' }}>
         <h3 className="font-bold text-[#1C1917] mb-1">Mon comptable</h3>
@@ -294,7 +375,27 @@ export default function FacturationHome() {
             Inviter
           </button>
         </div>
-        {acctMsg && <div className="text-xs mt-2" style={{ color: '#2F7A52' }}>{acctMsg}</div>}
+        {acctMsg && <div className="text-xs mt-2" style={{ color: '#57534E' }}>{acctMsg}</div>}
+        {acctPw && (
+          <div className="mt-3 rounded-xl border p-3" style={{ borderColor: 'rgba(122,62,112,.30)', background: 'rgba(122,62,112,.05)' }}>
+            <div className="text-xs font-semibold text-[#7A3E70] mb-1">
+              Compte comptable créé pour {acctPw.email}
+            </div>
+            <div className="text-[11px] text-[#8B8680] mb-2">
+              Transmettez ce mot de passe temporaire une seule fois. Il ne sera plus affiché ensuite.
+            </div>
+            <div className="flex items-center gap-2">
+              <input readOnly value={acctPw.pw} onFocus={(e) => e.target.select()}
+                     className="flex-1 font-mono text-sm px-3 py-2 rounded-lg border select-all"
+                     style={{ borderColor: '#E7E1D5', background: '#fff', color: '#1C1917' }} />
+              <button onClick={copyPw}
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-lg text-white"
+                      style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+                <Copy size={14} /> Copier
+              </button>
+            </div>
+          </div>
+        )}
         <style>{`.fld-a{border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none}.fld-a:focus{border-color:#7A3E70}`}</style>
       </div>
 
@@ -339,12 +440,26 @@ function Shell({ children, onBack }) {
   );
 }
 
-function Kpi({ label, value, tone = '#1C1917' }) {
+function Kpi({ label, value, tone = '#1C1917', sub }) {
   return (
     <div className="rounded-2xl bg-white border p-4" style={{ borderColor: '#ECE3D2' }}>
       <div className="text-xl font-bold" style={{ color: tone }}>{value}</div>
       <div className="text-xs text-[#8B8680] mt-0.5">{label}</div>
+      {sub && <div className="text-[10px] text-[#B4ADA2] mt-0.5">{sub}</div>}
     </div>
+  );
+}
+
+function ChannelTag({ channel }) {
+  const b2b = channel === 'e-invoicing';
+  return (
+    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+      style={b2b
+        ? { color: '#2F6FB3', background: 'rgba(47,111,179,.10)' }
+        : { color: '#7A3E70', background: 'rgba(122,62,112,.10)' }}
+      title={b2b ? 'Facture B2B transmise via la plateforme' : 'Vente B2C — e-reporting à la DGFiP'}>
+      {b2b ? 'e-invoicing' : 'e-reporting'}
+    </span>
   );
 }
 

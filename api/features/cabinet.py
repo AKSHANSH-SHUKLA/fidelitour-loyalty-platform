@@ -65,31 +65,23 @@ def _linked_tenant_ids(comptable_email: str) -> List[str]:
 
 
 def _client_summary(tenant: Dict[str, Any]) -> Dict[str, Any]:
-    """Light per-client compliance snapshot (same 3 rules as the Bouclier)."""
+    """Per-client compliance snapshot — reuses the owner-side Bouclier scoring
+    so the cabinet view and the client's own view always agree (single source
+    of truth: features.facturation.compute_bouclier)."""
+    from features.facturation import compute_bouclier  # lazy: avoid load-order coupling
     tid = tenant["id"]
-    issued = _db.fact_invoices.count_documents({"tenant_id": tid})
-    received = _db.fact_received_invoices.count_documents({"tenant_id": tid})
-    bad = _db.fact_invoices.count_documents(
-        {"tenant_id": tid, "state": {"$in": ["error", "refused"]}})
-    alerts: List[Dict[str, Any]] = []
-    if bad:
-        alerts.append({"level": "red", "message": f"{bad} facture(s) refusée(s)/en erreur."})
-    if not tenant.get("dgfip_activated"):
-        alerts.append({"level": "amber", "message": "Conformité DGFiP non activée."})
-    if received == 0:
-        alerts.append({"level": "amber", "message": "Aucune facture fournisseur reçue."})
-    reds = sum(1 for a in alerts if a["level"] == "red")
-    ambers = sum(1 for a in alerts if a["level"] == "amber")
-    score = max(0, 100 - reds * 25 - ambers * 8)
-    band = "red" if reds else ("amber" if ambers else "green")
+    b = compute_bouclier(tenant)
+    c = b["counts"]
     return {
         "tenant_id": tid,
         "name": tenant.get("legal_name") or tenant.get("name"),
         "siren": tenant.get("siren"),
-        "band": band, "score": score,
-        "issued": issued, "received": received,
+        "band": b["band"], "score": b["score"],
+        "issued": c["issued"], "received": c["received"],
+        "einvoicing": c["einvoicing"], "ereporting": c["ereporting"],
+        "credit_notes": c["credit_notes"], "refused_open": c["refused_open"],
         "dgfip_activated": bool(tenant.get("dgfip_activated")),
-        "alerts": alerts,
+        "alerts": b["alerts"], "breakdown": b["breakdown"],
     }
 
 
@@ -183,7 +175,14 @@ def cabinet_client_detail(tenant_id: str, token_data=Depends(require_role(["comp
     invoices = list(_db.fact_invoices.find({"tenant_id": tenant_id}).sort("created_at", -1).limit(200))
     for i in invoices:
         i.pop("_id", None)
-    return {"summary": _client_summary(t), "invoices": invoices}
+    credit_notes = list(_db.fact_credit_notes.find({"tenant_id": tenant_id}).sort("created_at", -1).limit(200))
+    for c in credit_notes:
+        c.pop("_id", None)
+    received = list(_db.fact_received_invoices.find({"tenant_id": tenant_id}).sort("received_at", -1).limit(200))
+    for r in received:
+        r.pop("_id", None)
+    return {"summary": _client_summary(t), "invoices": invoices,
+            "credit_notes": credit_notes, "received": received}
 
 
 @router.get("/api/comptable/alerts")
@@ -207,16 +206,23 @@ def cabinet_export(token_data=Depends(require_role(["comptable"]))):
     """One CSV of every client's issued invoices — no per-PA logins, no re-keying."""
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["client", "siren", "invoice_number", "buyer", "total_ht", "total_vat", "total_ttc", "state", "date"])
+    w.writerow(["client", "siren", "type", "channel", "number", "counterparty",
+                "total_ht", "total_vat", "total_ttc", "state", "date"])
     for tid in _linked_tenant_ids(token_data.email):
         t = _tenant(tid)
         if not t:
             continue
         cname = t.get("legal_name") or t.get("name")
+        siren = t.get("siren", "")
         for inv in _db.fact_invoices.find({"tenant_id": tid}):
-            w.writerow([cname, t.get("siren", ""), inv.get("number", ""),
+            w.writerow([cname, siren, "facture", inv.get("channel", ""), inv.get("number", ""),
                         (inv.get("buyer") or {}).get("name", ""),
                         inv.get("total_ht", 0), inv.get("total_vat", 0),
                         inv.get("total_ttc", 0), inv.get("state", ""), inv.get("date", "")])
+        for cn in _db.fact_credit_notes.find({"tenant_id": tid}):
+            w.writerow([cname, siren, "avoir", "", cn.get("number", ""),
+                        "corrige " + str(cn.get("original_number", "")),
+                        -abs(cn.get("amount_ht", 0)), -abs(cn.get("amount_vat", 0)),
+                        -abs(cn.get("amount_ttc", 0)), cn.get("state", ""), ""])
     return Response(content=buf.getvalue(), media_type="text/csv",
                     headers={"Content-Disposition": "attachment; filename=export_cabinet.csv"})

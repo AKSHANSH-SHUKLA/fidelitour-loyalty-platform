@@ -80,6 +80,81 @@ def _public(inv: Dict[str, Any]) -> Dict[str, Any]:
     return inv
 
 
+def compute_bouclier(tenant: Dict[str, Any]) -> Dict[str, Any]:
+    """Single source of truth for the Bouclier Fiscal score.
+
+    Transparent, per-invoice rules with an itemised `breakdown` so the number
+    is never a black box:
+      - each issued invoice stuck in ERROR/REFUSED and NOT yet corrected by an
+        avoir (credit note) costs points (capped) -> red
+      - DGFiP compliance not activated -> amber
+      - no supplier (received) invoice imported yet -> amber
+    A refused invoice that HAS a linked avoir is considered corrected and no
+    longer penalises the score (this is what makes "create an avoir" verifiable).
+    Also returns channel counts (B2B e-invoicing vs B2C e-reporting).
+    """
+    tid = tenant["id"]
+    issued = list(_db.fact_invoices.find({"tenant_id": tid}))
+    received = _db.fact_received_invoices.count_documents({"tenant_id": tid})
+    credit_notes = list(_db.fact_credit_notes.find({"tenant_id": tid}))
+    credited_ids = {cn.get("original_invoice_id") for cn in credit_notes}
+
+    refused = [i for i in issued if i.get("state") in (InvoiceState.ERROR, InvoiceState.REFUSED)]
+    uncorrected = [i for i in refused if i.get("id") not in credited_ids]
+    corrected = [i for i in refused if i.get("id") in credited_ids]
+
+    einvoicing = sum(1 for i in issued if i.get("channel") == "e-invoicing"
+                     or (i.get("channel") is None and (i.get("buyer") or {}).get("is_company", True)))
+    ereporting = len(issued) - einvoicing
+
+    alerts: List[Dict[str, Any]] = []
+    breakdown: List[Dict[str, Any]] = []
+    score = 100
+
+    if uncorrected:
+        pts = min(len(uncorrected) * 15, 45)
+        score -= pts
+        alerts.append({"level": "red",
+                       "message": f"{len(uncorrected)} facture(s) refusée(s) ou en erreur à corriger.",
+                       "fix_action": "review_rejected"})
+        breakdown.append({"level": "red",
+                          "label": f"{len(uncorrected)} facture(s) refusée(s) non corrigée(s)",
+                          "points": -pts})
+    if corrected:
+        breakdown.append({"level": "green",
+                          "label": f"{len(corrected)} facture(s) refusée(s) corrigée(s) par avoir",
+                          "points": 0})
+    if not tenant.get("dgfip_activated"):
+        score -= 20
+        alerts.append({"level": "amber",
+                       "message": "Conformité DGFiP non activée — activez pour émettre.",
+                       "fix_action": "activate_dgfip"})
+        breakdown.append({"level": "amber", "label": "Conformité DGFiP non activée", "points": -20})
+    if received == 0:
+        score -= 8
+        alerts.append({"level": "amber",
+                       "message": "Aucune facture fournisseur reçue — cohérence achats/ventes limitée.",
+                       "fix_action": None})
+        breakdown.append({"level": "amber", "label": "Aucune facture fournisseur importée", "points": -8})
+
+    score = max(0, score)
+    reds = sum(1 for a in alerts if a["level"] == "red")
+    ambers = sum(1 for a in alerts if a["level"] == "amber")
+    band = "red" if reds else ("amber" if ambers else "green")
+    if not breakdown:
+        breakdown.append({"level": "green", "label": "Aucune anomalie détectée", "points": 0})
+
+    return {
+        "score": score, "band": band, "alerts": alerts, "breakdown": breakdown,
+        "counts": {
+            "issued": len(issued), "received": received,
+            "einvoicing": einvoicing, "ereporting": ereporting,
+            "credit_notes": len(credit_notes),
+            "refused": len(refused), "refused_open": len(uncorrected),
+        },
+    }
+
+
 # --------------------------------------------------------------------------
 # availability & opt-in (ungated — used by the module chooser)
 # --------------------------------------------------------------------------
@@ -134,10 +209,7 @@ def facturation_status(token_data=Depends(require_role(["business_owner", "manag
         "dgfip_activated": bool(t.get("dgfip_activated")),
         "annuaire_status": t.get("annuaire_status"),
         "provider": type(get_pdp_connector()).__name__,
-        "counts": {
-            "issued": _db.fact_invoices.count_documents({"tenant_id": tid}),
-            "received": _db.fact_received_invoices.count_documents({"tenant_id": tid}),
-        },
+        "counts": compute_bouclier(t)["counts"],
     }
 
 
@@ -275,19 +347,32 @@ def create_credit_note(invoice_id: str, body: Dict[str, Any],
     orig = _db.fact_invoices.find_one({"id": invoice_id, "tenant_id": t["id"]})
     if not orig:
         raise HTTPException(404, "Facture d'origine introuvable.")
+    amount_ht = float(body.get("amount_ht", orig.get("total_ht", 0)))
+    amount_vat = float(body.get("amount_vat", orig.get("total_vat", 0)))
     cn = {
         "id": _new_id(),
         "tenant_id": t["id"],
         "original_invoice_id": invoice_id,
+        "original_number": orig.get("number"),
+        "buyer": orig.get("buyer"),
         "number": body.get("number") or ("AV-" + orig["number"]),
-        "amount_ht": float(body.get("amount_ht", orig.get("total_ht", 0))),
-        "amount_vat": float(body.get("amount_vat", orig.get("total_vat", 0))),
+        "amount_ht": amount_ht,
+        "amount_vat": amount_vat,
+        "amount_ttc": round(amount_ht + amount_vat, 2),
         "reason": body.get("reason"),
         "state": InvoiceState.DRAFT,
         "created_at": _now(),
     }
     _db.fact_credit_notes.insert_one(dict(cn))
     return {"credit_note": _public(cn)}
+
+
+@router.get("/api/owner/facturation/credit-notes")
+def list_credit_notes(token_data=Depends(require_role(["business_owner", "manager"]))):
+    """All avoirs (credit notes) issued, newest first."""
+    t = _require_facturation(token_data)
+    docs = list(_db.fact_credit_notes.find({"tenant_id": t["id"]}).sort("created_at", -1).limit(500))
+    return {"credit_notes": [_public(d) for d in docs]}
 
 
 # --------------------------------------------------------------------------
@@ -373,35 +458,12 @@ def coherence(token_data=Depends(require_role(["business_owner", "manager"]))):
     flags the obvious issues we already have data for."""
     t = _require_facturation(token_data)
     tid = t["id"]
-    alerts: List[Dict[str, Any]] = []
+    b = compute_bouclier(t)
 
-    # rule 1: any invoice stuck in error/refused
-    bad = _db.fact_invoices.count_documents(
-        {"tenant_id": tid, "state": {"$in": [InvoiceState.ERROR, InvoiceState.REFUSED]}})
-    if bad:
-        alerts.append({"level": "red",
-                       "message": f"{bad} facture(s) refusée(s) ou en erreur à corriger.",
-                       "fix_action": "review_rejected"})
-
-    # rule 2: DGFiP not activated yet
-    if not t.get("dgfip_activated"):
-        alerts.append({"level": "amber",
-                       "message": "Conformité DGFiP non activée — activez pour émettre.",
-                       "fix_action": "activate_dgfip"})
-
-    # rule 3 (placeholder for real 3-way check): no purchases data yet
-    if _db.fact_received_invoices.count_documents({"tenant_id": tid}) == 0:
-        alerts.append({"level": "amber",
-                       "message": "Aucune facture fournisseur reçue — cohérence achats/ventes limitée.",
-                       "fix_action": None})
-
-    reds = sum(1 for a in alerts if a["level"] == "red")
-    ambers = sum(1 for a in alerts if a["level"] == "amber")
-    score = max(0, 100 - reds * 25 - ambers * 8)
-    band = "red" if reds else ("amber" if ambers else "green")
-
-    result = {"id": _new_id(), "tenant_id": tid, "score": score, "band": band,
-              "alerts": alerts, "created_at": _now(),
+    result = {"id": _new_id(), "tenant_id": tid,
+              "score": b["score"], "band": b["band"],
+              "alerts": b["alerts"], "breakdown": b["breakdown"], "counts": b["counts"],
+              "created_at": _now(),
               "disclaimer": "Indicateur informatif de cohérence — ni conseil fiscal, ni ECF."}
     _db.fact_coherence_checks.insert_one(dict(result))
     return _public(result)

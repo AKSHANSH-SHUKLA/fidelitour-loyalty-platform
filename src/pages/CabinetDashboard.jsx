@@ -140,6 +140,35 @@ export default function CabinetDashboard() {
   );
 }
 
+function Pill({ state }) {
+  const map = {
+    draft: ['Brouillon', '#8B8680', 'rgba(139,134,128,.12)'],
+    sent: ['Envoyée', '#2F6FB3', 'rgba(47,111,179,.12)'],
+    accepted: ['Acceptée', '#2F7A52', 'rgba(63,156,107,.12)'],
+    refused: ['Refusée', '#C0392B', 'rgba(192,57,43,.12)'],
+    error: ['Erreur', '#C0392B', 'rgba(192,57,43,.12)'],
+    paid: ['Payée', '#2F7A52', 'rgba(63,156,107,.14)'],
+    credited: ['Avoirée', '#2F7A52', 'rgba(63,156,107,.12)'],
+  };
+  const [label, c, bg] = map[state] || [state || '—', '#8B8680', 'rgba(139,134,128,.12)'];
+  return (
+    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ color: c, background: bg }}>
+      {label}
+    </span>
+  );
+}
+
+function Chan({ channel }) {
+  const b2b = channel === 'e-invoicing';
+  return (
+    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+      style={b2b ? { color: '#2F6FB3', background: 'rgba(47,111,179,.10)' }
+                 : { color: '#7A3E70', background: 'rgba(122,62,112,.10)' }}>
+      {b2b ? 'e-invoicing' : 'e-reporting'}
+    </span>
+  );
+}
+
 function Stat({ label, value, tone = '#1C1917' }) {
   return (
     <div className="rounded-2xl bg-white border p-4 text-center" style={{ borderColor: '#ECE3D2' }}>
@@ -181,14 +210,52 @@ function DrillModal({ data, onClose }) {
             <div className="text-sm text-[#8B8680]">Aucune facture.</div>
           ) : (
             <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
-              {data.invoices.map((inv) => (
-                <div key={inv.id} className="py-2 flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-[#1C1917] w-28">{inv.number}</span>
-                  <span className="flex-1 text-[#57534E] truncate">{inv.buyer?.name || '—'}</span>
-                  <span className="text-[#1C1917]">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
-                </div>
-              ))}
+              {data.invoices.map((inv) => {
+                const credited = (data.credit_notes || []).some((c) => c.original_invoice_id === inv.id);
+                return (
+                  <div key={inv.id} className="py-2 flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-[#1C1917] w-24 shrink-0">{inv.number}</span>
+                    <span className="flex-1 text-[#57534E] truncate flex items-center gap-1.5">
+                      {inv.buyer?.name || '—'} <Chan channel={inv.channel} />
+                    </span>
+                    <span className="text-[#1C1917] w-20 text-right shrink-0">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
+                    <Pill state={credited ? 'credited' : inv.state} />
+                  </div>
+                );
+              })}
             </div>
+          )}
+
+          {(data.credit_notes || []).length > 0 && (
+            <>
+              <h4 className="text-sm font-bold text-[#1C1917] mt-4 mb-2">Avoirs émis</h4>
+              <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+                {data.credit_notes.map((cn) => (
+                  <div key={cn.id} className="py-2 flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-[#1C1917] w-28 shrink-0">{cn.number}</span>
+                    <span className="flex-1 text-[#57534E] truncate">corrige {cn.original_number}</span>
+                    <span className="w-20 text-right font-semibold" style={{ color: '#C0392B' }}>
+                      −{Math.abs(cn.amount_ttc ?? 0).toFixed(2)} €
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {(data.received || []).length > 0 && (
+            <>
+              <h4 className="text-sm font-bold text-[#1C1917] mt-4 mb-2">Factures reçues (fournisseurs)</h4>
+              <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+                {data.received.map((r) => (
+                  <div key={r.id} className="py-2 flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-[#1C1917] w-28 shrink-0">{r.number || '—'}</span>
+                    <span className="flex-1 text-[#57534E] truncate">{r.supplier?.name || '—'}</span>
+                    <span className="text-[#1C1917] w-20 text-right">{(r.total_ttc ?? 0).toFixed(2)} €</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
