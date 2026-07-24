@@ -81,6 +81,43 @@ def _public(inv: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # --------------------------------------------------------------------------
+# availability & opt-in (ungated — used by the module chooser)
+# --------------------------------------------------------------------------
+
+@router.get("/api/owner/facturation/availability")
+def facturation_availability(token_data=Depends(require_role(["business_owner", "manager"]))):
+    """Ungated: tells the module chooser whether this tenant has Facturation on.
+    Never 403s — loyalty-only tenants get {enabled: false}."""
+    t = _tenant(token_data.tenant_id)
+    return {
+        "enabled": bool(t.get("facturation_enabled")),
+        "plan": t.get("facturation_plan"),
+        "legal_name": t.get("legal_name"),
+        "siren": t.get("siren"),
+        "dgfip_activated": bool(t.get("dgfip_activated")),
+    }
+
+
+@router.post("/api/owner/facturation/enable")
+def facturation_enable(body: Dict[str, Any],
+                       token_data=Depends(require_role(["business_owner"]))):
+    """Turn the Facturation module ON for this tenant (simulates the purchase —
+    standalone or add-on). Optionally captures legal identity at the same time.
+    Stripe billing wiring comes later; for now this is the opt-in switch."""
+    t = _tenant(token_data.tenant_id)
+    upd: Dict[str, Any] = {
+        "facturation_enabled": True,
+        "facturation_plan": body.get("plan") or "addon",
+    }
+    for f in ("legal_name", "siren", "siret", "vat_number", "naf_code",
+              "enterprise_size", "vat_regime"):
+        if body.get(f):
+            upd[f] = body[f]
+    _db.tenants.update_one({"id": t["id"]}, {"$set": upd})
+    return {"ok": True, "enabled": True, "plan": upd["facturation_plan"]}
+
+
+# --------------------------------------------------------------------------
 # status & activation
 # --------------------------------------------------------------------------
 

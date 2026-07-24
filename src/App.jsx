@@ -99,6 +99,9 @@ import AdminAIAssistantPage from './pages/AdminAIAssistantPage';
 import AdminCampaignsPage from './pages/AdminCampaignsPage';
 import AdminInsightsPage from './pages/AdminInsightsPage';
 import GoogleTranslateBridge, { RouteAwareRetranslator } from './components/GoogleTranslateBridge';
+// Facturation module (French e-invoicing) — post-login module chooser + home.
+import ModuleChooserPage from './pages/ModuleChooserPage';
+import FacturationHome from './pages/FacturationHome';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -147,6 +150,19 @@ function App() {
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/join/:slug" element={<JoinPage />} />
           <Route path="/card/:barcodeId" element={<MyWalletCardPage />} />
+
+          {/* Facturation module — post-login chooser (Option A) + home.
+              Owner/manager only; loyalty-only tenants see the "activate" prompt. */}
+          <Route path="/modules" element={
+            <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+              <ModuleChooserPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/facturation" element={
+            <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
+              <FacturationHome />
+            </ProtectedRoute>
+          } />
 
           {/* Business Owner Routes — per-page role enforcement.
               - business_owner: full access

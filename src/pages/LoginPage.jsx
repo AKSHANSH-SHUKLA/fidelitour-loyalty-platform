@@ -16,6 +16,7 @@ const LoginPage = () => {
       const res = await login(formData);
       if (res.role === 'super_admin') navigate('/admin');
       else if (res.role === 'staff') navigate('/dashboard/scan');
+      else if (res.role === 'business_owner') navigate('/modules');
       else navigate('/dashboard');
     } catch (err) {
       setError('Invalid credentials');

@@ -194,6 +194,25 @@ export const ownerAPI = {
   listReviews: (params) => api.get('/owner/reviews', { params }),
 };
 
+// Facturation électronique (French e-invoicing) — second product module.
+// Backed by services.pdp_connector (Mock by default; B2Brouter via env).
+export const facturationAPI = {
+  // availability is ungated (returns {enabled:false} for loyalty-only tenants)
+  availability: () => api.get('/owner/facturation/availability'),
+  enable: (data) => api.post('/owner/facturation/enable', data || {}),
+  status: () => api.get('/owner/facturation/status'),
+  activate: (data) => api.post('/owner/facturation/activate', data || {}),
+  listInvoices: () => api.get('/owner/facturation/invoices'),
+  createInvoice: (data) => api.post('/owner/facturation/invoices', data),
+  sendInvoice: (id) => api.post('/owner/facturation/invoices/' + id + '/send'),
+  getInvoice: (id) => api.get('/owner/facturation/invoices/' + id),
+  creditNote: (id, data) => api.post('/owner/facturation/invoices/' + id + '/credit-note', data),
+  listReceived: () => api.get('/owner/facturation/received'),
+  markReceived: (id, data) => api.post('/owner/facturation/received/' + id + '/mark', data),
+  sendEreporting: (data) => api.post('/owner/facturation/ereporting', data),
+  coherence: () => api.get('/owner/facturation/coherence'),
+};
+
 export const publicAPI = {
   getJoinInfo: (slug) => api.get('/join/' + slug),
   joinProgram: (slug, data) => api.post('/join/' + slug, data),
