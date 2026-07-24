@@ -35,6 +35,17 @@ export default function FacturationHome() {
   const [showCreate, setShowCreate] = useState(false);
   const [acctEmail, setAcctEmail] = useState('');
   const [acctMsg, setAcctMsg] = useState('');
+  // Visible feedback for the test/action buttons so a click is never silent.
+  const [flash, setFlash] = useState(null);        // { type:'ok'|'err', text }
+  const [avoired, setAvoired] = useState({});       // { [invoiceId]: creditNoteNumber }
+  const [lastReport, setLastReport] = useState(null); // { period, state }
+  const [busy, setBusy] = useState('');             // which action is running
+
+  const showFlash = useCallback((type, text) => {
+    setFlash({ type, text });
+    window.clearTimeout(showFlash._t);
+    showFlash._t = window.setTimeout(() => setFlash(null), 6000);
+  }, []);
 
   const loadDashboard = useCallback(async () => {
     const [st, co, inv] = await Promise.all([
@@ -74,20 +85,46 @@ export default function FacturationHome() {
   const band = BAND[coh?.band] || BAND.amber;
 
   const activateDGFiP = async () => {
-    await facturationAPI.activate({ start_date: '2026-09-01', type_operation: 'services', enterprise_size: 'pme' }).catch(() => {});
-    await loadDashboard();
+    setBusy('dgfip');
+    try {
+      await facturationAPI.activate({ start_date: '2026-09-01', type_operation: 'services', enterprise_size: 'pme' });
+      await loadDashboard();
+      showFlash('ok', 'Conformité DGFiP activée ✓ — l’alerte « DGFiP non activée » disparaît et le score du Bouclier remonte.');
+    } catch (e) {
+      showFlash('err', 'Échec de l’activation DGFiP.');
+    } finally { setBusy(''); }
   };
   const simulateReceived = async () => {
-    await facturationAPI.seedReceived({ supplier_name: 'Fournisseur Test SARL', total_ht: 900 }).catch(() => {});
-    await loadDashboard();
+    setBusy('received');
+    try {
+      const r = await facturationAPI.seedReceived({ supplier_name: 'Fournisseur Test SARL', total_ht: 900 });
+      await loadDashboard();
+      showFlash('ok', `Facture fournisseur reçue ✓ ${r.data?.received?.number ? '(' + r.data.received.number + ') ' : ''}— le compteur « Factures reçues » augmente.`);
+    } catch (e) {
+      showFlash('err', 'Échec de la simulation de facture reçue.');
+    } finally { setBusy(''); }
   };
   const testEreporting = async () => {
-    await facturationAPI.sendEreporting({ period_start: '2026-07-01', period_end: '2026-07-31', totals_by_vat: { '20': 5000, '10': 2000 } }).catch(() => {});
-    await loadDashboard();
+    setBusy('ereport');
+    try {
+      const r = await facturationAPI.sendEreporting({ period_start: '2026-07-01', period_end: '2026-07-31', totals_by_vat: { '20': 5000, '10': 2000 } });
+      const st = r.data?.ereport?.state || 'queued';
+      setLastReport({ period: '01–31 juil. 2026', state: st });
+      showFlash('ok', `E-reporting B2C envoyé ✓ — période 01–31 juil. 2026, état : ${st}.`);
+    } catch (e) {
+      showFlash('err', 'Échec de l’envoi de l’e-reporting.');
+    } finally { setBusy(''); }
   };
   const makeAvoir = async (inv) => {
-    await facturationAPI.creditNote(inv.id, { reason: 'Correction (test)' }).catch(() => {});
-    await loadDashboard();
+    setBusy('avoir-' + inv.id);
+    try {
+      const r = await facturationAPI.creditNote(inv.id, { reason: 'Correction (test)' });
+      const num = r.data?.credit_note?.number || ('AV-' + inv.number);
+      setAvoired((m) => ({ ...m, [inv.id]: num }));
+      showFlash('ok', `Avoir ${num} créé pour ${inv.number} ✓ — la facture d’origine est corrigée par une note de crédit.`);
+    } catch (e) {
+      showFlash('err', `Échec de la création de l’avoir pour ${inv.number}.`);
+    } finally { setBusy(''); }
   };
   const inviteAccountant = async () => {
     setAcctMsg('');
@@ -105,6 +142,17 @@ export default function FacturationHome() {
 
   return (
     <Shell onBack={() => navigate('/modules')}>
+      {/* Toast — visible confirmation for every action so a click is never silent */}
+      {flash && (
+        <div className="mb-4 rounded-2xl px-4 py-3 text-sm flex items-start gap-2 border"
+             style={flash.type === 'ok'
+               ? { background: 'rgba(63,156,107,.10)', borderColor: 'rgba(63,156,107,.35)', color: '#2F7A52' }
+               : { background: 'rgba(192,57,43,.08)', borderColor: 'rgba(192,57,43,.30)', color: '#C0392B' }}>
+          <span className="shrink-0">{flash.type === 'ok' ? '✓' : '⚠'}</span>
+          <span className="flex-1">{flash.text}</span>
+          <button onClick={() => setFlash(null)} className="opacity-60 hover:opacity-100">✕</button>
+        </div>
+      )}
       {/* Bouclier Fiscal */}
       <div
         className="rounded-3xl bg-white border p-6 mb-5"
@@ -166,21 +214,27 @@ export default function FacturationHome() {
       {/* Actions & tests */}
       <div className="flex flex-wrap gap-2 mb-5">
         {!status?.dgfip_activated && (
-          <button onClick={activateDGFiP}
-            className="text-sm font-semibold px-3 py-2 rounded-xl text-white"
+          <button onClick={activateDGFiP} disabled={busy === 'dgfip'}
+            className="text-sm font-semibold px-3 py-2 rounded-xl text-white disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg,#3F9C6B,#2F7A52)' }}>
-            Activer conformité DGFiP
+            {busy === 'dgfip' ? 'Activation…' : 'Activer conformité DGFiP'}
           </button>
         )}
-        <button onClick={simulateReceived}
-          className="text-sm px-3 py-2 rounded-xl border" style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
-          Simuler une facture reçue
+        <button onClick={simulateReceived} disabled={busy === 'received'}
+          className="text-sm px-3 py-2 rounded-xl border disabled:opacity-50" style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+          {busy === 'received' ? 'Simulation…' : 'Simuler une facture reçue'}
         </button>
-        <button onClick={testEreporting}
-          className="text-sm px-3 py-2 rounded-xl border" style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
-          Envoyer un e-reporting (test)
+        <button onClick={testEreporting} disabled={busy === 'ereport'}
+          className="text-sm px-3 py-2 rounded-xl border disabled:opacity-50" style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+          {busy === 'ereport' ? 'Envoi…' : 'Envoyer un e-reporting (test)'}
         </button>
       </div>
+
+      {lastReport && (
+        <div className="mb-5 -mt-2 text-xs text-[#57534E]">
+          Dernier e-reporting : {lastReport.period} · état <b>{lastReport.state}</b>
+        </div>
+      )}
 
       {/* Invoices */}
       <div className="rounded-3xl bg-white border" style={{ borderColor: '#ECE3D2' }}>
@@ -206,10 +260,18 @@ export default function FacturationHome() {
                 <span className="flex-1 text-[#57534E] truncate">{inv.buyer?.name || '—'}</span>
                 <span className="text-[#1C1917] w-24 text-right">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
                 <StatePill state={inv.state} />
-                <button onClick={() => makeAvoir(inv)}
-                  className="text-xs px-2 py-1 rounded-lg border" style={{ borderColor: '#E7E1D5', color: '#8B8680' }}>
-                  Avoir
-                </button>
+                {avoired[inv.id] ? (
+                  <span className="text-xs px-2 py-1 rounded-lg font-semibold"
+                        style={{ color: '#2F7A52', background: 'rgba(63,156,107,.12)' }}
+                        title={avoired[inv.id]}>
+                    Avoiré ✓
+                  </span>
+                ) : (
+                  <button onClick={() => makeAvoir(inv)} disabled={busy === 'avoir-' + inv.id}
+                    className="text-xs px-2 py-1 rounded-lg border disabled:opacity-50" style={{ borderColor: '#E7E1D5', color: '#8B8680' }}>
+                    {busy === 'avoir-' + inv.id ? '…' : 'Avoir'}
+                  </button>
+                )}
               </div>
             ))}
           </div>
