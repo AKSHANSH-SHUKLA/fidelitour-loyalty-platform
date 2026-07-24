@@ -71,6 +71,23 @@ export default function FacturationHome() {
 
   const band = BAND[coh?.band] || BAND.amber;
 
+  const activateDGFiP = async () => {
+    await facturationAPI.activate({ start_date: '2026-09-01', type_operation: 'services', enterprise_size: 'pme' }).catch(() => {});
+    await loadDashboard();
+  };
+  const simulateReceived = async () => {
+    await facturationAPI.seedReceived({ supplier_name: 'Fournisseur Test SARL', total_ht: 900 }).catch(() => {});
+    await loadDashboard();
+  };
+  const testEreporting = async () => {
+    await facturationAPI.sendEreporting({ period_start: '2026-07-01', period_end: '2026-07-31', totals_by_vat: { '20': 5000, '10': 2000 } }).catch(() => {});
+    await loadDashboard();
+  };
+  const makeAvoir = async (inv) => {
+    await facturationAPI.creditNote(inv.id, { reason: 'Correction (test)' }).catch(() => {});
+    await loadDashboard();
+  };
+
   return (
     <Shell onBack={() => navigate('/modules')}>
       {/* Bouclier Fiscal */}
@@ -131,6 +148,25 @@ export default function FacturationHome() {
              tone={status?.dgfip_activated ? '#2F7A52' : '#B8860B'} />
       </div>
 
+      {/* Actions & tests */}
+      <div className="flex flex-wrap gap-2 mb-5">
+        {!status?.dgfip_activated && (
+          <button onClick={activateDGFiP}
+            className="text-sm font-semibold px-3 py-2 rounded-xl text-white"
+            style={{ background: 'linear-gradient(135deg,#3F9C6B,#2F7A52)' }}>
+            Activer conformité DGFiP
+          </button>
+        )}
+        <button onClick={simulateReceived}
+          className="text-sm px-3 py-2 rounded-xl border" style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+          Simuler une facture reçue
+        </button>
+        <button onClick={testEreporting}
+          className="text-sm px-3 py-2 rounded-xl border" style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+          Envoyer un e-reporting (test)
+        </button>
+      </div>
+
       {/* Invoices */}
       <div className="rounded-3xl bg-white border" style={{ borderColor: '#ECE3D2' }}>
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#F2ECE0' }}>
@@ -155,6 +191,10 @@ export default function FacturationHome() {
                 <span className="flex-1 text-[#57534E] truncate">{inv.buyer?.name || '—'}</span>
                 <span className="text-[#1C1917] w-24 text-right">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
                 <StatePill state={inv.state} />
+                <button onClick={() => makeAvoir(inv)}
+                  className="text-xs px-2 py-1 rounded-lg border" style={{ borderColor: '#E7E1D5', color: '#8B8680' }}>
+                  Avoir
+                </button>
               </div>
             ))}
           </div>
@@ -318,6 +358,7 @@ function Field({ label, children }) {
 function CreateInvoiceModal({ onClose, onCreated }) {
   const [buyer, setBuyer] = useState({ name: '', siren: '', is_company: true });
   const [line, setLine] = useState({ description: '', unit_price: '', vat_rate: 20 });
+  const [simulate, setSimulate] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -333,6 +374,7 @@ function CreateInvoiceModal({ onClose, onCreated }) {
           vat_rate: parseFloat(line.vat_rate || '20'),
         }],
         send: true,
+        simulate: simulate ? 'reject' : undefined,
       });
       await onCreated();
     } catch (e) {
@@ -389,6 +431,10 @@ function CreateInvoiceModal({ onClose, onCreated }) {
             </Field>
           </div>
         </div>
+        <label className="flex items-center gap-2 mt-3 text-xs text-[#8B8680] cursor-pointer">
+          <input type="checkbox" checked={simulate} onChange={(e) => setSimulate(e.target.checked)} />
+          Simuler un rejet (test — voir le message + le bouton de correction)
+        </label>
         {err && <div className="text-sm text-[#C0392B] mt-3">{err}</div>}
         <div className="flex gap-3 mt-5">
           <button onClick={onClose} className="flex-1 py-3 rounded-2xl border text-[#57534E]"

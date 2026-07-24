@@ -205,7 +205,7 @@ def create_invoice(body: Dict[str, Any],
     }
     _db.fact_invoices.insert_one(dict(inv))
     if body.get("send"):
-        return _do_send(t, inv)
+        return _do_send(t, inv, simulate=body.get("simulate"))
     return {"invoice": _public(inv)}
 
 
@@ -219,13 +219,19 @@ def send_invoice(invoice_id: str,
     return _do_send(t, inv)
 
 
-def _do_send(t: Dict[str, Any], inv: Dict[str, Any]) -> Dict[str, Any]:
-    """Idempotent send: same tenant+number never transmits twice."""
+def _do_send(t: Dict[str, Any], inv: Dict[str, Any], simulate: Optional[str] = None) -> Dict[str, Any]:
+    """Idempotent send: same tenant+number never transmits twice.
+    `simulate` (TEST, Mock only): 'reject' | 'error' | 'timeout' forces that outcome
+    so the rejection/error UX can be tested without a real PA."""
     key = IdempotencyGuard.make_key(t["id"], inv["number"])
     cached = _guard.already_sent(key)
     if cached:
         return {"invoice": _public(inv), "idempotent": True, "result": cached}
     conn = get_pdp_connector()
+    # TEST hook: only the in-memory Mock supports forced outcomes.
+    # Map the API vocabulary ('reject') to the Mock's ('refused').
+    if simulate and hasattr(conn, "force_next_send"):
+        conn.force_next_send = {"reject": "refused"}.get(simulate, simulate)
     account_id = t.get("pdp_account_id") or t["id"]
     try:
         created = conn.create_invoice(account_id, inv)
@@ -293,6 +299,27 @@ def list_received(token_data=Depends(require_role(["business_owner", "manager"])
     t = _require_facturation(token_data)
     docs = list(_db.fact_received_invoices.find({"tenant_id": t["id"]}).sort("received_at", -1).limit(500))
     return {"received": [_public(d) for d in docs]}
+
+
+@router.post("/api/owner/facturation/received/seed-test")
+def seed_test_received(body: Dict[str, Any],
+                       token_data=Depends(require_role(["business_owner", "manager"]))):
+    """TEST-ONLY: inject a fake supplier invoice so the purchases side of the
+    Bouclier Fiscal (and the Reçues list) can be exercised with the Mock PA."""
+    t = _require_facturation(token_data)
+    ht = float(body.get("total_ht", 800))
+    vat = round(ht * 0.20, 2)
+    rec = {
+        "id": _new_id(), "tenant_id": t["id"],
+        "supplier": {"name": body.get("supplier_name", "Fournisseur Test SARL"),
+                     "siren": body.get("siren", "444444444"), "is_company": True},
+        "number": body.get("number", "F-SUP-001"),
+        "total_ht": ht, "total_vat": vat, "total_ttc": round(ht + vat, 2),
+        "state": InvoiceState.RECEIVED,
+        "received_at": _now(),
+    }
+    _db.fact_received_invoices.insert_one(dict(rec))
+    return {"received": _public(rec)}
 
 
 @router.post("/api/owner/facturation/received/{rid}/mark")

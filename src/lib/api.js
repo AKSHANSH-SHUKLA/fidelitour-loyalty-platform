@@ -209,6 +209,7 @@ export const facturationAPI = {
   creditNote: (id, data) => api.post('/owner/facturation/invoices/' + id + '/credit-note', data),
   listReceived: () => api.get('/owner/facturation/received'),
   markReceived: (id, data) => api.post('/owner/facturation/received/' + id + '/mark', data),
+  seedReceived: (data) => api.post('/owner/facturation/received/seed-test', data || {}),
   sendEreporting: (data) => api.post('/owner/facturation/ereporting', data),
   coherence: () => api.get('/owner/facturation/coherence'),
 };
