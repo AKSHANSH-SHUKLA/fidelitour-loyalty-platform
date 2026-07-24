@@ -33,6 +33,8 @@ export default function FacturationHome() {
   const [coh, setCoh] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [acctEmail, setAcctEmail] = useState('');
+  const [acctMsg, setAcctMsg] = useState('');
 
   const loadDashboard = useCallback(async () => {
     const [st, co, inv] = await Promise.all([
@@ -86,6 +88,19 @@ export default function FacturationHome() {
   const makeAvoir = async (inv) => {
     await facturationAPI.creditNote(inv.id, { reason: 'Correction (test)' }).catch(() => {});
     await loadDashboard();
+  };
+  const inviteAccountant = async () => {
+    setAcctMsg('');
+    try {
+      const r = await facturationAPI.inviteAccountant(acctEmail);
+      const tp = r.data?.temp_password;
+      setAcctMsg(tp
+        ? `Comptable invité. Mot de passe temporaire : ${tp} (à transmettre une seule fois)`
+        : 'Comptable lié à votre dossier.');
+      setAcctEmail('');
+    } catch (e) {
+      setAcctMsg("Échec de l'invitation (email déjà utilisé ?).");
+    }
   };
 
   return (
@@ -199,6 +214,26 @@ export default function FacturationHome() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Mon comptable */}
+      <div className="rounded-3xl bg-white border mt-5 p-5" style={{ borderColor: '#ECE3D2' }}>
+        <h3 className="font-bold text-[#1C1917] mb-1">Mon comptable</h3>
+        <p className="text-sm text-[#57534E] mb-3">
+          Donnez accès à votre expert-comptable — il verra votre conformité depuis son Espace Cabinet.
+        </p>
+        <div className="flex gap-2">
+          <input className="fld-a flex-1" value={acctEmail} inputMode="email"
+                 onChange={(e) => setAcctEmail(e.target.value)}
+                 placeholder="email@cabinet-comptable.fr" />
+          <button onClick={inviteAccountant} disabled={!acctEmail.includes('@')}
+                  className="text-sm font-semibold px-4 rounded-xl text-white disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+            Inviter
+          </button>
+        </div>
+        {acctMsg && <div className="text-xs mt-2" style={{ color: '#2F7A52' }}>{acctMsg}</div>}
+        <style>{`.fld-a{border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none}.fld-a:focus{border-color:#7A3E70}`}</style>
       </div>
 
       {showCreate && (

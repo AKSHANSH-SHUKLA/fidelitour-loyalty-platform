@@ -1,0 +1,197 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Building2, ShieldCheck, AlertTriangle, Download, RefreshCw, X, ChevronRight,
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { comptableAPI } from '../lib/api';
+
+/**
+ * CabinetDashboard — the expert-comptable control tower.
+ * One login → every linked client's compliance health (Bouclier), red-first,
+ * with per-client drill-down, a combined alert feed, and a single CSV export.
+ */
+
+const BAND = {
+  red: { c: '#C0392B', bg: 'rgba(192,57,43,.12)', dot: '#C0392B', label: 'Action requise' },
+  amber: { c: '#B8860B', bg: 'rgba(224,169,43,.14)', dot: '#E0A92B', label: 'À vérifier' },
+  green: { c: '#2F7A52', bg: 'rgba(63,156,107,.12)', dot: '#3F9C6B', label: 'Conforme' },
+};
+
+export default function CabinetDashboard() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [data, setData] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [drill, setDrill] = useState(null); // {summary, invoices}
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [c, a] = await Promise.all([
+      comptableAPI.clients().catch(() => null),
+      comptableAPI.alerts().catch(() => null),
+    ]);
+    setData(c?.data || { clients: [], totals: {} });
+    setAlerts(a?.data?.alerts || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openClient = async (tid) => {
+    const r = await comptableAPI.client(tid).catch(() => null);
+    if (r?.data) setDrill(r.data);
+  };
+
+  const totals = data?.totals || {};
+
+  return (
+    <div className="min-h-screen" style={{
+      background:
+        'radial-gradient(1200px 500px at 85% -10%, rgba(107,46,90,.06), transparent 60%), #FBF7EF',
+    }}>
+      {/* header */}
+      <header className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+               style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+            <Building2 size={16} color="#fff" />
+          </div>
+          <span className="font-bold text-[#1C1917]">Espace Cabinet</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <a href={comptableAPI.exportUrl}
+             className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-white"
+             style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+            <Download size={15} /> Exporter tout (CSV)
+          </a>
+          <button onClick={() => { logout(); navigate('/login'); }}
+                  className="text-sm text-[#57534E] hover:text-[#1C1917]">Se déconnecter</button>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 pb-16">
+        {/* totals */}
+        <div className="grid grid-cols-4 gap-3 mb-5">
+          <Stat label="Dossiers" value={totals.count ?? 0} />
+          <Stat label="Action requise" value={totals.red ?? 0} tone="#C0392B" />
+          <Stat label="À vérifier" value={totals.amber ?? 0} tone="#B8860B" />
+          <Stat label="Conformes" value={totals.green ?? 0} tone="#2F7A52" />
+        </div>
+
+        {/* alerts feed */}
+        {alerts.length > 0 && (
+          <div className="rounded-2xl bg-white border p-4 mb-5" style={{ borderColor: '#ECE3D2' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-sm text-[#1C1917]">À traiter en priorité</h3>
+              <button onClick={load} className="text-[#8B8680] hover:text-[#1C1917]"><RefreshCw size={15} /></button>
+            </div>
+            <ul className="space-y-1.5">
+              {alerts.slice(0, 8).map((a, i) => (
+                <li key={i} className="flex items-center gap-2 text-sm">
+                  <AlertTriangle size={14} style={{ color: BAND[a.level]?.c }} />
+                  <button onClick={() => openClient(a.tenant_id)}
+                          className="font-semibold text-[#1C1917] hover:underline">{a.client}</button>
+                  <span className="text-[#57534E]">— {a.message}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* client list */}
+        <div className="rounded-3xl bg-white border" style={{ borderColor: '#ECE3D2' }}>
+          <div className="px-5 py-3 border-b font-bold text-[#1C1917]" style={{ borderColor: '#F2ECE0' }}>
+            Mes dossiers ({totals.count ?? 0})
+          </div>
+          {loading ? (
+            <div className="px-5 py-10 text-center text-sm text-[#8B8680]">Chargement…</div>
+          ) : (data?.clients || []).length === 0 ? (
+            <div className="px-5 py-10 text-center text-sm text-[#8B8680]">
+              Aucun dossier lié. Vos clients vous ajoutent depuis leur espace Facturation.
+            </div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+              {data.clients.map((c) => {
+                const b = BAND[c.band] || BAND.amber;
+                return (
+                  <button key={c.tenant_id} onClick={() => openClient(c.tenant_id)}
+                          className="w-full px-5 py-3 flex items-center gap-3 text-sm hover:bg-[#FCFAF5] text-left">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: b.dot }} />
+                    <span className="font-semibold text-[#1C1917] flex-1 truncate">{c.name}</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: b.c, background: b.bg }}>{c.score}/100</span>
+                    <span className="text-[#8B8680] w-24 text-right hidden md:block">{c.issued} émises · {c.received} reçues</span>
+                    <ChevronRight size={16} className="text-[#C6BFB2]" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <p className="text-[11px] text-[#A8A29E] mt-4 text-center italic">
+          Indicateur informatif de cohérence — ni conseil fiscal, ni ECF.
+        </p>
+      </main>
+
+      {drill && <DrillModal data={drill} onClose={() => setDrill(null)} />}
+    </div>
+  );
+}
+
+function Stat({ label, value, tone = '#1C1917' }) {
+  return (
+    <div className="rounded-2xl bg-white border p-4 text-center" style={{ borderColor: '#ECE3D2' }}>
+      <div className="text-2xl font-extrabold" style={{ color: tone }}>{value}</div>
+      <div className="text-[11px] text-[#8B8680] mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function DrillModal({ data, onClose }) {
+  const s = data.summary || {};
+  const b = BAND[s.band] || BAND.amber;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
+      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: '#F2ECE0' }}>
+          <div>
+            <h3 className="text-lg font-bold text-[#1C1917]">{s.name}</h3>
+            <span className="text-xs" style={{ color: b.c }}>
+              <ShieldCheck size={12} className="inline mr-1" />{b.label} · {s.score}/100
+            </span>
+          </div>
+          <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
+        </div>
+        <div className="p-5">
+          {(s.alerts || []).length > 0 && (
+            <ul className="space-y-1.5 mb-4">
+              {s.alerts.map((a, i) => (
+                <li key={i} className="flex items-center gap-2 text-sm">
+                  <AlertTriangle size={14} style={{ color: BAND[a.level]?.c }} />
+                  <span className="text-[#44403C]">{a.message}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <h4 className="text-sm font-bold text-[#1C1917] mb-2">Factures émises</h4>
+          {(data.invoices || []).length === 0 ? (
+            <div className="text-sm text-[#8B8680]">Aucune facture.</div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+              {data.invoices.map((inv) => (
+                <div key={inv.id} className="py-2 flex items-center gap-2 text-sm">
+                  <span className="font-semibold text-[#1C1917] w-28">{inv.number}</span>
+                  <span className="flex-1 text-[#57534E] truncate">{inv.buyer?.name || '—'}</span>
+                  <span className="text-[#1C1917]">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

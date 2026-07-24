@@ -1,0 +1,222 @@
+"""
+Cabinet multi-dossier — the accountant (expert-comptable) control tower.
+
+Status: 🟡 New (Step 7 of the Facturation build).
+Mounts at: /api/owner/facturation/cabinet/*  (owner links their accountant)
+           /api/comptable/*                   (accountant sees all their clients)
+
+Why this exists:
+  A French accountant with clients spread across many PAs must log into each PA
+  separately (see the "Madame Rousseau" problem). Only ~10 of ~150 PAs offer a
+  real cabinet view. FidClic offers one: an accountant logs in ONCE and sees the
+  compliance health (Bouclier Fiscal) of ALL their linked clients, red-first,
+  with per-client drill-down and a single export. This turns the accountant into
+  a distribution channel — they bring their whole client book onto FidClic.
+
+Model:
+  - New role: "comptable".
+  - Collection `cabinet_links`: {comptable_email, tenant_id, status} — the owner
+    (client) grants their accountant access by email (the "mandat" in practice).
+  - The accountant's endpoints aggregate over the tenants linked to their email.
+
+Safety: leaf module via features/_loader; a load failure can't take the app down.
+Legal: the Bouclier is an informational indicator, not tax advice / not an ECF.
+"""
+from __future__ import annotations
+
+import io
+import csv
+import secrets
+from datetime import datetime, timezone
+from typing import Dict, Any, List, Optional
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException, Response
+from auth import require_role, hash_password
+
+router = APIRouter(tags=["cabinet"])
+_db = None
+
+
+def init(db):
+    global _db
+    _db = db
+
+
+# --------------------------------------------------------------------------
+# helpers
+# --------------------------------------------------------------------------
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _norm(email: str) -> str:
+    return (email or "").strip().lower()
+
+
+def _tenant(tid):
+    return _db.tenants.find_one({"id": tid})
+
+
+def _linked_tenant_ids(comptable_email: str) -> List[str]:
+    links = _db.cabinet_links.find({"comptable_email": _norm(comptable_email), "status": "active"})
+    return [l["tenant_id"] for l in links]
+
+
+def _client_summary(tenant: Dict[str, Any]) -> Dict[str, Any]:
+    """Light per-client compliance snapshot (same 3 rules as the Bouclier)."""
+    tid = tenant["id"]
+    issued = _db.fact_invoices.count_documents({"tenant_id": tid})
+    received = _db.fact_received_invoices.count_documents({"tenant_id": tid})
+    bad = _db.fact_invoices.count_documents(
+        {"tenant_id": tid, "state": {"$in": ["error", "refused"]}})
+    alerts: List[Dict[str, Any]] = []
+    if bad:
+        alerts.append({"level": "red", "message": f"{bad} facture(s) refusée(s)/en erreur."})
+    if not tenant.get("dgfip_activated"):
+        alerts.append({"level": "amber", "message": "Conformité DGFiP non activée."})
+    if received == 0:
+        alerts.append({"level": "amber", "message": "Aucune facture fournisseur reçue."})
+    reds = sum(1 for a in alerts if a["level"] == "red")
+    ambers = sum(1 for a in alerts if a["level"] == "amber")
+    score = max(0, 100 - reds * 25 - ambers * 8)
+    band = "red" if reds else ("amber" if ambers else "green")
+    return {
+        "tenant_id": tid,
+        "name": tenant.get("legal_name") or tenant.get("name"),
+        "siren": tenant.get("siren"),
+        "band": band, "score": score,
+        "issued": issued, "received": received,
+        "dgfip_activated": bool(tenant.get("dgfip_activated")),
+        "alerts": alerts,
+    }
+
+
+# ==========================================================================
+# OWNER side — link / unlink my accountant
+# ==========================================================================
+
+@router.post("/api/owner/facturation/cabinet/invite")
+def invite_accountant(body: Dict[str, Any],
+                      token_data=Depends(require_role(["business_owner"]))):
+    """Grant my accountant access to my facturation (the 'mandat').
+    Creates a comptable login if the email is new (returns a temp password once)."""
+    email = _norm(body.get("email"))
+    if not email or "@" not in email:
+        raise HTTPException(422, "Email invalide.")
+    t = _tenant(token_data.tenant_id)
+    if not t or not t.get("facturation_enabled"):
+        raise HTTPException(403, "Module Facturation non activé.")
+
+    temp_password = None
+    existing = _db.users.find_one({"email": email})
+    if not existing:
+        temp_password = secrets.token_urlsafe(6)
+        _db.users.insert_one({
+            "email": email, "role": "comptable", "tenant_id": None,
+            "hashed_password": hash_password(temp_password),
+            "created_at": _now(),
+        })
+    elif existing.get("role") not in ("comptable",):
+        raise HTTPException(409, "Cet email est déjà utilisé par un autre type de compte.")
+
+    if not _db.cabinet_links.find_one({"comptable_email": email, "tenant_id": t["id"]}):
+        _db.cabinet_links.insert_one({
+            "id": str(uuid4()), "comptable_email": email,
+            "tenant_id": t["id"], "status": "active", "created_at": _now(),
+        })
+    return {"ok": True, "email": email, "temp_password": temp_password}
+
+
+@router.get("/api/owner/facturation/cabinet/links")
+def list_my_accountants(token_data=Depends(require_role(["business_owner"]))):
+    links = list(_db.cabinet_links.find({"tenant_id": token_data.tenant_id, "status": "active"}))
+    return {"accountants": [{"email": l["comptable_email"], "since": l.get("created_at")} for l in links]}
+
+
+@router.delete("/api/owner/facturation/cabinet/links")
+def revoke_accountant(body: Dict[str, Any],
+                      token_data=Depends(require_role(["business_owner"]))):
+    email = _norm(body.get("email"))
+    _db.cabinet_links.update_many(
+        {"tenant_id": token_data.tenant_id, "comptable_email": email},
+        {"$set": {"status": "revoked"}})
+    return {"ok": True}
+
+
+# ==========================================================================
+# COMPTABLE side — the control tower
+# ==========================================================================
+
+@router.get("/api/comptable/clients")
+def cabinet_clients(token_data=Depends(require_role(["comptable"]))):
+    """All clients linked to this accountant, with a red-first compliance summary."""
+    tids = _linked_tenant_ids(token_data.email)
+    summaries = []
+    for tid in tids:
+        t = _tenant(tid)
+        if t:
+            summaries.append(_client_summary(t))
+    order = {"red": 0, "amber": 1, "green": 2}
+    summaries.sort(key=lambda s: (order.get(s["band"], 3), -len(s["alerts"])))
+    reds = sum(1 for s in summaries if s["band"] == "red")
+    ambers = sum(1 for s in summaries if s["band"] == "amber")
+    return {"clients": summaries,
+            "totals": {"count": len(summaries), "red": reds, "amber": ambers,
+                       "green": len(summaries) - reds - ambers}}
+
+
+def _require_link(email: str, tenant_id: str):
+    if not _db.cabinet_links.find_one({"comptable_email": _norm(email),
+                                       "tenant_id": tenant_id, "status": "active"}):
+        raise HTTPException(403, "Vous n'avez pas accès à ce dossier.")
+
+
+@router.get("/api/comptable/clients/{tenant_id}")
+def cabinet_client_detail(tenant_id: str, token_data=Depends(require_role(["comptable"]))):
+    """Drill into one client (read-only): invoices + compliance snapshot."""
+    _require_link(token_data.email, tenant_id)
+    t = _tenant(tenant_id)
+    if not t:
+        raise HTTPException(404, "Dossier introuvable.")
+    invoices = list(_db.fact_invoices.find({"tenant_id": tenant_id}).sort("created_at", -1).limit(200))
+    for i in invoices:
+        i.pop("_id", None)
+    return {"summary": _client_summary(t), "invoices": invoices}
+
+
+@router.get("/api/comptable/alerts")
+def cabinet_alerts(token_data=Depends(require_role(["comptable"]))):
+    """One combined feed of everything that needs attention across the portfolio."""
+    feed = []
+    for tid in _linked_tenant_ids(token_data.email):
+        t = _tenant(tid)
+        if not t:
+            continue
+        s = _client_summary(t)
+        for a in s["alerts"]:
+            feed.append({"client": s["name"], "tenant_id": tid, **a})
+    order = {"red": 0, "amber": 1}
+    feed.sort(key=lambda a: order.get(a["level"], 2))
+    return {"alerts": feed}
+
+
+@router.get("/api/comptable/export")
+def cabinet_export(token_data=Depends(require_role(["comptable"]))):
+    """One CSV of every client's issued invoices — no per-PA logins, no re-keying."""
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["client", "siren", "invoice_number", "buyer", "total_ht", "total_vat", "total_ttc", "state", "date"])
+    for tid in _linked_tenant_ids(token_data.email):
+        t = _tenant(tid)
+        if not t:
+            continue
+        cname = t.get("legal_name") or t.get("name")
+        for inv in _db.fact_invoices.find({"tenant_id": tid}):
+            w.writerow([cname, t.get("siren", ""), inv.get("number", ""),
+                        (inv.get("buyer") or {}).get("name", ""),
+                        inv.get("total_ht", 0), inv.get("total_vat", 0),
+                        inv.get("total_ttc", 0), inv.get("state", ""), inv.get("date", "")])
+    return Response(content=buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=export_cabinet.csv"})

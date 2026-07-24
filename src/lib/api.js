@@ -212,6 +212,18 @@ export const facturationAPI = {
   seedReceived: (data) => api.post('/owner/facturation/received/seed-test', data || {}),
   sendEreporting: (data) => api.post('/owner/facturation/ereporting', data),
   coherence: () => api.get('/owner/facturation/coherence'),
+  // Cabinet (owner side): link/unlink my accountant.
+  inviteAccountant: (email) => api.post('/owner/facturation/cabinet/invite', { email }),
+  listAccountants: () => api.get('/owner/facturation/cabinet/links'),
+  revokeAccountant: (email) => api.delete('/owner/facturation/cabinet/links', { data: { email } }),
+};
+
+// Cabinet multi-dossier — accountant (role "comptable") control tower.
+export const comptableAPI = {
+  clients: () => api.get('/comptable/clients'),
+  client: (tenantId) => api.get('/comptable/clients/' + tenantId),
+  alerts: () => api.get('/comptable/alerts'),
+  exportUrl: '/api/comptable/export',
 };
 
 export const publicAPI = {

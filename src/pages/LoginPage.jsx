@@ -17,6 +17,7 @@ const LoginPage = () => {
       if (res.role === 'super_admin') navigate('/admin');
       else if (res.role === 'staff') navigate('/dashboard/scan');
       else if (res.role === 'business_owner') navigate('/modules');
+      else if (res.role === 'comptable') navigate('/cabinet');
       else navigate('/dashboard');
     } catch (err) {
       setError('Invalid credentials');

@@ -102,6 +102,7 @@ import GoogleTranslateBridge, { RouteAwareRetranslator } from './components/Goog
 // Facturation module (French e-invoicing) — post-login module chooser + home.
 import ModuleChooserPage from './pages/ModuleChooserPage';
 import FacturationHome from './pages/FacturationHome';
+import CabinetDashboard from './pages/CabinetDashboard';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -113,6 +114,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     // back to the landing.
     if (user.role === 'staff') return <Navigate to="/dashboard/scan" replace />;
     if (user.role === 'manager') return <Navigate to="/dashboard/analytics" replace />;
+    if (user.role === 'comptable') return <Navigate to="/cabinet" replace />;
     return <Navigate to="/" replace />;
   }
   return children;
@@ -126,6 +128,7 @@ const PublicRoute = ({ children }) => {
     // Owners land on the module chooser (CRM+Fidélité vs Facturation).
     // Handles already-logged-in sessions too (not just fresh logins).
     if (user.role === 'business_owner') return <Navigate to="/modules" replace />;
+    if (user.role === 'comptable') return <Navigate to="/cabinet" replace />;
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -164,6 +167,12 @@ function App() {
           <Route path="/facturation" element={
             <ProtectedRoute allowedRoles={['business_owner', 'manager']}>
               <FacturationHome />
+            </ProtectedRoute>
+          } />
+          {/* Accountant (comptable) control tower over all their linked clients. */}
+          <Route path="/cabinet" element={
+            <ProtectedRoute allowedRoles={['comptable']}>
+              <CabinetDashboard />
             </ProtectedRoute>
           } />
 
