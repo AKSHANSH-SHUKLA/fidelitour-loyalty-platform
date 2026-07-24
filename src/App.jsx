@@ -123,6 +123,9 @@ const PublicRoute = ({ children }) => {
   if (loading) return <div>Loading...</div>;
   if (user) {
     if (user.role === 'super_admin') return <Navigate to="/admin" replace />;
+    // Owners land on the module chooser (CRM+Fidélité vs Facturation).
+    // Handles already-logged-in sessions too (not just fresh logins).
+    if (user.role === 'business_owner') return <Navigate to="/modules" replace />;
     return <Navigate to="/dashboard" replace />;
   }
   return children;
