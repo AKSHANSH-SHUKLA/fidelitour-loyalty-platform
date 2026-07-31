@@ -1,5 +1,10 @@
 # Dev/test-only dependencies — NOT installed in production (Vercel).
-# Install locally with:  pip3 install -r api/requirements-dev.txt --break-system-packages
+#
+# The tests import real feature modules, so they need the RUNTIME deps too.
+# First-time local setup (run from the repo root):
+#
+#   pip3 install -r api/requirements.txt -r api/requirements-dev.txt --break-system-packages
+#   cd api && python3 tests/test_s1_s2.py
 #
 # Kept separate from requirements.txt on purpose: the serverless bundle stays
 # small and nothing test-related can ever ship to production.

@@ -5,6 +5,8 @@ import {
   MapPin, BrainCircuit, ScanLine, Smartphone, Settings2, BarChart3,
   Users, TrendingUp, Star, Sparkles, Zap, Target, Megaphone, Gift,
   ChevronRight, Check, ArrowRight, Award, Activity, MessageSquare,
+  ReceiptText, ShieldCheck, Building2, FileCheck2, AlertTriangle,
+  CalendarClock, FolderKanban, Inbox,
 } from 'lucide-react';
 import { AuchanPreview, DEFAULT_LAYOUT } from '../components/AuchanCard';
 import HeroPhoneShowcase from '../components/HeroPhoneShowcase';
@@ -416,7 +418,13 @@ const LandingPage = () => {
           </Link>
           <div className="hidden md:flex items-center gap-8 font-medium text-sm">
             <a href="#features" className="hover:text-[#B85C38] transition-colors">Fonctionnalités</a>
-            <a href="#proof"    className="hover:text-[#B85C38] transition-colors">Pourquoi FidéliTour</a>
+            {/* Two audiences, two entry points — the reform link carries a dot
+                because it is the time-sensitive one (Sept 2026 deadline). */}
+            <a href="#facturation" className="hover:text-[#2F6FB3] transition-colors flex items-center gap-1.5">
+              Facturation 2026
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.sky }} />
+            </a>
+            <a href="#cabinet"  className="hover:text-[#8B7DC9] transition-colors">Experts-comptables</a>
             <a href="#how"      className="hover:text-[#B85C38] transition-colors">Comment ça marche</a>
             <a href="#pricing"  className="hover:text-[#B85C38] transition-colors">Tarifs</a>
           </div>
@@ -827,6 +835,287 @@ const LandingPage = () => {
           <p className="text-xs text-center mt-8 italic" style={{ color: C.inkFaint }}>
             Scénarios illustratifs — chaque commerçant configure FidéliTour selon ses propres règles.
           </p>
+        </div>
+      </section>
+
+      {/* ───────────── FACTURATION ÉLECTRONIQUE — the 2026 reform hook ─────────────
+          Placement is deliberate: this sits right after the sector use-cases and
+          before the loyalty feature grid, because the reform is a DEADLINE, and a
+          deadline is the strongest reason a TPE clicks today. Design language is
+          intentionally the existing pastel/bento system — a 21st.dev-inspired
+          redesign can drop in later without touching the copy or the routes. */}
+      <section id="facturation" className="relative py-20 lg:py-28 overflow-hidden"
+               style={{ background: `linear-gradient(180deg, ${C.cream} 0%, ${C.azure}55 100%)` }}>
+        <div aria-hidden="true" className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-40"
+             style={{ background: `radial-gradient(circle, ${C.sky}66, transparent 70%)` }} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center mb-14">
+            <Eyebrow color={C.sky} bg={C.azure}>Nouveau module</Eyebrow>
+            <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight">
+              La facturation électronique,<br />
+              <span className="bg-clip-text text-transparent"
+                    style={{ backgroundImage: `linear-gradient(135deg, ${C.sky} 0%, ${C.lavender} 100%)` }}>
+                sans y penser une seule seconde
+              </span>
+            </h2>
+            <p className="mt-5 text-lg max-w-2xl mx-auto" style={{ color: C.inkMute }}>
+              Dès le 1<sup>er</sup> septembre 2026, toutes les entreprises doivent pouvoir
+              <b> recevoir</b> des factures électroniques. Émission obligatoire pour les TPE
+              en septembre 2027. FidClic s'occupe de tout — vous, vous facturez comme avant.
+            </p>
+          </div>
+
+          {/* deadline strip — urgency without drama */}
+          <div className="flex flex-wrap justify-center gap-3 mb-14">
+            {[
+              { d: '1 sept. 2026', t: 'Réception obligatoire — toutes les entreprises', c: C.terracotta, bg: C.shellPink },
+              { d: '1 sept. 2027', t: 'Émission obligatoire — TPE, PME, micro', c: C.lavender, bg: C.lilac },
+              { d: '1 janv. 2027', t: 'Fin du régime simplifié de TVA (CA12)', c: C.teal, bg: C.mint },
+            ].map((x) => (
+              <div key={x.d} className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border bg-white/70 backdrop-blur"
+                   style={{ borderColor: C.hairline }}>
+                <CalendarClock size={16} style={{ color: x.c }} />
+                <span className="text-sm font-bold" style={{ color: x.c }}>{x.d}</span>
+                <span className="text-sm" style={{ color: C.inkMute }}>{x.t}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* four pillars */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: ReceiptText, c: C.sky, bg: C.azure, title: 'Émettre en conforme',
+                body: "Vos factures partent au format légal (Factur-X) via une plateforme agréée. Vous remplissez un formulaire simple — le reste est invisible." },
+              { icon: Inbox, c: C.teal, bg: C.mint, title: 'Recevoir vos fournisseurs',
+                body: "Les factures de vos fournisseurs arrivent directement dans votre espace, classées, prêtes pour votre comptable. Fini les PDF perdus dans les mails." },
+              { icon: BarChart3, c: C.lavender, bg: C.lilac, title: 'E-reporting automatique',
+                body: "Vos ventes aux particuliers sont transmises à l'administration aux bonnes échéances, sans que vous ayez à y penser." },
+              { icon: FileCheck2, c: C.sage, bg: C.meadow, title: 'Avoirs & suivi',
+                body: "Une erreur ? On corrige par un avoir, comme la loi l'exige. Et vous suivez chaque facture : envoyée, acceptée, refusée, payée." },
+            ].map((f) => {
+              const Icon = f.icon;
+              return (
+                <div key={f.title} className="rounded-3xl p-6 bg-white border transition-all hover:-translate-y-1 hover:shadow-lg"
+                     style={{ borderColor: C.hairline }}>
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4"
+                       style={{ background: f.bg }}>
+                    <Icon size={20} style={{ color: f.c }} />
+                  </div>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: C.inkDeep }}>{f.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: C.inkMute }}>{f.body}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bouclier Fiscal — the differentiator, given its own stage */}
+          <div className="mt-8 rounded-3xl border overflow-hidden bg-white" style={{ borderColor: C.hairline }}>
+            <div className="grid lg:grid-cols-2">
+              <div className="p-8 lg:p-10">
+                <Eyebrow color={C.terracotta} bg={C.shellPink}>Exclusivité FidClic</Eyebrow>
+                <h3 className="font-['Cormorant_Garamond'] text-3xl font-bold mt-3 mb-3" style={{ color: C.inkDeep }}>
+                  Le Bouclier Fiscal
+                </h3>
+                <p className="text-base leading-relaxed mb-5" style={{ color: C.inkMute }}>
+                  Les autres logiciels vous disent « c'est envoyé ». FidClic vous dit
+                  <b> « et voici ce qui cloche »</b> : un score de cohérence, mis à jour en continu,
+                  avec le détail de chaque point — pour que vous voyiez vos données comme
+                  l'administration les verra.
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'Factures refusées ou en erreur, repérées immédiatement',
+                    'Conformité DGFiP et statut de votre plateforme, en un coup d\'œil',
+                    'Cohérence achats / ventes surveillée mois après mois',
+                    'Chaque point du score expliqué — jamais de boîte noire',
+                  ].map((li) => (
+                    <li key={li} className="flex items-start gap-2.5 text-sm" style={{ color: C.inkSoft }}>
+                      <Check size={16} className="mt-0.5 shrink-0" style={{ color: C.sage }} />
+                      {li}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs italic mt-5" style={{ color: C.inkFaint }}>
+                  Indicateur informatif de cohérence — ni conseil fiscal, ni ECF.
+                </p>
+              </div>
+
+              {/* score mockup */}
+              <div className="p-8 lg:p-10 flex items-center justify-center"
+                   style={{ background: `linear-gradient(135deg, ${C.sand} 0%, ${C.butter}88 100%)` }}>
+                <div className="w-full max-w-sm rounded-3xl bg-white border p-6 shadow-sm" style={{ borderColor: C.hairline }}>
+                  <div className="flex items-start gap-5">
+                    <div className="shrink-0 text-center">
+                      <div className="w-24 h-24 rounded-full flex items-center justify-center"
+                           style={{ background: `conic-gradient(${C.sage} 86%, ${C.hairline} 0)` }}>
+                        <div className="w-[76px] h-[76px] rounded-full bg-white flex flex-col items-center justify-center">
+                          <span className="text-2xl font-extrabold" style={{ color: C.sage }}>86</span>
+                          <span className="text-[10px]" style={{ color: C.inkFaint }}>/100</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs font-bold flex items-center justify-center gap-1" style={{ color: C.sage }}>
+                        <ShieldCheck size={12} /> Conforme
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-bold mb-2" style={{ color: C.inkDeep }}>Pourquoi ce score ?</div>
+                      {[
+                        ['Base', '100', C.inkMute],
+                        ['1 facture refusée non corrigée', '−15', C.terracotta],
+                        ['Aucune anomalie TVA détectée', '±0', C.sage],
+                      ].map(([l, v, col]) => (
+                        <div key={l} className="flex items-center justify-between text-xs py-1">
+                          <span style={{ color: C.inkMute }}>{l}</span>
+                          <span className="font-bold" style={{ color: col }}>{v}</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between text-xs pt-2 mt-1 border-t"
+                           style={{ borderColor: C.hairline }}>
+                        <span className="font-bold" style={{ color: C.inkDeep }}>Score</span>
+                        <span className="font-bold" style={{ color: C.sage }}>86/100</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-10">
+            <Link to="/register"
+                  className="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-full font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ background: `linear-gradient(135deg, ${C.sky} 0%, ${C.lavender} 100%)` }}>
+              Préparer mon entreprise <ArrowRight size={18} />
+            </Link>
+            <p className="text-xs mt-3" style={{ color: C.inkFaint }}>
+              Module optionnel — activez-le quand vous voulez, votre programme de fidélité continue sans changement.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────── ESPACE CABINET — the accountant channel ─────────────
+          Separate audience, separate section, separate CTA. An accountant who
+          lands here should immediately feel this was built for THEM, not for a
+          merchant — the whole distribution strategy depends on that. */}
+      <section id="cabinet" className="relative py-20 lg:py-28 overflow-hidden"
+               style={{ background: `linear-gradient(180deg, #FFFFFF 0%, ${C.lilac}66 100%)` }}>
+        <div aria-hidden="true" className="absolute -bottom-32 -left-24 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-40"
+             style={{ background: `radial-gradient(circle, ${C.lavender}55, transparent 70%)` }} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* copy */}
+            <div>
+              <Eyebrow color={C.lavender} bg={C.lilac}>Experts-comptables</Eyebrow>
+              <h2 className="font-['Cormorant_Garamond'] text-4xl md:text-5xl font-bold leading-tight mt-3">
+                Tous vos dossiers.<br />
+                <span className="bg-clip-text text-transparent"
+                      style={{ backgroundImage: `linear-gradient(135deg, ${C.lavender} 0%, ${C.rose} 100%)` }}>
+                  Un seul écran.
+                </span>
+              </h2>
+              <p className="mt-5 text-lg leading-relaxed" style={{ color: C.inkMute }}>
+                Vos clients seront répartis sur des dizaines de plateformes différentes.
+                L'Espace Cabinet vous rend la vue d'ensemble : chaque dossier, son état de
+                conformité, ce qui bloque — et qui s'en occupe.
+              </p>
+
+              <div className="mt-7 space-y-4">
+                {[
+                  { icon: FolderKanban, c: C.lavender, bg: C.lilac, t: 'Portefeuille priorisé',
+                    d: "Les dossiers à risque remontent en haut, automatiquement. Vous savez en 30 secondes où passer votre journée." },
+                  { icon: AlertTriangle, c: C.terracotta, bg: C.shellPink, t: 'Rien ne se perd',
+                    d: "Chaque rejet, chaque erreur devient un dossier assigné, avec une échéance — plus jamais noyé dans les emails." },
+                  { icon: Users, c: C.teal, bg: C.mint, t: 'Votre équipe, vos accès',
+                    d: "Chaque collaborateur ne voit que ses dossiers. Vous, vous voyez tout — y compris qui avance sur quoi." },
+                  { icon: FileCheck2, c: C.sage, bg: C.meadow, t: 'Export vers votre logiciel',
+                    d: "Gardez votre outil de production. Un export propre au format FEC, et vos écritures sont chez vous." },
+                ].map((f) => {
+                  const Icon = f.icon;
+                  return (
+                    <div key={f.t} className="flex gap-4">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                           style={{ background: f.bg }}>
+                        <Icon size={18} style={{ color: f.c }} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-base" style={{ color: C.inkDeep }}>{f.t}</div>
+                        <div className="text-sm mt-0.5 leading-relaxed" style={{ color: C.inkMute }}>{f.d}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link to="/register"
+                      className="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-full font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
+                      style={{ background: `linear-gradient(135deg, ${C.lavender} 0%, ${C.rose} 100%)` }}>
+                  Découvrir l'Espace Cabinet <ArrowRight size={18} />
+                </Link>
+                <span className="text-sm" style={{ color: C.inkFaint }}>
+                  Vos données restent exportables — à tout moment, sans condition.
+                </span>
+              </div>
+            </div>
+
+            {/* dashboard mockup */}
+            <div className="relative">
+              <div className="rounded-3xl bg-white border shadow-xl overflow-hidden" style={{ borderColor: C.hairline }}>
+                <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ background: C.sand, borderColor: C.hairline }}>
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: C.coral }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: C.ochre }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: C.sage }} />
+                  <div className="flex-1 text-center text-[11px]" style={{ color: C.inkFaint }}>
+                    Espace Cabinet — 45 dossiers
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-3 gap-2.5 mb-4">
+                    {[['3', 'Action requise', C.terracotta, C.shellPink],
+                      ['9', 'À vérifier', C.ochre, C.butter],
+                      ['33', 'Conformes', C.sage, C.meadow]].map(([n, l, c, bg]) => (
+                      <div key={l} className="rounded-2xl p-3 text-center" style={{ background: bg }}>
+                        <div className="text-xl font-extrabold" style={{ color: c }}>{n}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: C.inkMute }}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      ['Café Lumière', '58/100', C.terracotta, '2 factures refusées', 'M'],
+                      ['Boulangerie Dupont', '76/100', C.ochre, 'DGFiP non activée', 'L'],
+                      ['Salon Élise', '84/100', C.ochre, '3 à revoir', 'M'],
+                      ['Garage Martin', '100/100', C.sage, 'Conforme', 'L'],
+                    ].map(([name, score, c, note, who]) => (
+                      <div key={name} className="flex items-center gap-2.5 rounded-2xl border px-3 py-2.5"
+                           style={{ borderColor: C.hairline }}>
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: c }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-bold truncate" style={{ color: C.inkDeep }}>{name}</div>
+                          <div className="text-[11px]" style={{ color: c }}>{note}</div>
+                        </div>
+                        <span className="text-[11px] font-bold" style={{ color: c }}>{score}</span>
+                        <span className="w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0"
+                              style={{ background: C.lilac, color: C.lavender }}>{who}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* floating badge */}
+              <div className="absolute -bottom-4 -right-2 rounded-2xl bg-white border px-4 py-3 shadow-lg hidden sm:block"
+                   style={{ borderColor: C.hairline }}>
+                <div className="flex items-center gap-2">
+                  <Building2 size={16} style={{ color: C.lavender }} />
+                  <div>
+                    <div className="text-[11px] font-bold" style={{ color: C.inkDeep }}>Un seul login</div>
+                    <div className="text-[10px]" style={{ color: C.inkFaint }}>pour tout votre portefeuille</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
