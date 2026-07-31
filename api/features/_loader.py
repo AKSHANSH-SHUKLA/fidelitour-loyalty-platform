@@ -54,6 +54,9 @@ MODULES = [
     "features.facturation",
     # Cabinet multi-dossier — accountant (comptable) control tower over clients.
     "features.cabinet",
+    # Audit log — append-only "who did what, when". Compliance + the data source
+    # behind the cabinet's live activity view. Must load AFTER cabinet.
+    "features.audit",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.

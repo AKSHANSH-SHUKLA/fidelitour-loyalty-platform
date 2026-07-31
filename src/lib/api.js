@@ -206,6 +206,10 @@ export const facturationAPI = {
   createInvoice: (data) => api.post('/owner/facturation/invoices', data),
   sendInvoice: (id) => api.post('/owner/facturation/invoices/' + id + '/send'),
   getInvoice: (id) => api.get('/owner/facturation/invoices/' + id),
+  // S1 — the four status families move independently of each other.
+  setReview: (id, data) => api.post('/owner/facturation/invoices/' + id + '/review', data),
+  setPayment: (id, data) => api.post('/owner/facturation/invoices/' + id + '/payment', data),
+  audit: () => api.get('/owner/facturation/audit'),
   creditNote: (id, data) => api.post('/owner/facturation/invoices/' + id + '/credit-note', data),
   listCreditNotes: () => api.get('/owner/facturation/credit-notes'),
   listReceived: () => api.get('/owner/facturation/received'),
@@ -220,6 +224,12 @@ export const facturationAPI = {
 };
 
 // Cabinet multi-dossier — accountant (role "comptable") control tower.
+export const cabinetExtraAPI = {
+  // S2 — "kaun kya kar raha hai" (self-updating: working IS reporting)
+  audit: (tenantId) => api.get('/comptable/audit' + (tenantId ? '?tenant_id=' + tenantId : '')),
+  activity: (days = 7) => api.get('/comptable/activity-summary?days=' + days),
+};
+
 export const comptableAPI = {
   clients: () => api.get('/comptable/clients'),
   client: (tenantId) => api.get('/comptable/clients/' + tenantId),

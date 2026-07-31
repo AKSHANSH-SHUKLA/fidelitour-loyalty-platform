@@ -4,7 +4,7 @@ import {
   Building2, ShieldCheck, AlertTriangle, Download, RefreshCw, X, ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { comptableAPI } from '../lib/api';
+import { comptableAPI, facturationAPI } from '../lib/api';
 
 /**
  * CabinetDashboard — the expert-comptable control tower.
@@ -25,6 +25,7 @@ export default function CabinetDashboard() {
   const [alerts, setAlerts] = useState([]);
   const [drill, setDrill] = useState(null); // {summary, invoices}
   const [loading, setLoading] = useState(true);
+  const [reviewing, setReviewing] = useState(null);   // invoice id being validated
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,6 +43,25 @@ export default function CabinetDashboard() {
   const openClient = async (tid) => {
     const r = await comptableAPI.client(tid).catch(() => null);
     if (r?.data) setDrill(r.data);
+  };
+
+  /**
+   * S1 — the accountant validates a document. This ONLY touches review_status
+   * (and, through it, export readiness); the PA lifecycle and payment state are
+   * left untouched, which is why a refused invoice can still be validated.
+   */
+  const validateInvoice = async (invoiceId, target) => {
+    setReviewing(invoiceId);
+    try {
+      await facturationAPI.setReview(invoiceId, { target });
+      if (drill?.summary?.tenant_id) await openClient(drill.summary.tenant_id);
+      await load();       // portfolio counters refresh (workload view)
+    } catch (e) {
+      // 409 = illegal transition (e.g. two-step review required)
+      alert(e?.response?.data?.detail || 'Action impossible');
+    } finally {
+      setReviewing(null);
+    }
   };
 
   const totals = data?.totals || {};
@@ -121,6 +141,12 @@ export default function CabinetDashboard() {
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: b.dot }} />
                     <span className="font-semibold text-[#1C1917] flex-1 truncate">{c.name}</span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: b.c, background: b.bg }}>{c.score}/100</span>
+                    {/* S1 — pending work, so the cabinet sees WORKLOAD, not just health */}
+                    {c.unreviewed > 0 && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                            style={{ color: '#B8860B', background: 'rgba(184,134,11,.12)' }}
+                            title="Factures non revues">{c.unreviewed} à revoir</span>
+                    )}
                     <span className="text-[#8B8680] w-24 text-right hidden md:block">{c.issued} émises · {c.received} reçues</span>
                     <ChevronRight size={16} className="text-[#C6BFB2]" />
                   </button>
@@ -135,7 +161,10 @@ export default function CabinetDashboard() {
         </p>
       </main>
 
-      {drill && <DrillModal data={drill} onClose={() => setDrill(null)} />}
+      {drill && (
+        <DrillModal data={drill} onClose={() => setDrill(null)}
+                    onReview={validateInvoice} reviewing={reviewing} />
+      )}
     </div>
   );
 }
@@ -155,6 +184,27 @@ function Pill({ state }) {
     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ color: c, background: bg }}>
       {label}
     </span>
+  );
+}
+
+/** S1 — review + payment states, shown next to (not instead of) the PA state. */
+const REVIEW_MAP = {
+  unreviewed: ['Non revue', '#8B8680'],
+  pending_validation: ['À valider', '#B8860B'],
+  correction_required: ['À corriger', '#C0392B'],
+  validated: ['Validée', '#2F7A52'],
+};
+const PAY_MAP = {
+  unpaid: ['Impayée', '#8B8680'], partially_paid: ['Partielle', '#B8860B'],
+  paid: ['Payée', '#2F7A52'], overdue: ['En retard', '#C0392B'],
+  disputed: ['En litige', '#C0392B'],
+};
+
+function MiniChip({ value, map }) {
+  const [label, c] = map[value] || [value || '—', '#8B8680'];
+  return (
+    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+          style={{ color: c, background: c + '1A' }}>{label}</span>
   );
 }
 
@@ -178,7 +228,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
   );
 }
 
-function DrillModal({ data, onClose }) {
+function DrillModal({ data, onClose, onReview, reviewing }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
@@ -212,14 +262,26 @@ function DrillModal({ data, onClose }) {
             <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
               {data.invoices.map((inv) => {
                 const credited = (data.credit_notes || []).some((c) => c.original_invoice_id === inv.id);
+                const busy = reviewing === inv.id;
                 return (
-                  <div key={inv.id} className="py-2 flex items-center gap-2 text-sm">
+                  <div key={inv.id} className="py-2.5 flex items-center gap-2 text-sm flex-wrap">
                     <span className="font-semibold text-[#1C1917] w-24 shrink-0">{inv.number}</span>
-                    <span className="flex-1 text-[#57534E] truncate flex items-center gap-1.5">
+                    <span className="flex-1 min-w-[100px] text-[#57534E] truncate flex items-center gap-1.5">
                       {inv.buyer?.name || '—'} <Chan channel={inv.channel} />
                     </span>
                     <span className="text-[#1C1917] w-20 text-right shrink-0">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
-                    <Pill state={credited ? 'credited' : inv.state} />
+                    <Pill state={credited ? 'credited' : (inv.pa_status || inv.state)} />
+                    <MiniChip value={inv.review_status} map={REVIEW_MAP} />
+                    <MiniChip value={inv.payment_status} map={PAY_MAP} />
+                    {/* Review action — works even on a REFUSED invoice, which is
+                        exactly what the 4-status split unlocked. */}
+                    {inv.review_status !== 'validated' && onReview && (
+                      <button disabled={busy} onClick={() => onReview(inv.id, 'validated')}
+                        className="text-[11px] font-semibold px-2 py-1 rounded-lg text-white disabled:opacity-50 shrink-0"
+                        style={{ background: '#2F7A52' }}>
+                        {busy ? '…' : 'Valider'}
+                      </button>
+                    )}
                   </div>
                 );
               })}

@@ -41,6 +41,20 @@ _db = None
 def init(db):
     global _db
     _db = db
+    try:
+        _db.cabinet_links.create_index([("comptable_email", 1), ("status", 1)])
+        _db.cabinet_links.create_index([("tenant_id", 1), ("status", 1)])
+    except Exception:
+        pass       # best-effort; never break boot
+
+
+def _audit(*args, **kwargs):
+    """Thin wrapper — an audit failure must never break a cabinet action."""
+    try:
+        from features import audit
+        audit.log(*args, **kwargs)
+    except Exception:
+        pass
 
 
 # --------------------------------------------------------------------------
@@ -80,6 +94,10 @@ def _client_summary(tenant: Dict[str, Any]) -> Dict[str, Any]:
         "issued": c["issued"], "received": c["received"],
         "einvoicing": c["einvoicing"], "ereporting": c["ereporting"],
         "credit_notes": c["credit_notes"], "refused_open": c["refused_open"],
+        # S1: pending-work counters so the cabinet sees workload, not just health
+        "unreviewed": c.get("unreviewed", 0),
+        "pending_validation": c.get("pending_validation", 0),
+        "ready_to_export": c.get("ready_to_export", 0),
         "dgfip_activated": bool(tenant.get("dgfip_activated")),
         "alerts": b["alerts"], "breakdown": b["breakdown"],
     }
@@ -118,6 +136,10 @@ def invite_accountant(body: Dict[str, Any],
             "id": str(uuid4()), "comptable_email": email,
             "tenant_id": t["id"], "status": "active", "created_at": _now(),
         })
+    _audit("mandate.granted", tenant_id=t["id"], actor=token_data,
+           object_kind="mandate", object_id=email,
+           after={"comptable_email": email, "status": "active"},
+           detail={"account_created": bool(temp_password)})
     return {"ok": True, "email": email, "temp_password": temp_password}
 
 
@@ -133,7 +155,10 @@ def revoke_accountant(body: Dict[str, Any],
     email = _norm(body.get("email"))
     _db.cabinet_links.update_many(
         {"tenant_id": token_data.tenant_id, "comptable_email": email},
-        {"$set": {"status": "revoked"}})
+        {"$set": {"status": "revoked", "revoked_at": _now()}})
+    _audit("mandate.revoked", tenant_id=token_data.tenant_id, actor=token_data,
+           object_kind="mandate", object_id=email,
+           before={"status": "active"}, after={"status": "revoked"})
     return {"ok": True}
 
 
@@ -159,10 +184,29 @@ def cabinet_clients(token_data=Depends(require_role(["comptable"]))):
                        "green": len(summaries) - reds - ambers}}
 
 
-def _require_link(email: str, tenant_id: str):
-    if not _db.cabinet_links.find_one({"comptable_email": _norm(email),
-                                       "tenant_id": tenant_id, "status": "active"}):
+def assert_mandate(email: str, tenant_id: str) -> Dict[str, Any]:
+    """THE tenant-isolation guard for every comptable-side data access.
+
+    Single source of truth (S2): any endpoint that touches a client's data on
+    behalf of an accountant must call this. It never trusts a caller-supplied
+    tenant_id — it proves an ACTIVE mandate exists for (this accountant, this
+    client) and raises 403 otherwise.
+
+    Returns the mandate document so callers can read scope/assignee from it.
+    """
+    link = _db.cabinet_links.find_one({
+        "comptable_email": _norm(email),
+        "tenant_id": tenant_id,
+        "status": "active",
+    })
+    if not link:
         raise HTTPException(403, "Vous n'avez pas accès à ce dossier.")
+    return link
+
+
+def _require_link(email: str, tenant_id: str):
+    """Backwards-compatible alias — kept so existing call-sites keep working."""
+    return assert_mandate(email, tenant_id)
 
 
 @router.get("/api/comptable/clients/{tenant_id}")
@@ -172,9 +216,11 @@ def cabinet_client_detail(tenant_id: str, token_data=Depends(require_role(["comp
     t = _tenant(tenant_id)
     if not t:
         raise HTTPException(404, "Dossier introuvable.")
+    from services import statuses as st       # lazy: keeps leaf-module independent
     invoices = list(_db.fact_invoices.find({"tenant_id": tenant_id}).sort("created_at", -1).limit(200))
     for i in invoices:
         i.pop("_id", None)
+        st.ensure(i)        # legacy rows get their 4 status families filled in
     credit_notes = list(_db.fact_credit_notes.find({"tenant_id": tenant_id}).sort("created_at", -1).limit(200))
     for c in credit_notes:
         c.pop("_id", None)

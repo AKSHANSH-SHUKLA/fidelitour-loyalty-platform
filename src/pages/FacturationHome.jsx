@@ -315,7 +315,7 @@ export default function FacturationHome() {
                   {inv.buyer?.name || '—'} <ChannelTag channel={inv.channel} />
                 </span>
                 <span className="text-[#1C1917] w-24 text-right">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
-                <StatePill state={inv.state} />
+                <StatusChips inv={inv} />
                 {avoired[inv.id] ? (
                   <span className="text-xs px-2 py-1 rounded-lg font-semibold"
                         style={{ color: '#2F7A52', background: 'rgba(63,156,107,.12)' }}
@@ -459,6 +459,61 @@ function ChannelTag({ channel }) {
         : { color: '#7A3E70', background: 'rgba(122,62,112,.10)' }}
       title={b2b ? 'Facture B2B transmise via la plateforme' : 'Vente B2C — e-reporting à la DGFiP'}>
       {b2b ? 'e-invoicing' : 'e-reporting'}
+    </span>
+  );
+}
+
+/**
+ * S1 — an invoice has FOUR independent lives. Showing them side by side is the
+ * whole point: an invoice can be refused by the PA, validated by the accountant,
+ * half-paid, and failed-to-export — all at once. One pill could never say that.
+ */
+const FAMILY_LABELS = {
+  pa: { label: 'PA', map: {
+    draft: ['Brouillon', '#8B8680'], sent: ['Envoyée', '#2F6FB3'],
+    received: ['Reçue', '#2F6FB3'], accepted: ['Acceptée', '#2F7A52'],
+    refused: ['Refusée', '#C0392B'], paid: ['Payée', '#2F7A52'],
+    error: ['Erreur', '#C0392B'],
+  } },
+  review: { label: 'Révision', map: {
+    unreviewed: ['Non revue', '#8B8680'],
+    pending_validation: ['À valider', '#B8860B'],
+    correction_required: ['À corriger', '#C0392B'],
+    validated: ['Validée', '#2F7A52'],
+  } },
+  payment: { label: 'Paiement', map: {
+    unpaid: ['Impayée', '#8B8680'], partially_paid: ['Partielle', '#B8860B'],
+    paid: ['Payée', '#2F7A52'], overdue: ['En retard', '#C0392B'],
+    disputed: ['En litige', '#C0392B'],
+  } },
+  export: { label: 'Export', map: {
+    not_ready: ['—', '#B4ADA2'], ready: ['Prête', '#2F6FB3'],
+    queued: ['En file', '#B8860B'], exported: ['Exportée', '#2F7A52'],
+    failed: ['Échec', '#C0392B'],
+  } },
+};
+
+function StatusChips({ inv }) {
+  const rows = [
+    ['pa', inv.pa_status || inv.state],
+    ['review', inv.review_status],
+    ['payment', inv.payment_status],
+    ['export', inv.export_status],
+  ];
+  return (
+    <span className="flex items-center gap-1 flex-wrap">
+      {rows.map(([fam, val]) => {
+        const cfg = FAMILY_LABELS[fam];
+        const [label, color] = cfg.map[val] || [val || '—', '#8B8680'];
+        if (fam === 'export' && (!val || val === 'not_ready')) return null;
+        return (
+          <span key={fam} title={`${cfg.label} : ${label}`}
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                style={{ color, background: color + '1A' }}>
+            {label}
+          </span>
+        );
+      })}
     </span>
   );
 }

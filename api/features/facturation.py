@@ -33,7 +33,18 @@ from auth import require_role, get_current_user_data
 from services.pdp_connector import (
     get_pdp_connector, InvoiceState, IdempotencyGuard, PdpError,
 )
+from services import statuses as st
+from services.statuses import ReviewStatus, PaymentStatus, ExportStatus
 import models as m
+
+
+def _audit(*args, **kwargs):
+    """Thin wrapper so a missing/failed audit module can never break invoicing."""
+    try:
+        from features import audit
+        audit.log(*args, **kwargs)
+    except Exception:
+        pass
 
 router = APIRouter(tags=["facturation"])
 _db = None
@@ -76,8 +87,15 @@ def _compute_totals(lines: List[Dict[str, Any]]) -> Dict[str, float]:
 
 
 def _public(inv: Dict[str, Any]) -> Dict[str, Any]:
+    """Strip Mongo internals and guarantee the four status families exist.
+
+    Legacy rows only carry `state`; st.ensure() derives the rest on read so no
+    migration downtime is needed (see services/statuses.py).
+    """
+    if inv is None:
+        return inv
     inv.pop("_id", None)
-    return inv
+    return st.ensure(inv)
 
 
 def compute_bouclier(tenant: Dict[str, Any]) -> Dict[str, Any]:
@@ -94,12 +112,13 @@ def compute_bouclier(tenant: Dict[str, Any]) -> Dict[str, Any]:
     Also returns channel counts (B2B e-invoicing vs B2C e-reporting).
     """
     tid = tenant["id"]
-    issued = list(_db.fact_invoices.find({"tenant_id": tid}))
+    issued = [st.ensure(i) for i in _db.fact_invoices.find({"tenant_id": tid})]
     received = _db.fact_received_invoices.count_documents({"tenant_id": tid})
     credit_notes = list(_db.fact_credit_notes.find({"tenant_id": tid}))
     credited_ids = {cn.get("original_invoice_id") for cn in credit_notes}
 
-    refused = [i for i in issued if i.get("state") in (InvoiceState.ERROR, InvoiceState.REFUSED)]
+    # pa_status is the source of truth post-S1 (st.ensure backfills legacy rows).
+    refused = [i for i in issued if i.get("pa_status") in (InvoiceState.ERROR, InvoiceState.REFUSED)]
     uncorrected = [i for i in refused if i.get("id") not in credited_ids]
     corrected = [i for i in refused if i.get("id") in credited_ids]
 
@@ -151,6 +170,17 @@ def compute_bouclier(tenant: Dict[str, Any]) -> Dict[str, Any]:
             "einvoicing": einvoicing, "ereporting": ereporting,
             "credit_notes": len(credit_notes),
             "refused": len(refused), "refused_open": len(uncorrected),
+            # S1: per-family workload counters — the cabinet dashboard uses
+            # these to show "kitna kaam pending hai" without extra queries.
+            "unreviewed": sum(1 for i in issued
+                              if i.get("review_status") == ReviewStatus.UNREVIEWED),
+            "pending_validation": sum(1 for i in issued
+                                      if i.get("review_status") == ReviewStatus.PENDING_VALIDATION),
+            "ready_to_export": sum(1 for i in issued
+                                   if i.get("export_status") == ExportStatus.READY),
+            "unpaid": sum(1 for i in issued
+                          if i.get("payment_status") in (PaymentStatus.UNPAID,
+                                                         PaymentStatus.OVERDUE)),
         },
     }
 
@@ -269,9 +299,11 @@ def create_invoice(body: Dict[str, Any],
         "date": body.get("date"),
         "due_date": body.get("due_date"),
         **totals,
-        "state": InvoiceState.DRAFT,
+        # Four independent status families (see services/statuses.py).
+        **st.defaults(),
+        "state": InvoiceState.DRAFT,     # legacy mirror — remove after 1 release
         "channel": channel,
-        "lifecycle": [{"state": InvoiceState.DRAFT, "at": _now()}],
+        "lifecycle": [{"family": "pa", "state": InvoiceState.DRAFT, "at": _now()}],
         "created_at": _now(),
         "updated_at": _now(),
     }
@@ -316,6 +348,11 @@ def _do_send(t: Dict[str, Any], inv: Dict[str, Any], simulate: Optional[str] = N
     _update_state(inv["id"], result.get("state", InvoiceState.SENT),
                   pdp_id=result.get("id") or pdp_id,
                   code=result.get("reject_code"), reason=result.get("reject_reason"))
+    _audit("invoice.sent", tenant_id=t["id"], actor=None,
+           object_kind="invoice", object_id=inv["id"],
+           after={"pa_status": result.get("state", InvoiceState.SENT)},
+           detail={"number": inv.get("number"), "provider": type(conn).__name__,
+                   "reject_code": result.get("reject_code")})
     inv = _db.fact_invoices.find_one({"id": inv["id"]})
     return {"invoice": _public(inv), "result": result}
 
@@ -337,6 +374,111 @@ def get_invoice(invoice_id: str,
         except PdpError:
             pass
     return {"invoice": _public(inv)}
+
+
+@router.post("/api/owner/facturation/invoices/{invoice_id}/review")
+def set_review_status(invoice_id: str, body: Dict[str, Any],
+                      token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Move an invoice through the ACCOUNTING REVIEW state-machine.
+
+    Completely independent of the PA lifecycle: a refused invoice can still be
+    reviewed (and then corrected by an avoir), which was impossible while a
+    single `state` field existed.
+
+    body: {target: pending_validation|validated|correction_required|unreviewed,
+           account_code?, vat_rate?, comment?}
+    """
+    inv, tenant_id = _resolve_invoice_for_actor(invoice_id, token_data)
+    inv = st.ensure(inv)
+    target = (body.get("target") or "").strip()
+    two_step = bool((_db.tenants.find_one({"id": tenant_id}) or {}).get("require_two_step_review"))
+    if not st.review_transition_allowed(inv["review_status"], target, two_step):
+        raise HTTPException(
+            409,
+            f"Transition impossible: {inv['review_status']} → {target}"
+            + (" (validation en deux étapes requise)" if two_step else ""),
+        )
+    upd: Dict[str, Any] = {
+        "review_status": target,
+        "review_updated_at": _now(),
+        "review_updated_by": getattr(token_data, "email", None),
+        # Validation makes an entry exportable; un-validating pulls it back
+        # (unless it already left for the accounting software).
+        "export_status": st.export_status_for_review(target, inv["export_status"]),
+        "updated_at": _now(),
+    }
+    for f in ("account_code", "vat_rate", "comment"):
+        if body.get(f) is not None:
+            upd[f"review_{f}" if f == "comment" else f] = body[f]
+    _db.fact_invoices.update_one({"id": invoice_id}, {
+        "$set": upd,
+        "$push": {"lifecycle": {"family": "review", "state": target, "at": _now(),
+                                "by": getattr(token_data, "email", None)}},
+    })
+    _audit("invoice.review_changed", tenant_id=tenant_id, actor=token_data,
+           object_kind="invoice", object_id=invoice_id,
+           before={"review_status": inv["review_status"]},
+           after={"review_status": target, "export_status": upd["export_status"]},
+           detail={"number": inv.get("number")})
+    return {"invoice": _public(_db.fact_invoices.find_one({"id": invoice_id}))}
+
+
+@router.post("/api/owner/facturation/invoices/{invoice_id}/payment")
+def set_payment_status(invoice_id: str, body: Dict[str, Any],
+                       token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Record payment reality (unpaid / partially_paid / paid / overdue / disputed).
+
+    v1 is manual. From Zone 4 (banking) this becomes DERIVED from allocations
+    and this endpoint stays only for disputes and manual overrides — which is
+    why the amount is stored, not just the label.
+    """
+    inv, _ = _resolve_invoice_for_actor(invoice_id, token_data)
+    inv = st.ensure(inv)
+    target = (body.get("status") or "").strip()
+    valid = {PaymentStatus.UNPAID, PaymentStatus.PARTIALLY_PAID, PaymentStatus.PAID,
+             PaymentStatus.OVERDUE, PaymentStatus.DISPUTED}
+    if target not in valid:
+        raise HTTPException(422, f"Statut de paiement invalide: {target}")
+    amount = body.get("amount_paid")
+    upd: Dict[str, Any] = {"payment_status": target, "updated_at": _now()}
+    if amount is not None:
+        upd["amount_paid"] = float(amount)
+    if body.get("dispute_reason"):
+        upd["dispute_reason"] = body["dispute_reason"]
+    _db.fact_invoices.update_one({"id": invoice_id}, {
+        "$set": upd,
+        "$push": {"lifecycle": {"family": "payment", "state": target, "at": _now(),
+                                "by": getattr(token_data, "email", None)}},
+    })
+    _audit("invoice.payment_changed", tenant_id=inv["tenant_id"], actor=token_data,
+           object_kind="invoice", object_id=invoice_id,
+           before={"payment_status": inv["payment_status"]},
+           after={"payment_status": target, "amount_paid": amount},
+           detail={"number": inv.get("number")})
+    return {"invoice": _public(_db.fact_invoices.find_one({"id": invoice_id}))}
+
+
+def _resolve_invoice_for_actor(invoice_id: str, token_data):
+    """Find an invoice the caller is actually allowed to touch.
+
+    Owners/managers are scoped to their own tenant. A comptable is scoped to
+    the tenants they hold an ACTIVE mandate for — the check lives in
+    features.cabinet (single source of truth) and is imported lazily to keep
+    these two leaf-modules independent at import time.
+    """
+    role = getattr(token_data, "role", None)
+    if role == "comptable":
+        inv = _db.fact_invoices.find_one({"id": invoice_id})
+        if not inv:
+            raise HTTPException(404, "Facture introuvable.")
+        from features.cabinet import assert_mandate      # lazy: avoid load-order coupling
+        assert_mandate(getattr(token_data, "email", ""), inv["tenant_id"])
+        return inv, inv["tenant_id"]
+    t = _require_facturation(token_data)
+    inv = _db.fact_invoices.find_one({"id": invoice_id, "tenant_id": t["id"]})
+    if not inv:
+        raise HTTPException(404, "Facture introuvable.")
+    return inv, t["id"]
 
 
 @router.post("/api/owner/facturation/invoices/{invoice_id}/credit-note")
@@ -364,6 +506,10 @@ def create_credit_note(invoice_id: str, body: Dict[str, Any],
         "created_at": _now(),
     }
     _db.fact_credit_notes.insert_one(dict(cn))
+    _audit("credit_note.created", tenant_id=t["id"], actor=token_data,
+           object_kind="credit_note", object_id=cn["id"],
+           after={"number": cn["number"], "amount_ttc": cn["amount_ttc"]},
+           detail={"corrects": orig.get("number"), "reason": cn.get("reason")})
     return {"credit_note": _public(cn)}
 
 
@@ -515,7 +661,26 @@ def _next_number(tenant_id: str) -> str:
 
 def _update_state(invoice_id: str, state: str, pdp_id: Optional[str] = None,
                   code: Optional[str] = None, reason: Optional[str] = None) -> None:
-    upd: Dict[str, Any] = {"state": state, "updated_at": _now()}
+    """Update the PA lifecycle status ONLY (pa_status).
+
+    Review / payment / export statuses live their own lives and are never
+    touched here — that separation is the whole point of the S1 refactor.
+    `state` is still written as a legacy mirror for one release so a rollback
+    remains possible; readers should use pa_status.
+
+    One exception: the PA telling us "paid" (DGFiP 212) is genuine payment
+    evidence, so we let it seed payment_status too — but never downgrade a
+    payment status that was already set by the cabinet.
+    """
+    upd: Dict[str, Any] = {
+        "pa_status": state,
+        "state": state,              # legacy mirror — remove after 1 release
+        "updated_at": _now(),
+    }
+    if state == InvoiceState.PAID:
+        inv = _db.fact_invoices.find_one({"id": invoice_id}) or {}
+        if st.ensure(dict(inv)).get("payment_status") != PaymentStatus.PAID:
+            upd["payment_status"] = PaymentStatus.PAID
     if pdp_id:
         upd["pdp_invoice_id"] = pdp_id
     if code:
@@ -524,5 +689,5 @@ def _update_state(invoice_id: str, state: str, pdp_id: Optional[str] = None,
         upd["reject_reason"] = reason
     _db.fact_invoices.update_one({"id": invoice_id}, {
         "$set": upd,
-        "$push": {"lifecycle": {"state": state, "at": _now()}},
+        "$push": {"lifecycle": {"family": "pa", "state": state, "at": _now()}},
     })
