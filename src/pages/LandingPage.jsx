@@ -418,13 +418,14 @@ const LandingPage = () => {
           </Link>
           <div className="hidden md:flex items-center gap-8 font-medium text-sm">
             <a href="#features" className="hover:text-[#B85C38] transition-colors">Fonctionnalités</a>
-            {/* Two audiences, two entry points — the reform link carries a dot
-                because it is the time-sensitive one (Sept 2026 deadline). */}
-            <a href="#facturation" className="hover:text-[#2F6FB3] transition-colors flex items-center gap-1.5">
+            {/* Two audiences, two DEDICATED pages — not anchors. An accountant
+                deserves a page built for them, not a section between loyalty
+                blocks. The dot marks the time-sensitive one (Sept 2026). */}
+            <Link to="/facturation-electronique" className="hover:text-[#6BA4D9] transition-colors flex items-center gap-1.5">
               Facturation 2026
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.sky }} />
-            </a>
-            <a href="#cabinet"  className="hover:text-[#8B7DC9] transition-colors">Experts-comptables</a>
+            </Link>
+            <Link to="/experts-comptables" className="hover:text-[#8B7DC9] transition-colors">Experts-comptables</Link>
             <a href="#how"      className="hover:text-[#B85C38] transition-colors">Comment ça marche</a>
             <a href="#pricing"  className="hover:text-[#B85C38] transition-colors">Tarifs</a>
           </div>
@@ -982,10 +983,12 @@ const LandingPage = () => {
           </div>
 
           <div className="text-center mt-10">
-            <Link to="/register"
+            {/* Primary CTA goes to the FULL page, not to signup: this section is
+                a teaser, the deep story lives at /facturation-electronique. */}
+            <Link to="/facturation-electronique"
                   className="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-full font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
                   style={{ background: `linear-gradient(135deg, ${C.sky} 0%, ${C.lavender} 100%)` }}>
-              Préparer mon entreprise <ArrowRight size={18} />
+              Tout savoir sur la réforme 2026 <ArrowRight size={18} />
             </Link>
             <p className="text-xs mt-3" style={{ color: C.inkFaint }}>
               Module optionnel — activez-le quand vous voulez, votre programme de fidélité continue sans changement.
@@ -1048,7 +1051,8 @@ const LandingPage = () => {
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link to="/register"
+                {/* Straight to the accountant page — their whole story lives there. */}
+                <Link to="/experts-comptables"
                       className="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-full font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
                       style={{ background: `linear-gradient(135deg, ${C.lavender} 0%, ${C.rose} 100%)` }}>
                   Découvrir l'Espace Cabinet <ArrowRight size={18} />

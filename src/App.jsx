@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BranchProvider } from './contexts/BranchContext';
 
@@ -103,6 +103,23 @@ import GoogleTranslateBridge, { RouteAwareRetranslator } from './components/Goog
 import ModuleChooserPage from './pages/ModuleChooserPage';
 import FacturationHome from './pages/FacturationHome';
 import CabinetDashboard from './pages/CabinetDashboard';
+// Public marketing pages — one per product line, so each audience gets a whole
+// page instead of an anchor buried in the homepage.
+import FacturationLanding from './pages/FacturationLanding';
+import CabinetLanding from './pages/CabinetLanding';
+
+/**
+ * ScrollToTop — without this, navigating from the landing page to a product
+ * page keeps the old scroll position and the visitor lands mid-page, which
+ * feels broken. Anchor links (#pricing) are left alone.
+ */
+const ScrollToTop = () => {
+  const { pathname, hash } = useLocation();
+  React.useEffect(() => {
+    if (!hash) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname, hash]);
+  return null;
+};
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -150,12 +167,20 @@ function App() {
             (Insights, Card Designer, AI Assistant, etc.) get walked
             from scratch and don't stay in French after navigation. */}
         <RouteAwareRetranslator />
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/join/:slug" element={<JoinPage />} />
           <Route path="/card/:barcodeId" element={<MyWalletCardPage />} />
+
+          {/* Public product pages. Deliberately NOT wrapped in PublicRoute: a
+              logged-in owner or accountant must still be able to read about the
+              other module (and share the link) without being bounced to their
+              dashboard. */}
+          <Route path="/facturation-electronique" element={<FacturationLanding />} />
+          <Route path="/experts-comptables" element={<CabinetLanding />} />
 
           {/* Facturation module — post-login chooser (Option A) + home.
               Owner/manager only; loyalty-only tenants see the "activate" prompt. */}
