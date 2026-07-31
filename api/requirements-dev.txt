@@ -1,0 +1,7 @@
+# Dev/test-only dependencies — NOT installed in production (Vercel).
+# Install locally with:  pip3 install -r api/requirements-dev.txt --break-system-packages
+#
+# Kept separate from requirements.txt on purpose: the serverless bundle stays
+# small and nothing test-related can ever ship to production.
+
+mongomock==4.1.2      # in-memory MongoDB for tests/test_s1_s2.py (no DB, no network)
