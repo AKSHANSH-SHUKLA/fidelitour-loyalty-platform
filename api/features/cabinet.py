@@ -122,7 +122,10 @@ def invite_accountant(body: Dict[str, Any],
     temp_password = None
     existing = _db.users.find_one({"email": email})
     if not existing:
-        temp_password = secrets.token_urlsafe(6)
+        # Policy-compliant by construction (S3) — an accountant account reaches
+        # every linked client's financial data, so it never gets a weak default.
+        from services import password_policy
+        temp_password = password_policy.generate()
         _db.users.insert_one({
             "email": email, "role": "comptable", "tenant_id": None,
             "hashed_password": hash_password(temp_password),

@@ -289,6 +289,55 @@ def test_identity(db):
           db.audit_log.count_documents({"action": "facturation.enabled"}) > 0)
 
 
+# ==========================================================================
+# S3 — password policy
+# ==========================================================================
+
+def test_password_policy():
+    print("\nS3 — password policy")
+    from services import password_policy as P
+
+    good = ["Cafe-Lumiere2026!", "Xk9#mQp2wZ!a", "Bonjour!Paris99"]
+    for pw in good:
+        ok, errs = P.check(pw)
+        check(f"accepts strong password ({pw[:6]}…)", ok, errs)
+
+    bad = [
+        ("short1!A", "too short"),
+        ("alllowercase1!", "no uppercase"),
+        ("ALLUPPERCASE1!", "no lowercase"),
+        ("NoDigitsHere!!", "no digit"),
+        ("NoSpecial12345", "no special char"),
+        ("Password123!", "common word"),
+        ("", "empty"),
+    ]
+    for pw, why in bad:
+        ok, errs = P.check(pw)
+        check(f"rejects: {why}", not ok and len(errs) > 0)
+
+    # every failing rule is reported at once, not one at a time
+    ok, errs = P.check("abc")
+    check("reports ALL failing rules together", len(errs) >= 4, errs)
+
+    # generated passwords must satisfy the very policy they exist to bypass
+    for _ in range(25):
+        gen = P.generate()
+        ok, errs = P.check(gen)
+        if not ok:
+            check("generated password always compliant", False, f"{gen} → {errs}")
+            break
+    else:
+        check("generated password always compliant (25 samples)", True)
+    check("generated password has minimum length", len(P.generate()) >= P.MIN_LENGTH)
+
+    # assert_valid raises 422 rather than returning a boolean
+    try:
+        P.assert_valid("weak")
+        check("assert_valid raises on weak password", False, "no exception")
+    except Exception as e:
+        check("assert_valid raises on weak password", getattr(e, "status_code", None) == 422)
+
+
 if __name__ == "__main__":
     print("=" * 62)
     print("FidClic — S1 + S2 foundation tests")
@@ -298,6 +347,7 @@ if __name__ == "__main__":
     test_isolation(db)
     test_audit(db)
     test_identity(db)
+    test_password_policy()
     print("\n" + "=" * 62)
     print(f"PASSED: {len(PASS)}   FAILED: {len(FAIL)}")
     if FAIL:

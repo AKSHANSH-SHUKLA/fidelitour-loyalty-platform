@@ -3,6 +3,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Building2, User, Mail, Lock, Phone, MapPin, Coffee, ArrowRight } from 'lucide-react';
+import {
+  passwordRules, passwordValid, passwordStrength,
+  STRENGTH_LABELS, STRENGTH_COLORS,
+} from '../lib/passwordPolicy';
 
 /**
  * RegisterPage — proper multi-field business signup.
@@ -84,6 +88,10 @@ const RegisterPage = () => {
 
   const set = (k) => (e) => setFormData({ ...formData, [k]: e.target.value });
 
+  // Live password feedback (S3 policy) — recomputed on each keystroke.
+  const pwRules = passwordRules(formData.password);
+  const pwStrength = passwordStrength(formData.password);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -91,7 +99,12 @@ const RegisterPage = () => {
     // Lightweight client-side validation — clearer than waiting for the API
     if (!formData.business_name.trim()) return setError(t('auth.business_name_required'));
     if (!formData.email.trim())         return setError(t('auth.email_required'));
-    if (formData.password.length < 6)   return setError(t('auth.password_too_short'));
+    // S3 password policy — the same rules the server enforces. Checked here so
+    // the user gets the message instantly instead of after a round-trip.
+    if (!passwordValid(formData.password)) {
+      const missing = passwordRules(formData.password).filter((r) => !r.ok).map((r) => r.label);
+      return setError(`Mot de passe trop faible — il manque : ${missing.join(', ')}.`);
+    }
 
     setLoading(true);
     try {
@@ -191,12 +204,38 @@ const RegisterPage = () => {
                 <input type="tel" placeholder={t('auth.phone_optional_placeholder')}
                        className={INNER_INPUT} value={formData.phone} onChange={set('phone')} />
               </IconField>
-              {/* Password */}
+              {/* Password — with a live rule checklist (S3 policy).
+                  Rules appear only once typing starts, so the form never scolds
+                  someone before they have had a chance. */}
               <div className="md:col-span-2">
                 <IconField icon={Lock}>
-                  <input required type="password" placeholder={t('auth.password_placeholder')}
+                  <input required type="password" placeholder="Mot de passe (10 caractères minimum)"
                          className={INNER_INPUT} value={formData.password} onChange={set('password')} />
                 </IconField>
+                {formData.password.length > 0 && (
+                  <div className="mt-2.5 px-1">
+                    {/* strength bar */}
+                    <div className="flex gap-1 mb-2">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="h-1.5 flex-1 rounded-full transition-colors"
+                             style={{ background: i < pwStrength ? STRENGTH_COLORS[pwStrength] : '#EFE9E0' }} />
+                      ))}
+                    </div>
+                    <div className="text-[11px] font-semibold mb-2" style={{ color: STRENGTH_COLORS[pwStrength] }}>
+                      {STRENGTH_LABELS[pwStrength]}
+                    </div>
+                    {/* live checklist */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                      {pwRules.map((r) => (
+                        <div key={r.id} className="flex items-center gap-1.5 text-[11px]"
+                             style={{ color: r.ok ? '#2F7A52' : '#8B8680' }}>
+                          <span className="w-3.5 text-center">{r.ok ? '✓' : '○'}</span>
+                          {r.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

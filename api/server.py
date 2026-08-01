@@ -2075,6 +2075,11 @@ def register(payload: Dict[str, Any]):
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password are required")
 
+    # S3 — password policy. Enforced server-side because the browser can be
+    # bypassed, and this account will eventually hold financial data.
+    from services import password_policy
+    password_policy.assert_valid(password)
+
     existing = db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -8035,6 +8040,10 @@ def add_team_member(
         raise HTTPException(status_code=400, detail="Role must be 'manager' or 'staff'")
     if db.users.find_one({"email": req.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
+    # Same policy for staff accounts an owner creates — a weak staff password is
+    # a way into the same tenant's data.
+    from services import password_policy
+    password_policy.assert_valid(req.password)
     new_user = UserInDB(
         email=req.email,
         role=req.role,
@@ -8087,12 +8096,12 @@ def reset_team_member_password(
 
     new_pw = (req.new_password or "").strip()
     if not new_pw:
-        # Generate a memorable-but-strong default: 3 random uppercase letters + 4 digits.
-        import secrets, string
-        new_pw = "".join(secrets.choice(string.ascii_uppercase) for _ in range(3)) \
-              + str(secrets.randbelow(9000) + 1000)
-    if len(new_pw) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        # Auto-generated passwords must satisfy the same policy as typed ones —
+        # otherwise the "convenient" path quietly becomes the weakest one.
+        from services import password_policy
+        new_pw = password_policy.generate()
+    from services import password_policy as _pp
+    _pp.assert_valid(new_pw)
 
     db.users.update_one(
         {"email": email, "tenant_id": token_data.tenant_id},
