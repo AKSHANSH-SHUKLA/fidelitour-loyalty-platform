@@ -74,6 +74,23 @@ def _tenant(tid):
 
 
 def _linked_tenant_ids(comptable_email: str) -> List[str]:
+    """Which dossiers this accountant may see.
+
+    Two eras coexist on purpose:
+      - NEW: the person has a cabinet membership (S5). Scope then comes from
+        the team model — an admin sees the whole portfolio, everyone else only
+        their assigned dossiers.
+      - LEGACY: accounts created before the team model, linked directly by
+        email. They keep working exactly as before.
+
+    Doing it in this order means the migration needs no data rewrite and no
+    downtime: the moment a membership exists, the richer rules take over.
+    """
+    try:
+        from features.cabinet_os import visible_tenant_ids
+        return visible_tenant_ids(_norm(comptable_email))
+    except Exception:
+        pass       # no membership (legacy account, or module unavailable)
     links = _db.cabinet_links.find({"comptable_email": _norm(comptable_email), "status": "active"})
     return [l["tenant_id"] for l in links]
 
@@ -135,8 +152,18 @@ def invite_accountant(body: Dict[str, Any],
         raise HTTPException(409, "Cet email est déjà utilisé par un autre type de compte.")
 
     if not _db.cabinet_links.find_one({"comptable_email": email, "tenant_id": t["id"]}):
+        # Attach the mandate to the accountant's CABINET when they have one, so
+        # the whole firm can be scoped/assigned — not just the individual who
+        # happened to be invited. Falls back to the email-only link otherwise.
+        cabinet_id = None
+        assignee = None
+        mem = _db.cabinet_memberships.find_one({"user_email": email, "status": "active"})
+        if mem:
+            cabinet_id = mem.get("cabinet_id")
+            assignee = mem["id"] if mem.get("role") != "admin" else None
         _db.cabinet_links.insert_one({
             "id": str(uuid4()), "comptable_email": email,
+            "cabinet_id": cabinet_id, "assignee_membership_id": assignee,
             "tenant_id": t["id"], "status": "active", "created_at": _now(),
         })
     _audit("mandate.granted", tenant_id=t["id"], actor=token_data,
@@ -197,6 +224,16 @@ def assert_mandate(email: str, tenant_id: str) -> Dict[str, Any]:
 
     Returns the mandate document so callers can read scope/assignee from it.
     """
+    # Team-model scope first (role + assignment aware), legacy email link second.
+    try:
+        from features.cabinet_os import assert_can_see_tenant, current_membership
+        current_membership(_norm(email))          # raises if no membership
+        return assert_can_see_tenant(_norm(email), tenant_id)
+    except HTTPException:
+        raise                                     # a real 403 must not fall through
+    except Exception:
+        pass                                      # legacy account: use the old path
+
     link = _db.cabinet_links.find_one({
         "comptable_email": _norm(email),
         "tenant_id": tenant_id,

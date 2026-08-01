@@ -4,7 +4,7 @@ import {
   Building2, ShieldCheck, AlertTriangle, Download, RefreshCw, X, ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { comptableAPI, facturationAPI, cabinetExtraAPI } from '../lib/api';
+import { comptableAPI, facturationAPI, cabinetExtraAPI, casesAPI } from '../lib/api';
 import LiveText from '../components/LiveText';
 
 /**
@@ -30,6 +30,7 @@ export default function CabinetDashboard() {
   const [acting, setActing] = useState(null);         // action running for a client
   const [toast, setToast] = useState(null);
   const [crediting, setCrediting] = useState(null);
+  const [openCases, setOpenCases] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,6 +40,10 @@ export default function CabinetDashboard() {
     ]);
     setData(c?.data || { clients: [], totals: {} });
     setAlerts(a?.data?.alerts || []);
+    // Open-case badge lives in the header so the queue is never out of sight.
+    casesAPI.list({ status: 'open' })
+      .then((r) => setOpenCases(r?.data?.counts?.open ?? 0))
+      .catch(() => {});
     setLoading(false);
   }, []);
 
@@ -143,6 +148,18 @@ export default function CabinetDashboard() {
           <span className="font-bold text-[#1C1917]">Espace Cabinet</span>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/cabinet/cas')}
+                  className="text-sm font-semibold text-[#57534E] hover:text-[#C0392B] flex items-center gap-1.5">
+            <AlertTriangle size={15} /> Cas
+            {openCases > 0 && (
+              <LiveText className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ color: 'white', background: '#C0392B' }}>{String(openCases)}</LiveText>
+            )}
+          </button>
+          <button onClick={() => navigate('/cabinet/equipe')}
+                  className="text-sm font-semibold text-[#57534E] hover:text-[#7A3E70]">
+            Équipe
+          </button>
           <a href={comptableAPI.exportUrl}
              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-white"
              style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>

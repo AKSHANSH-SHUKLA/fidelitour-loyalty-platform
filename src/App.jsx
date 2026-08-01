@@ -103,6 +103,9 @@ import GoogleTranslateBridge, { RouteAwareRetranslator } from './components/Goog
 import ModuleChooserPage from './pages/ModuleChooserPage';
 import FacturationHome from './pages/FacturationHome';
 import CabinetDashboard from './pages/CabinetDashboard';
+import CabinetTeam from './pages/CabinetTeam';
+import CabinetCases from './pages/CabinetCases';
+import CabinetPasswordGate from './components/CabinetPasswordGate';
 // Public marketing pages — one per product line, so each audience gets a whole
 // page instead of an anchor buried in the homepage.
 import FacturationLanding from './pages/FacturationLanding';
@@ -197,7 +200,17 @@ function App() {
           {/* Accountant (comptable) control tower over all their linked clients. */}
           <Route path="/cabinet" element={
             <ProtectedRoute allowedRoles={['comptable']}>
-              <CabinetDashboard />
+              <CabinetPasswordGate><CabinetDashboard /></CabinetPasswordGate>
+            </ProtectedRoute>
+          } />
+          <Route path="/cabinet/equipe" element={
+            <ProtectedRoute allowedRoles={['comptable']}>
+              <CabinetPasswordGate><CabinetTeam /></CabinetPasswordGate>
+            </ProtectedRoute>
+          } />
+          <Route path="/cabinet/cas" element={
+            <ProtectedRoute allowedRoles={['comptable']}>
+              <CabinetPasswordGate><CabinetCases /></CabinetPasswordGate>
             </ProtectedRoute>
           } />
 

@@ -224,6 +224,33 @@ export const facturationAPI = {
 };
 
 // Cabinet multi-dossier — accountant (role "comptable") control tower.
+/** S5/S7 — the cabinet as an organisation: people, roles, assignment. */
+export const cabinetOsAPI = {
+  signup: (data) => api.post('/cabinet/signup', data),
+  me: () => api.get('/cabinet/me'),
+  team: () => api.get('/cabinet/team'),
+  createMember: (data) => api.post('/cabinet/team', data),
+  updateMember: (id, data) => api.patch('/cabinet/team/' + id, data),
+  changePassword: (data) => api.post('/cabinet/change-password', data),
+  assign: (tenantId, membershipId) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/assign', { membership_id: membershipId }),
+  unassigned: () => api.get('/cabinet/dossiers/unassigned'),
+};
+
+/** S4 — Exception Centre: failures as owned, dated work items. */
+export const casesAPI = {
+  list: (params = {}) => {
+    const q = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
+    ).toString();
+    return api.get('/cabinet/cases' + (q ? '?' + q : ''));
+  },
+  assign: (id, membershipId) =>
+    api.post('/cabinet/cases/' + id + '/assign', { membership_id: membershipId }),
+  setStatus: (id, status, note) =>
+    api.post('/cabinet/cases/' + id + '/status', { status, note }),
+};
+
 export const cabinetExtraAPI = {
   // S2 — "kaun kya kar raha hai" (self-updating: working IS reporting)
   audit: (tenantId) => api.get('/comptable/audit' + (tenantId ? '?tenant_id=' + tenantId : '')),

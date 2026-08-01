@@ -57,6 +57,11 @@ MODULES = [
     # Audit log — append-only "who did what, when". Compliance + the data source
     # behind the cabinet's live activity view. Must load AFTER cabinet.
     "features.audit",
+    # Cabinet OS — the firm as an organisation: memberships, roles, assignment.
+    "features.cabinet_os",
+    # Exception Centre — every failure becomes an owned, dated, closable case.
+    # Loads after cabinet_os because it resolves scope through memberships.
+    "features.exceptions_centre",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.

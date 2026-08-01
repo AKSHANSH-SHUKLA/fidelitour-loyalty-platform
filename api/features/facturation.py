@@ -46,6 +46,19 @@ def _audit(*args, **kwargs):
     except Exception:
         pass
 
+
+def _open_case(*args, **kwargs):
+    """Raise an Exception-Centre case, never letting it break the caller.
+
+    The whole point of a case is to catch a failure — so it must not itself be
+    able to cause one.
+    """
+    try:
+        from features import exceptions_centre
+        return exceptions_centre.open_case(*args, **kwargs)
+    except Exception:
+        return None
+
 router = APIRouter(tags=["facturation"])
 _db = None
 _guard = IdempotencyGuard()
@@ -516,8 +529,19 @@ def _do_send(t: Dict[str, Any], inv: Dict[str, Any], simulate: Optional[str] = N
         result = conn.send(pdp_id)
     except PdpError as e:
         _update_state(inv["id"], InvoiceState.ERROR, code=e.code, reason=e.message)
+        _open_case(t["id"], "send_error",
+                   detail_fr=f"Facture {inv.get('number')} : {e.message}",
+                   related_kind="invoice", related_id=inv["id"],
+                   related_ref=inv.get("number"), technical_ref=str(e.code))
         raise HTTPException(502, f"Envoi échoué: {e.message}")
     _guard.mark_sent(key, result)
+    if result.get("state") in (InvoiceState.REFUSED, InvoiceState.ERROR):
+        _open_case(t["id"], "pa_rejection",
+                   detail_fr=(f"Facture {inv.get('number')} refusée par la plateforme"
+                              + (f" : {result.get('reject_reason')}" if result.get("reject_reason") else "")),
+                   related_kind="invoice", related_id=inv["id"],
+                   related_ref=inv.get("number"),
+                   technical_ref=result.get("reject_code"))
     _update_state(inv["id"], result.get("state", InvoiceState.SENT),
                   pdp_id=result.get("id") or pdp_id,
                   code=result.get("reject_code"), reason=result.get("reject_reason"))
@@ -826,6 +850,14 @@ async def facturation_webhook(request: Request):
         inv = _db.fact_invoices.find_one({"pdp_invoice_id": pdp_id})
         if inv:
             _update_state(inv["id"], raw_state)
+            # A rejection arriving asynchronously is exactly the one that used
+            # to vanish into an inbox — so it becomes a case here too.
+            if raw_state in (InvoiceState.REFUSED, InvoiceState.ERROR):
+                _open_case(inv["tenant_id"], "pa_rejection",
+                           detail_fr=f"Facture {inv.get('number')} refusée (notification plateforme)",
+                           related_kind="invoice", related_id=inv["id"],
+                           related_ref=inv.get("number"),
+                           technical_ref=event.get("reject_code"))
     return {"received": True}
 
 
