@@ -97,7 +97,7 @@ export default function CabinetLanding() {
                 d'ensemble, et le contrôle de votre semaine.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/register"
+                <Link to="/cabinet/inscription"
                       className="inline-flex items-center gap-2 text-white px-7 py-3.5 rounded-full font-semibold shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5"
                       style={{ background: `linear-gradient(135deg, ${C.lavender} 0%, ${C.rose} 100%)` }}>
                   Créer mon cabinet <ArrowRight size={18} />
@@ -299,7 +299,7 @@ export default function CabinetLanding() {
             Autant avoir la réponse — et l'outil — avant eux.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/register"
+            <Link to="/cabinet/inscription"
                   className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold bg-white shadow-lg transition-all hover:-translate-y-0.5"
                   style={{ color: C.lavender }}>
               Créer mon cabinet <ArrowRight size={18} />

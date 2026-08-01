@@ -106,6 +106,7 @@ import CabinetDashboard from './pages/CabinetDashboard';
 import CabinetTeam from './pages/CabinetTeam';
 import CabinetCases from './pages/CabinetCases';
 import CabinetPasswordGate from './components/CabinetPasswordGate';
+import CabinetSignup from './pages/CabinetSignup';
 // Public marketing pages — one per product line, so each audience gets a whole
 // page instead of an anchor buried in the homepage.
 import FacturationLanding from './pages/FacturationLanding';
@@ -198,6 +199,9 @@ function App() {
             </ProtectedRoute>
           } />
           {/* Accountant (comptable) control tower over all their linked clients. */}
+          <Route path="/cabinet/inscription" element={
+            <PublicRoute><CabinetSignup /></PublicRoute>
+          } />
           <Route path="/cabinet" element={
             <ProtectedRoute allowedRoles={['comptable']}>
               <CabinetPasswordGate><CabinetDashboard /></CabinetPasswordGate>
