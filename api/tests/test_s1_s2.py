@@ -367,6 +367,49 @@ def test_invoice_compliance(db):
     check("TTC = HT + VAT", multi["total_ttc"] == 400, multi["total_ttc"])
 
 
+def test_cabinet_acts_for_client(db):
+    print("\nCabinet acting on behalf of a client")
+
+    # accountant creates + sends an invoice FOR their client
+    inv = F.create_invoice(invoice_payload(tenant_id="t1", send=True), token_data=CAB_A)["invoice"]
+    check("accountant can invoice for a mandated client", inv["tenant_id"] == "t1")
+    check("invoice actually sent", inv["pa_status"] == "sent", inv["pa_status"])
+
+    entry = db.audit_log.find_one({"action": "invoice.created", "object.id": inv["id"]})
+    check("audit records the cabinet user", entry.get("actor_email") == "a@cab.fr")
+    check("audit marks it as on-behalf-of",
+          (entry.get("detail") or {}).get("on_behalf_of") is not None, entry.get("detail"))
+
+    # e-reporting for a client
+    rep = F.send_ereporting({"tenant_id": "t1", "period_start": "2026-07-01",
+                             "period_end": "2026-07-31", "totals_by_vat": {"20": 100}},
+                            token_data=CAB_A)["ereport"]
+    check("accountant can send e-reporting for a client", rep["tenant_id"] == "t1")
+    rep_entry = db.audit_log.find_one({"action": "ereporting.sent", "object.id": rep["id"]})
+    check("e-reporting logged as on-behalf-of",
+          (rep_entry.get("detail") or {}).get("on_behalf_of") is not None)
+
+    # the guard rails
+    def expect(label, code, fn):
+        try:
+            fn()
+            check(label, False, "NO error raised")
+        except Exception as e:
+            check(label, getattr(e, "status_code", None) == code, e)
+
+    expect("accountant cannot invoice a NON-mandated client", 403,
+           lambda: F.create_invoice(invoice_payload(tenant_id="t2"), token_data=CAB_A))
+    expect("accountant must name the dossier explicitly", 422,
+           lambda: F.create_invoice(invoice_payload(), token_data=CAB_A))
+    expect("revoked mandate cannot act", 403,
+           lambda: F.send_ereporting({"tenant_id": "t1", "period_start": "2026-07-01",
+                                      "period_end": "2026-07-31"}, token_data=CAB_OLD))
+
+    # owner path unaffected: no tenant_id needed, own tenant used
+    own = F.create_invoice(invoice_payload(), token_data=OWNER)["invoice"]
+    check("owner path still works without tenant_id", own["tenant_id"] == "t1")
+
+
 def test_password_policy():
     print("\nS3 — password policy")
     from services import password_policy as P
@@ -422,6 +465,7 @@ if __name__ == "__main__":
     test_audit(db)
     test_identity(db)
     test_invoice_compliance(db)
+    test_cabinet_acts_for_client(db)
     test_password_policy()
     print("\n" + "=" * 62)
     print(f"PASSED: {len(PASS)}   FAILED: {len(FAIL)}")

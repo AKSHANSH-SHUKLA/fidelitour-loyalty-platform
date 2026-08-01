@@ -857,8 +857,8 @@ function CreateInvoiceModal({ onClose, onCreated, seller }) {
   const isFranchise = sellerRegime === 'franchise';
 
   const [buyer, setBuyer] = useState({
-    name: '', siren: '', vat_number: '', address: '', delivery_address: '',
-    is_company: true,
+    name: '', siren: '', siret: '', vat_number: '', address: '',
+    delivery_address: '', is_company: true,
   });
   const [invoice, setInvoice] = useState({
     issue_date: todayIso(),
@@ -996,6 +996,20 @@ function CreateInvoiceModal({ onClose, onCreated, seller }) {
                            placeholder="552100554" />
                     <Hint info="Obligatoire sur les factures B2B depuis la réforme 2026." />
                   </Field>
+                  <Field label={`SIRET client (recommandé) — ${buyer.siret.length}/14`}>
+                    <input className="fld" value={buyer.siret} inputMode="numeric" maxLength={14}
+                           onChange={(e) => setBuyer({ ...buyer, siret: e.target.value.replace(/\D/g, '') })}
+                           placeholder="55210055400013" />
+                    {/* Not legally mandatory, but the Annuaire routes at SIRET
+                        level: with it, the invoice reaches the right site of a
+                        multi-establishment client instead of the head office. */}
+                    <Hint info="L'annuaire achemine les factures au niveau de l'établissement. Sans SIRET, un client multi-sites peut recevoir la facture au mauvais endroit." />
+                  </Field>
+                </div>
+              )}
+
+              {buyer.is_company && (
+                <div className="grid md:grid-cols-2 gap-3">
                   <Field label="N° TVA du client (optionnel)">
                     <input className="fld" value={buyer.vat_number}
                            onChange={(e) => setBuyer({ ...buyer, vat_number: e.target.value.toUpperCase() })}

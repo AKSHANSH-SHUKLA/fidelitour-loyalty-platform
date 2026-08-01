@@ -75,6 +75,42 @@ def _require_facturation(token_data) -> Dict[str, Any]:
     return t
 
 
+def _tenant_for_actor(token_data, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+    """Resolve WHICH company this action is for, and prove the caller may act on it.
+
+    Owners/managers act on their own tenant, full stop. An accountant may act
+    ON BEHALF OF a client — but only one they hold an ACTIVE mandate for, and
+    only when they name the client explicitly (`tenant_id`), so an accountant
+    can never act "by accident" on the wrong dossier.
+
+    Why let the cabinet act at all: in real life the accountant is the one who
+    remembers the e-reporting deadline, not the restaurant owner. Blocking them
+    would just push the work back into email.
+    """
+    if getattr(token_data, "role", None) == "comptable":
+        if not tenant_id:
+            raise HTTPException(422, "tenant_id requis : précisez le dossier client.")
+        from features.cabinet import assert_mandate      # lazy: leaf-module independence
+        assert_mandate(getattr(token_data, "email", ""), tenant_id)
+        t = _tenant(tenant_id)
+        if not t or not t.get("facturation_enabled"):
+            raise HTTPException(403, "Le module Facturation n'est pas activé pour ce client.")
+        return t
+    return _require_facturation(token_data)
+
+
+def _acting_note(token_data, tenant: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Audit detail marking an action performed by a cabinet for a client.
+
+    Without this the log would read as if the business owner did it, which is
+    exactly the ambiguity the audit trail exists to remove.
+    """
+    if getattr(token_data, "role", None) == "comptable":
+        return {"on_behalf_of": tenant.get("legal_name") or tenant.get("name"),
+                "by_cabinet_user": getattr(token_data, "email", None)}
+    return None
+
+
 def _assert_invoice_compliant(tenant: Dict[str, Any], buyer: Dict[str, Any],
                               body: Dict[str, Any], lines: List[Dict[str, Any]]) -> None:
     """Refuse to create an invoice that is not legally complete.
@@ -387,9 +423,13 @@ def list_invoices(token_data=Depends(require_role(["business_owner", "manager"])
 
 @router.post("/api/owner/facturation/invoices")
 def create_invoice(body: Dict[str, Any],
-                   token_data=Depends(require_role(["business_owner", "manager"]))):
-    """Create a draft invoice. Pass send=true to also transmit immediately."""
-    t = _require_facturation(token_data)
+                   token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Create a draft invoice. Pass send=true to also transmit immediately.
+
+    An accountant may create FOR a client by passing `tenant_id` — the mandate
+    is verified and the action is recorded as done on their behalf.
+    """
+    t = _tenant_for_actor(token_data, body.get("tenant_id"))
     lines = body.get("lines") or []
     if not lines:
         raise HTTPException(422, "Au moins une ligne est requise.")
@@ -437,22 +477,26 @@ def create_invoice(body: Dict[str, Any],
         "updated_at": _now(),
     }
     _db.fact_invoices.insert_one(dict(inv))
+    _audit("invoice.created", tenant_id=t["id"], actor=token_data,
+           object_kind="invoice", object_id=inv["id"],
+           after={"number": inv["number"], "total_ttc": inv["total_ttc"],
+                  "channel": channel},
+           detail=_acting_note(token_data, t))
     if body.get("send"):
-        return _do_send(t, inv, simulate=body.get("simulate"))
+        return _do_send(t, inv, simulate=body.get("simulate"), actor=token_data)
     return {"invoice": _public(inv)}
 
 
 @router.post("/api/owner/facturation/invoices/{invoice_id}/send")
 def send_invoice(invoice_id: str,
-                 token_data=Depends(require_role(["business_owner", "manager"]))):
-    t = _require_facturation(token_data)
-    inv = _db.fact_invoices.find_one({"id": invoice_id, "tenant_id": t["id"]})
-    if not inv:
-        raise HTTPException(404, "Facture introuvable.")
-    return _do_send(t, inv)
+                 token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    inv, tenant_id = _resolve_invoice_for_actor(invoice_id, token_data)
+    t = _tenant(tenant_id)
+    return _do_send(t, inv, actor=token_data)
 
 
-def _do_send(t: Dict[str, Any], inv: Dict[str, Any], simulate: Optional[str] = None) -> Dict[str, Any]:
+def _do_send(t: Dict[str, Any], inv: Dict[str, Any], simulate: Optional[str] = None,
+             actor=None) -> Dict[str, Any]:
     """Idempotent send: same tenant+number never transmits twice.
     `simulate` (TEST, Mock only): 'reject' | 'error' | 'timeout' forces that outcome
     so the rejection/error UX can be tested without a real PA."""
@@ -477,11 +521,12 @@ def _do_send(t: Dict[str, Any], inv: Dict[str, Any], simulate: Optional[str] = N
     _update_state(inv["id"], result.get("state", InvoiceState.SENT),
                   pdp_id=result.get("id") or pdp_id,
                   code=result.get("reject_code"), reason=result.get("reject_reason"))
-    _audit("invoice.sent", tenant_id=t["id"], actor=None,
+    _audit("invoice.sent", tenant_id=t["id"], actor=actor,
            object_kind="invoice", object_id=inv["id"],
            after={"pa_status": result.get("state", InvoiceState.SENT)},
            detail={"number": inv.get("number"), "provider": type(conn).__name__,
-                   "reject_code": result.get("reject_code")})
+                   "reject_code": result.get("reject_code"),
+                   **(_acting_note(actor, t) or {})})
     inv = _db.fact_invoices.find_one({"id": inv["id"]})
     return {"invoice": _public(inv), "result": result}
 
@@ -663,7 +708,7 @@ def list_received(token_data=Depends(require_role(["business_owner", "manager"])
 
 @router.post("/api/owner/facturation/received/seed-test")
 def seed_test_received(body: Dict[str, Any],
-                       token_data=Depends(require_role(["business_owner", "manager"]))):
+                       token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
     """TEST-ONLY: inject a fake supplier invoice so the purchases side of the
     Bouclier Fiscal (and the Reçues list) can be exercised with the Mock PA."""
     t = _require_facturation(token_data)
@@ -700,8 +745,14 @@ def mark_received(rid: str, body: Dict[str, Any],
 
 @router.post("/api/owner/facturation/ereporting")
 def send_ereporting(body: Dict[str, Any],
-                    token_data=Depends(require_role(["business_owner", "manager"]))):
-    t = _require_facturation(token_data)
+                    token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Transmit B2C sales data for a period.
+
+    Either side can trigger it: the legal obligation sits with the BUSINESS, but
+    in practice the accountant is the one tracking the deadline. Pass tenant_id
+    to act for a client (mandate verified, recorded as on-behalf-of).
+    """
+    t = _tenant_for_actor(token_data, body.get("tenant_id"))
     report = {
         "id": _new_id(),
         "tenant_id": t["id"],
@@ -719,6 +770,11 @@ def send_ereporting(body: Dict[str, Any],
         report["state"] = "error"
         report["error"] = e.message
     _db.fact_ereports.insert_one(dict(report))
+    _audit("ereporting.sent", tenant_id=t["id"], actor=token_data,
+           object_kind="ereport", object_id=report["id"],
+           after={"state": report["state"], "period_start": report.get("period_start"),
+                  "period_end": report.get("period_end")},
+           detail=_acting_note(token_data, t))
     return {"ereport": _public(report)}
 
 

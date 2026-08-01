@@ -4,7 +4,7 @@ import {
   Building2, ShieldCheck, AlertTriangle, Download, RefreshCw, X, ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { comptableAPI, facturationAPI } from '../lib/api';
+import { comptableAPI, facturationAPI, cabinetExtraAPI } from '../lib/api';
 
 /**
  * CabinetDashboard — the expert-comptable control tower.
@@ -26,6 +26,8 @@ export default function CabinetDashboard() {
   const [drill, setDrill] = useState(null); // {summary, invoices}
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState(null);   // invoice id being validated
+  const [acting, setActing] = useState(null);         // action running for a client
+  const [toast, setToast] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,6 +66,43 @@ export default function CabinetDashboard() {
     }
   };
 
+  /**
+   * Perform a facturation action ON BEHALF OF a client dossier.
+   * The server re-verifies the mandate and stamps the audit entry with
+   * "on_behalf_of", so the history never reads as if the owner did it.
+   */
+  const actForClient = async (action, tenantId) => {
+    setActing(action);
+    try {
+      if (action === 'ereporting') {
+        const now = new Date();
+        const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+        const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+        const r = await cabinetExtraAPI.ereportingFor(tenantId, {
+          period_start: from, period_end: to, totals_by_vat: {},
+        });
+        setToast({ ok: true, msg: `E-reporting transmis — état : ${r.data?.ereport?.state || 'queued'}` });
+      } else if (action === 'activate') {
+        await cabinetExtraAPI.activateFor(tenantId, {
+          start_date: '2026-09-01', type_operation: 'services',
+        });
+        setToast({ ok: true, msg: 'Conformité DGFiP activée pour ce dossier.' });
+      } else if (action === 'received') {
+        await cabinetExtraAPI.seedReceivedFor(tenantId, {
+          supplier_name: 'Fournisseur Test SARL', total_ht: 900,
+        });
+        setToast({ ok: true, msg: 'Facture fournisseur simulée pour ce dossier.' });
+      }
+      await openClient(tenantId);
+      await load();
+    } catch (e) {
+      setToast({ ok: false, msg: e?.response?.data?.detail || 'Action impossible.' });
+    } finally {
+      setActing(null);
+      setTimeout(() => setToast(null), 6000);
+    }
+  };
+
   const totals = data?.totals || {};
 
   return (
@@ -92,6 +131,15 @@ export default function CabinetDashboard() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pb-16">
+        {toast && (
+          <div className="mb-4 rounded-2xl px-4 py-3 text-sm border"
+               style={toast.ok
+                 ? { background: 'rgba(63,156,107,.10)', borderColor: 'rgba(63,156,107,.35)', color: '#2F7A52' }
+                 : { background: 'rgba(192,57,43,.08)', borderColor: 'rgba(192,57,43,.30)', color: '#C0392B' }}>
+            {toast.ok ? '✓ ' : '⚠ '}{toast.msg}
+          </div>
+        )}
+
         {/* totals */}
         <div className="grid grid-cols-4 gap-3 mb-5">
           <Stat label="Dossiers" value={totals.count ?? 0} />
@@ -163,7 +211,8 @@ export default function CabinetDashboard() {
 
       {drill && (
         <DrillModal data={drill} onClose={() => setDrill(null)}
-                    onReview={validateInvoice} reviewing={reviewing} />
+                    onReview={validateInvoice} reviewing={reviewing}
+                    onActFor={actForClient} acting={acting} />
       )}
     </div>
   );
@@ -228,7 +277,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
   );
 }
 
-function DrillModal({ data, onClose, onReview, reviewing }) {
+function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
@@ -244,6 +293,38 @@ function DrillModal({ data, onClose, onReview, reviewing }) {
           </div>
           <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
         </div>
+        {/* Actions the cabinet can perform FOR this client. The legal duty sits
+            with the business, but in practice the accountant is the one who
+            tracks the deadline — so both sides get the button, and the audit log
+            records who actually pressed it. */}
+        {onActFor && (
+          <div className="px-5 pt-4 flex flex-wrap gap-2 border-b pb-4" style={{ borderColor: '#F2ECE0' }}>
+            <button onClick={() => onActFor('ereporting', s.tenant_id)}
+                    disabled={acting === 'ereporting'}
+                    className="text-xs font-semibold px-3 py-2 rounded-xl text-white disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+              {acting === 'ereporting' ? 'Envoi…' : "Envoyer l'e-reporting"}
+            </button>
+            {!s.dgfip_activated && (
+              <button onClick={() => onActFor('activate', s.tenant_id)}
+                      disabled={acting === 'activate'}
+                      className="text-xs font-semibold px-3 py-2 rounded-xl text-white disabled:opacity-50"
+                      style={{ background: 'linear-gradient(135deg,#3F9C6B,#2F7A52)' }}>
+                {acting === 'activate' ? 'Activation…' : 'Activer conformité DGFiP'}
+              </button>
+            )}
+            <button onClick={() => onActFor('received', s.tenant_id)}
+                    disabled={acting === 'received'}
+                    className="text-xs px-3 py-2 rounded-xl border disabled:opacity-50"
+                    style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+              {acting === 'received' ? 'Simulation…' : 'Simuler une facture reçue'}
+            </button>
+            <span className="text-[10px] self-center" style={{ color: '#A8A29E' }}>
+              Actions effectuées pour le compte du client — tracées dans l'historique.
+            </span>
+          </div>
+        )}
+
         <div className="p-5">
           {(s.alerts || []).length > 0 && (
             <ul className="space-y-1.5 mb-4">

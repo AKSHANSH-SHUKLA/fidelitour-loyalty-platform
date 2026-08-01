@@ -228,6 +228,17 @@ export const cabinetExtraAPI = {
   // S2 — "kaun kya kar raha hai" (self-updating: working IS reporting)
   audit: (tenantId) => api.get('/comptable/audit' + (tenantId ? '?tenant_id=' + tenantId : '')),
   activity: (days = 7) => api.get('/comptable/activity-summary?days=' + days),
+
+  // Acting FOR a client: the same facturation endpoints, with tenant_id naming
+  // the dossier. The server verifies the mandate and records "on behalf of".
+  createInvoiceFor: (tenantId, data) =>
+    api.post('/owner/facturation/invoices', { ...data, tenant_id: tenantId }),
+  ereportingFor: (tenantId, data) =>
+    api.post('/owner/facturation/ereporting', { ...data, tenant_id: tenantId }),
+  activateFor: (tenantId, data) =>
+    api.post('/owner/facturation/activate', { ...(data || {}), tenant_id: tenantId }),
+  seedReceivedFor: (tenantId, data) =>
+    api.post('/owner/facturation/received/seed-test', { ...(data || {}), tenant_id: tenantId }),
 };
 
 export const comptableAPI = {
