@@ -37,10 +37,23 @@ export function luhnValid(num) {
 /** SIREN = the COMPANY id. 9 digits, Luhn-valid. */
 export function validateSiren(siren) {
   const s = String(siren || '').replace(/\D/g, '');
-  if (!s) return { ok: false, error: null };                       // empty = not an error yet
-  if (s.length !== 9) return { ok: false, error: 'Le SIREN doit contenir 9 chiffres.' };
-  if (!luhnValid(s)) return { ok: false, error: 'Ce SIREN est invalide (clé de contrôle incorrecte).' };
-  return { ok: true, error: null };
+  if (!s) return { ok: false, error: null, code: 'empty' };        // empty = not an error yet
+  if (s.length !== 9) {
+    return {
+      ok: false, code: 'length',
+      error: `Il manque ${9 - s.length} chiffre(s) — un SIREN en compte 9 (${s.length}/9).`,
+    };
+  }
+  if (!luhnValid(s)) {
+    // Distinct code so the UI can offer a valid example: this is the error a
+    // tester hits when they invent a number, and the length message would be
+    // actively misleading here (the length IS right).
+    return {
+      ok: false, code: 'checksum',
+      error: "Ce numéro n'existe pas : le dernier chiffre d'un SIREN est une clé de contrôle, et elle ne correspond pas. Vérifiez sur votre Kbis ou votre avis INSEE.",
+    };
+  }
+  return { ok: true, error: null, code: 'ok' };
 }
 
 /**
@@ -53,17 +66,40 @@ export function validateSiren(siren) {
  */
 export function validateSiret(siret, expectedSiren) {
   const s = String(siret || '').replace(/\D/g, '');
-  if (!s) return { ok: false, error: null };
-  if (s.length !== 14) return { ok: false, error: 'Le SIRET doit contenir 14 chiffres.' };
+  if (!s) return { ok: false, error: null, code: 'empty' };
+  if (s.length !== 14) {
+    return {
+      ok: false, code: 'length',
+      error: `Il manque ${14 - s.length} chiffre(s) — un SIRET en compte 14 au total (${s.length}/14).`,
+    };
+  }
   if (expectedSiren && s.slice(0, 9) !== String(expectedSiren).replace(/\D/g, '')) {
-    return { ok: false, error: 'Les 9 premiers chiffres du SIRET doivent correspondre au SIREN.' };
+    return {
+      ok: false, code: 'mismatch',
+      error: 'Les 9 premiers chiffres doivent être identiques à votre SIREN.',
+    };
   }
   const isLaPoste = s.startsWith('356000000');
   if (!isLaPoste && !luhnValid(s)) {
-    return { ok: false, error: 'Ce SIRET est invalide (clé de contrôle incorrecte).' };
+    return {
+      ok: false, code: 'checksum',
+      error: "Ce numéro n'existe pas : la clé de contrôle du SIRET ne correspond pas. Vérifiez sur votre avis de situation INSEE.",
+    };
   }
-  return { ok: true, error: null };
+  return { ok: true, error: null, code: 'ok' };
 }
+
+/**
+ * Known-valid identifiers, used ONLY to help someone who is testing.
+ * Real, published company numbers (Danone), so they pass every checksum — a
+ * tester inventing digits will always fail Luhn, which looks like a bug when it
+ * is actually the validation working.
+ */
+export const SAMPLE_IDENTITY = {
+  siren: '552100554',
+  siret: '55210055400013',
+  vat: 'FR96552100554',
+};
 
 /**
  * TVA intracommunautaire = "FR" + 2-digit key + SIREN.

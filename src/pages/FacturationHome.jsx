@@ -7,6 +7,7 @@ import { facturationAPI } from '../lib/api';
 import {
   BUSINESS_PROFILES, LEGAL_FORMS, VAT_REGIMES, ENTERPRISE_SIZES, getProfile,
   validateSiren, validateSiret, validateVatNumber, validateNaf, deriveVatNumber,
+  SAMPLE_IDENTITY,
 } from '../lib/frenchIdentifiers';
 
 /**
@@ -688,24 +689,41 @@ function ActivationGate({ onDone, onBack }) {
             </Field>
           )}
 
-          <Field label="SIREN — 9 chiffres (identifie votre entreprise)">
+          <Field label={`SIREN — identifie votre entreprise (${form.siren.length}/9 chiffres)`}>
             <input className="fld" value={form.siren} inputMode="numeric" maxLength={9}
                    onBlur={() => mark('siren')}
                    onChange={(e) => setForm({ ...form, siren: e.target.value.replace(/\D/g, '') })}
-                   placeholder="123456789" />
+                   placeholder="552100554" />
             <Hint error={show('siren', vSiren)}
-                  ok={vSiren.ok && 'SIREN valide (clé de contrôle vérifiée)'} />
+                  ok={vSiren.ok && 'SIREN valide — clé de contrôle vérifiée'}
+                  info={!form.siren && "9 chiffres, sur votre Kbis ou votre avis de situation INSEE."} />
+            {/* A tester who invents digits will always fail the checksum; without
+                this the validation looks broken rather than strict. */}
+            {vSiren.code === 'checksum' && touched.siren && (
+              <button type="button"
+                      onClick={() => setForm({ ...form, siren: SAMPLE_IDENTITY.siren, siret: '', vat_number: '' })}
+                      className="text-[11px] mt-1 underline" style={{ color: '#2F6FB3' }}>
+                Vous testez ? Utiliser un numéro d'exemple valide ({SAMPLE_IDENTITY.siren})
+              </button>
+            )}
           </Field>
 
           {needs.siret && (
-            <Field label="SIRET — 14 chiffres (identifie votre établissement)">
+            <Field label={`SIRET — identifie votre établissement (${form.siret.length}/14 chiffres)`}>
               <input className="fld" value={form.siret} inputMode="numeric" maxLength={14}
                      onBlur={() => mark('siret')}
                      onChange={(e) => setForm({ ...form, siret: e.target.value.replace(/\D/g, '') })}
-                     placeholder={form.siren ? `${form.siren}00014` : '12345678900014'} />
+                     placeholder={form.siren ? `${form.siren}00013` : '55210055400013'} />
               <Hint error={show('siret', vSiret)}
                     ok={vSiret.ok && 'SIRET valide'}
-                    info={!form.siret && "C'est le SIREN suivi de 5 chiffres. Les factures électroniques sont routées à ce niveau — un établissement, un SIRET."} />
+                    info={!form.siret && "Vos 9 chiffres de SIREN, puis 5 chiffres propres à l'établissement — 14 au total. Les factures électroniques sont routées à ce niveau."} />
+              {vSiret.code === 'checksum' && touched.siret && form.siren === SAMPLE_IDENTITY.siren && (
+                <button type="button"
+                        onClick={() => setForm({ ...form, siret: SAMPLE_IDENTITY.siret })}
+                        className="text-[11px] mt-1 underline" style={{ color: '#2F6FB3' }}>
+                  Utiliser le SIRET d'exemple ({SAMPLE_IDENTITY.siret})
+                </button>
+              )}
             </Field>
           )}
 
@@ -786,12 +804,21 @@ function ActivationGate({ onDone, onBack }) {
 
 const FLD_CSS = `.fld{width:100%;border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none}.fld:focus{border-color:#2F6FB3}`;
 
-/** Inline field feedback: red on error, green on success, grey for guidance. */
+/**
+ * Inline field feedback: red on error, green on success, grey for guidance.
+ *
+ * The `key` is derived from the message itself. That looks redundant but is the
+ * fix for a real bug: the page runs through a Google-Translate layer, which
+ * swaps text nodes in place. When React only CHANGES a node's text, the
+ * translator can keep showing its previously cached translation — so a user
+ * typing a valid-length-but-invalid SIREN still saw "must contain 9 digits".
+ * Changing the key forces a fresh node, which the translator re-processes.
+ */
 function Hint({ error, ok, info }) {
-  if (error) return <div className="text-[11px] mt-1" style={{ color: '#C0392B' }}>{error}</div>;
-  if (ok) return <div className="text-[11px] mt-1" style={{ color: '#2F7A52' }}>✓ {ok}</div>;
-  if (info) return <div className="text-[11px] mt-1" style={{ color: '#8B8680' }}>{info}</div>;
-  return null;
+  const msg = error || (ok && `✓ ${ok}`) || info || null;
+  if (!msg) return null;
+  const color = error ? '#C0392B' : ok ? '#2F7A52' : '#8B8680';
+  return <div key={msg} className="text-[11px] mt-1 leading-snug" style={{ color }}>{msg}</div>;
 }
 
 function Field({ label, children }) {
