@@ -79,7 +79,7 @@ export default function CabinetPasswordGate({ children }) {
             is a trap, not a rule. */}
         <ul className="mb-4 space-y-1">
           {rules.map((r) => (
-            <li key={r.id} className="text-[12px] flex items-center gap-2"
+            <li key={r.id + (r.ok ? '-ok' : '-no')} className="text-[12px] flex items-center gap-2"
                 style={{ color: r.ok ? '#2F7A52' : '#8B8680' }}>
               <span>{r.ok ? '✓' : '○'}</span>
               <LiveText>{r.label}</LiveText>

@@ -386,7 +386,7 @@ function CreateMemberModal({ onClose, onCreated }) {
                    placeholder="Cabinet-Rousseau2026!" />
             <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 mt-1.5">
               {rules.map((r) => (
-                <div key={r.id} className="text-[10px]"
+                <div key={r.id + (form.password && r.ok ? '-ok' : '-no')} className="text-[10px]"
                      style={{ color: form.password && r.ok ? '#2F7A52' : '#8B8680' }}>
                   {form.password && r.ok ? '✓' : '○'} {r.label}
                 </div>

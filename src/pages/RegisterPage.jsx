@@ -232,7 +232,8 @@ const RegisterPage = () => {
                                style={{ background: i < pwStrength ? STRENGTH_COLORS[pwStrength] : '#EFE9E0' }} />
                         ))}
                       </div>
-                      <div className="text-[11px] font-semibold mb-2" style={{ color: STRENGTH_COLORS[pwStrength] }}>
+                      <div key={'pw-str-' + pwStrength}
+                           className="text-[11px] font-semibold mb-2" style={{ color: STRENGTH_COLORS[pwStrength] }}>
                         {STRENGTH_LABELS[pwStrength]}
                       </div>
                     </>
@@ -245,7 +246,8 @@ const RegisterPage = () => {
                     {pwRules.map((r) => {
                       const started = formData.password.length > 0;
                       return (
-                        <div key={r.id} className="flex items-center gap-1.5 text-[11px] transition-colors"
+                        <div key={r.id + (started && r.ok ? '-ok' : '-no')}
+                             className="flex items-center gap-1.5 text-[11px] transition-colors"
                              style={{ color: started && r.ok ? '#2F7A52' : '#8B8680' }}>
                           <span className="w-3.5 text-center">{started && r.ok ? '✓' : '○'}</span>
                           {r.label}
@@ -265,7 +267,8 @@ const RegisterPage = () => {
                          onChange={set('password_confirm')} />
                 </IconField>
                 {formData.password_confirm.length > 0 && (
-                  <div className="mt-1.5 px-1 text-[11px] font-semibold"
+                  <div key={passwordsMatch ? 'pw-match' : 'pw-nomatch'}
+                       className="mt-1.5 px-1 text-[11px] font-semibold"
                        style={{ color: passwordsMatch ? '#2F7A52' : '#C0392B' }}>
                     {passwordsMatch ? '✓ Les mots de passe correspondent' : '✗ Les mots de passe ne correspondent pas'}
                   </div>
