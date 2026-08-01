@@ -9,6 +9,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,6 +44,40 @@ const LoginPage = () => {
             <label className="block text-sm font-medium mb-1 text-[#57534E]">{t('auth.password')}</label>
             <input required type="password" className="w-full border border-[#E7E5E4] rounded-lg p-3 focus:ring-[#B85C38]/20 focus:border-[#B85C38]" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
           </div>
+          {/* Forgot password — honest v1. Email-based reset needs a mail
+              provider (S3 backlog); until then this panel routes each kind of
+              user to the recovery path that ALREADY works, instead of a dead
+              link or a fake "check your inbox". */}
+          <div className="text-right">
+            <button type="button" onClick={() => setShowForgot(!showForgot)}
+                    className="text-xs font-medium text-[#B85C38] hover:underline">
+              Mot de passe oublié ?
+            </button>
+          </div>
+          {showForgot && (
+            <div className="rounded-xl border p-3 text-xs space-y-2"
+                 style={{ borderColor: '#EFE2D4', background: '#FBF6EE', color: '#57534E' }}>
+              <div>
+                <span className="font-semibold text-[#1C1917]">Employé d'un cabinet ?</span>{' '}
+                Demandez à votre expert-comptable : page Équipe → « Réinitialiser MDP ».
+                Vous recevrez un mot de passe temporaire à changer à la connexion.
+              </div>
+              <div>
+                <span className="font-semibold text-[#1C1917]">Employé d'un commerce ?</span>{' '}
+                Votre gérant peut recréer votre accès depuis ses Paramètres.
+              </div>
+              <div>
+                <span className="font-semibold text-[#1C1917]">Gérant ou expert-comptable ?</span>{' '}
+                Écrivez-nous à{' '}
+                <a href="mailto:support@fidclic.fr?subject=Mot%20de%20passe%20oubli%C3%A9"
+                   className="font-semibold" style={{ color: '#B85C38' }}>
+                  support@fidclic.fr
+                </a>{' '}
+                depuis l'adresse email de votre compte — nous vérifions et réinitialisons sous 24 h.
+              </div>
+            </div>
+          )}
+
           <button type="submit" className="w-full bg-[#B85C38] text-white py-3 rounded-full font-medium hover:bg-[#9C4E2F] transition-colors mt-6">
             {t('auth.login_button')}
           </button>
