@@ -373,7 +373,7 @@ def list_team(token_data=Depends(require_role(["comptable"]))):
         {"cabinet_id": m["cabinet_id"], "status": "active",
          "assignee_membership_id": {"$in": [None, ""]}})
     return {"members": out, "unassigned_dossiers": unassigned,
-            "my_role": m["role"]}
+            "my_role": m["role"], "my_membership_id": m["id"]}
 
 
 @router.patch("/api/cabinet/team/{membership_id}")

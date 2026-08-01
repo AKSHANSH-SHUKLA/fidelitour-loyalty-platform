@@ -220,7 +220,7 @@ export default function CabinetTeam() {
                   </div>
                 </div>
 
-                {isAdmin && m.role !== 'admin' && m.role !== 'expert_comptable' && (
+                {isAdmin && m.id !== team?.my_membership_id && (
                   <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t" style={{ borderColor: '#F2ECE0' }}>
                     <select className="fld-sm" value={m.role} disabled={busy === m.id}
                             onChange={(e) => changeMember(m.id, { role: e.target.value }, 'Rôle mis à jour.')}>
@@ -229,6 +229,29 @@ export default function CabinetTeam() {
                       <option value="superviseur">Superviseur</option>
                       <option value="expert_comptable">Expert-comptable</option>
                     </select>
+                    {/* Pôle toggles — a wrong wing is a data problem the founder
+                        must be able to fix here, not by recreating the account. */}
+                    <div className="flex items-center gap-1.5">
+                      {Object.entries(DOMAIN_LABELS).map(([k, v]) => {
+                        const has = (m.domains || []).includes(k);
+                        return (
+                          <button key={k} type="button" disabled={busy === m.id}
+                                  onClick={() => {
+                                    const next = has
+                                      ? (m.domains || []).filter((d) => d !== k)
+                                      : [...(m.domains || []), k];
+                                    if (next.length === 0) return;   // at least one wing
+                                    changeMember(m.id, { domains: next }, 'Pôles mis à jour.');
+                                  }}
+                                  className="text-[10px] px-2 py-1 rounded-full border disabled:opacity-50"
+                                  style={has
+                                    ? { borderColor: '#7A3E70', color: '#7A3E70', background: 'rgba(122,62,112,.08)', fontWeight: 600 }
+                                    : { borderColor: '#E7E1D5', color: '#8B8680' }}>
+                            {v}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <button disabled={busy === m.id}
                             onClick={() => changeMember(m.id, { status: suspended ? 'active' : 'suspended' },
                                                         suspended ? 'Accès rétabli.' : 'Accès suspendu.')}
