@@ -657,12 +657,15 @@ def _resolve_invoice_for_actor(invoice_id: str, token_data):
 
 @router.post("/api/owner/facturation/invoices/{invoice_id}/credit-note")
 def create_credit_note(invoice_id: str, body: Dict[str, Any],
-                       token_data=Depends(require_role(["business_owner", "manager"]))):
-    """Correct/cancel a prior invoice with an avoir (credit note)."""
-    t = _require_facturation(token_data)
-    orig = _db.fact_invoices.find_one({"id": invoice_id, "tenant_id": t["id"]})
-    if not orig:
-        raise HTTPException(404, "Facture d'origine introuvable.")
+                       token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Correct/cancel a prior invoice with an avoir (credit note).
+
+    Open to the accountant too: fixing a rejected invoice is precisely their
+    job, and forcing them to ask the client to click it would put the fix back
+    into email — the exact loop this product exists to break.
+    """
+    orig, tenant_id = _resolve_invoice_for_actor(invoice_id, token_data)
+    t = _tenant(tenant_id)
     amount_ht = float(body.get("amount_ht", orig.get("total_ht", 0)))
     amount_vat = float(body.get("amount_vat", orig.get("total_vat", 0)))
     cn = {
@@ -683,7 +686,8 @@ def create_credit_note(invoice_id: str, body: Dict[str, Any],
     _audit("credit_note.created", tenant_id=t["id"], actor=token_data,
            object_kind="credit_note", object_id=cn["id"],
            after={"number": cn["number"], "amount_ttc": cn["amount_ttc"]},
-           detail={"corrects": orig.get("number"), "reason": cn.get("reason")})
+           detail={"corrects": orig.get("number"), "reason": cn.get("reason"),
+                   **(_acting_note(token_data, t) or {})})
     return {"credit_note": _public(cn)}
 
 

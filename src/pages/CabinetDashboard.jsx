@@ -28,6 +28,7 @@ export default function CabinetDashboard() {
   const [reviewing, setReviewing] = useState(null);   // invoice id being validated
   const [acting, setActing] = useState(null);         // action running for a client
   const [toast, setToast] = useState(null);
+  const [crediting, setCrediting] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,6 +64,27 @@ export default function CabinetDashboard() {
       alert(e?.response?.data?.detail || 'Action impossible');
     } finally {
       setReviewing(null);
+    }
+  };
+
+  /**
+   * Issue a credit note for a rejected invoice — the action that actually
+   * clears the Tax Shield alert. Validating only records that the accountant
+   * reviewed it; only an avoir corrects it, as French law requires.
+   */
+  const createCreditNote = async (invoiceId, number) => {
+    setCrediting(invoiceId);
+    try {
+      const r = await facturationAPI.creditNote(invoiceId, { reason: 'Correction' });
+      setToast({ ok: true,
+                 msg: `Avoir ${r.data?.credit_note?.number || ''} créé pour ${number}. L'alerte du Bouclier disparaît.` });
+      if (drill?.summary?.tenant_id) await openClient(drill.summary.tenant_id);
+      await load();
+    } catch (e) {
+      setToast({ ok: false, msg: e?.response?.data?.detail || "Création de l'avoir impossible." });
+    } finally {
+      setCrediting(null);
+      setTimeout(() => setToast(null), 6000);
     }
   };
 
@@ -212,7 +234,8 @@ export default function CabinetDashboard() {
       {drill && (
         <DrillModal data={drill} onClose={() => setDrill(null)}
                     onReview={validateInvoice} reviewing={reviewing}
-                    onActFor={actForClient} acting={acting} />
+                    onActFor={actForClient} acting={acting}
+                    onCreditNote={createCreditNote} crediting={crediting} />
       )}
     </div>
   );
@@ -277,13 +300,17 @@ function Stat({ label, value, tone = '#1C1917' }) {
   );
 }
 
-function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting }) {
+function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
+                     onCreditNote, crediting }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
          style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+      {/* Wide enough that an invoice row fits on ONE line: number, customer,
+          amount, three status chips and the action. At max-w-lg the chips
+          wrapped onto their own lines, which read as broken rather than dense. */}
+      <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: '#F2ECE0' }}>
           <div>
             <h3 className="text-lg font-bold text-[#1C1917]">{s.name}</h3>
@@ -361,6 +388,18 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting }) {
                         className="text-[11px] font-semibold px-2 py-1 rounded-lg text-white disabled:opacity-50 shrink-0"
                         style={{ background: '#2F7A52' }}>
                         {busy ? '…' : 'Valider'}
+                      </button>
+                    )}
+                    {/* A refused invoice is only truly fixed by a credit note —
+                        validating it just records that the accountant looked at
+                        it. This is the button that actually clears the alert. */}
+                    {['refused', 'error'].includes(inv.pa_status || inv.state)
+                      && !credited && onCreditNote && (
+                      <button disabled={crediting === inv.id}
+                              onClick={() => onCreditNote(inv.id, inv.number)}
+                              className="text-[11px] font-semibold px-2 py-1 rounded-lg border disabled:opacity-50 shrink-0"
+                              style={{ borderColor: '#C0392B', color: '#C0392B' }}>
+                        {crediting === inv.id ? '…' : 'Créer un avoir'}
                       </button>
                     )}
                   </div>
