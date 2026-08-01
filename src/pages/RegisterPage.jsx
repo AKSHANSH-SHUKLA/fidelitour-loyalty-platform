@@ -79,6 +79,7 @@ const RegisterPage = () => {
     owner_name: '',
     email: '',
     password: '',
+    password_confirm: '',
     phone: '',
     postal_code: '',
     role: 'business_owner',
@@ -91,6 +92,8 @@ const RegisterPage = () => {
   // Live password feedback (S3 policy) — recomputed on each keystroke.
   const pwRules = passwordRules(formData.password);
   const pwStrength = passwordStrength(formData.password);
+  const passwordsMatch = formData.password.length > 0
+    && formData.password === formData.password_confirm;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,10 +108,15 @@ const RegisterPage = () => {
       const missing = passwordRules(formData.password).filter((r) => !r.ok).map((r) => r.label);
       return setError(`Mot de passe trop faible — il manque : ${missing.join(', ')}.`);
     }
+    if (formData.password !== formData.password_confirm) {
+      return setError('Les deux mots de passe ne correspondent pas.');
+    }
 
     setLoading(true);
     try {
-      await register(formData);
+      // password_confirm is a UI-only guard — never send it to the API.
+      const { password_confirm, ...payload } = formData;
+      await register(payload);
       // Auto-login so the new user lands directly on /dashboard.
       try {
         const me = await login({ email: formData.email, password: formData.password });
@@ -204,36 +212,62 @@ const RegisterPage = () => {
                 <input type="tel" placeholder={t('auth.phone_optional_placeholder')}
                        className={INNER_INPUT} value={formData.phone} onChange={set('phone')} />
               </IconField>
-              {/* Password — with a live rule checklist (S3 policy).
-                  Rules appear only once typing starts, so the form never scolds
-                  someone before they have had a chance. */}
+              {/* Password — the rules are shown BEFORE typing starts.
+                  A user should know what is expected of them upfront; discovering
+                  the requirements only after a rejected attempt is how signups
+                  get abandoned. They simply turn green as the password is typed. */}
               <div className="md:col-span-2">
                 <IconField icon={Lock}>
-                  <input required type="password" placeholder="Mot de passe (10 caractères minimum)"
+                  <input required type="password" placeholder="Mot de passe"
                          className={INNER_INPUT} value={formData.password} onChange={set('password')} />
                 </IconField>
-                {formData.password.length > 0 && (
-                  <div className="mt-2.5 px-1">
-                    {/* strength bar */}
-                    <div className="flex gap-1 mb-2">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div key={i} className="h-1.5 flex-1 rounded-full transition-colors"
-                             style={{ background: i < pwStrength ? STRENGTH_COLORS[pwStrength] : '#EFE9E0' }} />
-                      ))}
-                    </div>
-                    <div className="text-[11px] font-semibold mb-2" style={{ color: STRENGTH_COLORS[pwStrength] }}>
-                      {STRENGTH_LABELS[pwStrength]}
-                    </div>
-                    {/* live checklist */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                      {pwRules.map((r) => (
-                        <div key={r.id} className="flex items-center gap-1.5 text-[11px]"
-                             style={{ color: r.ok ? '#2F7A52' : '#8B8680' }}>
-                          <span className="w-3.5 text-center">{r.ok ? '✓' : '○'}</span>
+
+                <div className="mt-2.5 px-1">
+                  {/* strength bar — only meaningful once something is typed */}
+                  {formData.password.length > 0 && (
+                    <>
+                      <div className="flex gap-1 mb-1.5">
+                        {[0, 1, 2, 3].map((i) => (
+                          <div key={i} className="h-1.5 flex-1 rounded-full transition-colors"
+                               style={{ background: i < pwStrength ? STRENGTH_COLORS[pwStrength] : '#EFE9E0' }} />
+                        ))}
+                      </div>
+                      <div className="text-[11px] font-semibold mb-2" style={{ color: STRENGTH_COLORS[pwStrength] }}>
+                        {STRENGTH_LABELS[pwStrength]}
+                      </div>
+                    </>
+                  )}
+
+                  <div className="text-[11px] font-semibold mb-1.5" style={{ color: '#57534E' }}>
+                    Votre mot de passe doit contenir :
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                    {pwRules.map((r) => {
+                      const started = formData.password.length > 0;
+                      return (
+                        <div key={r.id} className="flex items-center gap-1.5 text-[11px] transition-colors"
+                             style={{ color: started && r.ok ? '#2F7A52' : '#8B8680' }}>
+                          <span className="w-3.5 text-center">{started && r.ok ? '✓' : '○'}</span>
                           {r.label}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Confirm password — catches the typo that would otherwise lock
+                  the user out of an account they just created. */}
+              <div className="md:col-span-2">
+                <IconField icon={Lock}>
+                  <input required type="password" placeholder="Confirmer le mot de passe"
+                         className={INNER_INPUT} value={formData.password_confirm}
+                         onChange={set('password_confirm')} />
+                </IconField>
+                {formData.password_confirm.length > 0 && (
+                  <div className="mt-1.5 px-1 text-[11px] font-semibold"
+                       style={{ color: passwordsMatch ? '#2F7A52' : '#C0392B' }}>
+                    {passwordsMatch ? '✓ Les mots de passe correspondent' : '✗ Les mots de passe ne correspondent pas'}
                   </div>
                 )}
               </div>
