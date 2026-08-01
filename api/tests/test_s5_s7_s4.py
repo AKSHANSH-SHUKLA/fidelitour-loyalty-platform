@@ -92,7 +92,8 @@ def test_memberships(db):
     print("\nS5 — cabinet, roles and accounts")
 
     me = CO.cabinet_me(token_data=tok("rousseau@cab.fr"))
-    check("admin sees own membership", me["membership"]["role"] == "admin")
+    check("founder is expert_comptable (v2 roles)",
+          me["membership"]["role"] == "expert_comptable")
     check("admin can manage team", me["can"]["manage_team"] is True)
 
     lea = CO.cabinet_me(token_data=tok("lea@cab.fr"))

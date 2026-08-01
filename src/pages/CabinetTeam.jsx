@@ -20,11 +20,18 @@ import { passwordRules, passwordValid } from '../lib/passwordPolicy';
  *   keeps "Léa validated this" actually meaning Léa.
  */
 
+// Roles v2 (S8) — a responsibility CHAIN (produce → validate → sign), not a
+// permission ladder. "admin" is kept as an alias so pre-migration rows render.
 const ROLE_LABELS = {
-  admin: { label: 'Administrateur', hint: 'Voit tout, gère l\'équipe et les attributions', c: '#7A3E70', bg: 'rgba(122,62,112,.12)' },
-  collaborateur: { label: 'Collaborateur', hint: 'Ses dossiers · peut valider et exporter', c: '#2F6FB3', bg: 'rgba(47,111,179,.12)' },
-  assistant: { label: 'Assistant', hint: 'Ses dossiers · prépare, ne valide pas', c: '#B8860B', bg: 'rgba(184,134,11,.12)' },
+  expert_comptable: { label: 'Expert-comptable', hint: 'Voit tout · valide · seul à pouvoir signer (n° Ordre requis)', c: '#7A3E70', bg: 'rgba(122,62,112,.12)' },
+  admin: { label: 'Expert-comptable', hint: 'Voit tout · valide · seul à pouvoir signer', c: '#7A3E70', bg: 'rgba(122,62,112,.12)' },
+  superviseur: { label: 'Superviseur', hint: 'Chef de mission — voit tout, valide, attribue · ne signe pas', c: '#2F7A52', bg: 'rgba(63,156,107,.12)' },
+  collaborateur: { label: 'Collaborateur', hint: 'Ses dossiers · produit et valide sous seuil', c: '#2F6FB3', bg: 'rgba(47,111,179,.12)' },
+  assistant: { label: 'Assistant', hint: 'Ses dossiers · produit (saisie, lettrage), ne valide pas', c: '#B8860B', bg: 'rgba(184,134,11,.12)' },
+  agent: { label: 'Agent FidClic', hint: 'Produit seulement — chaque action passe en revue humaine', c: '#57534E', bg: 'rgba(87,83,78,.12)' },
 };
+
+const DOMAIN_LABELS = { compta: 'Compta', social: 'Paie', juridique: 'Juridique' };
 
 export default function CabinetTeam() {
   const navigate = useNavigate();
@@ -75,7 +82,8 @@ export default function CabinetTeam() {
     } finally { setBusy(null); }
   };
 
-  const isAdmin = team?.my_role === 'admin';
+  const isAdmin = ['admin', 'expert_comptable'].includes(team?.my_role);
+  const canAssign = ['admin', 'expert_comptable', 'superviseur'].includes(team?.my_role);
 
   return (
     <div className="min-h-screen" style={{
@@ -178,6 +186,22 @@ export default function CabinetTeam() {
                     </div>
                     <div className="text-xs text-[#8B8680]">{m.user_email}</div>
                     <div className="text-[11px] text-[#A8A29E] mt-0.5">{role.hint}</div>
+                    <div className="flex gap-1.5 mt-1 flex-wrap">
+                      {(m.domains || []).map((d) => (
+                        <span key={d} className="text-[10px] px-1.5 py-0.5 rounded-full border"
+                              style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+                          {DOMAIN_LABELS[d] || d}
+                        </span>
+                      ))}
+                      {(m.role === 'expert_comptable' || m.role === 'admin') && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                              style={m.ordre_number
+                                ? { color: '#2F7A52', background: 'rgba(63,156,107,.12)' }
+                                : { color: '#B8860B', background: 'rgba(184,134,11,.12)' }}>
+                          {m.ordre_number ? `Ordre n° ${m.ordre_number}` : 'N° Ordre manquant — signature bloquée'}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Workload — computed from the work itself, never reported */}
@@ -188,16 +212,22 @@ export default function CabinetTeam() {
                     <div className="text-xs" style={{ color: m.open_cases > 0 ? '#C0392B' : '#8B8680' }}>
                       <LiveText>{`${m.open_cases} cas ouvert(s)`}</LiveText>
                     </div>
+                    {m.tasks > 0 && (
+                      <div className="text-[11px] text-[#8B8680]">
+                        <LiveText>{`${m.tasks} tâche(s) attribuée(s)`}</LiveText>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {isAdmin && m.role !== 'admin' && (
+                {isAdmin && m.role !== 'admin' && m.role !== 'expert_comptable' && (
                   <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t" style={{ borderColor: '#F2ECE0' }}>
                     <select className="fld-sm" value={m.role} disabled={busy === m.id}
                             onChange={(e) => changeMember(m.id, { role: e.target.value }, 'Rôle mis à jour.')}>
-                      <option value="collaborateur">Collaborateur</option>
                       <option value="assistant">Assistant</option>
-                      <option value="admin">Administrateur</option>
+                      <option value="collaborateur">Collaborateur</option>
+                      <option value="superviseur">Superviseur</option>
+                      <option value="expert_comptable">Expert-comptable</option>
                     </select>
                     <button disabled={busy === m.id}
                             onClick={() => changeMember(m.id, { status: suspended ? 'active' : 'suspended' },
@@ -224,7 +254,7 @@ export default function CabinetTeam() {
         </div>
 
         {/* Dossier assignment table */}
-        {isAdmin && clients.length > 0 && (
+        {canAssign && clients.length > 0 && (
           <div className="rounded-3xl bg-white border" style={{ borderColor: '#ECE3D2' }}>
             <div className="px-5 py-3 border-b font-bold text-[#1C1917]" style={{ borderColor: '#F2ECE0' }}>
               Attribution des dossiers
@@ -265,7 +295,7 @@ export default function CabinetTeam() {
 }
 
 function CreateMemberModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({ full_name: '', email: '', role: 'collaborateur', password: '' });
+  const [form, setForm] = useState({ full_name: '', email: '', role: 'collaborateur', domains: ['compta'], ordre_number: '', password: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const rules = passwordRules(form.password);
@@ -309,10 +339,46 @@ function CreateMemberModal({ onClose, onCreated }) {
             <span className="text-xs font-medium text-[#57534E]">Rôle</span>
             <select className="fld" value={form.role}
                     onChange={(e) => setForm({ ...form, role: e.target.value })}>
-              <option value="collaborateur">Collaborateur — ses dossiers, peut valider</option>
-              <option value="assistant">Assistant — ses dossiers, prépare seulement</option>
+              <option value="assistant">Assistant — produit (saisie, lettrage), ne valide pas</option>
+              <option value="collaborateur">Collaborateur — ses dossiers, produit et valide</option>
+              <option value="superviseur">Superviseur — voit tout, valide, attribue</option>
+              <option value="expert_comptable">Expert-comptable — voit tout, valide et signe</option>
             </select>
           </label>
+          <div className="block">
+            <span className="text-xs font-medium text-[#57534E]">Pôle(s)</span>
+            <div className="flex gap-2 mt-1.5">
+              {Object.entries(DOMAIN_LABELS).map(([k, v]) => (
+                <button key={k} type="button"
+                        onClick={() => setForm((f) => ({
+                          ...f,
+                          domains: f.domains.includes(k)
+                            ? (f.domains.length > 1 ? f.domains.filter((d) => d !== k) : f.domains)
+                            : [...f.domains, k],
+                        }))}
+                        className="text-xs px-3 py-1.5 rounded-full border"
+                        style={form.domains.includes(k)
+                          ? { borderColor: '#7A3E70', color: '#7A3E70', background: 'rgba(122,62,112,.08)', fontWeight: 600 }
+                          : { borderColor: '#E7E1D5', color: '#8B8680' }}>
+                  {v}
+                </button>
+              ))}
+            </div>
+            <div className="text-[10px] text-[#A8A29E] mt-1">
+              Un gestionnaire de paie = Collaborateur + pôle « Paie ».
+            </div>
+          </div>
+          {form.role === 'expert_comptable' && (
+            <label className="block">
+              <span className="text-xs font-medium text-[#57534E]">N° d'inscription à l'Ordre</span>
+              <input className="fld" value={form.ordre_number}
+                     onChange={(e) => setForm({ ...form, ordre_number: e.target.value })}
+                     placeholder="140002200" />
+              <div className="text-[10px] text-[#A8A29E] mt-1">
+                Sans numéro, le compte fonctionne mais ne peut pas signer (attestation, lettre de mission).
+              </div>
+            </label>
+          )}
           <label className="block">
             <span className="text-xs font-medium text-[#57534E]">Mot de passe initial</span>
             <input className="fld" type="text" value={form.password}

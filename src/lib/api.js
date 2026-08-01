@@ -237,6 +237,12 @@ export const cabinetOsAPI = {
   unassigned: () => api.get('/cabinet/dossiers/unassigned'),
 };
 
+/** S9 — grille de répartition: who does what on each dossier. */
+export const grilleAPI = {
+  get: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/grille'),
+  set: (tenantId, body) => api.post('/cabinet/dossiers/' + tenantId + '/grille', body),
+};
+
 /** S4 — Exception Centre: failures as owned, dated work items. */
 export const casesAPI = {
   list: (params = {}) => {

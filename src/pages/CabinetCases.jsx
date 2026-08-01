@@ -69,7 +69,9 @@ export default function CabinetCases() {
   };
 
   const counts = data?.counts || {};
-  const isAdmin = me?.membership?.role === 'admin';
+  // v2 roles: EC and superviseur both have portfolio-wide oversight; legacy
+  // "admin" kept until every row has been normalized on read.
+  const isAdmin = ['admin', 'expert_comptable', 'superviseur'].includes(me?.membership?.role);
 
   return (
     <div className="min-h-screen" style={{

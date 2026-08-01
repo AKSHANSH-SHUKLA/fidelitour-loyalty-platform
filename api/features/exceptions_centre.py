@@ -135,7 +135,8 @@ def open_case(tenant_id: str, case_type: str, *, detail_fr: str = "",
         assignee = link.get("assignee_membership_id")
         if not assignee:
             adm = database.cabinet_memberships.find_one(
-                {"cabinet_id": link.get("cabinet_id"), "role": "admin", "status": "active"})
+                {"cabinet_id": link.get("cabinet_id"),
+                 "role": {"$in": ["expert_comptable", "admin"]}, "status": "active"})
             assignee = adm["id"] if adm else None
 
         due = (datetime.now(timezone.utc) + timedelta(days=spec["sla_days"])).date().isoformat()
@@ -230,7 +231,8 @@ def assign_case(case_id: str, body: Dict[str, Any],
     from features.cabinet_os import current_membership
     m = current_membership(token_data.email)
     case = _get_in_scope(case_id, token_data.email)
-    if m["role"] != "admin" and case.get("assignee_membership_id") != m["id"]:
+    from features.cabinet_os import PORTFOLIO_WIDE_ROLES
+    if m["role"] not in PORTFOLIO_WIDE_ROLES and case.get("assignee_membership_id") != m["id"]:
         raise HTTPException(403, "Vous ne pouvez réattribuer que vos propres cas.")
     target = body.get("membership_id")
     if target and not _db.cabinet_memberships.find_one(

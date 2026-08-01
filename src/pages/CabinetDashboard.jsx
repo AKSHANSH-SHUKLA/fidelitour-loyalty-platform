@@ -4,7 +4,8 @@ import {
   Building2, ShieldCheck, AlertTriangle, Download, RefreshCw, X, ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { comptableAPI, facturationAPI, cabinetExtraAPI, casesAPI } from '../lib/api';
+import { comptableAPI, facturationAPI, cabinetExtraAPI, casesAPI, cabinetOsAPI } from '../lib/api';
+import GrilleModal from '../components/GrilleModal';
 import LiveText from '../components/LiveText';
 
 /**
@@ -31,6 +32,8 @@ export default function CabinetDashboard() {
   const [toast, setToast] = useState(null);
   const [crediting, setCrediting] = useState(null);
   const [openCases, setOpenCases] = useState(0);
+  const [grilleFor, setGrilleFor] = useState(null);  // {tenant_id, name}
+  const [teamMembers, setTeamMembers] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,6 +46,9 @@ export default function CabinetDashboard() {
     // Open-case badge lives in the header so the queue is never out of sight.
     casesAPI.list({ status: 'open' })
       .then((r) => setOpenCases(r?.data?.counts?.open ?? 0))
+      .catch(() => {});
+    cabinetOsAPI.team()
+      .then((r) => setTeamMembers(r?.data?.members || []))
       .catch(() => {});
     setLoading(false);
   }, []);
@@ -253,7 +259,12 @@ export default function CabinetDashboard() {
         <DrillModal data={drill} onClose={() => setDrill(null)}
                     onReview={validateInvoice} reviewing={reviewing}
                     onActFor={actForClient} acting={acting}
-                    onCreditNote={createCreditNote} crediting={crediting} />
+                    onCreditNote={createCreditNote} crediting={crediting}
+                    onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })} />
+      )}
+      {grilleFor && (
+        <GrilleModal tenantId={grilleFor.tenant_id} clientName={grilleFor.name}
+                     members={teamMembers} onClose={() => setGrilleFor(null)} />
       )}
     </div>
   );
@@ -318,7 +329,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
 }
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
-                     onCreditNote, crediting }) {
+                     onCreditNote, crediting, onOpenGrille }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
@@ -336,7 +347,16 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
               <LiveText>{b.label}</LiveText> · {s.score}/100
             </span>
           </div>
-          <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
+          <div className="flex items-center gap-2">
+            {onOpenGrille && (
+              <button onClick={() => onOpenGrille(s.tenant_id, s.name)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-xl border"
+                      style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+                Répartition des tâches
+              </button>
+            )}
+            <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
+          </div>
         </div>
         {/* Actions the cabinet can perform FOR this client. The legal duty sits
             with the business, but in practice the accountant is the one who

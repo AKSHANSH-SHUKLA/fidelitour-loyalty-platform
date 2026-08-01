@@ -160,7 +160,8 @@ def invite_accountant(body: Dict[str, Any],
         mem = _db.cabinet_memberships.find_one({"user_email": email, "status": "active"})
         if mem:
             cabinet_id = mem.get("cabinet_id")
-            assignee = mem["id"] if mem.get("role") != "admin" else None
+            from features.cabinet_os import PORTFOLIO_WIDE_ROLES
+            assignee = mem["id"] if mem.get("role") not in PORTFOLIO_WIDE_ROLES else None
         _db.cabinet_links.insert_one({
             "id": str(uuid4()), "comptable_email": email,
             "cabinet_id": cabinet_id, "assignee_membership_id": assignee,

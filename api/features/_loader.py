@@ -62,6 +62,8 @@ MODULES = [
     # Exception Centre — every failure becomes an owned, dated, closable case.
     # Loads after cabinet_os because it resolves scope through memberships.
     "features.exceptions_centre",
+    # Grille de répartition (S9) — task-level assignment per dossier.
+    "features.grille",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.
