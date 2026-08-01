@@ -4,6 +4,7 @@ import {
   ReceiptText, ShieldCheck, ArrowLeft, Plus, Send, RefreshCw, AlertTriangle, Copy,
 } from 'lucide-react';
 import { facturationAPI } from '../lib/api';
+import LiveText from '../components/LiveText';
 import {
   BUSINESS_PROFILES, LEGAL_FORMS, VAT_REGIMES, ENTERPRISE_SIZES, getProfile,
   validateSiren, validateSiret, validateVatNumber, validateNaf, deriveVatNumber,
@@ -174,7 +175,7 @@ export default function FacturationHome() {
                ? { background: 'rgba(63,156,107,.10)', borderColor: 'rgba(63,156,107,.35)', color: '#2F7A52' }
                : { background: 'rgba(192,57,43,.08)', borderColor: 'rgba(192,57,43,.30)', color: '#C0392B' }}>
           <span className="shrink-0">{flash.type === 'ok' ? '✓' : '⚠'}</span>
-          <span className="flex-1">{flash.text}</span>
+          <LiveText className="flex-1">{flash.text}</LiveText>
           <button onClick={() => setFlash(null)} className="opacity-60 hover:opacity-100">✕</button>
         </div>
       )}
@@ -197,7 +198,7 @@ export default function FacturationHome() {
               </div>
             </div>
             <div className="mt-2 text-xs font-bold" style={{ color: band.c }}>
-              <ShieldCheck size={12} className="inline mr-1" />{band.label}
+              <ShieldCheck size={12} className="inline mr-1" /><LiveText>{band.label}</LiveText>
             </div>
           </div>
           <div className="flex-1">
@@ -216,7 +217,7 @@ export default function FacturationHome() {
                     <span style={{ color: BAND[a.level]?.c || '#B8860B' }}>
                       <AlertTriangle size={15} className="mt-0.5" />
                     </span>
-                    <span className="text-[#44403C]">{a.message}</span>
+                    <LiveText className="text-[#44403C]">{a.message}</LiveText>
                   </li>
                 ))}
               </ul>
@@ -237,7 +238,7 @@ export default function FacturationHome() {
                     <li key={i} className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1.5" style={{ color: BAND[r.level]?.c || '#57534E' }}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: BAND[r.level]?.c || '#8B8680' }} />
-                        {r.label}
+                        <LiveText>{r.label}</LiveText>
                       </span>
                       <span className="font-semibold" style={{ color: r.points < 0 ? '#C0392B' : '#2F7A52' }}>
                         {r.points < 0 ? r.points : (r.points === 0 ? '±0' : '+' + r.points)}
@@ -453,7 +454,7 @@ function Shell({ children, onBack }) {
 function Kpi({ label, value, tone = '#1C1917', sub }) {
   return (
     <div className="rounded-2xl bg-white border p-4" style={{ borderColor: '#ECE3D2' }}>
-      <div className="text-xl font-bold" style={{ color: tone }}>{value}</div>
+      <LiveText as="div" className="text-xl font-bold" style={{ color: tone }}>{value}</LiveText>
       <div className="text-xs text-[#8B8680] mt-0.5">{label}</div>
       {sub && <div className="text-[10px] text-[#B4ADA2] mt-0.5">{sub}</div>}
     </div>
@@ -520,7 +521,7 @@ function StatusChips({ inv }) {
           <span key={fam} title={`${cfg.label} : ${label}`}
                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
                 style={{ color, background: color + '1A' }}>
-            {label}
+            <LiveText>{label}</LiveText>
           </span>
         );
       })}

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { comptableAPI, facturationAPI, cabinetExtraAPI } from '../lib/api';
+import LiveText from '../components/LiveText';
 
 /**
  * CabinetDashboard — the expert-comptable control tower.
@@ -158,7 +159,7 @@ export default function CabinetDashboard() {
                style={toast.ok
                  ? { background: 'rgba(63,156,107,.10)', borderColor: 'rgba(63,156,107,.35)', color: '#2F7A52' }
                  : { background: 'rgba(192,57,43,.08)', borderColor: 'rgba(192,57,43,.30)', color: '#C0392B' }}>
-            {toast.ok ? '✓ ' : '⚠ '}{toast.msg}
+            <LiveText>{(toast.ok ? '✓ ' : '⚠ ') + toast.msg}</LiveText>
           </div>
         )}
 
@@ -183,7 +184,7 @@ export default function CabinetDashboard() {
                   <AlertTriangle size={14} style={{ color: BAND[a.level]?.c }} />
                   <button onClick={() => openClient(a.tenant_id)}
                           className="font-semibold text-[#1C1917] hover:underline">{a.client}</button>
-                  <span className="text-[#57534E]">— {a.message}</span>
+                  <LiveText className="text-[#57534E]">{'— ' + a.message}</LiveText>
                 </li>
               ))}
             </ul>
@@ -253,9 +254,8 @@ function Pill({ state }) {
   };
   const [label, c, bg] = map[state] || [state || '—', '#8B8680', 'rgba(139,134,128,.12)'];
   return (
-    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ color: c, background: bg }}>
-      {label}
-    </span>
+    <LiveText className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+              style={{ color: c, background: bg }}>{label}</LiveText>
   );
 }
 
@@ -275,8 +275,8 @@ const PAY_MAP = {
 function MiniChip({ value, map }) {
   const [label, c] = map[value] || [value || '—', '#8B8680'];
   return (
-    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
-          style={{ color: c, background: c + '1A' }}>{label}</span>
+    <LiveText className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+              style={{ color: c, background: c + '1A' }}>{label}</LiveText>
   );
 }
 
@@ -315,7 +315,8 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
           <div>
             <h3 className="text-lg font-bold text-[#1C1917]">{s.name}</h3>
             <span className="text-xs" style={{ color: b.c }}>
-              <ShieldCheck size={12} className="inline mr-1" />{b.label} · {s.score}/100
+              <ShieldCheck size={12} className="inline mr-1" />
+              <LiveText>{b.label}</LiveText> · {s.score}/100
             </span>
           </div>
           <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
@@ -358,7 +359,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
               {s.alerts.map((a, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm">
                   <AlertTriangle size={14} style={{ color: BAND[a.level]?.c }} />
-                  <span className="text-[#44403C]">{a.message}</span>
+                  <LiveText className="text-[#44403C]">{a.message}</LiveText>
                 </li>
               ))}
             </ul>
