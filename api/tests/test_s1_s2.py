@@ -56,12 +56,30 @@ CAB_B = SimpleNamespace(tenant_id=None, role="comptable", email="b@cab.fr")
 CAB_OLD = SimpleNamespace(tenant_id=None, role="comptable", email="old@cab.fr")
 
 
-def make_invoice(db, send=False, simulate=None):
-    r = F.create_invoice({
-        "buyer": {"name": "Client SARL", "is_company": True, "siren": "111222333"},
-        "lines": [{"label": "Prestation", "quantity": 1, "unit_price": 1000, "vat_rate": 20}],
-        "send": send, "simulate": simulate,
-    }, token_data=OWNER)
+#: A legally complete invoice payload — the same shape the UI sends.
+#: Kept as a helper so every test exercises the real (validated) path rather
+#: than a stripped-down one that would hide compliance regressions.
+def invoice_payload(**over):
+    body = {
+        "buyer": {
+            "name": "Client SARL", "is_company": True,
+            "siren": "552100554",                      # real, Luhn-valid
+            "address": "12 rue de la Paix, 75002 Paris",
+        },
+        "date": "2026-07-01",
+        "supply_date": "2026-07-01",
+        "due_date": "2026-07-31",
+        "operation_category": "services",
+        "lines": [{"description": "Prestation", "quantity": 1,
+                   "unit_price": 1000, "vat_rate": 20}],
+    }
+    body.update(over)
+    return body
+
+
+def make_invoice(db, send=False, simulate=None, token=None, **over):
+    r = F.create_invoice(invoice_payload(send=send, simulate=simulate, **over),
+                         token_data=token or OWNER)
     return r["invoice"]
 
 
@@ -80,11 +98,12 @@ def test_s1(db):
           == ("draft", ReviewStatus.UNREVIEWED, PaymentStatus.UNPAID, ExportStatus.NOT_READY))
 
     # THE key scenario: a REFUSED invoice can still be reviewed & validated.
-    ref = F.create_invoice({
-        "buyer": {"name": "byblos", "is_company": True},
-        "lines": [{"label": "x", "quantity": 1, "unit_price": 2500, "vat_rate": 20}],
-        "send": True, "simulate": "reject",
-    }, token_data=OWNER)["invoice"]
+    ref = F.create_invoice(invoice_payload(
+        buyer={"name": "byblos", "is_company": True, "siren": "552100554",
+               "address": "3 rue X, 75001 Paris"},
+        lines=[{"description": "x", "quantity": 1, "unit_price": 2500, "vat_rate": 20}],
+        send=True, simulate="reject",
+    ), token_data=OWNER)["invoice"]
     check("simulated reject sets pa_status=refused", ref["pa_status"] == "refused", ref["pa_status"])
 
     out = F.set_review_status(ref["id"], {"target": ReviewStatus.VALIDATED,
@@ -173,10 +192,11 @@ def test_isolation(db):
     check("5. portfolio lists only mandated tenants",
           [c["tenant_id"] for c in lst["clients"]] == ["t1"], lst["clients"])
     # 6. cross-tenant write via the invoice endpoints is blocked too
-    other = F.create_invoice({
-        "buyer": {"name": "y", "is_company": True},
-        "lines": [{"label": "y", "quantity": 1, "unit_price": 50, "vat_rate": 20}],
-    }, token_data=SimpleNamespace(tenant_id="t2", role="business_owner", email="o2@x.fr"))["invoice"]
+    other = F.create_invoice(invoice_payload(
+        buyer={"name": "y", "is_company": True, "siren": "552100554",
+               "address": "9 rue Y, 69001 Lyon"},
+        lines=[{"description": "y", "quantity": 1, "unit_price": 50, "vat_rate": 20}],
+    ), token_data=SimpleNamespace(tenant_id="t2", role="business_owner", email="o2@x.fr"))["invoice"]
     expect_403("6. accountant A cannot review an invoice of t2",
                lambda: F.set_review_status(other["id"], {"target": ReviewStatus.VALIDATED},
                                            token_data=CAB_A))
@@ -293,6 +313,60 @@ def test_identity(db):
 # S3 — password policy
 # ==========================================================================
 
+def test_invoice_compliance(db):
+    print("\nInvoice legal compliance (mandatory mentions)")
+
+    ok = make_invoice(db)
+    check("compliant invoice accepted", bool(ok["id"]))
+    check("supply_date stored", ok.get("supply_date") == "2026-07-01")
+    check("operation_category stored", ok.get("operation_category") == "services")
+    check("seller snapshot embedded", (ok.get("seller") or {}).get("legal_name") is not None)
+
+    def expect_422(label, **over):
+        try:
+            F.create_invoice(invoice_payload(**over), token_data=OWNER)
+            check(label, False, "NOT rejected")
+        except Exception as e:
+            check(label, getattr(e, "status_code", None) == 422, e)
+
+    expect_422("missing buyer address rejected",
+               buyer={"name": "X", "is_company": True, "siren": "552100554"})
+    expect_422("missing buyer SIREN rejected (B2B)",
+               buyer={"name": "X", "is_company": True, "address": "1 rue X"})
+    expect_422("invalid buyer SIREN rejected",
+               buyer={"name": "X", "is_company": True, "siren": "123456789", "address": "1 rue X"})
+    expect_422("missing supply_date rejected", supply_date=None)
+    expect_422("missing due_date rejected", due_date=None)
+    expect_422("due before issue rejected", due_date="2026-06-01")
+    expect_422("missing operation_category rejected", operation_category=None)
+    expect_422("empty line rejected",
+               lines=[{"description": "", "quantity": 1, "unit_price": 0, "vat_rate": 20}])
+
+    # B2C needs no SIREN — the rule must not over-block
+    b2c = F.create_invoice(invoice_payload(
+        buyer={"name": "Particulier", "is_company": False, "address": "5 rue Z, Tours"},
+    ), token_data=OWNER)["invoice"]
+    check("B2C invoice accepted without SIREN", b2c["channel"] == "e-reporting")
+
+    # franchise en base: charging VAT is illegal, not just unusual
+    db.tenants.update_one({"id": "t1"}, {"$set": {"vat_regime": "franchise"}})
+    expect_422("VAT under franchise en base rejected")
+    okf = F.create_invoice(invoice_payload(
+        lines=[{"description": "Prestation", "quantity": 1, "unit_price": 500, "vat_rate": 0}],
+    ), token_data=OWNER)["invoice"]
+    check("franchise invoice at 0% accepted", okf["total_vat"] == 0)
+    db.tenants.update_one({"id": "t1"}, {"$set": {"vat_regime": "reel_normal_mensuel"}})
+
+    # multi-line totals + per-rate VAT
+    multi = F.create_invoice(invoice_payload(lines=[
+        {"description": "Repas", "quantity": 10, "unit_price": 20, "vat_rate": 10},
+        {"description": "Vin", "quantity": 5, "unit_price": 30, "vat_rate": 20},
+    ]), token_data=OWNER)["invoice"]
+    check("multi-line HT total correct", multi["total_ht"] == 350, multi["total_ht"])
+    check("mixed VAT rates computed", multi["total_vat"] == 50, multi["total_vat"])
+    check("TTC = HT + VAT", multi["total_ttc"] == 400, multi["total_ttc"])
+
+
 def test_password_policy():
     print("\nS3 — password policy")
     from services import password_policy as P
@@ -347,6 +421,7 @@ if __name__ == "__main__":
     test_isolation(db)
     test_audit(db)
     test_identity(db)
+    test_invoice_compliance(db)
     test_password_policy()
     print("\n" + "=" * 62)
     print(f"PASSED: {len(PASS)}   FAILED: {len(FAIL)}")

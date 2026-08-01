@@ -9,6 +9,10 @@ import {
   validateSiren, validateSiret, validateVatNumber, validateNaf, deriveVatNumber,
   SAMPLE_IDENTITY,
 } from '../lib/frenchIdentifiers';
+import {
+  VAT_RATES, OPERATION_CATEGORIES, PAYMENT_TERMS,
+  computeTotals, legalMentions, validateInvoice, addDays, todayIso,
+} from '../lib/invoiceMentions';
 
 /**
  * FacturationHome — the Facturation module's home screen.
@@ -406,6 +410,7 @@ export default function FacturationHome() {
 
       {showCreate && (
         <CreateInvoiceModal
+          seller={status}
           onClose={() => setShowCreate(false)}
           onCreated={async () => { setShowCreate(false); await loadDashboard(); }}
         />
@@ -832,98 +837,358 @@ function Field({ label, children }) {
 
 /* ---------------- create invoice modal ---------------- */
 
-function CreateInvoiceModal({ onClose, onCreated }) {
-  const [buyer, setBuyer] = useState({ name: '', siren: '', is_company: true });
-  const [line, setLine] = useState({ description: '', unit_price: '', vat_rate: 20 });
+/**
+ * CreateInvoiceModal — a legally complete French invoice, not a demo form.
+ *
+ * WHY IT IS THIS LONG
+ *   A French invoice must carry ~25 mandatory mentions (art. 242 nonies A CGI,
+ *   art. L441-9 Code de commerce), and the 2026 reform adds more: the buyer's
+ *   SIREN, the delivery address, and the category of operation. A missing
+ *   mention is not cosmetic — the recipient's platform rejects the invoice, or
+ *   an auditor finds a non-compliant document years later.
+ *
+ *   Everything about the SELLER is filled automatically from the tenant, so the
+ *   user only ever types what only they can know. Everything mandatory is
+ *   validated BEFORE sending, because a rejection costs a support case and a
+ *   resend, while a validation message costs nothing.
+ */
+function CreateInvoiceModal({ onClose, onCreated, seller }) {
+  const sellerRegime = seller?.vat_regime || 'reel_normal_mensuel';
+  const isFranchise = sellerRegime === 'franchise';
+
+  const [buyer, setBuyer] = useState({
+    name: '', siren: '', vat_number: '', address: '', delivery_address: '',
+    is_company: true,
+  });
+  const [invoice, setInvoice] = useState({
+    issue_date: todayIso(),
+    supply_date: todayIso(),
+    payment_term: 'net30',
+    due_date: addDays(todayIso(), 30),
+    operation_category: 'services',
+    vat_on_debits: false,
+    purchase_order: '',
+    notes: '',
+  });
+  const [lines, setLines] = useState([
+    { description: '', quantity: '1', unit_price: '', vat_rate: isFranchise ? 0 : 20 },
+  ]);
+  const [sameDelivery, setSameDelivery] = useState(true);
   const [simulate, setSimulate] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
+  const [errors, setErrors] = useState([]);
+
+  const totals = computeTotals(lines);
+  const mentions = legalMentions({
+    vatRegime: sellerRegime,
+    isCompany: buyer.is_company,
+    operationCategory: invoice.operation_category,
+    vatOnDebits: invoice.vat_on_debits,
+  });
+
+  /* Payment terms drive the due date — the user picks a term, not a date. */
+  const setTerm = (termId) => {
+    const term = PAYMENT_TERMS.find((t) => t.id === termId);
+    setInvoice((i) => ({
+      ...i, payment_term: termId,
+      due_date: addDays(i.issue_date, term?.days ?? 30),
+    }));
+  };
+  const setIssueDate = (d) => {
+    const term = PAYMENT_TERMS.find((t) => t.id === invoice.payment_term);
+    setInvoice((i) => ({ ...i, issue_date: d, due_date: addDays(d, term?.days ?? 30) }));
+  };
+
+  const setLine = (idx, patch) =>
+    setLines((ls) => ls.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  const addLine = () =>
+    setLines((ls) => [...ls, { description: '', quantity: '1', unit_price: '',
+                               vat_rate: isFranchise ? 0 : 20 }]);
+  const removeLine = (idx) =>
+    setLines((ls) => (ls.length > 1 ? ls.filter((_, i) => i !== idx) : ls));
 
   const submit = async () => {
-    setBusy(true); setErr('');
+    const found = validateInvoice({ buyer, invoice, lines, sellerVatRegime: sellerRegime });
+    setErrors(found);
+    if (found.length) return;
+
+    setBusy(true);
     try {
       await facturationAPI.createInvoice({
-        buyer,
-        lines: [{
-          description: line.description || 'Prestation',
-          quantity: 1,
-          unit_price: parseFloat(line.unit_price || '0'),
-          vat_rate: parseFloat(line.vat_rate || '20'),
-        }],
+        buyer: {
+          ...buyer,
+          delivery_address: sameDelivery ? buyer.address : buyer.delivery_address,
+        },
+        date: invoice.issue_date,
+        supply_date: invoice.supply_date,
+        due_date: invoice.due_date,
+        payment_term: invoice.payment_term,
+        operation_category: invoice.operation_category,
+        vat_on_debits: invoice.vat_on_debits,
+        purchase_order: invoice.purchase_order || undefined,
+        notes: invoice.notes || undefined,
+        legal_mentions: mentions.map((m) => m.text),
+        lines: lines
+          .filter((l) => l.description?.trim() && parseFloat(l.unit_price || 0) > 0)
+          .map((l) => ({
+            description: l.description,
+            quantity: parseFloat(l.quantity || 1),
+            unit_price: parseFloat(l.unit_price || 0),
+            vat_rate: parseFloat(l.vat_rate ?? 0),
+          })),
         send: true,
         simulate: simulate ? 'reject' : undefined,
       });
       await onCreated();
     } catch (e) {
-      setErr("La création a échoué. Vérifiez les champs.");
+      setErrors([e?.response?.data?.detail || "L'envoi a échoué. Vérifiez les champs."]);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 overflow-y-auto"
          style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-4" style={{ color: '#1C1917' }}>Nouvelle facture</h3>
-        <div className="space-y-3">
-          <Field label="Client (nom)">
-            <input className="fld" value={buyer.name}
-                   onChange={(e) => setBuyer({ ...buyer, name: e.target.value })}
-                   placeholder="Client SARL" />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="SIREN client">
-              <input className="fld" value={buyer.siren} inputMode="numeric" maxLength={9}
-                     onChange={(e) => setBuyer({ ...buyer, siren: e.target.value.replace(/\D/g, '') })}
-                     placeholder="987654321" />
-            </Field>
-            <Field label="Type">
-              <select className="fld" value={buyer.is_company ? '1' : '0'}
-                      onChange={(e) => setBuyer({ ...buyer, is_company: e.target.value === '1' })}>
-                <option value="1">Entreprise (B2B)</option>
-                <option value="0">Particulier (B2C)</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Description">
-            <input className="fld" value={line.description}
-                   onChange={(e) => setLine({ ...line, description: e.target.value })}
-                   placeholder="Prestation de conseil" />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Montant HT (€)">
-              <input className="fld" value={line.unit_price} inputMode="decimal"
-                     onChange={(e) => setLine({ ...line, unit_price: e.target.value })}
-                     placeholder="1000" />
-            </Field>
-            <Field label="TVA (%)">
-              <select className="fld" value={line.vat_rate}
-                      onChange={(e) => setLine({ ...line, vat_rate: e.target.value })}>
-                <option value="20">20 %</option>
-                <option value="10">10 %</option>
-                <option value="5.5">5,5 %</option>
-                <option value="0">0 % (exonéré)</option>
-              </select>
-            </Field>
-          </div>
+      <div className="bg-white rounded-3xl w-full max-w-2xl my-6" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 pt-6 pb-4 border-b sticky top-0 bg-white rounded-t-3xl z-10"
+             style={{ borderColor: '#F2ECE0' }}>
+          <h3 className="text-lg font-bold" style={{ color: '#1C1917' }}>Nouvelle facture</h3>
+          <p className="text-xs text-[#8B8680] mt-0.5">
+            Vos informations d'entreprise sont ajoutées automatiquement. Tous les
+            champs marqués sont obligatoires pour une facture conforme.
+          </p>
         </div>
-        <label className="flex items-center gap-2 mt-3 text-xs text-[#8B8680] cursor-pointer">
-          <input type="checkbox" checked={simulate} onChange={(e) => setSimulate(e.target.checked)} />
-          Simuler un rejet (test — voir le message + le bouton de correction)
-        </label>
-        {err && <div className="text-sm text-[#C0392B] mt-3">{err}</div>}
-        <div className="flex gap-3 mt-5">
+
+        <div className="px-6 py-5 space-y-6">
+          {/* ---------------- CLIENT ---------------- */}
+          <section>
+            <SectionTitle>Client</SectionTitle>
+            <div className="space-y-3">
+              <div className="grid md:grid-cols-3 gap-3">
+                <div className="md:col-span-2">
+                  <Field label="Nom / Raison sociale *">
+                    <input className="fld" value={buyer.name}
+                           onChange={(e) => setBuyer({ ...buyer, name: e.target.value })}
+                           placeholder="Solutions RH SARL" />
+                  </Field>
+                </div>
+                <Field label="Type de client *">
+                  <select className="fld" value={buyer.is_company ? '1' : '0'}
+                          onChange={(e) => setBuyer({ ...buyer, is_company: e.target.value === '1' })}>
+                    <option value="1">Entreprise (B2B)</option>
+                    <option value="0">Particulier (B2C)</option>
+                  </select>
+                </Field>
+              </div>
+
+              <Field label="Adresse de facturation *">
+                <textarea className="fld" rows={2} value={buyer.address}
+                          onChange={(e) => setBuyer({ ...buyer, address: e.target.value })}
+                          placeholder={"12 rue de la Paix\n75002 Paris"} />
+              </Field>
+
+              {buyer.is_company && (
+                <div className="grid md:grid-cols-2 gap-3">
+                  <Field label={`SIREN client * (${buyer.siren.length}/9)`}>
+                    <input className="fld" value={buyer.siren} inputMode="numeric" maxLength={9}
+                           onChange={(e) => setBuyer({ ...buyer, siren: e.target.value.replace(/\D/g, '') })}
+                           placeholder="552100554" />
+                    <Hint info="Obligatoire sur les factures B2B depuis la réforme 2026." />
+                  </Field>
+                  <Field label="N° TVA du client (optionnel)">
+                    <input className="fld" value={buyer.vat_number}
+                           onChange={(e) => setBuyer({ ...buyer, vat_number: e.target.value.toUpperCase() })}
+                           placeholder="FR96552100554" />
+                  </Field>
+                </div>
+              )}
+
+              <label className="flex items-center gap-2 text-xs text-[#57534E] cursor-pointer">
+                <input type="checkbox" checked={sameDelivery}
+                       onChange={(e) => setSameDelivery(e.target.checked)} />
+                L'adresse de livraison / d'exécution est identique
+              </label>
+              {!sameDelivery && (
+                <Field label="Adresse de livraison ou d'exécution *">
+                  <textarea className="fld" rows={2} value={buyer.delivery_address}
+                            onChange={(e) => setBuyer({ ...buyer, delivery_address: e.target.value })}
+                            placeholder="Lieu où le bien est livré ou la prestation réalisée" />
+                  <Hint info="Nouvelle mention obligatoire en 2026 lorsqu'elle diffère de l'adresse de facturation." />
+                </Field>
+              )}
+            </div>
+          </section>
+
+          {/* ---------------- DATES & NATURE ---------------- */}
+          <section>
+            <SectionTitle>Dates et nature de l'opération</SectionTitle>
+            <div className="grid md:grid-cols-3 gap-3">
+              <Field label="Date d'émission *">
+                <input className="fld" type="date" value={invoice.issue_date}
+                       onChange={(e) => setIssueDate(e.target.value)} />
+              </Field>
+              <Field label="Date de vente / prestation *">
+                <input className="fld" type="date" value={invoice.supply_date}
+                       onChange={(e) => setInvoice({ ...invoice, supply_date: e.target.value })} />
+                <Hint info="Distincte de la date d'émission — c'est celle-ci qui compte pour la TVA." />
+              </Field>
+              <Field label="Conditions de paiement *">
+                <select className="fld" value={invoice.payment_term}
+                        onChange={(e) => setTerm(e.target.value)}>
+                  {PAYMENT_TERMS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                </select>
+                <Hint info={`Échéance : ${invoice.due_date}`} />
+              </Field>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3 mt-3">
+              <Field label="Catégorie d'opération *">
+                <select className="fld" value={invoice.operation_category}
+                        onChange={(e) => setInvoice({ ...invoice, operation_category: e.target.value })}>
+                  {OPERATION_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+                <Hint info={OPERATION_CATEGORIES.find((c) => c.id === invoice.operation_category)?.hint} />
+              </Field>
+              <Field label="Bon de commande / référence (optionnel)">
+                <input className="fld" value={invoice.purchase_order}
+                       onChange={(e) => setInvoice({ ...invoice, purchase_order: e.target.value })}
+                       placeholder="BC-2026-114" />
+              </Field>
+            </div>
+            {invoice.operation_category === 'services' && !isFranchise && (
+              <label className="flex items-center gap-2 mt-3 text-xs text-[#57534E] cursor-pointer">
+                <input type="checkbox" checked={invoice.vat_on_debits}
+                       onChange={(e) => setInvoice({ ...invoice, vat_on_debits: e.target.checked })} />
+                J'ai opté pour le paiement de la TVA sur les débits
+              </label>
+            )}
+          </section>
+
+          {/* ---------------- LIGNES ---------------- */}
+          <section>
+            <SectionTitle>Détail des prestations</SectionTitle>
+            <div className="space-y-2">
+              {lines.map((l, i) => (
+                <div key={i} className="grid grid-cols-12 gap-2 items-start">
+                  <div className="col-span-12 md:col-span-5">
+                    <input className="fld" value={l.description}
+                           onChange={(e) => setLine(i, { description: e.target.value })}
+                           placeholder="Description de la prestation ou du bien" />
+                  </div>
+                  <div className="col-span-3 md:col-span-2">
+                    <input className="fld" value={l.quantity} inputMode="decimal"
+                           onChange={(e) => setLine(i, { quantity: e.target.value })}
+                           placeholder="Qté" />
+                  </div>
+                  <div className="col-span-4 md:col-span-2">
+                    <input className="fld" value={l.unit_price} inputMode="decimal"
+                           onChange={(e) => setLine(i, { unit_price: e.target.value })}
+                           placeholder="P.U. HT" />
+                  </div>
+                  <div className="col-span-4 md:col-span-2">
+                    <select className="fld" value={l.vat_rate} disabled={isFranchise}
+                            onChange={(e) => setLine(i, { vat_rate: e.target.value })}>
+                      {VAT_RATES.map((r) => (
+                        <option key={r.value} value={r.value}>{r.value} %</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    {lines.length > 1 && (
+                      <button type="button" onClick={() => removeLine(i)}
+                              className="text-[#C0392B] text-lg leading-none px-1"
+                              title="Supprimer la ligne">×</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={addLine}
+                    className="text-xs font-semibold mt-2" style={{ color: '#2F6FB3' }}>
+              + Ajouter une ligne
+            </button>
+            {isFranchise && (
+              <Hint info="Franchise en base : la TVA est forcée à 0 % et la mention légale est ajoutée automatiquement." />
+            )}
+          </section>
+
+          {/* ---------------- TOTAUX ---------------- */}
+          <section className="rounded-2xl p-4" style={{ background: '#FCFAF5' }}>
+            <div className="flex justify-between text-sm py-0.5">
+              <span className="text-[#57534E]">Total HT</span>
+              <span className="font-semibold">{totals.total_ht.toFixed(2)} €</span>
+            </div>
+            {totals.vat_breakdown.filter((b) => b.base > 0).map((b) => (
+              <div key={b.rate} className="flex justify-between text-xs py-0.5 text-[#8B8680]">
+                <span>TVA {b.rate} % sur {b.base.toFixed(2)} €</span>
+                <span>{b.vat.toFixed(2)} €</span>
+              </div>
+            ))}
+            <div className="flex justify-between text-base pt-2 mt-1 border-t font-bold"
+                 style={{ borderColor: '#EFE7D7' }}>
+              <span>Total TTC</span>
+              <span style={{ color: '#2F6FB3' }}>{totals.total_ttc.toFixed(2)} €</span>
+            </div>
+          </section>
+
+          {/* ---------------- MENTIONS LÉGALES ---------------- */}
+          {mentions.length > 0 && (
+            <section>
+              <SectionTitle>Mentions légales ajoutées automatiquement</SectionTitle>
+              <ul className="space-y-1">
+                {mentions.map((m) => (
+                  <li key={m.id} className="text-[11px] text-[#57534E] flex gap-1.5">
+                    <span style={{ color: '#2F7A52' }}>✓</span> {m.text}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <Field label="Note pour le client (optionnel)">
+            <textarea className="fld" rows={2} value={invoice.notes}
+                      onChange={(e) => setInvoice({ ...invoice, notes: e.target.value })}
+                      placeholder="Merci de votre confiance." />
+          </Field>
+
+          <label className="flex items-center gap-2 text-xs text-[#8B8680] cursor-pointer">
+            <input type="checkbox" checked={simulate} onChange={(e) => setSimulate(e.target.checked)} />
+            Simuler un rejet (test — voir le message + le bouton de correction)
+          </label>
+
+          {errors.length > 0 && (
+            <div className="rounded-2xl p-3 border" style={{ background: '#FBEAE8', borderColor: 'rgba(192,57,43,.3)' }}>
+              <div className="text-xs font-bold mb-1" style={{ color: '#C0392B' }}>
+                Facture non conforme — à corriger avant l'envoi :
+              </div>
+              <ul className="space-y-0.5">
+                {errors.map((e, i) => (
+                  <li key={i} className="text-[11px]" style={{ color: '#C0392B' }}>• {e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 pb-6 pt-2 flex gap-3 sticky bottom-0 bg-white rounded-b-3xl">
           <button onClick={onClose} className="flex-1 py-3 rounded-2xl border text-[#57534E]"
                   style={{ borderColor: '#E7E1D5' }}>Annuler</button>
-          <button onClick={submit} disabled={busy || !buyer.name}
+          <button onClick={submit} disabled={busy}
                   className="flex-1 py-3 rounded-2xl text-white font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
             <Send size={15} /> {busy ? 'Envoi…' : 'Créer & envoyer'}
           </button>
         </div>
       </div>
-      <style>{`.fld{width:100%;border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none}.fld:focus{border-color:#2F6FB3}`}</style>
+      <style>{FLD_CSS}</style>
+    </div>
+  );
+}
+
+function SectionTitle({ children }) {
+  return (
+    <div className="text-[11px] font-bold uppercase tracking-wide mb-2.5" style={{ color: '#7A3E70' }}>
+      {children}
     </div>
   );
 }

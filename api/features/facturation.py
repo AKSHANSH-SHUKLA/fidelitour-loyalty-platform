@@ -75,6 +75,54 @@ def _require_facturation(token_data) -> Dict[str, Any]:
     return t
 
 
+def _assert_invoice_compliant(tenant: Dict[str, Any], buyer: Dict[str, Any],
+                              body: Dict[str, Any], lines: List[Dict[str, Any]]) -> None:
+    """Refuse to create an invoice that is not legally complete.
+
+    Every rule here maps to a real requirement (art. 242 nonies A CGI, art.
+    L441-9 Code de commerce, plus the 2026 reform additions). Blocking at
+    creation is deliberate: an invoice that leaves the building non-compliant
+    comes back as a rejection, a support case and a resend.
+    """
+    errors: List[str] = []
+
+    if not (buyer.get("name") or "").strip():
+        errors.append("Le nom du client est obligatoire.")
+    if not (buyer.get("address") or "").strip():
+        errors.append("L'adresse du client est obligatoire.")
+    if buyer.get("is_company", True):
+        siren = "".join(ch for ch in str(buyer.get("siren") or "") if ch.isdigit())
+        if len(siren) != 9:
+            errors.append("Le SIREN du client est obligatoire pour une facture B2B (réforme 2026).")
+        elif not _luhn_ok(siren):
+            errors.append("Le SIREN du client est invalide (clé de contrôle).")
+
+    if not body.get("date"):
+        errors.append("La date d'émission est obligatoire.")
+    if not body.get("supply_date"):
+        errors.append("La date de vente ou de prestation est obligatoire.")
+    if not body.get("due_date"):
+        errors.append("La date d'échéance est obligatoire.")
+    if body.get("due_date") and body.get("date") and body["due_date"] < body["date"]:
+        errors.append("L'échéance ne peut pas précéder la date d'émission.")
+    if not body.get("operation_category"):
+        errors.append("La catégorie d'opération est obligatoire (réforme 2026).")
+
+    usable = [l for l in lines
+              if str(l.get("description") or "").strip()
+              and float(l.get("unit_price") or 0) > 0]
+    if not usable:
+        errors.append("Au moins une ligne avec une description et un montant est requise.")
+
+    # Franchise en base: charging VAT is not a formatting slip, it is illegal.
+    if tenant.get("vat_regime") == "franchise":
+        if any(float(l.get("vat_rate") or 0) > 0 for l in lines):
+            errors.append("En franchise en base, aucune TVA ne peut être facturée.")
+
+    if errors:
+        raise HTTPException(422, " ".join(errors))
+
+
 def _compute_totals(lines: List[Dict[str, Any]]) -> Dict[str, float]:
     ht = vat = 0.0
     for ln in lines:
@@ -345,8 +393,15 @@ def create_invoice(body: Dict[str, Any],
     lines = body.get("lines") or []
     if not lines:
         raise HTTPException(422, "Au moins une ligne est requise.")
-    totals = _compute_totals(lines)
     buyer = body.get("buyer") or {}
+
+    # Mandatory content of a French invoice. The form checks the same rules for
+    # instant feedback, but a browser can be bypassed — and an invoice missing a
+    # legal mention is either rejected by the recipient's platform or found
+    # non-compliant in an audit years later.
+    _assert_invoice_compliant(t, buyer, body, lines)
+
+    totals = _compute_totals(lines)
     channel = "e-reporting" if not buyer.get("is_company", True) else "e-invoicing"
     inv = {
         "id": _new_id(),
@@ -355,7 +410,23 @@ def create_invoice(body: Dict[str, Any],
         "buyer": buyer,
         "lines": lines,
         "date": body.get("date"),
+        "supply_date": body.get("supply_date"),          # date de la vente/prestation
         "due_date": body.get("due_date"),
+        "payment_term": body.get("payment_term"),
+        "operation_category": body.get("operation_category"),   # 2026 mandatory
+        "vat_on_debits": bool(body.get("vat_on_debits")),
+        "purchase_order": body.get("purchase_order"),
+        "notes": body.get("notes"),
+        "legal_mentions": body.get("legal_mentions") or [],
+        # Snapshot of the seller AT ISSUE TIME: an invoice must stay readable
+        # exactly as it was sent, even if the company later changes address.
+        "seller": {
+            "legal_name": t.get("legal_name") or t.get("name"),
+            "legal_form": t.get("legal_form"),
+            "siren": t.get("siren"), "siret": t.get("siret"),
+            "vat_number": t.get("vat_number"), "naf_code": t.get("naf_code"),
+            "vat_regime": t.get("vat_regime"),
+        },
         **totals,
         # Four independent status families (see services/statuses.py).
         **st.defaults(),
