@@ -126,6 +126,8 @@ def init(db):
         _db.cabinets.create_index([("siren", 1)], unique=True, sparse=True)
         _db.cabinet_memberships.create_index([("cabinet_id", 1), ("user_email", 1)], unique=True)
         _db.cabinet_memberships.create_index([("user_email", 1), ("status", 1)])
+        # Root fix for the duplicate-founder race: one identity per email.
+        _db.users.create_index([("email", 1)], unique=True)
     except Exception:
         pass       # index creation is best-effort; never break boot
 
@@ -155,11 +157,59 @@ def current_membership(email: str) -> Dict[str, Any]:
 
     Called on every cabinet request, deliberately: a suspended or removed
     employee loses access on their next click, not when their token expires.
+
+    SELF-HEAL (observed in production): a double-submit on signup can race
+    past the duplicate-email check and create TWO cabinets + TWO memberships
+    for the same founder. find_one() then resolves to either row depending on
+    the instance — the portfolio appears and disappears between requests.
+    When we detect multiple active memberships we merge the duplicate cabinets
+    once, deterministically (oldest wins), and the flapping ends forever.
     """
-    m = _db.cabinet_memberships.find_one({"user_email": _norm(email), "status": "active"})
-    if not m:
+    rows = list(_db.cabinet_memberships.find({"user_email": _norm(email), "status": "active"}))
+    if not rows:
         raise HTTPException(403, "Aucun accès cabinet actif pour ce compte.")
-    return ensure_membership(m)
+    if len(rows) > 1:
+        rows.sort(key=lambda r: (r.get("created_at") or "", r.get("id") or ""))
+        winner = rows[0]
+        for loser in rows[1:]:
+            if loser.get("cabinet_id") != winner.get("cabinet_id"):
+                _merge_cabinets(winner["cabinet_id"], loser["cabinet_id"])
+            _db.cabinet_memberships.update_one(
+                {"id": loser["id"]}, {"$set": {"status": "merged", "merged_at": _now(),
+                                               "merged_into": winner["id"]}})
+        _audit("cabinet.duplicates_merged", actor=None, object_kind="membership",
+               object_id=winner["id"], detail={"merged": len(rows) - 1})
+        rows = [winner]
+    return ensure_membership(rows[0])
+
+
+def _merge_cabinets(win_id: str, lose_id: str) -> None:
+    """Fold a duplicate cabinet into the surviving one.
+
+    Everything that referenced the duplicate now references the survivor.
+    Memberships move one by one because of the (cabinet_id, user_email)
+    unique index: a person present in BOTH cabinets keeps the surviving row
+    and the duplicate is marked merged, never deleted (audit history).
+    """
+    for coll in ("cabinet_links", "dossier_tasks", "exception_cases"):
+        try:
+            getattr(_db, coll).update_many({"cabinet_id": lose_id},
+                                           {"$set": {"cabinet_id": win_id}})
+        except Exception:
+            pass
+    for mem in _db.cabinet_memberships.find({"cabinet_id": lose_id}):
+        dup = _db.cabinet_memberships.find_one({"cabinet_id": win_id,
+                                                "user_email": mem["user_email"]})
+        if dup:
+            _db.cabinet_memberships.update_one(
+                {"id": mem["id"]}, {"$set": {"status": "merged", "merged_at": _now(),
+                                             "merged_into": dup["id"]}})
+        else:
+            _db.cabinet_memberships.update_one(
+                {"id": mem["id"]}, {"$set": {"cabinet_id": win_id}})
+    _db.cabinets.update_one({"id": lose_id},
+                            {"$set": {"status": "merged", "merged_into": win_id,
+                                      "merged_at": _now()}})
 
 
 def require_cabinet_role(email: str, allowed: tuple) -> Dict[str, Any]:

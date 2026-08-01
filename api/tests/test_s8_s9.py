@@ -278,12 +278,51 @@ def test_owner_change_moves_defaults(db):
     check("new owner sees the dossier", "t2" in CO.visible_tenant_ids("marc@cab.fr"))
 
 
+def test_duplicate_cabinet_merge(db):
+    print("\nSelf-heal — duplicate cabinets from a signup double-submit")
+    # simulate the race: same founder, two cabinets, split team + links
+    import features.cabinet_os as co
+    cabA = {"id": "dupA", "name": "Cabinet Dup", "status": "active", "created_at": "2026-08-01T10:00:00"}
+    cabB = {"id": "dupB", "name": "Cabinet Dup", "status": "active", "created_at": "2026-08-01T10:00:05"}
+    db.cabinets.insert_many([dict(cabA), dict(cabB)])
+    db.users.insert_one({"email": "dup@cab.fr", "role": "comptable"})
+    db.cabinet_memberships.insert_many([
+        {"id": "m-dupA", "cabinet_id": "dupA", "user_email": "dup@cab.fr",
+         "full_name": "Dup", "role": "expert_comptable", "status": "active",
+         "created_at": "2026-08-01T10:00:00"},
+        {"id": "m-dupB", "cabinet_id": "dupB", "user_email": "dup@cab.fr",
+         "full_name": "Dup", "role": "expert_comptable", "status": "active",
+         "created_at": "2026-08-01T10:00:05"},
+        {"id": "m-emp", "cabinet_id": "dupB", "user_email": "emp@cab.fr",
+         "full_name": "Emp", "role": "assistant", "status": "active",
+         "created_at": "2026-08-01T10:01:00"},
+    ])
+    db.tenants.insert_one({"id": "tdup", "legal_name": "Client Dup"})
+    db.cabinet_links.insert_one({"id": "l-dup", "cabinet_id": "dupB",
+                                 "tenant_id": "tdup", "status": "active"})
+
+    m = CO.current_membership("dup@cab.fr")
+    check("resolves to the OLDEST membership", m["id"] == "m-dupA")
+    check("duplicate membership marked merged",
+          db.cabinet_memberships.find_one({"id": "m-dupB"})["status"] == "merged")
+    check("duplicate cabinet marked merged",
+          db.cabinets.find_one({"id": "dupB"})["status"] == "merged")
+    check("links moved to the surviving cabinet",
+          db.cabinet_links.find_one({"id": "l-dup"})["cabinet_id"] == "dupA")
+    check("stranded employee moved to the surviving cabinet",
+          db.cabinet_memberships.find_one({"id": "m-emp"})["cabinet_id"] == "dupA")
+    check("founder now sees the portfolio", "tdup" in CO.visible_tenant_ids("dup@cab.fr"))
+    m2 = CO.current_membership("dup@cab.fr")
+    check("second resolution is stable (no flapping)", m2["id"] == "m-dupA")
+
+
 if __name__ == "__main__":
     db, cab_a, cab_b = build()
     test_roles_v2(db)
     test_scoping_v2(db)
     test_grille(db)
     test_owner_change_moves_defaults(db)
+    test_duplicate_cabinet_merge(db)
 
     print("\n" + "=" * 62)
     print(f"PASSED: {len(PASS)}   FAILED: {len(FAIL)}")

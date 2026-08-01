@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, ArrowRight } from 'lucide-react';
 import { cabinetOsAPI } from '../lib/api';
@@ -29,6 +29,9 @@ export default function CabinetSignup() {
   });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  // A double-click can fire twice BEFORE setBusy re-renders — the ref blocks
+  // the second call synchronously. This exact race created two cabinets in prod.
+  const inFlight = useRef(false);
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const rules = passwordRules(form.password);
@@ -40,6 +43,8 @@ export default function CabinetSignup() {
     if (!form.name.trim()) return setErr('Le nom du cabinet est obligatoire.');
     if (!passwordValid(form.password)) return setErr('Le mot de passe ne respecte pas encore toutes les règles.');
     if (!matches) return setErr('Les deux mots de passe ne correspondent pas.');
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     try {
       const { confirm, ...payload } = form;
@@ -49,6 +54,7 @@ export default function CabinetSignup() {
     } catch (ex) {
       setErr(ex?.response?.data?.detail || "Création impossible — vérifiez les champs.");
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
