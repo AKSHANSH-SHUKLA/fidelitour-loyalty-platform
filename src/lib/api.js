@@ -232,6 +232,7 @@ export const cabinetOsAPI = {
   createMember: (data) => api.post('/cabinet/team', data),
   updateMember: (id, data) => api.patch('/cabinet/team/' + id, data),
   changePassword: (data) => api.post('/cabinet/change-password', data),
+  resetMemberPassword: (id) => api.post('/cabinet/team/' + id + '/reset-password'),
   assign: (tenantId, membershipId) =>
     api.post('/cabinet/dossiers/' + tenantId + '/assign', { membership_id: membershipId }),
   unassigned: () => api.get('/cabinet/dossiers/unassigned'),

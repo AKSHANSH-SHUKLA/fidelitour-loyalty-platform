@@ -487,6 +487,41 @@ def update_member(membership_id: str, body: Dict[str, Any],
     return {"ok": True, "dossiers_unassigned": freed}
 
 
+@router.post("/api/cabinet/team/{membership_id}/reset-password")
+def reset_member_password(membership_id: str,
+                          token_data=Depends(require_role(["comptable"]))):
+    """Forgot-password, cabinet edition — the EC resets it in person.
+
+    No email infrastructure needed, and it matches how these accounts are
+    born (the EC created them and handed over the first password). The new
+    temp password is generated server-side (always policy-compliant), shown
+    EXACTLY ONCE to the EC, and must_change_password forces the employee to
+    replace it at next login — so the EC never knows the working password.
+    Self-reset via this route is refused: the EC's own recovery will be the
+    email flow (S3 backlog), not a self-serve loop that proves nothing.
+    """
+    from services import password_policy
+    admin = require_cabinet_role(token_data.email, MANAGER_ROLES)
+    mem = _db.cabinet_memberships.find_one({"id": membership_id,
+                                            "cabinet_id": admin["cabinet_id"]})
+    if not mem:
+        raise HTTPException(404, "Membre introuvable.")
+    if mem["id"] == admin["id"]:
+        raise HTTPException(409, "Utilisez le changement de mot de passe classique pour votre propre compte.")
+    if mem.get("status") != "active":
+        raise HTTPException(409, "Réactivez d'abord ce compte.")
+
+    temp = password_policy.generate()
+    _db.users.update_one({"email": mem["user_email"]},
+                         {"$set": {"hashed_password": hash_password(temp)}})
+    _db.cabinet_memberships.update_one({"id": mem["id"]},
+                                       {"$set": {"must_change_password": True}})
+    _audit("cabinet.password_reset_by_admin", actor=token_data,
+           object_kind="membership", object_id=mem["id"],
+           detail={"member": mem["user_email"]})
+    return {"ok": True, "temp_password": temp}
+
+
 @router.post("/api/cabinet/change-password")
 def change_own_password(body: Dict[str, Any],
                         token_data=Depends(require_role(["comptable"]))):

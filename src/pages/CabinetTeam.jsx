@@ -253,6 +253,22 @@ export default function CabinetTeam() {
                       })}
                     </div>
                     <button disabled={busy === m.id}
+                            onClick={async () => {
+                              if (!window.confirm(`Réinitialiser le mot de passe de ${m.full_name} ? Un mot de passe temporaire sera généré — il devra le changer à sa prochaine connexion.`)) return;
+                              setBusy(m.id);
+                              try {
+                                const r = await cabinetOsAPI.resetMemberPassword(m.id);
+                                flash(true, `Nouveau mot de passe temporaire pour ${m.full_name} : ${r.data.temp_password} — transmettez-le, il ne sera plus jamais affiché.`);
+                                await load();
+                              } catch (e) {
+                                flash(false, e?.response?.data?.detail || 'Réinitialisation impossible.');
+                              } finally { setBusy(null); }
+                            }}
+                            className="text-xs px-3 py-1.5 rounded-lg border disabled:opacity-50"
+                            style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+                      Réinitialiser MDP
+                    </button>
+                    <button disabled={busy === m.id}
                             onClick={() => changeMember(m.id, { status: suspended ? 'active' : 'suspended' },
                                                         suspended ? 'Accès rétabli.' : 'Accès suspendu.')}
                             className="text-xs px-3 py-1.5 rounded-lg border disabled:opacity-50"

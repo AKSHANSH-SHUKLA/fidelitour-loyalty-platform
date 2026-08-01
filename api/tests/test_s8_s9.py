@@ -316,6 +316,25 @@ def test_duplicate_cabinet_merge(db):
     check("second resolution is stable (no flapping)", m2["id"] == "m-dupA")
 
 
+def test_password_reset(db):
+    print("\nForgot password — EC resets a member (no email needed)")
+    r = tok("rousseau@cab.fr")
+    res = CO.reset_member_password(mem_id("marc@cab.fr"), token_data=r)
+    check("reset returns a temp password once", bool(res.get("temp_password")))
+    from services import password_policy
+    check("temp password is policy-compliant",
+          password_policy.check(res["temp_password"])[0] is True)
+    check("member must change it at next login",
+          CO._db.cabinet_memberships.find_one({"user_email": "marc@cab.fr"})["must_change_password"] is True)
+    expect_status("EC cannot self-reset via this route", 409,
+                  lambda: CO.reset_member_password(mem_id("rousseau@cab.fr"), token_data=r))
+    expect_status("non-EC cannot reset anyone", 403,
+                  lambda: CO.reset_member_password(mem_id("marc@cab.fr"),
+                                                   token_data=tok("sophie@cab.fr")))
+    check("reset is audited",
+          A._db.audit_log.count_documents({"action": "cabinet.password_reset_by_admin"}) >= 1)
+
+
 if __name__ == "__main__":
     db, cab_a, cab_b = build()
     test_roles_v2(db)
@@ -323,6 +342,7 @@ if __name__ == "__main__":
     test_grille(db)
     test_owner_change_moves_defaults(db)
     test_duplicate_cabinet_merge(db)
+    test_password_reset(db)
 
     print("\n" + "=" * 62)
     print(f"PASSED: {len(PASS)}   FAILED: {len(FAIL)}")
