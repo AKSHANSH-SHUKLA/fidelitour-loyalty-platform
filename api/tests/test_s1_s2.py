@@ -247,6 +247,48 @@ def test_audit(db):
         A._db = orig
 
 
+# ==========================================================================
+# Legal identity validation (activation gate)
+# ==========================================================================
+
+def test_identity(db):
+    print("\nLegal identity validation (SIREN / SIRET / TVA)")
+
+    db.tenants.insert_one({"id": "t9", "name": "Nouveau", "facturation_enabled": False})
+    OWNER9 = SimpleNamespace(tenant_id="t9", role="business_owner", email="o9@x.fr")
+
+    # 552100554 is a real, Luhn-valid SIREN (Danone) — good positive fixture.
+    ok = F.facturation_enable({"siren": "552100554", "siret": "55210055400013",
+                               "legal_name": "Test SARL", "vat_regime": "reel_normal_mensuel"},
+                              token_data=OWNER9)
+    check("valid identity accepted", ok["ok"] is True)
+    saved = db.tenants.find_one({"id": "t9"})
+    check("siren stored digits-only", saved.get("siren") == "552100554")
+
+    def expect_422(label, body):
+        try:
+            F.facturation_enable(body, token_data=OWNER9)
+            check(label, False, "NOT rejected")
+        except Exception as e:
+            check(label, getattr(e, "status_code", None) == 422, e)
+
+    expect_422("bad SIREN checksum rejected", {"siren": "123456789"})
+    expect_422("SIREN wrong length rejected", {"siren": "12345"})
+    expect_422("bad SIRET checksum rejected", {"siren": "552100554", "siret": "55210055400012"})
+    expect_422("SIRET not matching SIREN rejected",
+               {"siren": "552100554", "siret": "99999999900014"})
+    expect_422("wrong TVA key rejected",
+               {"siren": "552100554", "vat_number": "FR99552100554"})
+
+    check("TVA derived correctly", F._derive_vat("552100554") == "FR96552100554",
+          F._derive_vat("552100554"))
+    check("correct TVA accepted",
+          F.facturation_enable({"siren": "552100554", "vat_number": "FR96552100554"},
+                               token_data=OWNER9)["ok"] is True)
+    check("activation is audited",
+          db.audit_log.count_documents({"action": "facturation.enabled"}) > 0)
+
+
 if __name__ == "__main__":
     print("=" * 62)
     print("FidClic — S1 + S2 foundation tests")
@@ -255,6 +297,7 @@ if __name__ == "__main__":
     test_s1(db)
     test_isolation(db)
     test_audit(db)
+    test_identity(db)
     print("\n" + "=" * 62)
     print(f"PASSED: {len(PASS)}   FAILED: {len(FAIL)}")
     if FAIL:

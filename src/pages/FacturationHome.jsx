@@ -4,6 +4,10 @@ import {
   ReceiptText, ShieldCheck, ArrowLeft, Plus, Send, RefreshCw, AlertTriangle, Copy,
 } from 'lucide-react';
 import { facturationAPI } from '../lib/api';
+import {
+  BUSINESS_PROFILES, LEGAL_FORMS, VAT_REGIMES, ENTERPRISE_SIZES, getProfile,
+  validateSiren, validateSiret, validateVatNumber, validateNaf, deriveVatNumber,
+} from '../lib/frenchIdentifiers';
 
 /**
  * FacturationHome — the Facturation module's home screen.
@@ -538,77 +542,256 @@ function StatePill({ state }) {
 
 /* ---------------- activation gate ---------------- */
 
+/**
+ * ActivationGate — captures the LEGAL IDENTITY before the module turns on.
+ *
+ * WHY IT IS PROFILE-DRIVEN
+ *   Asking a baker for a "numéro de TVA intracommunautaire" is how you lose a
+ *   signup. Asking "vous êtes auto-entrepreneur ou société ?" is a question
+ *   they can answer. The profile then decides which identifiers are required,
+ *   which are optional, and which are irrelevant.
+ *
+ * WHY THE VALIDATION MATTERS
+ *   A wrong SIREN/SIRET is the number one cause of e-invoice rejection: the
+ *   Annuaire cannot route the invoice. Catching it here (Luhn key check) costs
+ *   nothing; catching it after a rejection costs a support case and a resend.
+ *   The TVA number is DERIVED from the SIREN, so it can never disagree with it.
+ */
 function ActivationGate({ onDone, onBack }) {
-  const [form, setForm] = useState({ legal_name: '', siren: '', vat_regime: 'reel_normal_mensuel' });
+  const [step, setStep] = useState(1);                   // 1 = profile, 2 = identity
+  const [profileId, setProfileId] = useState('');
+  const [form, setForm] = useState({
+    legal_name: '', legal_form: '', siren: '', siret: '', vat_number: '',
+    naf_code: '', enterprise_size: 'tpe', vat_regime: 'reel_normal_mensuel',
+  });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [touched, setTouched] = useState({});
+
+  const profile = profileId ? getProfile(profileId) : null;
+  const needs = profile?.needs || {};
+
+  const chooseProfile = (id) => {
+    const p = getProfile(id);
+    setProfileId(id);
+    setForm((f) => ({ ...f, vat_regime: p.defaultVatRegime }));
+    setStep(2);
+  };
+
+  // Live field validation — errors only surface once a field has been touched,
+  // so the form never scolds someone who has not typed yet.
+  const vSiren = validateSiren(form.siren);
+  const vSiret = validateSiret(form.siret, form.siren);
+  const vVat = validateVatNumber(form.vat_number, form.siren);
+  const vNaf = validateNaf(form.naf_code);
+  const show = (key, res) => (touched[key] && res.error ? res.error : null);
+  const mark = (key) => setTouched((t) => ({ ...t, [key]: true }));
+
+  // Derive the VAT number the moment a valid SIREN exists — one less thing to
+  // look up, and impossible to mistype.
+  const suggestVat = () => {
+    const derived = deriveVatNumber(form.siren);
+    if (derived) setForm((f) => ({ ...f, vat_number: derived }));
+  };
+
+  const vatRequired = needs.vat === true
+    || (needs.vat === 'conditional' && form.vat_regime !== 'franchise');
+
+  const canSubmit =
+    form.legal_name.trim()
+    && vSiren.ok
+    && (!needs.siret || vSiret.ok)
+    && (!vatRequired || vVat.ok)
+    && (!form.naf_code || vNaf.ok)
+    && !busy;
 
   const submit = async () => {
     setBusy(true); setErr('');
     try {
-      await facturationAPI.enable({ plan: 'addon', ...form });
+      await facturationAPI.enable({ plan: 'addon', business_profile: profileId, ...form });
       await onDone();
     } catch (e) {
-      setErr("L'activation a échoué. Réessayez.");
+      setErr(e?.response?.data?.detail || "L'activation a échoué. Réessayez.");
     } finally {
       setBusy(false);
     }
   };
 
-  return (
-    <Shell onBack={onBack}>
-      <div className="rounded-3xl bg-white border p-7 mt-6" style={{ borderColor: '#ECE3D2' }}>
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-             style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
-          <ReceiptText size={22} color="#fff" />
+  /* ---------------- STEP 1 — which kind of business are you? ---------------- */
+  if (step === 1) {
+    return (
+      <Shell onBack={onBack}>
+        <div className="rounded-3xl bg-white border p-7 mt-6" style={{ borderColor: '#ECE3D2' }}>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+               style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
+            <ReceiptText size={22} color="#fff" />
+          </div>
+          <h1 className="text-2xl font-bold mb-1" style={{ color: '#1C1917' }}>
+            Activer la Facturation électronique
+          </h1>
+          <p className="text-sm text-[#57534E] mb-6">
+            Première question, la plus simple : quel type d'entreprise êtes-vous ?
+            Nous ne vous demanderons ensuite que ce qui vous concerne réellement.
+          </p>
+
+          <div className="space-y-2.5">
+            {BUSINESS_PROFILES.map((p) => (
+              <button key={p.id} onClick={() => chooseProfile(p.id)}
+                      className="w-full text-left rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                      style={{ borderColor: '#E7E1D5', background: '#FCFAF5' }}>
+                <div className="font-semibold text-[#1C1917]">{p.label}</div>
+                <div className="text-xs text-[#8B8680] mt-0.5">{p.hint}</div>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-[#A8A29E] mt-5 text-center">
+            Vous pourrez modifier ces informations à tout moment dans les paramètres.
+          </p>
         </div>
+        <style>{FLD_CSS}</style>
+      </Shell>
+    );
+  }
+
+  /* ---------------- STEP 2 — the identifiers this profile actually needs ---- */
+  return (
+    <Shell onBack={() => setStep(1)}>
+      <div className="rounded-3xl bg-white border p-7 mt-6" style={{ borderColor: '#ECE3D2' }}>
+        <button onClick={() => setStep(1)} className="text-xs text-[#2F6FB3] mb-3">
+          ‹ Changer de profil
+        </button>
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#1C1917' }}>
-          Activer la Facturation électronique
+          Votre identité légale
         </h1>
-        <p className="text-sm text-[#57534E] mb-6">
-          Émettez des factures conformes à la réforme 2026, faites votre e-reporting,
-          et suivez votre Bouclier Fiscal. Renseignez votre identité légale pour commencer.
+        <p className="text-sm text-[#57534E] mb-1">
+          Profil : <b>{profile.label}</b>
+        </p>
+        <p className="text-xs text-[#8B8680] mb-6">
+          Ces informations figureront sur vos factures et servent à vous identifier
+          auprès de l'administration. Nous vérifions leur validité immédiatement.
         </p>
 
         <div className="space-y-3">
-          <Field label="Raison sociale">
+          <Field label="Raison sociale / Nom">
             <input className="fld" value={form.legal_name}
                    onChange={(e) => setForm({ ...form, legal_name: e.target.value })}
                    placeholder="Ex. Café Lumière SARL" />
           </Field>
-          <Field label="SIREN (9 chiffres)">
+
+          {needs.legalForm && (
+            <Field label="Forme juridique">
+              <select className="fld" value={form.legal_form}
+                      onChange={(e) => setForm({ ...form, legal_form: e.target.value })}>
+                <option value="">Sélectionner…</option>
+                {LEGAL_FORMS.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </Field>
+          )}
+
+          <Field label="SIREN — 9 chiffres (identifie votre entreprise)">
             <input className="fld" value={form.siren} inputMode="numeric" maxLength={9}
+                   onBlur={() => mark('siren')}
                    onChange={(e) => setForm({ ...form, siren: e.target.value.replace(/\D/g, '') })}
                    placeholder="123456789" />
+            <Hint error={show('siren', vSiren)}
+                  ok={vSiren.ok && 'SIREN valide (clé de contrôle vérifiée)'} />
           </Field>
+
+          {needs.siret && (
+            <Field label="SIRET — 14 chiffres (identifie votre établissement)">
+              <input className="fld" value={form.siret} inputMode="numeric" maxLength={14}
+                     onBlur={() => mark('siret')}
+                     onChange={(e) => setForm({ ...form, siret: e.target.value.replace(/\D/g, '') })}
+                     placeholder={form.siren ? `${form.siren}00014` : '12345678900014'} />
+              <Hint error={show('siret', vSiret)}
+                    ok={vSiret.ok && 'SIRET valide'}
+                    info={!form.siret && "C'est le SIREN suivi de 5 chiffres. Les factures électroniques sont routées à ce niveau — un établissement, un SIRET."} />
+            </Field>
+          )}
+
           <Field label="Régime de TVA">
             <select className="fld" value={form.vat_regime}
                     onChange={(e) => setForm({ ...form, vat_regime: e.target.value })}>
-              <option value="reel_normal_mensuel">Réel normal (mensuel)</option>
-              <option value="rsi">Régime simplifié</option>
-              <option value="franchise">Franchise en base (auto-entrepreneur)</option>
+              {VAT_REGIMES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
+            <Hint info={VAT_REGIMES.find((r) => r.id === form.vat_regime)?.hint} />
+          </Field>
+
+          {/* TVA number is hidden entirely when the regime makes it meaningless */}
+          {needs.vat && form.vat_regime !== 'franchise' && (
+            <Field label={`Numéro de TVA intracommunautaire${vatRequired ? '' : ' (optionnel)'}`}>
+              <div className="flex gap-2">
+                <input className="fld flex-1" value={form.vat_number}
+                       onBlur={() => mark('vat')}
+                       onChange={(e) => setForm({ ...form, vat_number: e.target.value.toUpperCase() })}
+                       placeholder="FR32123456789" />
+                <button type="button" onClick={suggestVat} disabled={!vSiren.ok}
+                        className="text-xs font-semibold px-3 rounded-xl border disabled:opacity-40 whitespace-nowrap"
+                        style={{ borderColor: '#E7E1D5', color: '#2F6FB3' }}>
+                  Calculer
+                </button>
+              </div>
+              <Hint error={show('vat', vVat)}
+                    ok={vVat.ok && 'Numéro cohérent avec le SIREN'}
+                    info={!form.vat_number && vSiren.ok && "Il se calcule à partir de votre SIREN — cliquez sur « Calculer »."} />
+            </Field>
+          )}
+
+          <Field label="Code NAF / APE (optionnel)">
+            <input className="fld" value={form.naf_code} maxLength={5}
+                   onBlur={() => mark('naf')}
+                   onChange={(e) => setForm({ ...form, naf_code: e.target.value.toUpperCase() })}
+                   placeholder="5610A" />
+            <Hint error={show('naf', vNaf)} info={!form.naf_code && "Votre code d'activité, sur votre avis de situation INSEE."} />
+          </Field>
+
+          <Field label="Taille de l'entreprise">
+            <select className="fld" value={form.enterprise_size}
+                    onChange={(e) => setForm({ ...form, enterprise_size: e.target.value })}>
+              {ENTERPRISE_SIZES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+            <Hint info={`Obligation d'émission : ${ENTERPRISE_SIZES.find((s) => s.id === form.enterprise_size)?.emission}. La réception, elle, concerne tout le monde dès le 1er septembre 2026.`} />
           </Field>
         </div>
 
+        {profile.note && (
+          <div className="mt-4 rounded-xl p-3 text-xs" style={{ background: '#EAF1F9', color: '#1E4E86' }}>
+            {profile.note}
+          </div>
+        )}
+        {form.vat_regime === 'reel_simplifie' && (
+          <div className="mt-3 rounded-xl p-3 text-xs" style={{ background: 'rgba(224,169,43,.14)', color: '#8A6508' }}>
+            <b>À noter :</b> le régime réel simplifié disparaît au 1<sup>er</sup> janvier 2027.
+            Vous passerez à des déclarations trimestrielles (CA3). Nous vous préviendrons
+            à l'avance — et le Bouclier Fiscal suivra la transition.
+          </div>
+        )}
+
         {err && <div className="text-sm text-[#C0392B] mt-3">{err}</div>}
 
-        <button
-          onClick={submit}
-          disabled={busy || !form.legal_name}
+        <button onClick={submit} disabled={!canSubmit}
           className="w-full mt-6 text-white font-semibold py-3 rounded-2xl disabled:opacity-50"
-          style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}
-        >
+          style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
           {busy ? 'Activation…' : 'Activer le module'}
         </button>
         <p className="text-[11px] text-[#A8A29E] mt-3 text-center">
-          La configuration exacte (PA, DGFiP) se fait ensuite depuis les paramètres.
+          La configuration de la plateforme agréée et de la conformité DGFiP se fait ensuite.
         </p>
       </div>
 
-      <style>{`.fld{width:100%;border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none}.fld:focus{border-color:#2F6FB3}`}</style>
+      <style>{FLD_CSS}</style>
     </Shell>
   );
+}
+
+const FLD_CSS = `.fld{width:100%;border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none}.fld:focus{border-color:#2F6FB3}`;
+
+/** Inline field feedback: red on error, green on success, grey for guidance. */
+function Hint({ error, ok, info }) {
+  if (error) return <div className="text-[11px] mt-1" style={{ color: '#C0392B' }}>{error}</div>;
+  if (ok) return <div className="text-[11px] mt-1" style={{ color: '#2F7A52' }}>✓ {ok}</div>;
+  if (info) return <div className="text-[11px] mt-1" style={{ color: '#8B8680' }}>{info}</div>;
+  return null;
 }
 
 function Field({ label, children }) {

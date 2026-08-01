@@ -210,16 +210,74 @@ def facturation_enable(body: Dict[str, Any],
     standalone or add-on). Optionally captures legal identity at the same time.
     Stripe billing wiring comes later; for now this is the opt-in switch."""
     t = _tenant(token_data.tenant_id)
+
+    # Server-side identity validation. The form checks the same things, but a
+    # browser can be bypassed — and a bad SIREN/SIRET here means every future
+    # invoice gets rejected by the Annuaire, which is far more expensive than
+    # a 422 right now.
+    siren = _digits(body.get("siren"))
+    siret = _digits(body.get("siret"))
+    if siren:
+        if len(siren) != 9 or not _luhn_ok(siren):
+            raise HTTPException(422, "SIREN invalide (9 chiffres, clé de contrôle).")
+    if siret:
+        if len(siret) != 14:
+            raise HTTPException(422, "SIRET invalide (14 chiffres attendus).")
+        if siren and not siret.startswith(siren):
+            raise HTTPException(422, "Le SIRET doit commencer par le SIREN.")
+        # La Poste (356000000…) is the documented exception to the Luhn rule.
+        if not siret.startswith("356000000") and not _luhn_ok(siret):
+            raise HTTPException(422, "SIRET invalide (clé de contrôle incorrecte).")
+    vat = (body.get("vat_number") or "").replace(" ", "").upper()
+    if vat and siren:
+        expected = _derive_vat(siren)
+        if vat != expected:
+            raise HTTPException(422, f"N° de TVA incohérent avec le SIREN. Attendu : {expected}")
+
     upd: Dict[str, Any] = {
         "facturation_enabled": True,
         "facturation_plan": body.get("plan") or "addon",
     }
-    for f in ("legal_name", "siren", "siret", "vat_number", "naf_code",
-              "enterprise_size", "vat_regime"):
+    for f in ("legal_name", "legal_form", "naf_code", "enterprise_size",
+              "vat_regime", "business_profile"):
         if body.get(f):
             upd[f] = body[f]
+    if siren:
+        upd["siren"] = siren
+    if siret:
+        upd["siret"] = siret
+    if vat:
+        upd["vat_number"] = vat
     _db.tenants.update_one({"id": t["id"]}, {"$set": upd})
+    _audit("facturation.enabled", tenant_id=t["id"], actor=token_data,
+           object_kind="tenant", object_id=t["id"],
+           after={k: upd[k] for k in ("siren", "siret", "vat_regime", "business_profile")
+                  if k in upd})
     return {"ok": True, "enabled": True, "plan": upd["facturation_plan"]}
+
+
+def _digits(v) -> str:
+    return "".join(ch for ch in str(v or "") if ch.isdigit())
+
+
+def _luhn_ok(num: str) -> bool:
+    """Luhn checksum — the key digit built into every SIREN and SIRET."""
+    total, double = 0, False
+    for ch in reversed(num):
+        d = int(ch)
+        if double:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+        double = not double
+    return total % 10 == 0
+
+
+def _derive_vat(siren: str) -> str:
+    """FR + key + SIREN, where key = (12 + 3 × (SIREN mod 97)) mod 97."""
+    key = (12 + 3 * (int(siren) % 97)) % 97
+    return f"FR{key:02d}{siren}"
 
 
 # --------------------------------------------------------------------------
