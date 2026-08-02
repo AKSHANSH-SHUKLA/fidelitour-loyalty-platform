@@ -10,6 +10,8 @@ const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [showForgot, setShowForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,12 +70,33 @@ const LoginPage = () => {
               </div>
               <div>
                 <span className="font-semibold text-[#1C1917]">Gérant ou expert-comptable ?</span>{' '}
-                Écrivez-nous à{' '}
-                <a href="mailto:support@fidclic.fr?subject=Mot%20de%20passe%20oubli%C3%A9"
-                   className="font-semibold" style={{ color: '#B85C38' }}>
-                  support@fidclic.fr
-                </a>{' '}
-                depuis l'adresse email de votre compte — nous vérifions et réinitialisons sous 24 h.
+                Recevez un lien de réinitialisation par email (valable 30 min) :
+                {resetSent ? (
+                  <div key="reset-sent" className="mt-1.5 font-semibold" style={{ color: '#2F7A52' }}>
+                    ✓ Si un compte existe pour cette adresse, l'email est parti — vérifiez
+                    votre boîte (et les spams).
+                  </div>
+                ) : (
+                  <div className="flex gap-1.5 mt-1.5">
+                    <input type="email" value={resetEmail}
+                           onChange={(e) => setResetEmail(e.target.value)}
+                           placeholder="votre@email.fr"
+                           className="flex-1 border border-[#E7E5E4] rounded-lg px-2 py-1.5 text-xs" />
+                    <button type="button"
+                            disabled={!resetEmail.includes('@')}
+                            onClick={async () => {
+                              try {
+                                const api = (await import('../lib/api')).default;
+                                await api.post('/auth/forgot-password', { email: resetEmail });
+                              } catch (e) { /* neutral by design */ }
+                              setResetSent(true);
+                            }}
+                            className="px-3 py-1.5 rounded-lg text-white text-xs font-semibold disabled:opacity-40"
+                            style={{ background: '#B85C38' }}>
+                      Envoyer
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

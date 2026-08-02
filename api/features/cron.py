@@ -36,6 +36,69 @@ def init(db):
     _db = db
 
 
+@router.get("/api/cron/backup-weekly")
+@router.post("/api/cron/backup-weekly")
+def backup_weekly(authorization: str = Header(default="")):
+    """S3 finale — the parachute. Weekly JSON snapshot of every business-
+    critical collection, gzipped and EMAILED to the founder.
+
+    Why email as the destination: at this scale (KBs, not GBs) the founder's
+    inbox is an off-site, access-controlled, versioned store that costs
+    nothing and needs zero new infrastructure. When data outgrows an
+    attachment, this function is the single place that changes (S3/GCS).
+    A backup that lives only inside the same database it protects is not a
+    backup — that is why there is no "backups" collection.
+    """
+    secret = os.getenv("CRON_SECRET")
+    if not secret:
+        raise HTTPException(503, "CRON_SECRET non configuré.")
+    if authorization != f"Bearer {secret}":
+        raise HTTPException(401, "Non autorisé.")
+
+    import base64
+    import gzip
+    import json as _json
+    from datetime import datetime, timezone
+
+    COLLECTIONS = ["users", "tenants", "cabinets", "cabinet_memberships",
+                   "cabinet_links", "dossier_tasks", "fact_invoices",
+                   "fact_received_invoices", "fact_credit_notes",
+                   "fact_ereports", "subscriptions", "doc_requests",
+                   "exception_cases", "customers"]
+    dump = {}
+    for name in COLLECTIONS:
+        try:
+            rows = []
+            for d in getattr(_db, name).find():
+                d.pop("_id", None)
+                rows.append(d)
+            dump[name] = rows
+        except Exception:
+            dump[name] = []
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    raw = _json.dumps(dump, default=str).encode()
+    packed = base64.b64encode(gzip.compress(raw)).decode()
+
+    from services import mailer
+    key = mailer._api_key()
+    if not key:
+        return {"ok": False, "reason": "mailer_disabled"}
+    to = os.getenv("BACKUP_EMAIL", mailer.SENDER_EMAIL)
+    res = mailer._post({
+        "sender": {"email": mailer.SENDER_EMAIL, "name": "FidClic Backup"},
+        "to": [{"email": to}],
+        "subject": f"[FidClic] Sauvegarde hebdomadaire {stamp}",
+        "htmlContent": f"<p>Sauvegarde du {stamp} — {sum(len(v) for v in dump.values())} "
+                       f"documents, {len(raw) // 1024} Ko avant compression. "
+                       f"Conservez cet email : c'est votre copie hors-site.</p>",
+        "attachment": [{"name": f"fidclic-backup-{stamp}.json.gz",
+                        "content": packed}],
+    }, key)
+    return {"ok": True, "documents": sum(len(v) for v in dump.values()),
+            "size_kb": len(raw) // 1024, "sent_to": to,
+            "message_id": res.get("messageId")}
+
+
 @router.get("/api/cron/agent-daily")
 @router.post("/api/cron/agent-daily")
 def agent_daily(authorization: str = Header(default="")):

@@ -74,6 +74,10 @@
     {
       "path": "/api/cron/agent-daily",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/backup-weekly",
+      "schedule": "0 6 * * 0"
     }
   ]
 }
