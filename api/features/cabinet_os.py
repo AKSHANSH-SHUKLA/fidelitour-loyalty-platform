@@ -80,6 +80,7 @@ MANAGER_ROLES = ("expert_comptable",)                       # team + settings
 ASSIGN_ROLES = ("expert_comptable", "superviseur")          # dossiers + grille
 VALIDATOR_ROLES = ("expert_comptable", "superviseur", "collaborateur")
 PORTFOLIO_WIDE_ROLES = ("expert_comptable", "superviseur")  # see every dossier
+SIGHT_WIDE_ROLES = PORTFOLIO_WIDE_ROLES + ("agent",)        # + the firm's own tool
 HUMAN_ROLES = tuple(r for r in ROLES if r != "agent")
 
 
@@ -111,6 +112,60 @@ def ensure_membership(m: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             pass
     return m
+
+
+# ==========================================================================
+# S11 — the agent seat. FidClic itself gets a membership per cabinet, so its
+# work carries ITS name in every audit line and workload counter — never a
+# human's. The agent produces; it NEVER validates (no threshold, no
+# exception) and never signs. That hard line is the garde-fou the profession
+# explicitly demands ("un logiciel qui envoie en comptabilité des pièces non
+# validées est un outil dangereux").
+# ==========================================================================
+
+AGENT_DOMAIN = "@agent.fidclic"
+
+
+def agent_email_for(cabinet_id: str) -> str:
+    return f"agent+{cabinet_id}{AGENT_DOMAIN}"
+
+
+def is_agent_email(email: Optional[str]) -> bool:
+    return bool(email) and _norm(email).endswith(AGENT_DOMAIN)
+
+
+def ensure_agent(cabinet_id: str) -> Dict[str, Any]:
+    """Create (once) and return the cabinet's agent membership.
+
+    No users row and no password — the agent cannot log in. It exists only
+    as an IDENTITY that internal services act under, which is exactly what
+    makes 'FidClic prepared 34 entries this month' a true, auditable claim.
+    """
+    email = agent_email_for(cabinet_id)
+    m = _db.cabinet_memberships.find_one({"cabinet_id": cabinet_id, "user_email": email})
+    if m:
+        if m.get("status") != "active":
+            _db.cabinet_memberships.update_one({"id": m["id"]}, {"$set": {"status": "active"}})
+            m["status"] = "active"
+        return m
+    doc = {
+        "id": str(uuid4()), "cabinet_id": cabinet_id, "user_email": email,
+        "full_name": "Agent FidClic", "role": "agent", "status": "active",
+        "domains": ["compta"], "ordre_number": None, "is_lab_referent": False,
+        "must_change_password": False, "invited_by": "system", "created_at": _now(),
+    }
+    _db.cabinet_memberships.insert_one(dict(doc))
+    _audit("cabinet.agent_enabled", actor=None, object_kind="membership",
+           object_id=doc["id"], after={"cabinet_id": cabinet_id})
+    return doc
+
+
+def agent_actor(cabinet_id: str):
+    """A token-like actor for internal calls made AS the agent."""
+    from types import SimpleNamespace
+    ensure_agent(cabinet_id)
+    return SimpleNamespace(email=agent_email_for(cabinet_id), role="comptable",
+                           tenant_id=None)
 
 
 def can_sign(m: Dict[str, Any]) -> bool:
@@ -247,7 +302,7 @@ def visible_tenant_ids(email: str) -> List[str]:
     """
     m = current_membership(email)
     q: Dict[str, Any] = {"cabinet_id": m["cabinet_id"], "status": "active"}
-    if m.get("role") in PORTFOLIO_WIDE_ROLES:
+    if m.get("role") in SIGHT_WIDE_ROLES:
         return [l["tenant_id"] for l in _db.cabinet_links.find(q)]
     q["assignee_membership_id"] = m["id"]
     owned = {l["tenant_id"] for l in _db.cabinet_links.find(q)}
@@ -263,7 +318,7 @@ def assert_can_see_tenant(email: str, tenant_id: str) -> Dict[str, Any]:
     link = _db.cabinet_links.find_one(q)
     if not link:
         raise HTTPException(403, "Ce dossier ne vous est pas attribué.")
-    if m.get("role") in PORTFOLIO_WIDE_ROLES:
+    if m.get("role") in SIGHT_WIDE_ROLES:
         return link
     if link.get("assignee_membership_id") == m["id"]:
         return link
@@ -660,6 +715,61 @@ def create_client_dossier(body: Dict[str, Any],
                   "owner": owner_membership_id,
                   "client_account_created": bool(client_account)})
     return {"ok": True, "tenant_id": tenant["id"], "client_account": client_account}
+
+
+@router.post("/api/cabinet/dossiers/{tenant_id}/agent/draft-invoice")
+def agent_draft_invoice(tenant_id: str, body: Dict[str, Any],
+                        token_data=Depends(require_role(["comptable"]))):
+    """S11 demo loop — a HUMAN triggers it, the AGENT does the work.
+
+    The draft is created under the agent's own identity (created_by = the
+    agent's email; audit actor = the agent, with triggered_by naming the
+    human). It lands in the review queue like anyone else's work — and the
+    agent itself can never validate it. Robot cooks; human runs the pass.
+
+    In S12 the trigger becomes autonomous (schedules, incoming documents);
+    the identity, audit and queue mechanics built here do not change.
+    """
+    caller = current_membership(token_data.email)
+    assert_can_see_tenant(token_data.email, tenant_id)
+    agent = ensure_agent(caller["cabinet_id"])
+
+    from features import facturation as F
+    actor = agent_actor(caller["cabinet_id"])
+    payload = {
+        "tenant_id": tenant_id,
+        "buyer": body.get("buyer") or {
+            "name": "Client Démo SARL", "is_company": True, "siren": "552100554",
+            "address": "1 rue de la Paix, 75002 Paris",
+        },
+        "date": body.get("date") or datetime.now(timezone.utc).date().isoformat(),
+        "supply_date": body.get("supply_date") or datetime.now(timezone.utc).date().isoformat(),
+        "due_date": body.get("due_date") or (datetime.now(timezone.utc).date().isoformat()),
+        "payment_term": body.get("payment_term") or "net30",
+        "operation_category": body.get("operation_category") or "services",
+        "lines": body.get("lines") or [{
+            "description": "Prestation récurrente (préparée par l'agent)",
+            "quantity": 1, "unit_price": 500.0, "vat_rate": 20,
+        }],
+        # DRAFT only — the agent prepares, it never transmits on its own either.
+        "send": False,
+    }
+    # due_date must not precede issue date; default +30 days
+    try:
+        from datetime import timedelta, date
+        d = date.fromisoformat(payload["date"])
+        if payload["due_date"] <= payload["date"]:
+            payload["due_date"] = (d + timedelta(days=30)).isoformat()
+    except Exception:
+        pass
+    res = F.create_invoice(payload, token_data=actor)
+    _audit("agent.invoice_drafted", tenant_id=tenant_id, actor=actor,
+           object_kind="invoice", object_id=res["invoice"]["id"],
+           after={"number": res["invoice"]["number"],
+                  "total_ttc": res["invoice"]["total_ttc"]},
+           detail={"triggered_by": token_data.email, "agent": agent["user_email"]})
+    return {"ok": True, "invoice": res["invoice"],
+            "agent": {"name": agent["full_name"], "email": agent["user_email"]}}
 
 
 @router.post("/api/cabinet/team/{membership_id}/reset-password")

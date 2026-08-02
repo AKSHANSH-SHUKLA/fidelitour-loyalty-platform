@@ -272,6 +272,14 @@ def cabinet_client_detail(tenant_id: str, token_data=Depends(require_role(["comp
             "credit_notes": credit_notes, "received": received}
 
 
+def _is_agent(email):
+    try:
+        from features.cabinet_os import is_agent_email
+        return is_agent_email(email)
+    except Exception:
+        return False
+
+
 @router.get("/api/comptable/review-queue")
 def review_queue(token_data=Depends(require_role(["comptable"]))):
     """S10 — "what is waiting for MY eyes" (the lab tray, not the archive).
@@ -311,6 +319,9 @@ def review_queue(token_data=Depends(require_role(["comptable"]))):
             "total_ttc": ttc, "date": inv.get("date"),
             "review_status": inv["review_status"], "pa_status": inv.get("pa_status"),
             "created_by": inv.get("created_by"),
+            "created_by_label": ("Agent FidClic"
+                                 if _is_agent(inv.get("created_by"))
+                                 else inv.get("created_by")),
             "created_at": inv.get("created_at"),
             # four-eyes preview FOR THE CALLER: prepared by me AND >= seuil
             "four_eyes_blocked_for_me": bool(

@@ -288,7 +288,18 @@ export default function CabinetDashboard() {
                     onActFor={actForClient} acting={acting}
                     onCreditNote={createCreditNote} crediting={crediting}
                     onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })}
-                    onNewInvoice={(tid) => setInvoiceFor(tid)} />
+                    onNewInvoice={(tid) => setInvoiceFor(tid)}
+                    onAgentDraft={async (tid) => {
+                      try {
+                        const r = await cabinetOsAPI.agentDraftInvoice(tid);
+                        setToast({ ok: true,
+                                   msg: `L'agent a préparé le brouillon ${r.data.invoice.number} (${r.data.invoice.total_ttc} € TTC) — il attend une validation humaine dans « À valider ».` });
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Action impossible.' });
+                      }
+                      setTimeout(() => setToast(null), 8000);
+                      await openClient(tid); await load();
+                    }} />
       )}
       {invoiceFor && (
         <CreateInvoiceModal
@@ -383,7 +394,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
 }
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
-                     onCreditNote, crediting, onOpenGrille, onNewInvoice }) {
+                     onCreditNote, crediting, onOpenGrille, onNewInvoice, onAgentDraft }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
@@ -423,6 +434,14 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                       className="text-xs font-semibold px-3 py-2 rounded-xl text-white"
                       style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
                 + Nouvelle facture
+              </button>
+            )}
+            {onAgentDraft && (
+              <button onClick={() => onAgentDraft(s.tenant_id)}
+                      className="text-xs font-semibold px-3 py-2 rounded-xl border"
+                      style={{ borderColor: '#57534E', color: '#57534E' }}
+                      title="L'agent prépare un brouillon — il ne peut jamais le valider.">
+                🤖 Brouillon par l'agent
               </button>
             )}
             <button onClick={() => onActFor('ereporting', s.tenant_id)}

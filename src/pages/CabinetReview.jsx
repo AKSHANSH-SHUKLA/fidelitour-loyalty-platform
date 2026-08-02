@@ -146,7 +146,7 @@ export default function CabinetReview() {
                     )}
                   </div>
                   <div className="text-[11px] text-[#8B8680] mt-0.5">
-                    <LiveText>{`Préparée par ${inv.created_by || '—'} · ${inv.date || ''} · statut PA : ${inv.pa_status || '—'}`}</LiveText>
+                    <LiveText>{`Préparée par ${inv.created_by_label || inv.created_by || '—'} · ${inv.date || ''} · statut PA : ${inv.pa_status || '—'}`}</LiveText>
                   </div>
                 </div>
                 {canValidate && (

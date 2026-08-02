@@ -618,6 +618,16 @@ def set_review_status(invoice_id: str, body: Dict[str, Any],
     # Business owners validating their own company's invoices are out of
     # scope — the rule protects the CABINET's chain of responsibility.
     auto_validated = False
+    # S11 HARD RULE — the agent NEVER validates. No threshold, no exception,
+    # checked before anything else so no code path below can soften it.
+    try:
+        from features.cabinet_os import is_agent_email
+        if target == "validated" and is_agent_email(getattr(token_data, "email", None)):
+            raise HTTPException(403, "L'agent FidClic ne valide jamais — une personne doit examiner ce travail.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
     if target == "validated":
         reviewer = getattr(token_data, "email", None)
         preparer = inv.get("created_by")

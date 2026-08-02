@@ -239,6 +239,8 @@ export const cabinetOsAPI = {
   updateSettings: (data) => api.patch('/cabinet/settings', data),
   sirenLookup: (siren) => api.get('/cabinet/siren-lookup?siren=' + siren),
   createClient: (data) => api.post('/cabinet/clients', data),
+  agentDraftInvoice: (tenantId, body = {}) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/agent/draft-invoice', body),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */
