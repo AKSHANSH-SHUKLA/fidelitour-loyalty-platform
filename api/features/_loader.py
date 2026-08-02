@@ -68,6 +68,14 @@ MODULES = [
     "features.agent_collect",
     # Agent capability #2 (S13) — recurring billing from standing instructions.
     "features.agent_billing",
+    # Agent capability #3 — OCR ingestion of supplier invoices (Chapter 4).
+    "features.agent_ocr",
+    # Agent capability #4 — Saisie: proposes the purchase entry from OCR.
+    "features.agent_saisie",
+    # La Mémoire + Le Conseiller (Chapter 8) — dossier memory + advisory drafts.
+    "features.conseiller",
+    # Agent capability #6 — TVA/CA3 draft declaration.
+    "features.agent_tva",
     # The agent's alarm clock — Vercel Cron hits this daily.
     "features.cron",
     # Password reset by email (magic link) — S3 finale.

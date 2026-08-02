@@ -122,10 +122,17 @@ def create_request(tenant_id: str, body: Dict[str, Any],
     if not email or "@" not in email:
         raise HTTPException(422, "Email du client requis (aucun compte client connu pour ce dossier).")
     due = body.get("due_date") or (_today() + timedelta(days=7)).isoformat()
+    # optional WhatsApp reach — the agent will use it when the channel is live
+    from services import whatsapp as wa
+    phone = wa.normalize_phone(body.get("client_phone") or "")
+    channel_pref = (body.get("channel") or "auto").strip().lower()
+    if channel_pref not in ("auto", "email", "whatsapp"):
+        channel_pref = "auto"
 
     doc = {
         "id": str(uuid4()), "cabinet_id": m["cabinet_id"], "tenant_id": tenant_id,
         "label": label, "due_date": due, "client_email": email,
+        "client_phone": phone, "channel_pref": channel_pref,
         "status": "pending", "reminders": [],
         "created_by": token_data.email, "created_at": _now(),
     }
@@ -224,6 +231,36 @@ def _email_html(cabinet_name: str, client_name: str,
     </div>"""
 
 
+def _relance_text(cabinet_name: str, client_name: str,
+                  items: List[Dict[str, Any]], nth: int) -> str:
+    """Plain-text version of the relance for WhatsApp/SMS channels."""
+    lines = "\n".join(f"• {i['label']} (pour le {i['due_date']})" for i in items)
+    head = (f"Bonjour {client_name}, votre cabinet {cabinet_name} attend "
+            f"ces pièces :" if nth <= 1 else
+            f"Rappel{' important' if nth >= 3 else ''} — {cabinet_name} attend "
+            f"toujours ces pièces :")
+    return (f"{head}\n{lines}\n\nVous pouvez les envoyer directement ici en "
+            f"réponse.\n— Assistant FidClic, pour {cabinet_name}")
+
+
+def _pick_channel(reqs: List[Dict[str, Any]]) -> str:
+    """Decide email vs whatsapp for a client group.
+
+    WhatsApp only when the channel is actually live (configured) AND we hold a
+    phone AND the client didn't pin 'email'. Otherwise email — the always-on
+    default. So the agent degrades gracefully until the Meta account is ready.
+    """
+    from services import whatsapp as wa
+    phone = next((r.get("client_phone") for r in reqs if r.get("client_phone")), "")
+    prefs = {r.get("channel_pref", "auto") for r in reqs}
+    if "email" in prefs:
+        return "email"
+    wants_wa = "whatsapp" in prefs or "auto" in prefs
+    if phone and wants_wa and wa.is_configured():
+        return "whatsapp"
+    return "email"
+
+
 @router.post("/api/cabinet/agent/collect/run")
 def run_collection(token_data=Depends(require_role(["comptable"]))):
     """One agent pass over every pending request of MY cabinet (human trigger)."""
@@ -286,17 +323,29 @@ def run_collection_for_cabinet(cabinet_id: str, triggered_by: str) -> Dict[str, 
 
         nth = max(len(r.get("reminders") or []) for r in due_items) + 1
         client_name = t.get("legal_name") or t.get("name") or "Madame, Monsieur"
-        res = mailer.send(
-            to=email, to_name=client_name,
-            subject=f"Documents en attente — {cabinet.get('name', 'votre cabinet')}"
-                    + (f" (relance {nth})" if nth > 1 else ""),
-            html=_email_html(cabinet.get("name", "votre cabinet"), client_name,
-                             [{"label": r["label"], "due_date": r["due_date"]}
-                              for r in due_items], nth),
-        )
-        stamp = {"at": _now(), "to": email, "nth": nth,
+        cab_name = cabinet.get("name", "votre cabinet")
+        items = [{"label": r["label"], "due_date": r["due_date"]} for r in due_items]
+
+        channel = _pick_channel(due_items)
+        if channel == "whatsapp":
+            from services import whatsapp as wa
+            phone = next((r.get("client_phone") for r in due_items
+                          if r.get("client_phone")), "")
+            res = wa.send_whatsapp(phone, _relance_text(cab_name, client_name, items, nth))
+            dest = phone
+        else:
+            res = mailer.send(
+                to=email, to_name=client_name,
+                subject=f"Documents en attente — {cab_name}"
+                        + (f" (relance {nth})" if nth > 1 else ""),
+                html=_email_html(cab_name, client_name, items, nth),
+            )
+            dest = email
+
+        stamp = {"at": _now(), "to": dest, "channel": channel, "nth": nth,
                  "sent": res.get("sent", False),
-                 **({"error": res.get("reason")} if not res.get("sent") else {})}
+                 **({"error": res.get("reason") or res.get("error")}
+                    if not res.get("sent") else {})}
         for r in due_items:
             _db.doc_requests.update_one({"id": r["id"]}, {"$push": {"reminders": stamp}})
         if res.get("sent"):
@@ -304,7 +353,8 @@ def run_collection_for_cabinet(cabinet_id: str, triggered_by: str) -> Dict[str, 
         _audit("agent.reminder_sent", tenant_id=tenant_id, actor=agent_actor,
                object_kind="doc_request",
                object_id=",".join(r["id"] for r in due_items),
-               after={"to": email, "pieces": [r["label"] for r in due_items],
+               after={"to": dest, "channel": channel,
+                      "pieces": [r["label"] for r in due_items],
                       "nth": nth, "delivered": res.get("sent", False),
                       "reliability_score": score},
                detail={"triggered_by": triggered_by,

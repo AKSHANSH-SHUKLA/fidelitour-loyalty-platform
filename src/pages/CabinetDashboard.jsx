@@ -10,6 +10,8 @@ import NewClientModal from '../components/NewClientModal';
 import NewSubscriptionModal from '../components/NewSubscriptionModal';
 import { CreateInvoiceModal } from './FacturationHome';
 import LiveText from '../components/LiveText';
+import AgentToolsPanel from '../components/AgentToolsPanel';
+import WhatsAppIcon from '../components/WhatsAppIcon';
 
 /**
  * CabinetDashboard — the expert-comptable control tower.
@@ -315,6 +317,7 @@ export default function CabinetDashboard() {
 
       {drill && (
         <DrillModal data={drill} onClose={() => setDrill(null)}
+                    onToast={(ok, msg) => { setToast({ ok, msg }); setTimeout(() => setToast(null), 7000); }}
                     onReview={validateInvoice} reviewing={reviewing}
                     onActFor={actForClient} acting={acting}
                     onCreditNote={createCreditNote} crediting={crediting}
@@ -363,9 +366,15 @@ export default function CabinetDashboard() {
                       const label = window.prompt('Quelle pièce demander ? (ex. « Relevé bancaire juillet »)');
                       if (!label) return;
                       const email = window.prompt("Email du client (vide = compte client connu) :") || '';
+                      const phone = window.prompt("Téléphone WhatsApp du client (optionnel, ex. 06 12 34 56 78) :") || '';
+                      const channel = phone
+                        ? (window.confirm("Relancer par WhatsApp si disponible ? (Annuler = email)") ? 'auto' : 'email')
+                        : 'email';
                       try {
-                        await cabinetOsAPI.createDocRequest(tid, { label, client_email: email || undefined });
-                        setToast({ ok: true, msg: `Demande enregistrée : « ${label} ». L'agent la relancera au bon moment.` });
+                        await cabinetOsAPI.createDocRequest(tid, {
+                          label, client_email: email || undefined,
+                          client_phone: phone || undefined, channel });
+                        setToast({ ok: true, msg: `Demande enregistrée : « ${label} ». L'agent la relancera au bon moment${phone && channel !== 'email' ? ' (WhatsApp si actif, sinon email)' : ''}.` });
                         await openClient(tid);
                       } catch (e) {
                         setToast({ ok: false, msg: e?.response?.data?.detail || 'Demande impossible.' });
@@ -488,7 +497,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                      onCreditNote, crediting, onOpenGrille, onExportFec, onNewInvoice,
-                     docReqs, onAskDoc, onDocReceived,
+                     docReqs, onAskDoc, onDocReceived, onToast,
                      subs, onNewSub, onToggleSub, onRunBilling }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
@@ -556,9 +565,12 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                     <span className="font-semibold text-[#1C1917]">{rq.label}</span>
                     <span className="text-[#8B8680]">pour le {rq.due_date}</span>
                     {(rq.reminders || []).length > 0 && rq.status === 'pending' && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
                             style={{ color: '#57534E', background: 'rgba(87,83,78,.08)' }}>
                         🤖 {rq.reminders.length} relance(s)
+                        {(rq.reminders || []).some((rm) => rm.channel === 'whatsapp') && (
+                          <WhatsAppIcon size={12} title="Relance envoyée par WhatsApp" />
+                        )}
                       </span>
                     )}
                     {rq.status === 'escalated' && (
@@ -579,6 +591,9 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             )}
           </div>
         )}
+
+        {/* Chapter 4 + 8 + TVA — the agent's autonomous work for this dossier */}
+        {s.tenant_id && <AgentToolsPanel tenantId={s.tenant_id} onToast={onToast} />}
 
         {/* S13 — abonnements: the standing instructions the agent executes */}
         {subs !== null && (

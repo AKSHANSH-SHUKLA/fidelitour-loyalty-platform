@@ -253,6 +253,24 @@ export const cabinetOsAPI = {
   toggleSubscription: (id, active) =>
     api.patch('/cabinet/subscriptions/' + id, { active }),
   runBilling: () => api.post('/cabinet/agent/billing/run'),
+  // Chapter 4 — OCR reads a supplier invoice photo; Saisie proposes the entry.
+  ocrIngest: (tenantId, body) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/ocr', body),
+  saisieEntries: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/saisie'),
+  runSaisie: (tenantId) => api.post('/cabinet/dossiers/' + tenantId + '/saisie/run'),
+  validateSaisie: (entryId) => api.post('/cabinet/saisie/' + entryId + '/validate'),
+  // Chapter 8 — La Mémoire (dossier notes) + Le Conseiller (advisory opportunities).
+  memoire: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/memoire'),
+  addMemoire: (tenantId, body) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/memoire', body),
+  runConseiller: (tenantId) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/conseiller/run'),
+  conseils: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/conseils'),
+  dismissConseil: (id) => api.post('/cabinet/conseils/' + id + '/dismiss'),
+  // TVA/CA3 — draft VAT declaration from validated sales + accepted purchases.
+  runTva: (tenantId, body) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/tva/run', body || {}),
+  tvaDeclarations: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/tva'),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */
