@@ -72,6 +72,8 @@ MODULES = [
     "features.cron",
     # Password reset by email (magic link) — S3 finale.
     "features.auth_reset",
+    # Export FEC — the 18-column accounting file every French tool imports.
+    "features.fec",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.

@@ -217,6 +217,7 @@ export const facturationAPI = {
   seedReceived: (data) => api.post('/owner/facturation/received/seed-test', data || {}),
   sendEreporting: (data) => api.post('/owner/facturation/ereporting', data),
   coherence: () => api.get('/owner/facturation/coherence'),
+  fecUrl: (from, to) => '/api/owner/facturation/fec' + ((from||to) ? ('?from=' + (from||'') + '&to=' + (to||'')) : ''),
   // Cabinet (owner side): link/unlink my accountant.
   inviteAccountant: (email) => api.post('/owner/facturation/cabinet/invite', { email }),
   listAccountants: () => api.get('/owner/facturation/cabinet/links'),
@@ -296,6 +297,7 @@ export const comptableAPI = {
   client: (tenantId) => api.get('/comptable/clients/' + tenantId),
   alerts: () => api.get('/comptable/alerts'),
   reviewQueue: () => api.get('/comptable/review-queue'),
+  fec: (tenantId, from, to) => api.get('/cabinet/dossiers/' + tenantId + '/fec' + ((from||to) ? ('?from=' + (from||'') + '&to=' + (to||'')) : ''), { responseType: 'text' }),
   exportUrl: '/api/comptable/export',
 };
 

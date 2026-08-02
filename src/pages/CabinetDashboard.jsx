@@ -319,6 +319,21 @@ export default function CabinetDashboard() {
                     onActFor={actForClient} acting={acting}
                     onCreditNote={createCreditNote} crediting={crediting}
                     onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })}
+                    onExportFec={async (tid, name) => {
+                      try {
+                        const resp = await comptableAPI.fec(tid);
+                        const blob = new Blob([resp.data], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url; a.download = (name || 'dossier') + '-FEC.txt';
+                        document.body.appendChild(a); a.click(); a.remove();
+                        URL.revokeObjectURL(url);
+                        setToast({ ok: true, msg: 'FEC généré — importable dans Sage/Cegid.' });
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Export FEC impossible.' });
+                      }
+                      setTimeout(() => setToast(null), 6000);
+                    }}
                     onNewInvoice={(tid) => setInvoiceFor(tid)}
                     docReqs={docReqs}
                     subs={subs}
@@ -472,7 +487,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
 }
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
-                     onCreditNote, crediting, onOpenGrille, onNewInvoice,
+                     onCreditNote, crediting, onOpenGrille, onExportFec, onNewInvoice,
                      docReqs, onAskDoc, onDocReceived,
                      subs, onNewSub, onToggleSub, onRunBilling }) {
   const s = data.summary || {};
@@ -498,6 +513,14 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                       className="text-xs font-semibold px-3 py-1.5 rounded-xl border"
                       style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
                 Répartition des tâches
+              </button>
+            )}
+            {onExportFec && (
+              <button onClick={() => onExportFec(s.tenant_id, s.name)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-xl border"
+                      style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}
+                      title="Fichier des Écritures Comptables — importable dans Sage, Cegid, etc.">
+                Export FEC
               </button>
             )}
             <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
