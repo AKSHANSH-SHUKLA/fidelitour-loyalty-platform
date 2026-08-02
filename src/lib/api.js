@@ -241,6 +241,11 @@ export const cabinetOsAPI = {
   createClient: (data) => api.post('/cabinet/clients', data),
   agentDraftInvoice: (tenantId, body = {}) =>
     api.post('/cabinet/dossiers/' + tenantId + '/agent/draft-invoice', body),
+  docRequests: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/doc-requests'),
+  createDocRequest: (tenantId, body) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/doc-requests', body),
+  markDocReceived: (id) => api.post('/cabinet/doc-requests/' + id + '/received'),
+  runCollection: () => api.post('/cabinet/agent/collect/run'),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */

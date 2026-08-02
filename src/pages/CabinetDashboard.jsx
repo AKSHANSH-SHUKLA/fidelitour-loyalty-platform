@@ -38,6 +38,8 @@ export default function CabinetDashboard() {
   const [teamMembers, setTeamMembers] = useState([]);
   const [showNewClient, setShowNewClient] = useState(false);
   const [invoiceFor, setInvoiceFor] = useState(null);   // tenant_id being invoiced
+  const [docReqs, setDocReqs] = useState(null);         // {requests, reliability} for the drill
+  const [runningAgent, setRunningAgent] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
   const [canOnboard, setCanOnboard] = useState(false);
 
@@ -70,6 +72,9 @@ export default function CabinetDashboard() {
   const openClient = async (tid) => {
     const r = await comptableAPI.client(tid).catch(() => null);
     if (r?.data) setDrill(r.data);
+    cabinetOsAPI.docRequests(tid)
+      .then((x) => setDocReqs(x?.data || null))
+      .catch(() => setDocReqs(null));
   };
 
   /**
@@ -187,6 +192,26 @@ export default function CabinetDashboard() {
             Équipe
           </button>
           {canOnboard && (
+            <button disabled={runningAgent}
+                    onClick={async () => {
+                      setRunningAgent(true);
+                      try {
+                        const r = await cabinetOsAPI.runCollection();
+                        setToast({ ok: true,
+                                   msg: `Agent : ${r.data.emails_sent} email(s) envoyé(s), ${r.data.cases_opened} cas escaladé(s), ${r.data.waiting_not_due} en attente (pas encore l'heure de relancer).` });
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Relances impossibles.' });
+                      } finally {
+                        setRunningAgent(false);
+                        setTimeout(() => setToast(null), 9000);
+                      }
+                    }}
+                    className="text-sm font-semibold px-3 py-2 rounded-xl border disabled:opacity-50"
+                    style={{ borderColor: '#57534E', color: '#57534E' }}>
+              {runningAgent ? '🤖 …' : '🤖 Lancer les relances'}
+            </button>
+          )}
+          {canOnboard && (
             <button onClick={() => setShowNewClient(true)}
                     className="text-sm font-semibold px-3 py-2 rounded-xl border"
                     style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
@@ -289,6 +314,30 @@ export default function CabinetDashboard() {
                     onCreditNote={createCreditNote} crediting={crediting}
                     onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })}
                     onNewInvoice={(tid) => setInvoiceFor(tid)}
+                    docReqs={docReqs}
+                    onAskDoc={async (tid) => {
+                      const label = window.prompt('Quelle pièce demander ? (ex. « Relevé bancaire juillet »)');
+                      if (!label) return;
+                      const email = window.prompt("Email du client (vide = compte client connu) :") || '';
+                      try {
+                        await cabinetOsAPI.createDocRequest(tid, { label, client_email: email || undefined });
+                        setToast({ ok: true, msg: `Demande enregistrée : « ${label} ». L'agent la relancera au bon moment.` });
+                        await openClient(tid);
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Demande impossible.' });
+                      }
+                      setTimeout(() => setToast(null), 7000);
+                    }}
+                    onDocReceived={async (tid, id) => {
+                      try {
+                        const r = await cabinetOsAPI.markDocReceived(id);
+                        setToast({ ok: true, msg: r.data.on_time ? 'Pièce reçue — dans les temps ✓ (score du client ↑)' : 'Pièce reçue (en retard — le score du client s\'en souviendra).' });
+                        await openClient(tid);
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Action impossible.' });
+                      }
+                      setTimeout(() => setToast(null), 7000);
+                    }}
                     onAgentDraft={async (tid) => {
                       try {
                         const r = await cabinetOsAPI.agentDraftInvoice(tid);
@@ -394,7 +443,8 @@ function Stat({ label, value, tone = '#1C1917' }) {
 }
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
-                     onCreditNote, crediting, onOpenGrille, onNewInvoice, onAgentDraft }) {
+                     onCreditNote, crediting, onOpenGrille, onNewInvoice, onAgentDraft,
+                     docReqs, onAskDoc, onDocReceived }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
@@ -423,6 +473,60 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
           </div>
         </div>
+        {/* S12 — pièces manquantes: what the agent is chasing for this client */}
+        {docReqs && (
+          <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-bold text-[#1C1917]">
+                Pièces manquantes
+                <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ color: docReqs.reliability >= 80 ? '#2F7A52' : docReqs.reliability >= 50 ? '#B8860B' : '#C0392B',
+                               background: 'rgba(139,134,128,.10)' }}>
+                  Fiabilité client : {docReqs.reliability}/100
+                </span>
+              </div>
+              <button onClick={() => onAskDoc(s.tenant_id)}
+                      className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border"
+                      style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+                + Demander une pièce
+              </button>
+            </div>
+            {(docReqs.requests || []).length === 0 ? (
+              <div className="text-xs text-[#8B8680]">Rien en attente.</div>
+            ) : (
+              <div className="space-y-1.5">
+                {docReqs.requests.map((rq) => (
+                  <div key={rq.id} className="flex items-center gap-2 text-xs flex-wrap">
+                    <span className="w-2 h-2 rounded-full shrink-0"
+                          style={{ background: rq.status === 'received' ? '#3F9C6B'
+                                   : rq.status === 'escalated' ? '#C0392B' : '#E0A92B' }} />
+                    <span className="font-semibold text-[#1C1917]">{rq.label}</span>
+                    <span className="text-[#8B8680]">pour le {rq.due_date}</span>
+                    {(rq.reminders || []).length > 0 && rq.status === 'pending' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                            style={{ color: '#57534E', background: 'rgba(87,83,78,.08)' }}>
+                        🤖 {rq.reminders.length} relance(s)
+                      </span>
+                    )}
+                    {rq.status === 'escalated' && (
+                      <span className="text-[10px] font-semibold" style={{ color: '#C0392B' }}>
+                        escaladé — voir Cas
+                      </span>
+                    )}
+                    {rq.status === 'pending' && (
+                      <button onClick={() => onDocReceived(s.tenant_id, rq.id)}
+                              className="ml-auto text-[10px] font-semibold px-2 py-1 rounded-lg border"
+                              style={{ borderColor: 'rgba(63,156,107,.4)', color: '#2F7A52' }}>
+                        Reçu ✓
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Actions the cabinet can perform FOR this client. The legal duty sits
             with the business, but in practice the accountant is the one who
             tracks the deadline — so both sides get the button, and the audit log

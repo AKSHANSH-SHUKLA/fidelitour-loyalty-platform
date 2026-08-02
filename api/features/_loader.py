@@ -64,6 +64,8 @@ MODULES = [
     "features.exceptions_centre",
     # Grille de répartition (S9) — task-level assignment per dossier.
     "features.grille",
+    # Agent capability #1 (S12) — document collection with adaptive relances.
+    "features.agent_collect",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.
