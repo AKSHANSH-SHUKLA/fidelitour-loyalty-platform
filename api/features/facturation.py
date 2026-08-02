@@ -400,9 +400,16 @@ def facturation_status(token_data=Depends(require_role(["business_owner", "manag
 
 @router.post("/api/owner/facturation/activate")
 def facturation_activate(body: Dict[str, Any],
-                         token_data=Depends(require_role(["business_owner"]))):
-    """Register the company with the PA / DGFiP (PPF Annuaire + tax-report setting)."""
-    t = _require_facturation(token_data)
+                         token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Register the company with the PA / DGFiP (PPF Annuaire + tax-report setting).
+
+    An accountant may activate FOR a mandated client (tenant_id in body) —
+    in practice the cabinet is the one tracking the deadline, so both sides
+    get the lever and the audit records who actually pulled it.
+    """
+    t = _tenant_for_actor(token_data, body.get("tenant_id"))
+    if not t.get("facturation_enabled"):
+        raise HTTPException(403, "Module Facturation non activé pour ce dossier.")
     conn = get_pdp_connector()
     settings = {
         "start_date": body.get("start_date") or "2026-09-01",
@@ -420,6 +427,10 @@ def facturation_activate(body: Dict[str, Any],
         "annuaire_status": res.get("annuaire") or res.get("status") or "pending",
         "dgfip_start_date": settings["start_date"],
     }})
+    _audit("facturation.dgfip_activated", tenant_id=t["id"], actor=token_data,
+           object_kind="tenant", object_id=t["id"],
+           after={"start_date": settings["start_date"]},
+           detail=_acting_note(token_data, t))
     return {"ok": True, "result": res}
 
 

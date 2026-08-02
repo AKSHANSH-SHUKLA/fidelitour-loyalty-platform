@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { comptableAPI, facturationAPI, cabinetExtraAPI, casesAPI, cabinetOsAPI } from '../lib/api';
 import GrilleModal from '../components/GrilleModal';
 import NewClientModal from '../components/NewClientModal';
+import { CreateInvoiceModal } from './FacturationHome';
 import LiveText from '../components/LiveText';
 
 /**
@@ -36,6 +37,7 @@ export default function CabinetDashboard() {
   const [grilleFor, setGrilleFor] = useState(null);  // {tenant_id, name}
   const [teamMembers, setTeamMembers] = useState([]);
   const [showNewClient, setShowNewClient] = useState(false);
+  const [invoiceFor, setInvoiceFor] = useState(null);   // tenant_id being invoiced
   const [reviewCount, setReviewCount] = useState(0);
   const [canOnboard, setCanOnboard] = useState(false);
 
@@ -285,7 +287,21 @@ export default function CabinetDashboard() {
                     onReview={validateInvoice} reviewing={reviewing}
                     onActFor={actForClient} acting={acting}
                     onCreditNote={createCreditNote} crediting={crediting}
-                    onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })} />
+                    onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })}
+                    onNewInvoice={(tid) => setInvoiceFor(tid)} />
+      )}
+      {invoiceFor && (
+        <CreateInvoiceModal
+          tenantId={invoiceFor}
+          seller={{ vat_regime: 'reel_normal' }}
+          onClose={() => setInvoiceFor(null)}
+          onCreated={async () => {
+            setInvoiceFor(null);
+            setToast({ ok: true, msg: 'Facture créée et transmise pour ce dossier.' });
+            setTimeout(() => setToast(null), 6000);
+            if (drill?.summary?.tenant_id) await openClient(drill.summary.tenant_id);
+            await load();
+          }} />
       )}
       {showNewClient && (
         <NewClientModal members={teamMembers}
@@ -367,7 +383,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
 }
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
-                     onCreditNote, crediting, onOpenGrille }) {
+                     onCreditNote, crediting, onOpenGrille, onNewInvoice }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
@@ -402,6 +418,13 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             records who actually pressed it. */}
         {onActFor && (
           <div className="px-5 pt-4 flex flex-wrap gap-2 border-b pb-4" style={{ borderColor: '#F2ECE0' }}>
+            {onNewInvoice && (
+              <button onClick={() => onNewInvoice(s.tenant_id)}
+                      className="text-xs font-semibold px-3 py-2 rounded-xl text-white"
+                      style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
+                + Nouvelle facture
+              </button>
+            )}
             <button onClick={() => onActFor('ereporting', s.tenant_id)}
                     disabled={acting === 'ereporting'}
                     className="text-xs font-semibold px-3 py-2 rounded-xl text-white disabled:opacity-50"

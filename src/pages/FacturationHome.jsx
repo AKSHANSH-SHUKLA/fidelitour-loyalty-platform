@@ -853,7 +853,9 @@ function Field({ label, children }) {
  *   validated BEFORE sending, because a rejection costs a support case and a
  *   resend, while a validation message costs nothing.
  */
-function CreateInvoiceModal({ onClose, onCreated, seller }) {
+export function CreateInvoiceModal({ onClose, onCreated, seller, tenantId }) {
+  // tenantId set => a cabinet member is invoicing FOR a client (mandate path);
+  // the server re-verifies the mandate and stamps the audit "on behalf of".
   const sellerRegime = seller?.vat_regime || 'reel_normal_mensuel';
   const isFranchise = sellerRegime === 'franchise';
 
@@ -916,6 +918,7 @@ function CreateInvoiceModal({ onClose, onCreated, seller }) {
     setBusy(true);
     try {
       await facturationAPI.createInvoice({
+        ...(tenantId ? { tenant_id: tenantId } : {}),
         buyer: {
           ...buyer,
           delivery_address: sameDelivery ? buyer.address : buyer.delivery_address,
