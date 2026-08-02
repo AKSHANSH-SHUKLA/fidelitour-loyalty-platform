@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { comptableAPI, facturationAPI, cabinetExtraAPI, casesAPI, cabinetOsAPI } from '../lib/api';
 import GrilleModal from '../components/GrilleModal';
 import NewClientModal from '../components/NewClientModal';
+import NewSubscriptionModal from '../components/NewSubscriptionModal';
 import { CreateInvoiceModal } from './FacturationHome';
 import LiveText from '../components/LiveText';
 
@@ -39,6 +40,8 @@ export default function CabinetDashboard() {
   const [showNewClient, setShowNewClient] = useState(false);
   const [invoiceFor, setInvoiceFor] = useState(null);   // tenant_id being invoiced
   const [docReqs, setDocReqs] = useState(null);         // {requests, reliability} for the drill
+  const [subs, setSubs] = useState(null);               // subscriptions for the drill
+  const [showNewSub, setShowNewSub] = useState(null);   // tenant_id
   const [runningAgent, setRunningAgent] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
   const [canOnboard, setCanOnboard] = useState(false);
@@ -75,6 +78,9 @@ export default function CabinetDashboard() {
     cabinetOsAPI.docRequests(tid)
       .then((x) => setDocReqs(x?.data || null))
       .catch(() => setDocReqs(null));
+    cabinetOsAPI.subscriptions(tid)
+      .then((x) => setSubs(x?.data?.subscriptions || []))
+      .catch(() => setSubs(null));
   };
 
   /**
@@ -315,6 +321,29 @@ export default function CabinetDashboard() {
                     onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })}
                     onNewInvoice={(tid) => setInvoiceFor(tid)}
                     docReqs={docReqs}
+                    subs={subs}
+                    onNewSub={(tid) => setShowNewSub(tid)}
+                    onToggleSub={async (tid, id, active) => {
+                      try {
+                        await cabinetOsAPI.toggleSubscription(id, active);
+                        setToast({ ok: true, msg: active ? 'Abonnement réactivé.' : 'Abonnement mis en pause.' });
+                        await openClient(tid);
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Action impossible.' });
+                      }
+                      setTimeout(() => setToast(null), 6000);
+                    }}
+                    onRunBilling={async (tid) => {
+                      try {
+                        const r = await cabinetOsAPI.runBilling();
+                        setToast({ ok: true,
+                                   msg: `Agent : ${r.data.invoices_drafted} brouillon(s) préparé(s), ${r.data.skipped} pas encore dus.` });
+                        await openClient(tid); await load();
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Exécution impossible.' });
+                      }
+                      setTimeout(() => setToast(null), 8000);
+                    }}
                     onAskDoc={async (tid) => {
                       const label = window.prompt('Quelle pièce demander ? (ex. « Relevé bancaire juillet »)');
                       if (!label) return;
@@ -338,17 +367,7 @@ export default function CabinetDashboard() {
                       }
                       setTimeout(() => setToast(null), 7000);
                     }}
-                    onAgentDraft={async (tid) => {
-                      try {
-                        const r = await cabinetOsAPI.agentDraftInvoice(tid);
-                        setToast({ ok: true,
-                                   msg: `L'agent a préparé le brouillon ${r.data.invoice.number} (${r.data.invoice.total_ttc} € TTC) — il attend une validation humaine dans « À valider ».` });
-                      } catch (e) {
-                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Action impossible.' });
-                      }
-                      setTimeout(() => setToast(null), 8000);
-                      await openClient(tid); await load();
-                    }} />
+                    />
       )}
       {invoiceFor && (
         <CreateInvoiceModal
@@ -361,6 +380,16 @@ export default function CabinetDashboard() {
             setTimeout(() => setToast(null), 6000);
             if (drill?.summary?.tenant_id) await openClient(drill.summary.tenant_id);
             await load();
+          }} />
+      )}
+      {showNewSub && (
+        <NewSubscriptionModal tenantId={showNewSub}
+          onClose={() => setShowNewSub(null)}
+          onCreated={async () => {
+            setShowNewSub(null);
+            setToast({ ok: true, msg: "Abonnement enregistré — l'agent facturera chaque mois au jour choisi, en brouillon à valider." });
+            setTimeout(() => setToast(null), 8000);
+            if (drill?.summary?.tenant_id) await openClient(drill.summary.tenant_id);
           }} />
       )}
       {showNewClient && (
@@ -443,8 +472,9 @@ function Stat({ label, value, tone = '#1C1917' }) {
 }
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
-                     onCreditNote, crediting, onOpenGrille, onNewInvoice, onAgentDraft,
-                     docReqs, onAskDoc, onDocReceived }) {
+                     onCreditNote, crediting, onOpenGrille, onNewInvoice,
+                     docReqs, onAskDoc, onDocReceived,
+                     subs, onNewSub, onToggleSub, onRunBilling }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
   return (
@@ -527,6 +557,59 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
           </div>
         )}
 
+        {/* S13 — abonnements: the standing instructions the agent executes */}
+        {subs !== null && (
+          <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-bold text-[#1C1917]">Abonnements (facturation récurrente)</div>
+              <div className="flex gap-2">
+                <button onClick={() => onRunBilling(s.tenant_id)}
+                        className="text-xs px-2.5 py-1.5 rounded-lg border"
+                        style={{ borderColor: '#E7E1D5', color: '#57534E' }}
+                        title="Exécute toutes les instructions dues — l'agent prépare des brouillons, il ne transmet rien.">
+                  🤖 Exécuter maintenant
+                </button>
+                <button onClick={() => onNewSub(s.tenant_id)}
+                        className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border"
+                        style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+                  + Nouvel abonnement
+                </button>
+              </div>
+            </div>
+            {subs.length === 0 ? (
+              <div className="text-xs text-[#8B8680]">
+                Aucune instruction permanente — « chaque mois, le X, facturer Y à Z ».
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {subs.map((sb) => {
+                  const ht = (sb.lines || []).reduce((a, l) => a + (l.quantity || 1) * (l.unit_price || 0), 0);
+                  return (
+                    <div key={sb.id} className="flex items-center gap-2 text-xs flex-wrap">
+                      <span className="w-2 h-2 rounded-full shrink-0"
+                            style={{ background: sb.active ? '#3F9C6B' : '#8B8680' }} />
+                      <span className="font-semibold text-[#1C1917]">{sb.label}</span>
+                      <span className="text-[#57534E]">{ht.toFixed(2)} € HT · le {sb.day_of_month} du mois</span>
+                      <span className="text-[#8B8680]">→ {sb.buyer?.name}</span>
+                      {sb.last_run_ym && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                              style={{ color: '#57534E', background: 'rgba(87,83,78,.08)' }}>
+                          dernier : {sb.last_run_ym}
+                        </span>
+                      )}
+                      <button onClick={() => onToggleSub(s.tenant_id, sb.id, !sb.active)}
+                              className="ml-auto text-[10px] px-2 py-1 rounded-lg border"
+                              style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+                        {sb.active ? 'Mettre en pause' : 'Réactiver'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Actions the cabinet can perform FOR this client. The legal duty sits
             with the business, but in practice the accountant is the one who
             tracks the deadline — so both sides get the button, and the audit log
@@ -538,14 +621,6 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                       className="text-xs font-semibold px-3 py-2 rounded-xl text-white"
                       style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
                 + Nouvelle facture
-              </button>
-            )}
-            {onAgentDraft && (
-              <button onClick={() => onAgentDraft(s.tenant_id)}
-                      className="text-xs font-semibold px-3 py-2 rounded-xl border"
-                      style={{ borderColor: '#57534E', color: '#57534E' }}
-                      title="L'agent prépare un brouillon — il ne peut jamais le valider.">
-                🤖 Brouillon par l'agent
               </button>
             )}
             <button onClick={() => onActFor('ereporting', s.tenant_id)}

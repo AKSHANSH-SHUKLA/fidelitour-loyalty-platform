@@ -226,21 +226,26 @@ def _email_html(cabinet_name: str, client_name: str,
 
 @router.post("/api/cabinet/agent/collect/run")
 def run_collection(token_data=Depends(require_role(["comptable"]))):
-    """One agent pass over every pending request of MY cabinet.
+    """One agent pass over every pending request of MY cabinet (human trigger)."""
+    from features import cabinet_os as co
+    actor_h = co.require_cabinet_role(token_data.email, co.ASSIGN_ROLES)
+    return run_collection_for_cabinet(actor_h["cabinet_id"], token_data.email)
 
-    Human-triggered (EC/superviseur) in S12 — the founder should SEE what the
-    agent sends before any cron does it silently. The mechanics (identity,
-    audit, escalation) will not change when the trigger becomes a schedule.
+
+def run_collection_for_cabinet(cabinet_id: str, triggered_by: str) -> Dict[str, Any]:
+    """The actual pass — shared by the human button and the daily cron.
+
+    Identity, audit and escalation are identical for both triggers; only the
+    `triggered_by` note differs ("cron" vs a person's email).
     """
     from features import cabinet_os as co
     from services import mailer
-    actor_h = co.require_cabinet_role(token_data.email, co.ASSIGN_ROLES)
-    cabinet = _db.cabinets.find_one({"id": actor_h["cabinet_id"]}) or {}
-    agent = co.ensure_agent(actor_h["cabinet_id"])
-    agent_actor = co.agent_actor(actor_h["cabinet_id"])
+    cabinet = _db.cabinets.find_one({"id": cabinet_id}) or {}
+    agent = co.ensure_agent(cabinet_id)
+    agent_actor = co.agent_actor(cabinet_id)
     today = _today()
 
-    pending = list(_db.doc_requests.find({"cabinet_id": actor_h["cabinet_id"],
+    pending = list(_db.doc_requests.find({"cabinet_id": cabinet_id,
                                           "status": "pending"}))
     # group per (tenant, client_email) — ONE email listing everything
     groups: Dict[tuple, List[Dict[str, Any]]] = {}
@@ -302,7 +307,7 @@ def run_collection(token_data=Depends(require_role(["comptable"]))):
                after={"to": email, "pieces": [r["label"] for r in due_items],
                       "nth": nth, "delivered": res.get("sent", False),
                       "reliability_score": score},
-               detail={"triggered_by": token_data.email,
+               detail={"triggered_by": triggered_by,
                        "agent": agent["user_email"]})
 
     return {"ok": True, "emails_sent": sent, "cases_opened": escalated,

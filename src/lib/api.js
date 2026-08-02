@@ -246,6 +246,12 @@ export const cabinetOsAPI = {
     api.post('/cabinet/dossiers/' + tenantId + '/doc-requests', body),
   markDocReceived: (id) => api.post('/cabinet/doc-requests/' + id + '/received'),
   runCollection: () => api.post('/cabinet/agent/collect/run'),
+  subscriptions: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/subscriptions'),
+  createSubscription: (tenantId, body) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/subscriptions', body),
+  toggleSubscription: (id, active) =>
+    api.patch('/cabinet/subscriptions/' + id, { active }),
+  runBilling: () => api.post('/cabinet/agent/billing/run'),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */
