@@ -105,6 +105,7 @@ import FacturationHome from './pages/FacturationHome';
 import CabinetDashboard from './pages/CabinetDashboard';
 import CabinetTeam from './pages/CabinetTeam';
 import CabinetCases from './pages/CabinetCases';
+import CabinetReview from './pages/CabinetReview';
 import CabinetPasswordGate from './components/CabinetPasswordGate';
 import CabinetSignup from './pages/CabinetSignup';
 // Public marketing pages — one per product line, so each audience gets a whole
@@ -215,6 +216,11 @@ function App() {
           <Route path="/cabinet/cas" element={
             <ProtectedRoute allowedRoles={['comptable']}>
               <CabinetPasswordGate><CabinetCases /></CabinetPasswordGate>
+            </ProtectedRoute>
+          } />
+          <Route path="/cabinet/revue" element={
+            <ProtectedRoute allowedRoles={['comptable']}>
+              <CabinetPasswordGate><CabinetReview /></CabinetPasswordGate>
             </ProtectedRoute>
           } />
 

@@ -272,6 +272,54 @@ def cabinet_client_detail(tenant_id: str, token_data=Depends(require_role(["comp
             "credit_notes": credit_notes, "received": received}
 
 
+@router.get("/api/comptable/review-queue")
+def review_queue(token_data=Depends(require_role(["comptable"]))):
+    """S10 — "what is waiting for MY eyes" (the lab tray, not the archive).
+
+    Every invoice across my visible dossiers whose review is not finished,
+    OLDEST FIRST — the order a reviewer should actually work in. Each row says
+    who prepared it, and whether validating it would need four eyes for ME
+    (so the UI can grey out the button instead of letting a click bounce)."""
+    tids = _linked_tenant_ids(token_data.email)
+    me = _norm(token_data.email)
+
+    seuil = 1000.0
+    try:
+        from features.cabinet_os import current_membership
+        mem = current_membership(me)
+        cab = _db.cabinets.find_one({"id": mem["cabinet_id"]}) or {}
+        seuil = float((cab.get("settings") or {}).get("review_threshold_eur", 1000))
+    except Exception:
+        pass
+
+    tenants = {t["id"]: t for t in _db.tenants.find({"id": {"$in": tids}})}
+    rows = []
+    for inv in _db.fact_invoices.find({
+            "tenant_id": {"$in": tids},
+            "review_status": {"$in": [None, "unreviewed", "pending_validation",
+                                      "correction_required"]}}):
+        from services import statuses as st
+        inv = st.ensure(inv)
+        if inv["review_status"] == "validated":
+            continue
+        t = tenants.get(inv["tenant_id"]) or {}
+        ttc = float(inv.get("total_ttc") or 0)
+        rows.append({
+            "id": inv["id"], "number": inv.get("number"),
+            "tenant_id": inv["tenant_id"],
+            "client_name": t.get("legal_name") or t.get("name"),
+            "total_ttc": ttc, "date": inv.get("date"),
+            "review_status": inv["review_status"], "pa_status": inv.get("pa_status"),
+            "created_by": inv.get("created_by"),
+            "created_at": inv.get("created_at"),
+            # four-eyes preview FOR THE CALLER: prepared by me AND >= seuil
+            "four_eyes_blocked_for_me": bool(
+                inv.get("created_by") and _norm(inv.get("created_by")) == me and ttc >= seuil),
+        })
+    rows.sort(key=lambda r: r.get("created_at") or "")
+    return {"queue": rows, "count": len(rows), "seuil": seuil}
+
+
 @router.get("/api/comptable/alerts")
 def cabinet_alerts(token_data=Depends(require_role(["comptable"]))):
     """One combined feed of everything that needs attention across the portfolio."""

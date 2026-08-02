@@ -487,6 +487,181 @@ def update_member(membership_id: str, body: Dict[str, Any],
     return {"ok": True, "dossiers_unassigned": freed}
 
 
+@router.patch("/api/cabinet/settings")
+def update_settings(body: Dict[str, Any],
+                    token_data=Depends(require_role(["comptable"]))):
+    """Cabinet-level policy knobs — EC only. Currently: the four-eyes seuil
+    (review_threshold_eur) and the two-step review switch."""
+    admin = require_cabinet_role(token_data.email, MANAGER_ROLES)
+    cab = _db.cabinets.find_one({"id": admin["cabinet_id"]}) or {}
+    settings = dict(cab.get("settings") or {})
+    upd = {}
+    if "review_threshold_eur" in body:
+        try:
+            v = float(body["review_threshold_eur"])
+        except (TypeError, ValueError):
+            raise HTTPException(422, "Seuil invalide.")
+        if v < 0:
+            raise HTTPException(422, "Le seuil ne peut pas être négatif.")
+        upd["review_threshold_eur"] = v
+    if "require_two_step_review" in body:
+        upd["require_two_step_review"] = bool(body["require_two_step_review"])
+    if not upd:
+        raise HTTPException(422, "Rien à modifier.")
+    settings.update(upd)
+    _db.cabinets.update_one({"id": admin["cabinet_id"]}, {"$set": {"settings": settings}})
+    _audit("cabinet.settings_updated", actor=token_data, object_kind="cabinet",
+           object_id=admin["cabinet_id"], before=cab.get("settings"), after=settings)
+    return {"ok": True, "settings": settings}
+
+
+# ==========================================================================
+# S6 — cabinet-initiated client onboarding
+# ==========================================================================
+
+def _luhn_ok(digits: str) -> bool:
+    total = 0
+    for i, ch in enumerate(reversed(digits)):
+        d = int(ch)
+        if i % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+    return total % 10 == 0
+
+
+def _fetch_company(siren: str) -> Optional[Dict[str, Any]]:
+    """Government lookup (recherche-entreprises.api.gouv.fr — public, no key).
+
+    Kept as its own function so tests can replace it without network access,
+    and so a future INSEE-Sirene switch changes exactly one place."""
+    import json as _json
+    import urllib.request
+    url = f"https://recherche-entreprises.api.gouv.fr/search?q={siren}&page=1&per_page=1"
+    req = urllib.request.Request(url, headers={"User-Agent": "FidClic/1.0"})
+    with urllib.request.urlopen(req, timeout=8) as r:
+        data = _json.loads(r.read().decode())
+    for res in data.get("results") or []:
+        if res.get("siren") == siren:
+            siege = res.get("siege") or {}
+            return {
+                "siren": siren,
+                "legal_name": res.get("nom_complet") or res.get("nom_raison_sociale"),
+                "siret": siege.get("siret"),
+                "naf_code": res.get("activite_principale"),
+                "address": siege.get("adresse"),
+                "postal_code": siege.get("code_postal"),
+                "city": siege.get("libelle_commune"),
+                "legal_form": res.get("nature_juridique"),
+                "active": (res.get("etat_administratif") or "A") == "A",
+            }
+    return None
+
+
+@router.get("/api/cabinet/siren-lookup")
+def siren_lookup(siren: str = "", token_data=Depends(require_role(["comptable"]))):
+    """Type a SIREN, get the company — like plate number → RTO record.
+    EC/superviseur only (they are the ones who onboard clients)."""
+    require_cabinet_role(token_data.email, ASSIGN_ROLES)
+    digits = "".join(ch for ch in (siren or "") if ch.isdigit())
+    if len(digits) != 9:
+        raise HTTPException(422, "Le SIREN doit comporter 9 chiffres.")
+    if not _luhn_ok(digits):
+        raise HTTPException(422, "SIREN invalide (échec du contrôle de clé).")
+    try:
+        found = _fetch_company(digits)
+    except Exception:
+        raise HTTPException(502, "Annuaire des entreprises injoignable — réessayez, ou saisissez les informations manuellement.")
+    if not found:
+        raise HTTPException(404, "Aucune entreprise trouvée pour ce SIREN.")
+    return {"company": found}
+
+
+@router.post("/api/cabinet/clients")
+def create_client_dossier(body: Dict[str, Any],
+                          token_data=Depends(require_role(["comptable"]))):
+    """S6 — the cabinet onboards a client itself. The client never has to
+    register first: dossier + mandate are created in one step, the owner is
+    assigned, and (optionally) a client login is created whose temp password
+    is shown exactly once.
+
+    This is the flow that makes FidClic sellable to a 45-client cabinet —
+    nobody asks 45 bakery owners to sign up on their own.
+    """
+    actor = require_cabinet_role(token_data.email, ASSIGN_ROLES)
+    siren = "".join(ch for ch in str(body.get("siren") or "") if ch.isdigit())
+    legal_name = (body.get("legal_name") or "").strip()
+    if len(siren) != 9 or not _luhn_ok(siren):
+        raise HTTPException(422, "SIREN invalide (9 chiffres + clé).")
+    if not legal_name:
+        raise HTTPException(422, "La raison sociale est obligatoire.")
+
+    # one dossier per SIREN per cabinet — a duplicate is a mistake, not a client
+    for l in _db.cabinet_links.find({"cabinet_id": actor["cabinet_id"], "status": "active"}):
+        t = _db.tenants.find_one({"id": l["tenant_id"]}) or {}
+        if t.get("siren") == siren:
+            raise HTTPException(409, f"Ce SIREN est déjà suivi par votre cabinet ({t.get('legal_name') or t.get('name')}).")
+
+    owner_membership_id = body.get("owner_membership_id") or None
+    if owner_membership_id:
+        mem = _db.cabinet_memberships.find_one({"id": owner_membership_id,
+                                                "cabinet_id": actor["cabinet_id"],
+                                                "status": "active"})
+        if not mem:
+            raise HTTPException(422, "Responsable invalide ou inactif.")
+
+    # ALL validation happens before ANY insert — a refused request must leave
+    # zero trace, otherwise a failed attempt half-creates a dossier (found by
+    # the test that tried a duplicate email after this block originally ran).
+    email = _norm(body.get("client_email") or "")
+    if email:
+        if "@" not in email:
+            raise HTTPException(422, "Email du client invalide.")
+        if _db.users.find_one({"email": email}):
+            raise HTTPException(409, "Cet email a déjà un compte — le client peut se connecter et vous retrouver dans « Mon comptable ».")
+
+    tenant = {
+        "id": str(uuid4()),
+        "name": (body.get("name") or legal_name)[:60],
+        "legal_name": legal_name,
+        "siren": siren,
+        "siret": "".join(ch for ch in str(body.get("siret") or "") if ch.isdigit()) or None,
+        "naf_code": body.get("naf_code"),
+        "address": body.get("address"), "postal_code": body.get("postal_code"),
+        "city": body.get("city"),
+        "facturation_enabled": True,
+        "created_by_cabinet": actor["cabinet_id"],
+        "created_at": _now(),
+    }
+    _db.tenants.insert_one(dict(tenant))
+    _db.cabinet_links.insert_one({
+        "id": str(uuid4()), "cabinet_id": actor["cabinet_id"],
+        "comptable_email": _norm(token_data.email),
+        "tenant_id": tenant["id"], "status": "active",
+        "assignee_membership_id": owner_membership_id,
+        "origin": "cabinet_onboarding", "created_at": _now(),
+    })
+
+    # optional client login — temp password shown ONCE, like member creation
+    client_account = None
+    if email:
+        from services import password_policy
+        temp = password_policy.generate()
+        _db.users.insert_one({"email": email, "role": "business_owner",
+                              "tenant_id": tenant["id"],
+                              "hashed_password": hash_password(temp),
+                              "created_at": _now()})
+        client_account = {"email": email, "temp_password": temp}
+
+    _audit("client.onboarded_by_cabinet", tenant_id=tenant["id"], actor=token_data,
+           object_kind="tenant", object_id=tenant["id"],
+           after={"legal_name": legal_name, "siren": siren,
+                  "owner": owner_membership_id,
+                  "client_account_created": bool(client_account)})
+    return {"ok": True, "tenant_id": tenant["id"], "client_account": client_account}
+
+
 @router.post("/api/cabinet/team/{membership_id}/reset-password")
 def reset_member_password(membership_id: str,
                           token_data=Depends(require_role(["comptable"]))):

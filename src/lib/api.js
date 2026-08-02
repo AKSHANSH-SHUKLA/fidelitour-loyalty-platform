@@ -236,6 +236,9 @@ export const cabinetOsAPI = {
   assign: (tenantId, membershipId) =>
     api.post('/cabinet/dossiers/' + tenantId + '/assign', { membership_id: membershipId }),
   unassigned: () => api.get('/cabinet/dossiers/unassigned'),
+  updateSettings: (data) => api.patch('/cabinet/settings', data),
+  sirenLookup: (siren) => api.get('/cabinet/siren-lookup?siren=' + siren),
+  createClient: (data) => api.post('/cabinet/clients', data),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */
@@ -279,6 +282,7 @@ export const comptableAPI = {
   clients: () => api.get('/comptable/clients'),
   client: (tenantId) => api.get('/comptable/clients/' + tenantId),
   alerts: () => api.get('/comptable/alerts'),
+  reviewQueue: () => api.get('/comptable/review-queue'),
   exportUrl: '/api/comptable/export',
 };
 

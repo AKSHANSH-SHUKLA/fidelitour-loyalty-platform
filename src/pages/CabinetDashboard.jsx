@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { comptableAPI, facturationAPI, cabinetExtraAPI, casesAPI, cabinetOsAPI } from '../lib/api';
 import GrilleModal from '../components/GrilleModal';
+import NewClientModal from '../components/NewClientModal';
 import LiveText from '../components/LiveText';
 
 /**
@@ -34,6 +35,9 @@ export default function CabinetDashboard() {
   const [openCases, setOpenCases] = useState(0);
   const [grilleFor, setGrilleFor] = useState(null);  // {tenant_id, name}
   const [teamMembers, setTeamMembers] = useState([]);
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [canOnboard, setCanOnboard] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +53,12 @@ export default function CabinetDashboard() {
       .catch(() => {});
     cabinetOsAPI.team()
       .then((r) => setTeamMembers(r?.data?.members || []))
+      .catch(() => {});
+    comptableAPI.reviewQueue()
+      .then((r) => setReviewCount(r?.data?.count ?? 0))
+      .catch(() => {});
+    cabinetOsAPI.me()
+      .then((r) => setCanOnboard(!!r?.data?.can?.assign))
       .catch(() => {});
     setLoading(false);
   }, []);
@@ -154,6 +164,14 @@ export default function CabinetDashboard() {
           <span className="font-bold text-[#1C1917]">Espace Cabinet</span>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/cabinet/revue')}
+                  className="text-sm font-semibold text-[#57534E] hover:text-[#2F7A52] flex items-center gap-1.5">
+            À valider
+            {reviewCount > 0 && (
+              <LiveText className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ color: 'white', background: '#2F7A52' }}>{String(reviewCount)}</LiveText>
+            )}
+          </button>
           <button onClick={() => navigate('/cabinet/cas')}
                   className="text-sm font-semibold text-[#57534E] hover:text-[#C0392B] flex items-center gap-1.5">
             <AlertTriangle size={15} /> Cas
@@ -166,6 +184,13 @@ export default function CabinetDashboard() {
                   className="text-sm font-semibold text-[#57534E] hover:text-[#7A3E70]">
             Équipe
           </button>
+          {canOnboard && (
+            <button onClick={() => setShowNewClient(true)}
+                    className="text-sm font-semibold px-3 py-2 rounded-xl border"
+                    style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+              + Nouveau client
+            </button>
+          )}
           <a href={comptableAPI.exportUrl}
              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-white"
              style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
@@ -261,6 +286,19 @@ export default function CabinetDashboard() {
                     onActFor={actForClient} acting={acting}
                     onCreditNote={createCreditNote} crediting={crediting}
                     onOpenGrille={(tid, name) => setGrilleFor({ tenant_id: tid, name })} />
+      )}
+      {showNewClient && (
+        <NewClientModal members={teamMembers}
+                        onClose={() => setShowNewClient(false)}
+                        onCreated={async (res) => {
+                          setShowNewClient(false);
+                          setToast({ ok: true,
+                                     msg: res.client_account
+                                       ? `Dossier créé. Accès client : ${res.client_account.email} / ${res.client_account.temp_password} — transmettez-le, il ne sera plus affiché.`
+                                       : 'Dossier client créé et mandat activé.' });
+                          setTimeout(() => setToast(null), 12000);
+                          await load();
+                        }} />
       )}
       {grilleFor && (
         <GrilleModal tenantId={grilleFor.tenant_id} clientName={grilleFor.name}

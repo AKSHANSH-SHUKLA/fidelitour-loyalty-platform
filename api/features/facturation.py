@@ -486,6 +486,7 @@ def create_invoice(body: Dict[str, Any],
         "state": InvoiceState.DRAFT,     # legacy mirror — remove after 1 release
         "channel": channel,
         "lifecycle": [{"family": "pa", "state": InvoiceState.DRAFT, "at": _now()}],
+        "created_by": getattr(token_data, "email", None),
         "created_at": _now(),
         "updated_at": _now(),
     }
@@ -596,6 +597,37 @@ def set_review_status(invoice_id: str, body: Dict[str, Any],
             f"Transition impossible: {inv['review_status']} → {target}"
             + (" (validation en deux étapes requise)" if two_step else ""),
         )
+
+    # ---- S10: four-eyes (quatre yeux), threshold-based ----------------------
+    # A cabinet reviewer may not validate an invoice THEY prepared when it is
+    # at or above the cabinet's seuil. Below the seuil self-validation is
+    # allowed but permanently marked auto_validated — visible, not hidden.
+    # Real cabinets work exactly this way: not everything is double-checked,
+    # only what is big or risky; "everything" would deadlock a 2-person firm.
+    # Business owners validating their own company's invoices are out of
+    # scope — the rule protects the CABINET's chain of responsibility.
+    auto_validated = False
+    if target == "validated":
+        reviewer = getattr(token_data, "email", None)
+        preparer = inv.get("created_by")
+        if reviewer and preparer and reviewer == preparer:
+            mem = None
+            try:
+                from features.cabinet_os import current_membership
+                mem = current_membership(reviewer)
+            except Exception:
+                mem = None      # not cabinet staff (business owner) → rule doesn't apply
+            if mem:
+                cab = _db.cabinets.find_one({"id": mem["cabinet_id"]}) or {}
+                seuil = float((cab.get("settings") or {}).get("review_threshold_eur", 1000))
+                if float(inv.get("total_ttc") or 0) >= seuil:
+                    raise HTTPException(
+                        409,
+                        f"Quatre yeux : cette facture ({inv.get('total_ttc')} € TTC) dépasse le "
+                        f"seuil de {seuil:g} € — elle doit être validée par une autre personne "
+                        f"que celle qui l'a préparée.")
+                auto_validated = True
+
     upd: Dict[str, Any] = {
         "review_status": target,
         "review_updated_at": _now(),
@@ -605,6 +637,8 @@ def set_review_status(invoice_id: str, body: Dict[str, Any],
         "export_status": st.export_status_for_review(target, inv["export_status"]),
         "updated_at": _now(),
     }
+    if auto_validated:
+        upd["auto_validated"] = True
     for f in ("account_code", "vat_rate", "comment"):
         if body.get(f) is not None:
             upd[f"review_{f}" if f == "comment" else f] = body[f]
@@ -617,7 +651,8 @@ def set_review_status(invoice_id: str, body: Dict[str, Any],
            object_kind="invoice", object_id=invoice_id,
            before={"review_status": inv["review_status"]},
            after={"review_status": target, "export_status": upd["export_status"]},
-           detail={"number": inv.get("number")})
+           detail={"number": inv.get("number"),
+                   **({"auto_validated": True} if auto_validated else {})})
     return {"invoice": _public(_db.fact_invoices.find_one({"id": invoice_id}))}
 
 
