@@ -187,6 +187,44 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
     } catch (err) { toast(false, err?.response?.data?.detail || 'Changement impossible.'); }
   };
 
+  const _readText = (file) => new Promise((res, rej) => {
+    const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej;
+    fr.readAsText(file);
+  });
+  const _ext = (name) => (name.split('.').pop() || '').toLowerCase();
+
+  const onImportInvoices = async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    setBusy('imp-inv');
+    try {
+      const text = await _readText(f);
+      const fmt = _ext(f.name) === 'txt' || text.includes('EcritureNum') ? 'fec' : 'csv';
+      const r = await cabinetOsAPI.importInvoices(tenantId, text, fmt);
+      toast(true, `${r.data.imported} facture(s) importée(s).`); await refresh();
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Import impossible.'); }
+    setBusy('');
+  };
+  const onImportBank = async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    setBusy('imp-bank');
+    try {
+      const text = await _readText(f);
+      const fmt = _ext(f.name) === 'ofx' || text.toUpperCase().includes('<STMTTRN>') ? 'ofx' : 'csv';
+      const r = await cabinetOsAPI.importBank(tenantId, text, fmt);
+      toast(true, `${r.data.imported} transaction(s) importée(s). Lancez « Rapprocher ».`); await refresh();
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Import impossible.'); }
+    setBusy('');
+  };
+  const onSyncReceived = async () => {
+    setBusy('sync');
+    try {
+      const r = await cabinetOsAPI.syncReceived(tenantId);
+      toast(true, `${r.data.synced} facture(s) fournisseur récupérée(s) (PA : ${r.data.pa_provider}).`);
+      await refresh();
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Synchronisation impossible.'); }
+    setBusy('');
+  };
+
   const btn = (extra) => ({ ...extra });
   const pendingSaisie = saisie.filter((s) => s.status === 'proposed');
   const pendingLettrage = lettrage.filter((x) => x.status === 'proposed');
@@ -211,6 +249,25 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
           <span className="text-[10px] text-[#8B8680]">FidClic route chaque client vers SA PA automatiquement.</span>
         </div>
       )}
+
+      {/* Import / récupération de données */}
+      <div className="mb-4">
+        <div className="text-xs font-semibold text-[#57534E] mb-2">Données du dossier</div>
+        <div className="flex gap-2 flex-wrap">
+          <label className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer" style={PLUM}>
+            {busy === 'imp-inv' ? 'Import…' : '⬆︎ Importer factures (CSV/FEC)'}
+            <input type="file" accept=".csv,.txt" className="hidden" onChange={onImportInvoices} />
+          </label>
+          <label className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer" style={PLUM}>
+            {busy === 'imp-bank' ? 'Import…' : '⬆︎ Importer relevé (CSV/OFX)'}
+            <input type="file" accept=".csv,.ofx" className="hidden" onChange={onImportBank} />
+          </label>
+          <button onClick={onSyncReceived} disabled={busy === 'sync'}
+                  className="text-xs px-2.5 py-1.5 rounded-lg border" style={GREY}>
+            {busy === 'sync' ? 'Sync…' : '🔄 Synchroniser factures reçues'}
+          </button>
+        </div>
+      </div>
 
       {/* Chapter 4 — OCR + Saisie */}
       <div className="mb-4">

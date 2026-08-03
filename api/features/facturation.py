@@ -828,6 +828,44 @@ def list_received(token_data=Depends(require_role(["business_owner", "manager"])
     return {"received": [_public(d) for d in docs]}
 
 
+@router.post("/api/owner/facturation/received/sync")
+def sync_received(body: Dict[str, Any],
+                  token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Pull supplier invoices from THIS client's PA into FidClic.
+
+    Model B: the connector is chosen per client, so this works no matter which
+    PA the client is on. This is the 'pull' complement to the webhook 'push' —
+    together they guarantee every client's incoming invoices reach the cabinet,
+    regardless of platform.
+    """
+    t = _tenant_for_actor(token_data, body.get("tenant_id"))
+    conn = get_pdp_connector(t)
+    account_id = t.get("pdp_account_id") or t["id"]
+    try:
+        items = conn.list_received(account_id)
+    except PdpError as e:
+        raise HTTPException(502, f"Synchronisation impossible: {e.message}")
+    new = 0
+    for it in items:
+        rid = it.get("id") or _new_id()
+        if _db.fact_received_invoices.find_one({"tenant_id": t["id"], "pdp_received_id": rid}):
+            continue
+        src = it.get("invoice") or {}
+        supplier = src.get("supplier") or src.get("seller") or {}
+        ht = float(src.get("total_ht") or 0)
+        vat = float(src.get("total_vat") or round(ht * 0.20, 2))
+        _db.fact_received_invoices.insert_one({
+            "id": _new_id(), "tenant_id": t["id"], "pdp_received_id": rid,
+            "supplier": {"name": supplier.get("name") or "Fournisseur",
+                         "siren": supplier.get("siren") or "", "is_company": True},
+            "number": src.get("number") or "",
+            "total_ht": ht, "total_vat": vat, "total_ttc": round(ht + vat, 2) or float(src.get("total_ttc") or 0),
+            "state": it.get("state") or InvoiceState.RECEIVED,
+            "source": "pa_sync", "received_at": _now()})
+        new += 1
+    return {"ok": True, "synced": new, "pa_provider": getattr(conn, "provider", "mock")}
+
+
 @router.post("/api/owner/facturation/received/seed-test")
 def seed_test_received(body: Dict[str, Any],
                        token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):

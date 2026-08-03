@@ -226,6 +226,25 @@ export default function CabinetDashboard() {
               + Nouveau client
             </button>
           )}
+          {canOnboard && (
+            <label className="text-sm font-semibold px-3 py-2 rounded-xl border cursor-pointer"
+                   style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}
+                   title="Importer plusieurs clients d'un coup (CSV : raison sociale, siren, email, pa)">
+              ⬆︎ Importer clients
+              <input type="file" accept=".csv,.txt" className="hidden" onChange={async (e) => {
+                const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+                try {
+                  const text = await f.text();
+                  const r = await cabinetOsAPI.importClients(text);
+                  setToast({ ok: true, msg: `${r.data.created} client(s) importé(s)` + (r.data.skipped ? `, ${r.data.skipped} ignoré(s).` : '.') });
+                  await load();
+                } catch (err) {
+                  setToast({ ok: false, msg: err?.response?.data?.detail || 'Import impossible.' });
+                }
+                setTimeout(() => setToast(null), 8000);
+              }} />
+            </label>
+          )}
           <a href={comptableAPI.exportUrl}
              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-white"
              style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>

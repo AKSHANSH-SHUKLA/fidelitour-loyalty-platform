@@ -288,6 +288,14 @@ export const cabinetOsAPI = {
   paProviders: () => api.get('/facturation/pa-providers'),
   setDossierPa: (tenantId, provider) =>
     api.post('/owner/facturation/set-pa', { tenant_id: tenantId, pdp_provider: provider }),
+  // Imports — clients (CSV), invoices (CSV/FEC), bank (CSV/OFX) + reception pull.
+  importClients: (content) => api.post('/cabinet/import/clients', { content }),
+  importInvoices: (tenantId, content, format) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/import/invoices', { content, format }),
+  importBank: (tenantId, content, format) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/import/bank', { content, format }),
+  syncReceived: (tenantId) =>
+    api.post('/owner/facturation/received/sync', { tenant_id: tenantId }),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */
