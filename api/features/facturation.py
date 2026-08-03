@@ -31,7 +31,7 @@ from pydantic import BaseModel
 from auth import require_role, get_current_user_data
 
 from services.pdp_connector import (
-    get_pdp_connector, InvoiceState, IdempotencyGuard, PdpError,
+    get_pdp_connector, InvoiceState, IdempotencyGuard, PdpError, KNOWN_PROVIDERS,
 )
 from services import statuses as st
 from services.statuses import ReviewStatus, PaymentStatus, ExportStatus
@@ -393,9 +393,38 @@ def facturation_status(token_data=Depends(require_role(["business_owner", "manag
         "vat_regime": t.get("vat_regime"),
         "dgfip_activated": bool(t.get("dgfip_activated")),
         "annuaire_status": t.get("annuaire_status"),
-        "provider": type(get_pdp_connector()).__name__,
+        "provider": type(get_pdp_connector(t)).__name__,
+        "pa_provider": getattr(get_pdp_connector(t), "provider", "mock"),
         "counts": compute_bouclier(t)["counts"],
     }
+
+
+@router.get("/api/facturation/pa-providers")
+def pa_providers():
+    """The list of PAs a client can be routed to (Model B — Multi-PA)."""
+    return {"providers": KNOWN_PROVIDERS}
+
+
+@router.post("/api/owner/facturation/set-pa")
+def set_pa(body: Dict[str, Any],
+           token_data=Depends(require_role(["business_owner", "manager", "comptable"]))):
+    """Choose which Plateforme Agréée a given client (dossier) is on.
+
+    Model B: each client keeps ITS OWN platform. A cabinet can set a different PA
+    per dossier; FidClic routes every operation to the right one automatically.
+    """
+    t = _tenant_for_actor(token_data, body.get("tenant_id"))
+    provider = (body.get("pdp_provider") or "").strip().lower()
+    if provider not in KNOWN_PROVIDERS:
+        raise HTTPException(422, f"Plateforme inconnue. Choix: {', '.join(KNOWN_PROVIDERS)}.")
+    upd: Dict[str, Any] = {"pdp_provider": provider}
+    if body.get("pdp_account_id"):
+        upd["pdp_account_id"] = str(body["pdp_account_id"])
+    _db.tenants.update_one({"id": t["id"]}, {"$set": upd})
+    _audit("facturation.pa_set", tenant_id=t["id"], actor=token_data,
+           object_kind="tenant", object_id=t["id"], after={"pdp_provider": provider})
+    return {"ok": True, "pa_provider": provider,
+            "pa_account_id": upd.get("pdp_account_id") or t.get("pdp_account_id") or t["id"]}
 
 
 @router.post("/api/owner/facturation/activate")
@@ -410,7 +439,16 @@ def facturation_activate(body: Dict[str, Any],
     t = _tenant_for_actor(token_data, body.get("tenant_id"))
     if not t.get("facturation_enabled"):
         raise HTTPException(403, "Module Facturation non activé pour ce dossier.")
-    conn = get_pdp_connector()
+    conn = get_pdp_connector(t)
+    # allow setting the client's PA at activation time (Model B — per-client PA)
+    prov = (body.get("pdp_provider") or "").strip().lower()
+    if prov:
+        _db.tenants.update_one({"id": t["id"]}, {"$set": {"pdp_provider": prov}})
+        t["pdp_provider"] = prov
+        conn = get_pdp_connector(t)
+    if body.get("pdp_account_id"):
+        _db.tenants.update_one({"id": t["id"]}, {"$set": {"pdp_account_id": body["pdp_account_id"]}})
+        t["pdp_account_id"] = body["pdp_account_id"]
     settings = {
         "start_date": body.get("start_date") or "2026-09-01",
         "type_operation": body.get("type_operation") or "services",
@@ -529,7 +567,7 @@ def _do_send(t: Dict[str, Any], inv: Dict[str, Any], simulate: Optional[str] = N
     cached = _guard.already_sent(key)
     if cached:
         return {"invoice": _public(inv), "idempotent": True, "result": cached}
-    conn = get_pdp_connector()
+    conn = get_pdp_connector(t)   # Model B: route to THIS client's PA
     # TEST hook: only the in-memory Mock supports forced outcomes.
     # Map the API vocabulary ('reject') to the Mock's ('refused').
     if simulate and hasattr(conn, "force_next_send"):
@@ -577,7 +615,7 @@ def get_invoice(invoice_id: str,
     # refresh live status if it was already transmitted
     if inv.get("pdp_invoice_id") and inv.get("state") not in (InvoiceState.DRAFT,):
         try:
-            st = get_pdp_connector().get_status(inv["pdp_invoice_id"])
+            st = get_pdp_connector(t).get_status(inv["pdp_invoice_id"])
             if st.get("state") and st["state"] != inv.get("state"):
                 _update_state(invoice_id, st["state"])
                 inv = _db.fact_invoices.find_one({"id": invoice_id})
@@ -847,7 +885,7 @@ def send_ereporting(body: Dict[str, Any],
         "created_at": _now(),
     }
     try:
-        res = get_pdp_connector().send_ereporting(t.get("pdp_account_id") or t["id"], report)
+        res = get_pdp_connector(t).send_ereporting(t.get("pdp_account_id") or t["id"], report)
         report["state"] = res.get("state", "queued")
         report["pdp_report_id"] = res.get("id")
     except PdpError as e:

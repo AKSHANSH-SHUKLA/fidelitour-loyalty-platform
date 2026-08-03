@@ -284,6 +284,10 @@ export const cabinetOsAPI = {
   // Le Réviseur — pre-validation review report.
   runRevision: (tenantId) => api.post('/cabinet/dossiers/' + tenantId + '/revision/run'),
   revisionReports: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/revision'),
+  // Multi-PA (Model B) — each client can be on its own Plateforme Agréée.
+  paProviders: () => api.get('/facturation/pa-providers'),
+  setDossierPa: (tenantId, provider) =>
+    api.post('/owner/facturation/set-pa', { tenant_id: tenantId, pdp_provider: provider }),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */

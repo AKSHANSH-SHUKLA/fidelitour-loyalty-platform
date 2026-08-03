@@ -168,6 +168,8 @@ class MockPdp(PdpConnector):
         self._invoices: Dict[str, Dict[str, Any]] = {}
         self._received: Dict[str, List[Dict[str, Any]]] = {}
         self.force_next_send: Optional[str] = None  # test hook
+        self.provider: str = "mock"
+        self.placeholder: bool = False
 
     def create_invoice(self, account_id, invoice):
         inv_id = "mock-" + uuid.uuid4().hex[:12]
@@ -267,6 +269,8 @@ class B2BrouterPdp(PdpConnector):
         self.api_version = api_version
         self.base_url = base_url.rstrip("/")
         self.webhook_secret = webhook_secret
+        self.provider: str = "b2brouter"
+        self.placeholder: bool = False
 
     # -- low-level HTTP (urllib, stdlib) --
     def _request(self, method: str, path: str, body: Optional[dict] = None) -> Any:
@@ -404,37 +408,75 @@ class IdempotencyGuard:
 # ---------------------------------------------------------------------------
 
 _singleton: Optional[PdpConnector] = None
+_tenant_instances: Dict[str, PdpConnector] = {}   # provider name -> connector
+
+# Which PAs FidClic knows how to route to. "mock" and "b2brouter" have real
+# adapters; any other name (iopole, pennylane, ...) is accepted for routing and
+# backed by a labelled Mock until its concrete adapter is dropped in — the app
+# stays PA-agnostic, so adding a real adapter is a one-class change here.
+KNOWN_PROVIDERS = ["b2brouter", "iopole", "pennylane", "mock"]
 
 
-def get_pdp_connector() -> PdpConnector:
-    """
-    Return the active connector based on env. Default = Mock (safe: no network,
-    no account needed). Set PDP_PROVIDER=b2brouter + the B2BROUTER_* vars to go
-    live against the sandbox/production API.
-    """
-    global _singleton
-    if _singleton is not None:
-        return _singleton
-
-    provider = (os.environ.get("PDP_PROVIDER") or "mock").lower()
+def _build(provider: str) -> PdpConnector:
+    """Construct one connector for a given PA provider name (Multi-PA core)."""
+    provider = (provider or "mock").lower()
     if provider == "b2brouter":
         key = os.environ.get("B2BROUTER_API_KEY", "")
-        if not key:
-            # Fail safe to Mock rather than crash the app if env is missing.
-            _singleton = MockPdp()
-            return _singleton
-        _singleton = B2BrouterPdp(
-            api_key=key,
-            api_version=os.environ.get("B2BROUTER_API_VERSION", "2026-03-02"),
-            base_url=os.environ.get("B2BROUTER_BASE_URL", "https://api.b2brouter.net"),
-            webhook_secret=os.environ.get("B2BROUTER_WEBHOOK_SECRET", ""),
-        )
+        if key:
+            c: PdpConnector = B2BrouterPdp(
+                api_key=key,
+                api_version=os.environ.get("B2BROUTER_API_VERSION", "2026-03-02"),
+                base_url=os.environ.get("B2BROUTER_BASE_URL", "https://api.b2brouter.net"),
+                webhook_secret=os.environ.get("B2BROUTER_WEBHOOK_SECRET", ""),
+            )
+            c.provider = "b2brouter"
+            return c
+        c = MockPdp(); c.provider = "b2brouter"; c.placeholder = True
+        return c  # safe fallback: no key -> Mock, never crash
+    if provider == "mock":
+        c = MockPdp(); c.provider = "mock"; c.placeholder = False
+        return c
+    # Any other named PA: accepted for per-client routing. Backed by a labelled
+    # Mock until we integrate that vendor's real adapter (env {PROVIDER}_API_KEY).
+    c = MockPdp(); c.provider = provider
+    c.placeholder = not bool(os.environ.get(provider.upper() + "_API_KEY", ""))
+    return c
+
+
+def _tenant_provider(tenant) -> Optional[str]:
+    if tenant is None:
+        return None
+    if isinstance(tenant, dict):
+        p = tenant.get("pdp_provider")
     else:
-        _singleton = MockPdp()
+        p = getattr(tenant, "pdp_provider", None)
+    return (p or "").lower() or None
+
+
+def get_pdp_connector(tenant=None) -> PdpConnector:
+    """
+    Return the connector for a given client (tenant) — the Multi-PA router.
+
+    - If the tenant declares its own `pdp_provider` (Client A -> b2brouter,
+      Client B -> iopole, ...), route to THAT PA (cached per provider). This is
+      Model B: one cabinet, clients on any platform.
+    - Otherwise fall back to the app default from env (PDP_PROVIDER, default
+      "mock") — unchanged legacy behaviour, backward compatible.
+    """
+    global _singleton
+    prov = _tenant_provider(tenant)
+    if prov:
+        if prov not in _tenant_instances:
+            _tenant_instances[prov] = _build(prov)
+        return _tenant_instances[prov]
+    if _singleton is not None:
+        return _singleton
+    _singleton = _build(os.environ.get("PDP_PROVIDER") or "mock")
     return _singleton
 
 
 def reset_pdp_connector() -> None:
-    """Test helper — clears the singleton so env changes take effect."""
+    """Test helper — clears every cached connector so env/config changes apply."""
     global _singleton
     _singleton = None
+    _tenant_instances.clear()

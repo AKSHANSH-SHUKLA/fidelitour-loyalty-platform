@@ -25,13 +25,15 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
   const [lettrage, setLettrage] = useState([]);
   const [findings, setFindings] = useState([]);
   const [revision, setRevision] = useState(null);
+  const [paList, setPaList] = useState([]);
+  const [pa, setPa] = useState('');
   const [busy, setBusy] = useState('');
 
   const toast = (ok, msg) => onToast && onToast(ok, msg);
 
   const refresh = async () => {
     try {
-      const [se, co, me, tv, lt, gd, rv] = await Promise.all([
+      const [se, co, me, tv, lt, gd, rv, pp] = await Promise.all([
         cabinetOsAPI.saisieEntries(tenantId).catch(() => ({ data: { entries: [] } })),
         cabinetOsAPI.conseils(tenantId).catch(() => ({ data: { conseils: [] } })),
         cabinetOsAPI.memoire(tenantId).catch(() => ({ data: { notes: [] } })),
@@ -39,7 +41,9 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
         cabinetOsAPI.lettrageMatches(tenantId).catch(() => ({ data: { matches: [] } })),
         cabinetOsAPI.gardienFindings(tenantId).catch(() => ({ data: { findings: [] } })),
         cabinetOsAPI.revisionReports(tenantId).catch(() => ({ data: { reports: [] } })),
+        cabinetOsAPI.paProviders().catch(() => ({ data: { providers: [] } })),
       ]);
+      setPaList(pp.data.providers || []);
       setSaisie(se.data.entries || []);
       setConseils(co.data.conseils || []);
       setNotes(me.data.notes || []);
@@ -174,6 +178,15 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
     setBusy('');
   };
 
+  const changePa = async (provider) => {
+    setPa(provider);
+    if (!provider) return;
+    try {
+      await cabinetOsAPI.setDossierPa(tenantId, provider);
+      toast(true, `Plateforme du client : ${provider}. FidClic y routera automatiquement.`);
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Changement impossible.'); }
+  };
+
   const btn = (extra) => ({ ...extra });
   const pendingSaisie = saisie.filter((s) => s.status === 'proposed');
   const pendingLettrage = lettrage.filter((x) => x.status === 'proposed');
@@ -185,6 +198,19 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
       <div className="text-sm font-bold text-[#1C1917] mb-3">
         L'agent FidClic <span className="text-[11px] font-normal text-[#8B8680]">— il prépare, vous validez</span>
       </div>
+
+      {/* Multi-PA — chaque client sur SA plateforme agréée */}
+      {paList.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold text-[#57534E]">Plateforme (PA) du client :</span>
+          <select value={pa} onChange={(e) => changePa(e.target.value)}
+                  className="text-xs border rounded-lg px-2 py-1" style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+            <option value="">— choisir —</option>
+            {paList.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <span className="text-[10px] text-[#8B8680]">FidClic route chaque client vers SA PA automatiquement.</span>
+        </div>
+      )}
 
       {/* Chapter 4 — OCR + Saisie */}
       <div className="mb-4">
