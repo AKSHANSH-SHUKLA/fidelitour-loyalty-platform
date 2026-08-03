@@ -76,6 +76,12 @@ MODULES = [
     "features.conseiller",
     # Agent capability #6 — TVA/CA3 draft declaration.
     "features.agent_tva",
+    # Agent capability #7 — Le Lettrage (rapprochement bancaire).
+    "features.agent_lettrage",
+    # Agent capability #8 — Le Gardien (points de vigilance / anomalies).
+    "features.agent_gardien",
+    # Agent capability #9 — Le Réviseur (revue avant validation).
+    "features.agent_reviseur",
     # The agent's alarm clock — Vercel Cron hits this daily.
     "features.cron",
     # Password reset by email (magic link) — S3 finale.

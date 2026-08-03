@@ -271,6 +271,19 @@ export const cabinetOsAPI = {
   runTva: (tenantId, body) =>
     api.post('/cabinet/dossiers/' + tenantId + '/tva/run', body || {}),
   tvaDeclarations: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/tva'),
+  // Le Lettrage — bank reconciliation (agent proposes, human validates).
+  seedBankTx: (tenantId, body) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/bank-transactions/seed-test', body),
+  runLettrage: (tenantId) => api.post('/cabinet/dossiers/' + tenantId + '/lettrage/run'),
+  lettrageMatches: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/lettrage'),
+  validateLettrage: (id) => api.post('/cabinet/lettrage/' + id + '/validate'),
+  // Le Gardien — anomaly findings.
+  runGardien: (tenantId) => api.post('/cabinet/dossiers/' + tenantId + '/gardien/run'),
+  gardienFindings: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/gardien'),
+  resolveGardien: (id) => api.post('/cabinet/gardien/' + id + '/resolve'),
+  // Le Réviseur — pre-validation review report.
+  runRevision: (tenantId) => api.post('/cabinet/dossiers/' + tenantId + '/revision/run'),
+  revisionReports: (tenantId) => api.get('/cabinet/dossiers/' + tenantId + '/revision'),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */

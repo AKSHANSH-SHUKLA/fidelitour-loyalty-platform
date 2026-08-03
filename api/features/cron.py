@@ -110,10 +110,11 @@ def agent_daily(authorization: str = Header(default="")):
 
     from features.agent_collect import run_collection_for_cabinet
     from features.agent_billing import run_billing_for_cabinet
+    from features.agent_gardien import run_gardien_for_cabinet
 
     summary: Dict[str, Any] = {"cabinets": 0, "emails_sent": 0,
                                "cases_opened": 0, "invoices_drafted": 0,
-                               "failures": []}
+                               "gardien_findings": 0, "failures": []}
     for cab in _db.cabinets.find({"status": "active"}):
         summary["cabinets"] += 1
         try:
@@ -129,4 +130,11 @@ def agent_daily(authorization: str = Header(default="")):
         except Exception as e:                                   # noqa: BLE001
             summary["failures"].append({"cabinet": cab.get("name"),
                                         "step": "billing", "error": str(e)[:120]})
+        try:
+            from features import cabinet_os as co
+            g = run_gardien_for_cabinet(cab["id"], co.agent_actor(cab["id"]), "cron")
+            summary["gardien_findings"] += g.get("findings_created", 0)
+        except Exception as e:                                   # noqa: BLE001
+            summary["failures"].append({"cabinet": cab.get("name"),
+                                        "step": "gardien", "error": str(e)[:120]})
     return summary

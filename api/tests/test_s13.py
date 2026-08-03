@@ -25,6 +25,7 @@ import features.cabinet as C
 import features.facturation as F
 import features.audit as A
 import features.cron as CRON
+import features.agent_gardien as GD  # cron now also runs Le Gardien nightly
 from services import mailer
 
 PASS, FAIL = [], []
@@ -52,7 +53,7 @@ PW = "Cabinet-Test2026!"
 
 def build():
     db = mongomock.MongoClient().db
-    for mod in (CO, AB, AC, C, F, A, CRON):
+    for mod in (CO, AB, AC, C, F, A, CRON, GD):
         mod.init(db)
     os.environ["BREVO_API_KEY"] = "test-key"
     mailer._post = lambda payload, key: {"messageId": "t"}

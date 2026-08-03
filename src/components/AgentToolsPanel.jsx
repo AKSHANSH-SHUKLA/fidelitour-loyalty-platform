@@ -22,22 +22,31 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
   const [conseils, setConseils] = useState([]);
   const [notes, setNotes] = useState([]);
   const [tva, setTva] = useState([]);
+  const [lettrage, setLettrage] = useState([]);
+  const [findings, setFindings] = useState([]);
+  const [revision, setRevision] = useState(null);
   const [busy, setBusy] = useState('');
 
   const toast = (ok, msg) => onToast && onToast(ok, msg);
 
   const refresh = async () => {
     try {
-      const [se, co, me, tv] = await Promise.all([
+      const [se, co, me, tv, lt, gd, rv] = await Promise.all([
         cabinetOsAPI.saisieEntries(tenantId).catch(() => ({ data: { entries: [] } })),
         cabinetOsAPI.conseils(tenantId).catch(() => ({ data: { conseils: [] } })),
         cabinetOsAPI.memoire(tenantId).catch(() => ({ data: { notes: [] } })),
         cabinetOsAPI.tvaDeclarations(tenantId).catch(() => ({ data: { declarations: [] } })),
+        cabinetOsAPI.lettrageMatches(tenantId).catch(() => ({ data: { matches: [] } })),
+        cabinetOsAPI.gardienFindings(tenantId).catch(() => ({ data: { findings: [] } })),
+        cabinetOsAPI.revisionReports(tenantId).catch(() => ({ data: { reports: [] } })),
       ]);
       setSaisie(se.data.entries || []);
       setConseils(co.data.conseils || []);
       setNotes(me.data.notes || []);
       setTva(tv.data.declarations || []);
+      setLettrage(lt.data.matches || []);
+      setFindings(gd.data.findings || []);
+      setRevision((rv.data.reports || [])[0] || null);
     } catch { /* non-fatal */ }
   };
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [tenantId]);
@@ -126,8 +135,49 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
     setBusy('');
   };
 
+  const runLettrage = async () => {
+    setBusy('lettrage');
+    try {
+      const r = await cabinetOsAPI.runLettrage(tenantId);
+      toast(true, `Le Lettrage : ${r.data.matches_proposed} rapprochement(s) proposé(s).`);
+      await refresh();
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Action impossible.'); }
+    setBusy('');
+  };
+  const validateLettrage = async (id) => {
+    try { await cabinetOsAPI.validateLettrage(id); toast(true, 'Rapprochement validé — facture payée.'); await refresh(); }
+    catch (err) { toast(false, err?.response?.data?.detail || 'Validation impossible.'); }
+  };
+  const runGardien = async () => {
+    setBusy('gardien');
+    try {
+      const r = await cabinetOsAPI.runGardien(tenantId);
+      toast(true, r.data.findings_created > 0
+        ? `Le Gardien : ${r.data.findings_created} point(s) de vigilance.`
+        : 'Le Gardien : aucune anomalie détectée.');
+      await refresh();
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Analyse impossible.'); }
+    setBusy('');
+  };
+  const resolveFinding = async (id) => {
+    try { await cabinetOsAPI.resolveGardien(id); await refresh(); }
+    catch (err) { toast(false, err?.response?.data?.detail || 'Action impossible.'); }
+  };
+  const runRevision = async () => {
+    setBusy('revision');
+    try {
+      const r = await cabinetOsAPI.runRevision(tenantId);
+      const rep = r.data.report;
+      toast(true, `Le Réviseur : ${rep.ready} prête(s), ${rep.to_fix} à corriger.`);
+      await refresh();
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Revue impossible.'); }
+    setBusy('');
+  };
+
   const btn = (extra) => ({ ...extra });
   const pendingSaisie = saisie.filter((s) => s.status === 'proposed');
+  const pendingLettrage = lettrage.filter((x) => x.status === 'proposed');
+  const openFindings = findings.filter((f) => f.status === 'open');
   const openConseils = conseils.filter((c) => c.status === 'open');
 
   return (
@@ -208,6 +258,80 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
                     style={{ background: 'rgba(87,83,78,.08)', color: '#57534E' }}
                     title={n.kind}>📌 {n.text}</span>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Le Lettrage — rapprochement bancaire */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-semibold text-[#57534E]">Le Lettrage (rapprochement bancaire)</div>
+          <button onClick={runLettrage} disabled={busy === 'lettrage'}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border" style={PLUM}>
+            🤖 Rapprocher
+          </button>
+        </div>
+        {pendingLettrage.length === 0 ? (
+          <div className="text-xs text-[#8B8680]">Aucun rapprochement en attente.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {pendingLettrage.map((x) => (
+              <div key={x.id} className="flex items-center gap-2 text-xs flex-wrap">
+                <span className="font-semibold text-[#1C1917]">{x.invoice_number}</span>
+                <span className="text-[#8B8680]">{money(x.amount)} · {x.basis} · {Math.round((x.confidence || 0) * 100)}%</span>
+                <button onClick={() => validateLettrage(x.id)}
+                        className="ml-auto text-[10px] font-semibold px-2 py-1 rounded-lg border"
+                        style={{ borderColor: 'rgba(63,156,107,.4)', color: '#2F7A52' }}>
+                  Valider ✓
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Le Gardien — points de vigilance */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-semibold text-[#57534E]">Le Gardien (points de vigilance)</div>
+          <button onClick={runGardien} disabled={busy === 'gardien'}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border" style={PLUM}>
+            🤖 Contrôler
+          </button>
+        </div>
+        {openFindings.length === 0 ? (
+          <div className="text-xs text-[#8B8680]">Aucune anomalie signalée.</div>
+        ) : (
+          <div className="space-y-1.5">
+            {openFindings.map((f) => (
+              <div key={f.id} className="text-xs rounded-lg p-2"
+                   style={{ background: f.severity === 'warning' ? 'rgba(192,57,43,.07)' : 'rgba(224,169,43,.08)' }}>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-[#1C1917]">{f.title}</span>
+                  <button onClick={() => resolveFinding(f.id)} className="ml-auto text-[10px] text-[#8B8680]">Résoudre</button>
+                </div>
+                <div className="text-[#57534E] mt-0.5">{f.message}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Le Réviseur — revue avant validation */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-semibold text-[#57534E]">Le Réviseur (revue avant validation)</div>
+          <button onClick={runRevision} disabled={busy === 'revision'}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border" style={PLUM}>
+            🤖 Réviser
+          </button>
+        </div>
+        {!revision ? (
+          <div className="text-xs text-[#8B8680]">Aucune revue lancée.</div>
+        ) : (
+          <div className="text-xs text-[#57534E]">
+            {revision.reviewed} facture(s) revue(s) · <b className="text-[#2F7A52]">{revision.ready} prête(s)</b> ·
+            <b className="text-[#C0392B]"> {revision.to_fix} à corriger</b>
           </div>
         )}
       </div>
