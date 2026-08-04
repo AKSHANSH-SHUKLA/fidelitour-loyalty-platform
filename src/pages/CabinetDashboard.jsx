@@ -12,6 +12,7 @@ import { CreateInvoiceModal } from './FacturationHome';
 import LiveText from '../components/LiveText';
 import AgentToolsPanel from '../components/AgentToolsPanel';
 import WhatsAppIcon from '../components/WhatsAppIcon';
+import GuideBox from '../components/GuideBox';
 
 /**
  * CabinetDashboard — the expert-comptable control tower.
@@ -266,6 +267,16 @@ export default function CabinetDashboard() {
         )}
 
         {/* totals */}
+        <GuideBox
+          title="Nouveau ici ? Le tour en 5 étapes"
+          steps={[
+            '⬆︎ Importer clients (en haut) : votre liste de clients en CSV → tous les dossiers se créent d\'un coup.',
+            'Cliquez un dossier dans « Mes dossiers » : tout ce client est là (factures, pièces, agent).',
+            'Dans le dossier : « + Demander une pièce » pour que l\'agent relance le client à votre place (email/WhatsApp).',
+            '« À valider » (en haut) : la file des factures qui attendent votre validation — règle des 4 yeux.',
+            '« Équipe » : créez les comptes de vos collaborateurs ; chacun ne voit que ses dossiers.',
+          ]}
+          example="votre stagiaire photographie 10 tickets fournisseurs → l'agent lit et propose 10 écritures → votre collaborateur les valide en 5 clics." />
         <div className="grid grid-cols-4 gap-3 mb-5">
           <Stat label="Dossiers" value={totals.count ?? 0} />
           <Stat label="Action requise" value={totals.red ?? 0} tone="#C0392B" />
@@ -557,6 +568,15 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
         {/* S12 — pièces manquantes: what the agent is chasing for this client */}
         {docReqs && (
           <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
+            <GuideBox
+              title="Pièces manquantes — comment ça marche ?"
+              steps={[
+                '« + Demander une pièce » : dites ce qui manque (ex. relevé bancaire juillet) + l\'email (et WhatsApp si vous voulez) du client.',
+                'L\'agent relance TOUT SEUL au bon moment — doux avec les clients fiables, insistant avec les retardataires.',
+                'Quand la pièce arrive, cliquez « Reçu ✓ » — le score de fiabilité du client s\'ajuste.',
+                'Après 3 relances sans réponse, un Cas s\'ouvre pour qu\'un humain prenne le relais.',
+              ]}
+              example="« Relevé bancaire juillet » demandé le 1er → l'agent relance le 5, le 9… → reçu le 10 → vous cliquez Reçu ✓. Zéro email écrit à la main." />
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-bold text-[#1C1917]">
                 Pièces manquantes

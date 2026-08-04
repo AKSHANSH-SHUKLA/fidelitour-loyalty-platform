@@ -90,6 +90,8 @@ MODULES = [
     "features.fec",
     # Imports — bulk clients (CSV), invoices (CSV/FEC), bank (CSV/OFX).
     "features.data_import",
+    # Ticket numérique — B2C e-receipt to the customer (email + push rail).
+    "features.receipts",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.

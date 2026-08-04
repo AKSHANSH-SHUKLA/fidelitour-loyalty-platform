@@ -249,9 +249,38 @@ def compute_bouclier(tenant: Dict[str, Any]) -> Dict[str, Any]:
     if received == 0:
         score -= 8
         alerts.append({"level": "amber",
-                       "message": "Aucune facture fournisseur reçue — cohérence achats/ventes limitée.",
+                       "message": "Aucune facture fournisseur reçue — importez ou photographiez (OCR) "
+                                  "vos justificatifs, même les tickets de caisse des grandes surfaces.",
                        "fix_action": None})
         breakdown.append({"level": "amber", "label": "Aucune facture fournisseur importée", "points": -8})
+
+    # Terrain (août 2026) — la signature des ventes en espèces non déclarées :
+    # les ACHATS restent élevés (souvent payés en partie par carte pour « faire
+    # justifié ») pendant que les VENTES DÉCLARÉES restent basses. Si le total
+    # des achats approche/dépasse un seuil du total des ventes déclarées, la
+    # cohérence devient implausible pour quasi tous les secteurs. Indicateur
+    # informatif, PAS une accusation — le seuil est réglable par dossier
+    # (tenant.achats_ventes_seuil, défaut 0.80).
+    achats_ttc = sum(float(r.get("total_ttc") or 0)
+                     for r in _db.fact_received_invoices.find({"tenant_id": tid}))
+    ventes_ttc = sum(float(i.get("total_ttc") or 0) for i in issued)
+    for er in _db.fact_ereports.find({"tenant_id": tid}):
+        for v in (er.get("totals_by_vat") or {}).values():
+            ventes_ttc += float(v or 0)
+    try:
+        seuil_av = float(tenant.get("achats_ventes_seuil") or 0.80)
+    except (TypeError, ValueError):
+        seuil_av = 0.80
+    if achats_ttc > 0 and ventes_ttc > 0 and achats_ttc > ventes_ttc * seuil_av:
+        score -= 12
+        ratio_pct = round(achats_ttc / ventes_ttc * 100)
+        alerts.append({"level": "amber",
+                       "message": f"Achats élevés ({ratio_pct} % des ventes déclarées) — "
+                                  "toutes les ventes (y compris en espèces) sont-elles déclarées ?",
+                       "fix_action": None})
+        breakdown.append({"level": "amber",
+                          "label": f"Ratio achats/ventes déclarées implausible ({ratio_pct} %)",
+                          "points": -12})
 
     score = max(0, score)
     reds = sum(1 for a in alerts if a["level"] == "red")

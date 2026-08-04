@@ -10,6 +10,7 @@
  */
 import { useEffect, useState } from 'react';
 import { cabinetOsAPI } from '../lib/api';
+import GuideBox from './GuideBox';
 
 const CARD = { borderColor: '#F2ECE0' };
 const PLUM = { borderColor: '#D8CBB8', color: '#4E1F44' };
@@ -236,6 +237,18 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
       <div className="text-sm font-bold text-[#1C1917] mb-3">
         L'agent FidClic <span className="text-[11px] font-normal text-[#8B8680]">— il prépare, vous validez</span>
       </div>
+
+      <GuideBox
+        title="Comment utiliser cette section ? (guide rapide)"
+        steps={[
+          '📷 Lire une facture : photographiez une facture fournisseur (même un ticket de caisse Metro/Carrefour) — l\'agent lit les montants.',
+          '🤖 Proposer les écritures : l\'agent pré-remplit l\'écriture comptable ; vous cliquez « Valider ✓ ».',
+          '🤖 Rapprocher : importez le relevé bancaire (bouton ci-dessus), l\'agent relie chaque virement à sa facture.',
+          '🤖 Analyser / Contrôler / Réviser : l\'agent détecte opportunités et anomalies — vous décidez.',
+          '🤖 Calculer la TVA : indiquez la période, l\'agent prépare le brouillon de CA3.',
+        ]}
+        example="lundi matin : importez le relevé de la semaine → Rapprocher → Valider les 12 rapprochements proposés → 10 minutes au lieu de 2 heures." />
+
 
       {/* Multi-PA — chaque client sur SA plateforme agréée */}
       {paList.length > 0 && (
