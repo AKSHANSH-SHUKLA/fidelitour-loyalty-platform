@@ -14,6 +14,39 @@ import AgentToolsPanel from '../components/AgentToolsPanel';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import GuideBox from '../components/GuideBox';
 import AskPieceModal from '../components/AskPieceModal';
+import { MC, glass, EASE, statusColor } from '../components/cabinet/mc';
+import { AmbientCanvas, Rise, StatTile, Panel, Pill as McPill, McButton, LiveDot }
+  from '../components/cabinet/Primitives';
+import CoachMarks, { tourSeen, resetTour } from '../components/cabinet/CoachMarks';
+import DemoMode from '../components/cabinet/DemoMode';
+
+/** The guided tour of the cabinet home — anchored to real elements. */
+const HOME_TOUR = [
+  { sel: '[data-tour="hero"]', title: 'Votre journée, en une ligne',
+    body: "En haut : qui vous êtes, et LA chose qui vous attend aujourd'hui. Si rien n'attend votre validation, c'est écrit en vert.",
+    example: "un assistant voit « photographiez les factures », un expert-comptable voit « 2 factures à valider »." },
+  { sel: '[data-tour="nightstrip"]', title: "L'agent travaille la nuit",
+    body: "Pendant que le cabinet dort, l'agent relance les clients, lit les pièces, prépare les écritures et les contrôles. Cliquez pour revoir le déroulé.",
+    example: "au réveil : 7 pièces lues, 7 écritures prêtes, 1 anomalie signalée — il ne reste qu'à valider." },
+  { sel: '[data-tour="stats"]', title: 'Les 4 chiffres qui comptent',
+    body: "Dossiers suivis, action requise (rouge), à vérifier (orange), conformes (vert). Cliquez « Action requise » pour ouvrir les cas.",
+    example: null },
+  { sel: '[data-tour="dossiers"]', title: 'Vos dossiers clients',
+    body: "Chaque ligne est un client : sa pastille de santé, son score, et le travail en attente. Cliquez pour entrer dans le dossier.",
+    example: "« BOUYGUES · 72/100 · 2 à revoir » — deux factures attendent une validation humaine." },
+  { sel: '[data-tour="relances"]', title: 'Lancer les relances',
+    body: "Un clic et l'agent écrit à TOUS les clients qui doivent une pièce — au bon moment pour chacun, par email ou WhatsApp.",
+    example: "un bon payeur est relancé doucement et tard ; un retardataire, tôt et fermement." },
+  { sel: '[data-tour="newclient"]', title: 'Ajouter des clients',
+    body: "« + Nouveau client » avec le SIREN (le reste se remplit tout seul), ou « Importer clients » pour créer 45 dossiers d'un coup depuis un CSV.",
+    example: null },
+  { sel: '[data-tour="review"]', title: 'La file « À valider »',
+    body: "La règle des 4 yeux : au-dessus d'un seuil, celui qui prépare ne peut pas valider. Cette file, c'est ce qui attend VOTRE signature.",
+    example: null },
+  { sel: '[data-tour="demo"]', title: 'Le mode démo',
+    body: "Rejouez une nuit complète de travail de l'agent sur des données fictives — parfait pour montrer FidClic à un client sans toucher à ses données.",
+    example: null },
+];
 
 /**
  * CabinetDashboard — the expert-comptable control tower.
@@ -51,6 +84,8 @@ export default function CabinetDashboard() {
   const [canOnboard, setCanOnboard] = useState(false);
   const [me, setMe] = useState(null);                 // my membership (role, name)
   const [askDocFor, setAskDocFor] = useState(null);   // {tenant_id, name} → AskPieceModal
+  const [showTour, setShowTour] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,6 +112,15 @@ export default function CabinetDashboard() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // First visit → run the guided tour once the data (and therefore the anchors)
+  // are on screen. Never auto-runs again; the "? Visite guidée" button replays it.
+  useEffect(() => {
+    if (loading || !data) return;
+    if (tourSeen('cabinet-home')) return;
+    const t = setTimeout(() => setShowTour(true), 900);
+    return () => clearTimeout(t);
+  }, [loading, data]);
 
   const openClient = async (tid) => {
     const r = await comptableAPI.client(tid).catch(() => null);
@@ -169,38 +213,56 @@ export default function CabinetDashboard() {
   const totals = data?.totals || {};
 
   return (
-    <div className="min-h-screen" style={{
-      background:
-        'radial-gradient(1200px 500px at 85% -10%, rgba(107,46,90,.06), transparent 60%), #FBF7EF',
-    }}>
+    <div className="min-h-screen relative" style={{ color: MC.ink }}>
+      <AmbientCanvas />
+      <div className="relative">
       {/* header */}
-      <header className="flex items-center justify-between px-6 py-4">
+      <header className="flex items-center justify-between px-6 py-4 flex-wrap gap-2"
+              style={{ borderBottom: `1px solid ${MC.stroke}`, backdropFilter: 'blur(12px)' }}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-               style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+               style={{ background: `linear-gradient(135deg, ${MC.indigo}, #5B5BE8)`,
+                        boxShadow: '0 8px 22px -10px rgba(124,124,248,.9)' }}>
             <Building2 size={16} color="#fff" />
           </div>
-          <span className="font-bold text-[#1C1917]">Espace Cabinet</span>
+          <span className="font-bold" style={{ color: MC.ink }}>Espace Cabinet</span>
+          <span className="hidden sm:flex items-center gap-1.5 ml-2"
+                style={{ fontSize: 11, color: MC.ink3 }}>
+            <LiveDot /> agent en veille
+          </span>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/cabinet/revue')}
-                  className="text-sm font-semibold text-[#57534E] hover:text-[#2F7A52] flex items-center gap-1.5">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button data-tour="demo" onClick={() => setShowDemo(true)}
+                  className="text-sm font-semibold px-3 py-2 rounded-xl"
+                  style={{ background: 'rgba(124,124,248,.14)', color: '#CFCBFF',
+                           border: '1px solid rgba(124,124,248,.35)' }}>
+            ▶ Mode démo
+          </button>
+          <button onClick={() => { resetTour('cabinet-home'); setShowTour(true); }}
+                  className="text-sm font-semibold px-3 py-2 rounded-xl"
+                  style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2,
+                           border: `1px solid ${MC.stroke}` }}>
+            ? Visite guidée
+          </button>
+          <button data-tour="review" onClick={() => navigate('/cabinet/revue')}
+                  className="text-sm font-semibold flex items-center gap-1.5"
+                  style={{ color: MC.ink2 }}>
             À valider
             {reviewCount > 0 && (
               <LiveText className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ color: 'white', background: '#2F7A52' }}>{String(reviewCount)}</LiveText>
+                        style={{ color: '#04121B', background: MC.green }}>{String(reviewCount)}</LiveText>
             )}
           </button>
           <button onClick={() => navigate('/cabinet/cas')}
-                  className="text-sm font-semibold text-[#57534E] hover:text-[#C0392B] flex items-center gap-1.5">
+                  className="text-sm font-semibold flex items-center gap-1.5" style={{ color: MC.ink2 }}>
             <AlertTriangle size={15} /> Cas
             {openCases > 0 && (
               <LiveText className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ color: 'white', background: '#C0392B' }}>{String(openCases)}</LiveText>
+                        style={{ color: '#fff', background: MC.red }}>{String(openCases)}</LiveText>
             )}
           </button>
           <button onClick={() => navigate('/cabinet/equipe')}
-                  className="text-sm font-semibold text-[#57534E] hover:text-[#7A3E70]">
+                  className="text-sm font-semibold" style={{ color: MC.ink2 }}>
             Équipe
           </button>
           {canOnboard && (
@@ -218,21 +280,22 @@ export default function CabinetDashboard() {
                         setTimeout(() => setToast(null), 9000);
                       }
                     }}
-                    className="text-sm font-semibold px-3 py-2 rounded-xl border disabled:opacity-50"
-                    style={{ borderColor: '#57534E', color: '#57534E' }}>
+                    data-tour="relances"
+                    className="text-sm font-semibold px-3 py-2 rounded-xl disabled:opacity-50"
+                    style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2, border: `1px solid ${MC.stroke}` }}>
               {runningAgent ? '🤖 …' : '🤖 Lancer les relances'}
             </button>
           )}
           {canOnboard && (
-            <button onClick={() => setShowNewClient(true)}
-                    className="text-sm font-semibold px-3 py-2 rounded-xl border"
-                    style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+            <button data-tour="newclient" onClick={() => setShowNewClient(true)}
+                    className="text-sm font-semibold px-3 py-2 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2, border: `1px solid ${MC.stroke}` }}>
               + Nouveau client
             </button>
           )}
           {canOnboard && (
-            <label className="text-sm font-semibold px-3 py-2 rounded-xl border cursor-pointer"
-                   style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}
+            <label className="text-sm font-semibold px-3 py-2 rounded-xl cursor-pointer"
+                   style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2, border: `1px solid ${MC.stroke}` }}
                    title="Importer plusieurs clients d'un coup (CSV : raison sociale, siren, email, pa)">
               ⬆︎ Importer clients
               <input type="file" accept=".csv,.txt" className="hidden" onChange={async (e) => {
@@ -251,20 +314,21 @@ export default function CabinetDashboard() {
           )}
           <a href={comptableAPI.exportUrl}
              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-white"
-             style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+             style={{ background: `linear-gradient(135deg, ${MC.indigo}, #5B5BE8)`,
+                      boxShadow: '0 10px 26px -14px rgba(124,124,248,.9)' }}>
             <Download size={15} /> Exporter tout (CSV)
           </a>
           <button onClick={() => { logout(); navigate('/login'); }}
-                  className="text-sm text-[#57534E] hover:text-[#1C1917]">Se déconnecter</button>
+                  className="text-sm" style={{ color: MC.ink3 }}>Se déconnecter</button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 pb-16">
+      <main className="max-w-4xl mx-auto px-4 pb-16 pt-5">
         {toast && (
-          <div className="mb-4 rounded-2xl px-4 py-3 text-sm border"
+          <div className="mb-4 rounded-2xl px-4 py-3 text-sm"
                style={toast.ok
-                 ? { background: 'rgba(63,156,107,.10)', borderColor: 'rgba(63,156,107,.35)', color: '#2F7A52' }
-                 : { background: 'rgba(192,57,43,.08)', borderColor: 'rgba(192,57,43,.30)', color: '#C0392B' }}>
+                 ? { background: 'rgba(61,220,151,.12)', border: '1px solid rgba(61,220,151,.35)', color: MC.green }
+                 : { background: 'rgba(255,107,107,.10)', border: '1px solid rgba(255,107,107,.35)', color: MC.red }}>
             <LiveText>{(toast.ok ? '✓ ' : '⚠ ') + toast.msg}</LiveText>
           </div>
         )}
@@ -274,115 +338,132 @@ export default function CabinetDashboard() {
             change REMOUNTS the subtree — the page translator replaces text
             nodes in place, and React's insertBefore crashes if we patch them
             (same bug LiveText fixes; here the whole card is the unit). */}
-        <div key={`hero-${me?.membership?.full_name || me?.full_name || ''}-${me?.membership?.role || me?.role || ''}-${reviewCount}`}
-             className="bg-white border rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap"
-             style={{ borderColor: '#E7E1D5' }}>
-          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0"
-               style={{ background: 'rgba(78,31,68,.08)', color: '#4E1F44' }}>
-            <LiveText>{String(me?.membership?.full_name || me?.full_name || 'C').charAt(0).toUpperCase()}</LiveText>
+        <Rise>
+          <div key={`hero-${me?.membership?.full_name || me?.full_name || ''}-${me?.membership?.role || me?.role || ''}-${reviewCount}`}
+               data-tour="hero" className="p-5 mb-4 flex items-center gap-4 flex-wrap"
+               style={glass('accent')}>
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold shrink-0"
+                 style={{ background: `linear-gradient(135deg, ${MC.indigo}, ${MC.plum})`, color: '#fff', fontSize: 18,
+                          boxShadow: '0 12px 28px -14px rgba(124,124,248,.9)' }}>
+              <LiveText>{String(me?.membership?.full_name || me?.full_name || 'C').charAt(0).toUpperCase()}</LiveText>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <LiveText as="div" style={{ fontWeight: 700, fontSize: 19, letterSpacing: '-.02em', color: MC.ink }}>
+                {`Bonjour ${me?.membership?.full_name || me?.full_name || ''}`}
+              </LiveText>
+              <LiveText as="div" style={{ fontSize: 12, color: MC.ink3, marginTop: 2 }}>
+                {`${{ expert_comptable: 'Expert-comptable', superviseur: 'Superviseur',
+                      collaborateur: 'Collaborateur', assistant: 'Assistant' }[
+                      me?.membership?.role || me?.role] || 'Cabinet'} · ${
+                   new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+              </LiveText>
+            </div>
+            {(me?.membership?.role || me?.role) === 'assistant' ? (
+              <LiveText as="span" style={{ fontSize: 12.5, color: MC.ink2, maxWidth: 260 }}>
+                📷 Ouvrez un dossier et photographiez les factures — l'agent fait le reste.
+              </LiveText>
+            ) : reviewCount > 0 ? (
+              <McButton variant="danger" onClick={() => navigate('/cabinet/revue')}>
+                <LiveText>{`${reviewCount} facture(s) attendent votre validation →`}</LiveText>
+              </McButton>
+            ) : (
+              <LiveText as="span" style={{ fontSize: 12.5, fontWeight: 600, color: MC.green }}>
+                ✓ Rien n'attend votre validation
+              </LiveText>
+            )}
           </div>
-          <div className="flex-1 min-w-[180px]">
-            <LiveText as="div" className="font-bold text-sm text-[#1C1917]">
-              {`Bonjour ${me?.membership?.full_name || me?.full_name || ''} 👋`}
-            </LiveText>
-            <LiveText as="div" className="text-[11px] text-[#8B8680]">
-              {`${{ expert_comptable: 'Expert-comptable', superviseur: 'Superviseur',
-                    collaborateur: 'Collaborateur', assistant: 'Assistant' }[
-                    me?.membership?.role || me?.role] || 'Cabinet'} · ${
-                 new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`}
-            </LiveText>
-          </div>
-          {(me?.membership?.role || me?.role) === 'assistant' ? (
-            <LiveText as="span" className="text-xs text-[#57534E]">
-              📷 Ouvrez un dossier et photographiez les factures — l'agent fait le reste.
-            </LiveText>
-          ) : reviewCount > 0 ? (
-            <button onClick={() => navigate('/cabinet/revue')}
-                    className="text-xs font-semibold px-3 py-2 rounded-xl text-white"
-                    style={{ background: '#C0392B' }}>
-              <LiveText>{`${reviewCount} facture(s) attendent votre validation →`}</LiveText>
-            </button>
-          ) : (
-            <LiveText as="span" className="text-xs font-semibold" style={{ color: '#2F7A52' }}>
-              ✓ Rien n'attend votre validation
-            </LiveText>
-          )}
-        </div>
+        </Rise>
 
-        <GuideBox
-          title="Nouveau ici ? Le tour en 5 étapes"
-          steps={[
-            '⬆︎ Importer clients (en haut) : votre liste de clients en CSV → tous les dossiers se créent d\'un coup.',
-            'Cliquez un dossier dans « Mes dossiers » : tout ce client est là (factures, pièces, agent).',
-            'Dans le dossier : « + Demander une pièce » pour que l\'agent relance le client à votre place (email/WhatsApp).',
-            '« À valider » (en haut) : la file des factures qui attendent votre validation — règle des 4 yeux.',
-            '« Équipe » : créez les comptes de vos collaborateurs ; chacun ne voit que ses dossiers.',
-          ]}
-          example="votre stagiaire photographie 10 tickets fournisseurs → l'agent lit et propose 10 écritures → votre collaborateur les valide en 5 clics." />
-        <div className="grid grid-cols-4 gap-3 mb-5">
-          <Stat label="Dossiers" value={totals.count ?? 0} />
-          <Stat label="Action requise" value={totals.red ?? 0} tone="#C0392B" />
-          <Stat label="À vérifier" value={totals.amber ?? 0} tone="#B8860B" />
-          <Stat label="Conformes" value={totals.green ?? 0} tone="#2F7A52" />
+        {/* Ce que l'agent a fait cette nuit — the invisible work, made visible */}
+        <Rise delay={60}>
+          <button onClick={() => setShowDemo(true)} data-tour="nightstrip"
+                  className="w-full text-left p-4 mb-4 flex items-center gap-3 flex-wrap transition-transform duration-200"
+                  style={{ ...glass(), cursor: 'pointer' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}>
+            <LiveDot />
+            <span style={{ fontSize: 13, color: MC.ink, fontWeight: 600 }}>
+              L'agent a travaillé cette nuit
+            </span>
+            <span style={{ fontSize: 12, color: MC.ink3 }}>
+              relances, lecture des pièces, écritures, contrôles — voir le déroulé
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: MC.indigo, fontWeight: 700 }}>▶ Rejouer la nuit</span>
+          </button>
+        </Rise>
+
+        <div data-tour="stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <StatTile label="Dossiers suivis" value={totals.count ?? 0} delay={80} />
+          <StatTile label="Action requise" value={totals.red ?? 0} tone="danger" delay={140}
+                    onClick={() => navigate('/cabinet/cas')} />
+          <StatTile label="À vérifier" value={totals.amber ?? 0} tone="warn" delay={200} />
+          <StatTile label="Conformes" value={totals.green ?? 0} tone="ok" delay={260} />
         </div>
 
         {/* alerts feed */}
         {alerts.length > 0 && (
-          <div className="rounded-2xl bg-white border p-4 mb-5" style={{ borderColor: '#ECE3D2' }}>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-sm text-[#1C1917]">À traiter en priorité</h3>
-              <button onClick={load} className="text-[#8B8680] hover:text-[#1C1917]"><RefreshCw size={15} /></button>
-            </div>
-            <ul className="space-y-1.5">
+          <Panel title="À traiter en priorité" delay={320} className="mb-5" tone="warn"
+                 right={<button onClick={load} style={{ color: MC.ink3 }}><RefreshCw size={15} /></button>}>
+            <ul className="space-y-2">
               {alerts.slice(0, 8).map((a, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm">
-                  <AlertTriangle size={14} style={{ color: BAND[a.level]?.c }} />
+                <li key={i} className="flex items-center gap-2 text-[13px]">
+                  <AlertTriangle size={13} style={{ color: statusColor[a.level] || MC.amber }} className="shrink-0" />
                   <button onClick={() => openClient(a.tenant_id)}
-                          className="font-semibold text-[#1C1917] hover:underline">{a.client}</button>
-                  <LiveText className="text-[#57534E]">{'— ' + a.message}</LiveText>
+                          style={{ fontWeight: 600, color: MC.ink, cursor: 'pointer' }}>{a.client}</button>
+                  <LiveText style={{ color: MC.ink3 }}>{'— ' + a.message}</LiveText>
                 </li>
               ))}
             </ul>
-          </div>
+          </Panel>
         )}
 
         {/* client list */}
-        <div className="rounded-3xl bg-white border" style={{ borderColor: '#ECE3D2' }}>
-          <div className="px-5 py-3 border-b font-bold text-[#1C1917]" style={{ borderColor: '#F2ECE0' }}>
-            Mes dossiers ({totals.count ?? 0})
-          </div>
+        <Panel delay={380} data-tour="dossiers"
+               title={`Mes dossiers (${totals.count ?? 0})`}>
+          <div data-tour="dossiers">
           {loading ? (
-            <div className="px-5 py-10 text-center text-sm text-[#8B8680]">Chargement…</div>
+            <div className="py-10 text-center text-sm" style={{ color: MC.ink3 }}>Chargement…</div>
           ) : (data?.clients || []).length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-[#8B8680]">
-              Aucun dossier lié. Vos clients vous ajoutent depuis leur espace Facturation.
+            <div className="py-10 text-center text-sm" style={{ color: MC.ink3 }}>
+              Aucun dossier lié. Importez votre liste de clients, ou ajoutez-en un.
             </div>
           ) : (
-            <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
-              {data.clients.map((c) => {
-                const b = BAND[c.band] || BAND.amber;
+            <div className="space-y-2">
+              {data.clients.map((c, idx) => {
+                const dot = statusColor[c.band] || MC.amber;
                 return (
                   <button key={c.tenant_id} onClick={() => openClient(c.tenant_id)}
-                          className="w-full px-5 py-3 flex items-center gap-3 text-sm hover:bg-[#FCFAF5] text-left">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: b.dot }} />
-                    <span className="font-semibold text-[#1C1917] flex-1 truncate">{c.name}</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: b.c, background: b.bg }}>{c.score}/100</span>
-                    {/* S1 — pending work, so the cabinet sees WORKLOAD, not just health */}
-                    {c.unreviewed > 0 && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
-                            style={{ color: '#B8860B', background: 'rgba(184,134,11,.12)' }}
-                            title="Factures non revues">{c.unreviewed} à revoir</span>
-                    )}
-                    <span className="text-[#8B8680] w-24 text-right hidden md:block">{c.issued} émises · {c.received} reçues</span>
-                    <ChevronRight size={16} className="text-[#C6BFB2]" />
+                          className="w-full px-3.5 py-3 flex items-center gap-3 text-sm text-left transition-transform duration-200"
+                          style={{ background: 'rgba(255,255,255,.04)', border: `1px solid ${MC.stroke}`,
+                                   borderRadius: 14, cursor: 'pointer',
+                                   animation: `mcRise .45s ${EASE} both`, animationDelay: `${420 + idx * 45}ms` }}
+                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateX(3px)';
+                                                 e.currentTarget.style.background = 'rgba(255,255,255,.075)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'none';
+                                                 e.currentTarget.style.background = 'rgba(255,255,255,.04)'; }}>
+                    <span className="w-2 h-2 rounded-full shrink-0"
+                          style={{ background: dot, boxShadow: `0 0 8px ${dot}` }} />
+                    <span key={c.name} className="flex-1 truncate"
+                          style={{ fontWeight: 600, color: MC.ink }}>{c.name}</span>
+                    <McPill tone={c.band === 'green' ? 'ok' : c.band === 'red' ? 'danger' : 'warn'}>
+                      {`${c.score}/100`}
+                    </McPill>
+                    {c.unreviewed > 0 && <McPill tone="warn">{`${c.unreviewed} à revoir`}</McPill>}
+                    <span key={`io-${c.issued}-${c.received}`}
+                          className="hidden md:block text-right"
+                          style={{ color: MC.ink3, fontSize: 11.5, width: 110 }}>
+                      {`${c.issued} émises · ${c.received} reçues`}
+                    </span>
+                    <ChevronRight size={16} style={{ color: MC.ink3 }} />
                   </button>
                 );
               })}
             </div>
           )}
-        </div>
+          </div>
+        </Panel>
 
-        <p className="text-[11px] text-[#A8A29E] mt-4 text-center italic">
+        <p className="mt-4 text-center italic" style={{ fontSize: 11, color: MC.ink3 }}>
           Indicateur informatif de cohérence — ni conseil fiscal, ni ECF.
         </p>
       </main>
@@ -518,6 +599,11 @@ export default function CabinetDashboard() {
         <GrilleModal tenantId={grilleFor.tenant_id} clientName={grilleFor.name}
                      members={teamMembers} onClose={() => setGrilleFor(null)} />
       )}
+      {showTour && (
+        <CoachMarks steps={HOME_TOUR} storageKey="cabinet-home"
+                    onClose={() => setShowTour(false)} />
+      )}
+      {showDemo && <DemoMode onClose={() => setShowDemo(false)} />}
       {askDocFor && (
         <AskPieceModal clientName={askDocFor.name}
                        onClose={() => setAskDocFor(null)}
@@ -534,6 +620,7 @@ export default function CabinetDashboard() {
                          }
                        }} />
       )}
+      </div>
     </div>
   );
 }
