@@ -605,9 +605,9 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
   // Clicking a card shows ONLY that room, with a back button. No more stacking.
   const [room, setRoom] = useState(null);
   const [agentN, setAgentN] = useState(0);
-  const ROOM_TITLES = { agent: "L'agent a préparé", ventes: 'Ventes (factures client)',
+  const ROOM_TITLES = { agent: "L'agent a préparé", ventes: 'Ventes',
                         pieces: 'Pièces attendues', abos: 'Abonnements',
-                        achats: 'Achats (fournisseurs)', indicateurs: 'Indicateurs & alertes' };
+                        achats: 'Achats', indicateurs: 'Indicateurs', plus: 'Plus' };
   // Ventes: unpaid first — "à encaisser d'abord" (MyFiteco: impayés en un clin d'œil)
   const sortedInv = [...(data.invoices || [])].sort((a, b) =>
     ((a.payment_status === 'paid') - (b.payment_status === 'paid'))
@@ -616,55 +616,37 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
     (i) => i.review_status === 'validated' && i.payment_status !== 'paid');
   const unpaidTot = unpaid.reduce((a, i) => a + (i.total_ttc || 0), 0);
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
-         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      {/* Wide enough that an invoice row fits on ONE line: number, customer,
-          amount, three status chips and the action. At max-w-lg the chips
-          wrapped onto their own lines, which read as broken rather than dense. */}
-      <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: '#F2ECE0' }}>
-          <div>
-            <h3 className="text-lg font-bold text-[#1C1917]">{s.name}</h3>
-            <span className="text-xs" style={{ color: b.c }}>
-              <ShieldCheck size={12} className="inline mr-1" />
-              <LiveText>{b.label}</LiveText> · {s.score}/100
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {onOpenGrille && (
-              <button onClick={() => onOpenGrille(s.tenant_id, s.name)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-xl border"
-                      style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
-                Répartition des tâches
-              </button>
-            )}
-            {onExportFec && (
-              <button onClick={() => onExportFec(s.tenant_id, s.name)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-xl border"
-                      style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}
-                      title="Fichier des Écritures Comptables — importable dans Sage, Cegid, etc.">
-                Export FEC
-              </button>
-            )}
-            <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
-          </div>
+    <div className="fixed inset-0 z-50 overflow-auto" style={{ background: '#F3F1FA' }}>
+      <div className="min-h-full flex flex-col">
+        {/* MyFiteco-style top bar: blue home → CLIENT NAME, score chip right */}
+        <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-3"
+             style={{ borderColor: '#E7E1D5' }}>
+          <button onClick={onClose} aria-label="Retour à la liste"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg shrink-0"
+                  style={{ background: '#2F6FB3' }}>🏠</button>
+          <span style={{ color: '#C9C2B4' }}>›</span>
+          <span className="font-extrabold text-[#1C1917] tracking-wide uppercase truncate">{s.name}</span>
+          <span className="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0"
+                style={{ color: b.c, background: '#F3F1FA' }}>
+            <LiveText>{`${s.score}/100`}</LiveText>
+          </span>
         </div>
 
-        {/* ── The HUB: cards with counters, one per room ─────────────────── */}
-        {room !== null && (
-          <div className="px-5 pt-3 pb-1 flex items-center gap-3">
-            <button onClick={() => setRoom(null)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-xl border"
-                    style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
-              ← Retour au dossier
-            </button>
-            <span className="text-sm font-bold text-[#1C1917]">{ROOM_TITLES[room]}</span>
-          </div>
+        <div className="w-full max-w-2xl mx-auto px-4 pb-6 pt-5 flex-1">
+        <h2 className="text-2xl font-extrabold text-[#1C1917] mb-4">
+          <LiveText>{ROOM_TITLES[room] || 'Synthèse'}</LiveText>
+        </h2>
+        {['pieces', 'abos', 'indicateurs'].includes(room) && (
+          <button onClick={() => setRoom('plus')}
+                  className="mb-3 text-xs font-semibold px-3 py-1.5 rounded-xl border bg-white"
+                  style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+            ← Retour
+          </button>
         )}
         {room === null && (
-          <div className="p-5">
+          <div className="flex flex-col gap-3">
             {(s.alerts || []).length > 0 && (
-              <ul className="space-y-1 mb-4">
+              <ul className="space-y-1 mb-1">
                 {s.alerts.slice(0, 3).map((a, i) => (
                   <li key={i} className="flex items-center gap-2 text-xs">
                     <AlertTriangle size={13} style={{ color: BAND[a.level]?.c }} />
@@ -673,34 +655,26 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                 ))}
               </ul>
             )}
-            <div className="grid md:grid-cols-2 gap-3">
-              <HubCard icon="🤖" title="L'agent a préparé" desc="écritures, rapprochements, conseils — à valider"
-                       badge={agentN} accent onClick={() => setRoom('agent')} />
-              <HubCard icon="📤" title="Ventes (factures client)" desc="créer, envoyer, suivre les paiements"
-                       count={(data.invoices || []).length}
-                       badge={(data.invoices || []).filter((i) => i.review_status !== 'validated').length}
-                       onClick={() => setRoom('ventes')} />
-              <HubCard icon="📥" title="Achats (fournisseurs)" desc="factures reçues + tickets photographiés"
-                       count={(data.received || []).length} onClick={() => setRoom('achats')} />
-              <HubCard icon="📨" title="Pièces attendues" desc="l'agent relance le client tout seul"
-                       badge={(docReqs?.requests || []).filter((r) => r.status === 'pending').length}
-                       onClick={() => setRoom('pieces')} />
-              <HubCard icon="📊" title="Indicateurs & alertes" desc="bouclier fiscal, reconstitution, impayés"
-                       badge={(s.alerts || []).length} onClick={() => setRoom('indicateurs')} />
-              <HubCard icon="🔁" title="Abonnements" desc="« chaque mois, le X, facturer Y à Z »"
-                       count={(subs || []).length} onClick={() => setRoom('abos')} />
-            </div>
-            <button onClick={() => setRoom('agent')}
-                    className="mt-4 w-full text-sm font-semibold py-3 rounded-2xl text-white"
-                    style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
-              📷 Photographier une facture — l'agent la lit et la range
-            </button>
-            <div className="mt-3 text-center text-[11px] text-[#8B8680]">
-              Chaque carte est une pièce du dossier — cliquez pour entrer, « Retour » pour ressortir.
-            </div>
+            <HubCard icon="🤖" title="L'agent a préparé" desc="écritures, rapprochements, conseils — à valider"
+                     badge={agentN} accent onClick={() => setRoom('agent')} />
+            <HubCard icon="📤" title="Ventes" desc="créer, envoyer, suivre les paiements"
+                     count={(data.invoices || []).length}
+                     badge={(data.invoices || []).filter((i) => i.review_status !== 'validated').length}
+                     onClick={() => setRoom('ventes')} />
+            <HubCard icon="🛒" title="Achats" desc="factures reçues + tickets photographiés"
+                     count={(data.received || []).length} onClick={() => setRoom('achats')} />
+            <HubCard icon="📨" title="Pièces attendues" desc="l'agent relance le client tout seul"
+                     badge={(docReqs?.requests || []).filter((r) => r.status === 'pending').length}
+                     onClick={() => setRoom('pieces')} />
+            <HubCard icon="📊" title="Indicateurs" desc="bouclier fiscal, reconstitution, impayés"
+                     badge={(s.alerts || []).length} onClick={() => setRoom('indicateurs')} />
+            <HubCard icon="🔁" title="Abonnements" desc="« chaque mois, le X, facturer Y à Z »"
+                     count={(subs || []).length} onClick={() => setRoom('abos')} />
           </div>
         )}
 
+        <div className={room && room !== 'plus' ? 'bg-white rounded-3xl border overflow-hidden' : ''}
+             style={{ borderColor: '#E7E1D5' }}>
         {/* S12 — pièces manquantes: what the agent is chasing for this client */}
         {room === 'pieces' && docReqs && (
           <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
@@ -1056,7 +1030,61 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
           </button>
         </div>
         )}
+        </div>
+
+        {/* ── Tab: PLUS — everything else, stacked MyFiteco-style ────────── */}
+        {room === 'plus' && (
+          <div className="flex flex-col gap-3">
+            <HubCard icon="📨" title="Pièces attendues" desc="l'agent relance le client tout seul"
+                     badge={(docReqs?.requests || []).filter((r) => r.status === 'pending').length}
+                     onClick={() => setRoom('pieces')} />
+            <HubCard icon="📊" title="Indicateurs" desc="bouclier fiscal, reconstitution, impayés"
+                     badge={(s.alerts || []).length} onClick={() => setRoom('indicateurs')} />
+            <HubCard icon="🔁" title="Abonnements" desc="« chaque mois, le X, facturer Y à Z »"
+                     count={(subs || []).length} onClick={() => setRoom('abos')} />
+            {onExportFec && (
+              <HubCard icon="🧾" title="Export FEC" desc="le fichier que Sage / Cegid importent"
+                       onClick={() => onExportFec(s.tenant_id, s.name)} />
+            )}
+            {onOpenGrille && (
+              <HubCard icon="👥" title="Répartition des tâches" desc="qui fait quoi sur ce dossier"
+                       onClick={() => onOpenGrille(s.tenant_id, s.name)} />
+            )}
+          </div>
+        )}
+        </div>
+
+        {/* ── MyFiteco-style bottom navigation — the 5 tabs ──────────────── */}
+        <div className="sticky bottom-0 z-10 bg-white border-t px-2 pt-1.5 grid grid-cols-5 mt-auto"
+             style={{ borderColor: '#E7E1D5', paddingBottom: 'max(6px, env(safe-area-inset-bottom))' }}>
+          {[[null, '🗂️', 'Synthèse'], ['achats', '🛒', 'Achats'], ['ventes', '📤', 'Ventes'],
+            ['agent', '🤖', 'Agent'], ['plus', '⋯', 'Plus']].map(([r, ic, lb]) => {
+            const active = room === r
+              || (r === 'plus' && ['pieces', 'abos', 'indicateurs'].includes(room));
+            return (
+              <button key={String(lb)} onClick={() => setRoom(r)}
+                      className="flex flex-col items-center py-1 rounded-xl"
+                      style={{ color: active ? '#2F6FB3' : '#8B8680',
+                               background: active ? 'rgba(47,111,179,.08)' : 'transparent' }}>
+                <span className="text-lg leading-none">{ic}</span>
+                <span className="text-[10px] font-semibold mt-0.5">{lb}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Floating 📷 — photograph a piece from anywhere in the dossier.
+          On the Ventes tab it files a SALES invoice, everywhere else a purchase. */}
+      <label className="fixed bottom-20 right-5 w-14 h-14 rounded-2xl flex items-center justify-center text-2xl cursor-pointer"
+             style={{ background: '#2F6FB3', boxShadow: '0 8px 20px rgba(47,111,179,.45)' }}
+             title={room === 'ventes' ? 'Photographier une facture de vente'
+                    : 'Photographier une facture fournisseur / un ticket'}>
+        <span>📷</span>
+        <input type="file" accept="image/*" className="hidden"
+               onChange={(e) => { const f = e.target.files && e.target.files[0]; e.target.value = '';
+                 if (f && onOcr) onOcr(s.tenant_id, f, room === 'ventes'); }} />
+      </label>
     </div>
   );
 }
@@ -1066,9 +1094,9 @@ function HubCard({ icon, title, desc, count, badge, accent, onClick }) {
   return (
     <button onClick={onClick}
             className="flex items-center gap-3 text-left rounded-2xl border p-4 bg-white hover:shadow transition"
-            style={{ borderColor: accent ? '#7A3E70' : '#E7E1D5', borderWidth: accent ? 2 : 1 }}>
-      <span className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
-            style={{ background: 'rgba(78,31,68,.08)' }}>{icon}</span>
+            style={{ borderColor: accent ? '#2F6FB3' : '#EAE7F2', borderWidth: accent ? 2 : 1 }}>
+      <span className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0"
+            style={{ background: '#E8EDFB' }}>{icon}</span>
       <span className="flex-1 min-w-0">
         <span className="block text-sm font-bold text-[#1C1917]">{title}</span>
         <span className="block text-[11px] text-[#8B8680] truncate">{desc}</span>
