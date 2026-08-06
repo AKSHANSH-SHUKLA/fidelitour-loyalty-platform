@@ -501,14 +501,20 @@ function PeriodModal({ onClose, onSubmit }) {
   const [annee, setAnnee] = useState(String(now.getFullYear()));
   const MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
     'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-  const go = () => {
+  const [busy, setBusy] = useState(false);
+  // await the run BEFORE closing, otherwise the list behind the modal renders
+  // from stale state and the new declaration only appears on the next visit.
+  const go = async () => {
     const y = parseInt(annee, 10);
     let m1, m2;
     if (mode === 'mois') { m1 = mois; m2 = mois; }
     else { m1 = (trim - 1) * 3 + 1; m2 = trim * 3; }
     const last = new Date(y, m2, 0).getDate();
-    onSubmit(`${y}-${String(m1).padStart(2, '0')}-01`,
-             `${y}-${String(m2).padStart(2, '0')}-${last}`);
+    setBusy(true);
+    try {
+      await onSubmit(`${y}-${String(m1).padStart(2, '0')}-01`,
+                     `${y}-${String(m2).padStart(2, '0')}-${last}`);
+    } finally { setBusy(false); }
     onClose();
   };
   return (
@@ -565,8 +571,9 @@ function PeriodModal({ onClose, onSubmit }) {
         <div className="px-5 pb-5 flex gap-2">
           <button onClick={onClose} className="flex-1 text-sm font-semibold py-2.5 rounded-xl border"
                   style={{ borderColor: '#E0DCE8', color: '#57534E' }}>Annuler</button>
-          <button onClick={go} className="flex-1 text-sm font-semibold py-2.5 rounded-xl text-white"
-                  style={{ background: '#2F6FB3' }}>Calculer</button>
+          <button onClick={go} disabled={busy}
+                  className="flex-1 text-sm font-semibold py-2.5 rounded-xl text-white disabled:opacity-50"
+                  style={{ background: '#2F6FB3' }}>{busy ? 'Calcul…' : 'Calculer'}</button>
         </div>
       </div>
     </div>
