@@ -13,6 +13,7 @@ import LiveText from '../components/LiveText';
 import AgentToolsPanel from '../components/AgentToolsPanel';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import GuideBox from '../components/GuideBox';
+import AskPieceModal from '../components/AskPieceModal';
 
 /**
  * CabinetDashboard — the expert-comptable control tower.
@@ -49,6 +50,7 @@ export default function CabinetDashboard() {
   const [reviewCount, setReviewCount] = useState(0);
   const [canOnboard, setCanOnboard] = useState(false);
   const [me, setMe] = useState(null);                 // my membership (role, name)
+  const [askDocFor, setAskDocFor] = useState(null);   // {tenant_id, name} → AskPieceModal
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -462,25 +464,8 @@ export default function CabinetDashboard() {
                       }
                       setTimeout(() => setToast(null), 8000);
                     }}
-                    onAskDoc={async (tid) => {
-                      const label = window.prompt('Quelle pièce demander ? (ex. « Relevé bancaire juillet »)');
-                      if (!label) return;
-                      const email = window.prompt("Email du client (vide = compte client connu) :") || '';
-                      const phone = window.prompt("Téléphone WhatsApp du client (optionnel, ex. 06 12 34 56 78) :") || '';
-                      const channel = phone
-                        ? (window.confirm("Relancer par WhatsApp si disponible ? (Annuler = email)") ? 'auto' : 'email')
-                        : 'email';
-                      try {
-                        await cabinetOsAPI.createDocRequest(tid, {
-                          label, client_email: email || undefined,
-                          client_phone: phone || undefined, channel });
-                        setToast({ ok: true, msg: `Demande enregistrée : « ${label} ». L'agent la relancera au bon moment${phone && channel !== 'email' ? ' (WhatsApp si actif, sinon email)' : ''}.` });
-                        await openClient(tid);
-                      } catch (e) {
-                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Demande impossible.' });
-                      }
-                      setTimeout(() => setToast(null), 7000);
-                    }}
+                    onAskDoc={(tid) => setAskDocFor({ tenant_id: tid,
+                                                      name: drill?.summary?.name })}
                     onDocReceived={async (tid, id) => {
                       try {
                         const r = await cabinetOsAPI.markDocReceived(id);
@@ -532,6 +517,22 @@ export default function CabinetDashboard() {
       {grilleFor && (
         <GrilleModal tenantId={grilleFor.tenant_id} clientName={grilleFor.name}
                      members={teamMembers} onClose={() => setGrilleFor(null)} />
+      )}
+      {askDocFor && (
+        <AskPieceModal clientName={askDocFor.name}
+                       onClose={() => setAskDocFor(null)}
+                       onSubmit={async (body) => {
+                         try {
+                           await cabinetOsAPI.createDocRequest(askDocFor.tenant_id, body);
+                           setToast({ ok: true, msg: `Demande enregistrée : « ${body.label} ». L'agent relancera au bon moment.` });
+                           await openClient(askDocFor.tenant_id);
+                         } catch (e) {
+                           setToast({ ok: false, msg: e?.response?.data?.detail || 'Demande impossible.' });
+                           throw e;
+                         } finally {
+                           setTimeout(() => setToast(null), 7000);
+                         }
+                       }} />
       )}
     </div>
   );

@@ -29,6 +29,8 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
   const [paList, setPaList] = useState([]);
   const [pa, setPa] = useState('');
   const [busy, setBusy] = useState('');
+  const [showTva, setShowTva] = useState(false);
+  const [showNote, setShowNote] = useState(false);
 
   const toast = (ok, msg) => onToast && onToast(ok, msg);
 
@@ -122,18 +124,16 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
     catch (err) { toast(false, err?.response?.data?.detail || 'Action impossible.'); }
   };
 
-  const addNote = async () => {
-    const text = window.prompt('Note sur ce dossier (ex. « le gérant préfère WhatsApp ») :');
-    if (!text) return;
-    try { await cabinetOsAPI.addMemoire(tenantId, { text }); await refresh(); toast(true, 'Note ajoutée à La Mémoire.'); }
-    catch (err) { toast(false, err?.response?.data?.detail || 'Ajout impossible.'); }
+  const addNote = () => setShowNote(true);
+  const saveNote = async (kind, text) => {
+    try {
+      await cabinetOsAPI.addMemoire(tenantId, { text, kind });
+      await refresh(); toast(true, 'Note ajoutée à La Mémoire.');
+    } catch (err) { toast(false, err?.response?.data?.detail || 'Ajout impossible.'); throw err; }
   };
 
-  const runTva = async () => {
-    const start = window.prompt('Début de période (AAAA-MM-JJ) :', '2026-07-01');
-    if (!start) return;
-    const end = window.prompt('Fin de période (AAAA-MM-JJ) :', '2026-07-31');
-    if (!end) return;
+  const runTva = () => setShowTva(true);
+  const runTvaPeriod = async (start, end) => {
     setBusy('tva');
     try {
       const r = await cabinetOsAPI.runTva(tenantId, { period_start: start, period_end: end });
@@ -480,6 +480,147 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
             ))}
           </div>
         )}
+      </div>
+
+      {showTva && <PeriodModal onClose={() => setShowTva(false)} onSubmit={runTvaPeriod} />}
+      {showNote && <NoteModal onClose={() => setShowNote(false)} onSubmit={saveNote} />}
+    </div>
+  );
+}
+
+const _L = { display: 'block', fontSize: 12, fontWeight: 600, color: '#57534E', marginBottom: 4 };
+const _I = { width: '100%', border: '1px solid #E0DCE8', borderRadius: 12, padding: '10px 12px',
+             fontSize: 14, background: '#FBFAFE', color: '#1C1917', outline: 'none' };
+
+/** Elegant period picker for the CA3 — month or quarter, zero typing. */
+function PeriodModal({ onClose, onSubmit }) {
+  const now = new Date();
+  const [mode, setMode] = useState('mois');
+  const [mois, setMois] = useState(now.getMonth() === 0 ? 12 : now.getMonth()); // previous month
+  const [trim, setTrim] = useState(Math.max(1, Math.ceil(now.getMonth() / 3)));
+  const [annee, setAnnee] = useState(String(now.getFullYear()));
+  const MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
+    'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  const go = () => {
+    const y = parseInt(annee, 10);
+    let m1, m2;
+    if (mode === 'mois') { m1 = mois; m2 = mois; }
+    else { m1 = (trim - 1) * 3 + 1; m2 = trim * 3; }
+    const last = new Date(y, m2, 0).getDate();
+    onSubmit(`${y}-${String(m1).padStart(2, '0')}-01`,
+             `${y}-${String(m2).padStart(2, '0')}-${last}`);
+    onClose();
+  };
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
+      <div className="bg-white rounded-3xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: '#EFECF6' }}>
+          <span className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                style={{ background: '#E8EDFB' }}>🧮</span>
+          <div>
+            <div className="font-bold text-[15px] text-[#1C1917]">Calculer la TVA (CA3)</div>
+            <div className="text-[11px] text-[#8B8680]">l'agent prépare un brouillon — il ne déclare rien</div>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-3.5">
+          <div className="flex gap-2">
+            {[['mois', 'Par mois'], ['trimestre', 'Par trimestre']].map(([v, l]) => (
+              <button key={v} onClick={() => setMode(v)}
+                      className="flex-1 text-xs font-semibold py-2 rounded-xl border"
+                      style={{ borderColor: mode === v ? '#2F6FB3' : '#E0DCE8',
+                               color: mode === v ? '#2F6FB3' : '#57534E',
+                               background: mode === v ? 'rgba(47,111,179,.06)' : '#fff' }}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {mode === 'mois' ? (
+              <div>
+                <label style={_L}>Mois</label>
+                <select style={_I} value={mois} onChange={(e) => setMois(+e.target.value)}>
+                  {MOIS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label style={_L}>Trimestre</label>
+                <select style={_I} value={trim} onChange={(e) => setTrim(+e.target.value)}>
+                  {[1, 2, 3, 4].map((t) => <option key={t} value={t}>{`T${t}`}</option>)}
+                </select>
+              </div>
+            )}
+            <div>
+              <label style={_L}>Année</label>
+              <select style={_I} value={annee} onChange={(e) => setAnnee(e.target.value)}>
+                {[0, 1, 2].map((d) => {
+                  const y = String(new Date().getFullYear() - d);
+                  return <option key={y}>{y}</option>;
+                })}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="px-5 pb-5 flex gap-2">
+          <button onClick={onClose} className="flex-1 text-sm font-semibold py-2.5 rounded-xl border"
+                  style={{ borderColor: '#E0DCE8', color: '#57534E' }}>Annuler</button>
+          <button onClick={go} className="flex-1 text-sm font-semibold py-2.5 rounded-xl text-white"
+                  style={{ background: '#2F6FB3' }}>Calculer</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** La Mémoire — note with a type dropdown instead of a bare prompt. */
+function NoteModal({ onClose, onSubmit }) {
+  const [kind, setKind] = useState('preference');
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const KINDS = [['preference', 'Préférence du client'], ['quirk', 'Particularité du dossier'],
+    ['deadline', 'Échéance à retenir'], ['fact', 'Fait / information'], ['risk', 'Point de vigilance']];
+  const go = async () => {
+    if (!text.trim()) return;
+    setBusy(true);
+    try { await onSubmit(kind, text.trim()); onClose(); } catch { /* toasted */ }
+    setBusy(false);
+  };
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
+      <div className="bg-white rounded-3xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: '#EFECF6' }}>
+          <span className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                style={{ background: '#E8EDFB' }}>📌</span>
+          <div>
+            <div className="font-bold text-[15px] text-[#1C1917]">Note pour La Mémoire</div>
+            <div className="text-[11px] text-[#8B8680]">visible par toute l'équipe, pour toujours</div>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-3.5">
+          <div>
+            <label style={_L}>Type de note</label>
+            <select style={_I} value={kind} onChange={(e) => setKind(e.target.value)}>
+              {KINDS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={_L}>La note</label>
+            <textarea style={{ ..._I, minHeight: 84, resize: 'vertical' }} value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="ex. Le gérant préfère WhatsApp ; clôture décalée au 30/06" />
+          </div>
+        </div>
+        <div className="px-5 pb-5 flex gap-2">
+          <button onClick={onClose} className="flex-1 text-sm font-semibold py-2.5 rounded-xl border"
+                  style={{ borderColor: '#E0DCE8', color: '#57534E' }}>Annuler</button>
+          <button onClick={go} disabled={busy || !text.trim()}
+                  className="flex-1 text-sm font-semibold py-2.5 rounded-xl text-white disabled:opacity-50"
+                  style={{ background: '#2F6FB3' }}>
+            {busy ? 'Ajout…' : 'Ajouter la note'}
+          </button>
+        </div>
       </div>
     </div>
   );
