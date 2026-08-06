@@ -296,6 +296,14 @@ export const cabinetOsAPI = {
     api.post('/cabinet/dossiers/' + tenantId + '/import/bank', { content, format }),
   syncReceived: (tenantId) =>
     api.post('/owner/facturation/received/sync', { tenant_id: tenantId }),
+  importInvoicesXlsx: (tenantId, contentB64) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/import/invoices',
+             { content_b64: contentB64, format: 'xlsx' }),
+  importEinvoiceXml: (tenantId, content) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/import/einvoice', { content }),
+  // Coefficients sectoriels — la reconstitution simulée.
+  learnCoefficients: () => api.post('/cabinet/coefficients/learn'),
+  coefficients: () => api.get('/cabinet/coefficients'),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */

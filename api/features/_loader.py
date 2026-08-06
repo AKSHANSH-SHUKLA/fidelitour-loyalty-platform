@@ -92,6 +92,9 @@ MODULES = [
     "features.data_import",
     # Ticket numérique — B2C e-receipt to the customer (email + push rail).
     "features.receipts",
+    # Coefficients sectoriels — the simulated DGFiP reconstitution (defaults +
+    # self-learned medians from the cabinet's own dossiers).
+    "features.coefficients",
     # NOTE on A/B testing: there's no dedicated module for auto-A/B testing.
     # It was a planned/described feature in the docs but never had its own
     # backend module mounted. So there's nothing to disable here.

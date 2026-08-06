@@ -19,11 +19,14 @@ WHY THIS EXISTS
 """
 from __future__ import annotations
 
+import base64
 import csv
 import io
 import re
+import zipfile
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -82,6 +85,119 @@ def _pick(row: Dict[str, str], *names) -> str:
         if n in row and row[n]:
             return row[n]
     return ""
+
+
+# --------------------------------------------------------------------------
+# .xlsx reader — stdlib only (an xlsx IS a zip of XML). No new dependency:
+# Vercel functions stay slim, and simple sheets are all an import needs.
+# --------------------------------------------------------------------------
+
+def _xlsx_rows(content_b64: str) -> List[Dict[str, str]]:
+    try:
+        z = zipfile.ZipFile(io.BytesIO(base64.b64decode(content_b64)))
+    except Exception:
+        raise HTTPException(422, "Fichier .xlsx illisible.")
+    shared: List[str] = []
+    try:
+        root = ET.fromstring(z.read("xl/sharedStrings.xml"))
+        for si in root:
+            shared.append("".join(t.text or "" for t in si.iter()
+                                  if t.tag.endswith("}t")))
+    except KeyError:
+        pass
+    sheet_name = next((n for n in z.namelist()
+                       if n.startswith("xl/worksheets/sheet")), None)
+    if not sheet_name:
+        raise HTTPException(422, "Aucune feuille trouvée dans le fichier.")
+    root = ET.fromstring(z.read(sheet_name))
+    rows: List[List[str]] = []
+    for row in root.iter():
+        if not row.tag.endswith("}row"):
+            continue
+        cells: Dict[int, str] = {}
+        for c in row:
+            ref = c.get("r") or ""
+            col = 0
+            for ch in ref:
+                if ch.isalpha():
+                    col = col * 26 + (ord(ch.upper()) - 64)
+            v = c.find("{*}v")
+            if v is None:
+                txt = "".join(t.text or "" for t in c.iter() if t.tag.endswith("}t"))
+            else:
+                txt = v.text or ""
+                if c.get("t") == "s":
+                    try:
+                        txt = shared[int(txt)]
+                    except (ValueError, IndexError):
+                        pass
+            cells[col - 1] = txt.strip()
+        if cells:
+            width = max(cells) + 1
+            rows.append([cells.get(i, "") for i in range(width)])
+    if len(rows) < 2:
+        return []
+    headers = [(h or "").strip().lower() for h in rows[0]]
+    return [{headers[i]: (r[i] if i < len(r) else "")
+             for i in range(len(headers)) if headers[i]} for r in rows[1:]]
+
+
+# --------------------------------------------------------------------------
+# Factur-X / UBL / CII e-invoice XML reader — the 2026 formats. Namespace-
+# agnostic (matches on local tag names) so vendor variants still parse.
+# --------------------------------------------------------------------------
+
+def _xml_findtext(root, *localnames) -> str:
+    for el in root.iter():
+        tag = el.tag.split("}")[-1]
+        if tag in localnames and (el.text or "").strip():
+            return el.text.strip()
+    return ""
+
+
+def parse_einvoice_xml(content: str) -> Optional[Dict[str, Any]]:
+    """UBL Invoice or CII CrossIndustryInvoice (Factur-X XML) → normalized dict."""
+    try:
+        root = ET.fromstring(content.strip())
+    except ET.ParseError:
+        return None
+    tag = root.tag.split("}")[-1]
+    if tag == "Invoice":                                   # UBL
+        number = ""
+        for el in root:
+            if el.tag.split("}")[-1] == "ID" and (el.text or "").strip():
+                number = el.text.strip(); break
+        supplier = ""
+        for el in root.iter():
+            if el.tag.split("}")[-1] == "AccountingSupplierParty":
+                supplier = _xml_findtext(el, "RegistrationName", "Name"); break
+        date = _xml_findtext(root, "IssueDate")
+        ht = _num(_xml_findtext(root, "TaxExclusiveAmount", "LineExtensionAmount"))
+        ttc = _num(_xml_findtext(root, "TaxInclusiveAmount", "PayableAmount"))
+        vat = _num(_xml_findtext(root, "TaxAmount"))
+    elif tag == "CrossIndustryInvoice":                    # CII / Factur-X
+        number = _xml_findtext(root, "ID")
+        supplier = ""
+        for el in root.iter():
+            if el.tag.split("}")[-1] == "SellerTradeParty":
+                supplier = _xml_findtext(el, "Name"); break
+        date = _xml_findtext(root, "DateTimeString")
+        if re.fullmatch(r"\d{8}", date or ""):
+            date = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+        ht = _num(_xml_findtext(root, "TaxBasisTotalAmount"))
+        vat = _num(_xml_findtext(root, "TaxTotalAmount"))
+        ttc = _num(_xml_findtext(root, "GrandTotalAmount", "DuePayableAmount"))
+    else:
+        return None
+    if not ttc and (ht or vat):
+        ttc = round(ht + vat, 2)
+    if not ht and ttc:
+        ht = round(ttc - vat, 2) if vat else round(ttc / 1.2, 2)
+    if not vat and ht and ttc:
+        vat = round(ttc - ht, 2)
+    return {"number": number or "SANS-NUMERO", "supplier": supplier or "Fournisseur",
+            "date": (date or "")[:10], "total_ht": round(ht, 2),
+            "total_vat": round(vat, 2), "total_ttc": round(ttc, 2)}
 
 
 # ==========================================================================
@@ -206,7 +322,12 @@ def import_invoices(tenant_id: str, body: Dict[str, Any],
     co.assert_can_see_tenant(token_data.email, tenant_id)
     content = body.get("content", "")
     fmt = (body.get("format") or "").lower()
-    if fmt == "fec" or ("\t" in content and "EcritureNum" in content):
+    if fmt == "xlsx" or body.get("content_b64"):
+        rows = _xlsx_rows(body.get("content_b64") or content)
+        if not rows:
+            raise HTTPException(422, "Feuille vide ou en-têtes manquants.")
+        invoices = [_invoice_from_csv_row(tenant_id, r) for r in rows]
+    elif fmt == "fec" or ("\t" in content and "EcritureNum" in content):
         invoices = _invoices_from_fec(tenant_id, content)
     else:
         rows = _rows(content)
@@ -223,6 +344,38 @@ def import_invoices(tenant_id: str, body: Dict[str, Any],
     except Exception:
         pass
     return {"ok": True, "imported": len(invoices)}
+
+
+# ==========================================================================
+# 2bis. E-invoice XML (Factur-X / UBL / CII) → received supplier invoice
+# ==========================================================================
+
+@router.post("/api/cabinet/dossiers/{tenant_id}/import/einvoice")
+def import_einvoice(tenant_id: str, body: Dict[str, Any],
+                    token_data=Depends(require_role(["comptable"]))):
+    """Import one e-invoice XML (the 2026 formats) as a RECEIVED supplier
+    invoice. Accepts UBL <Invoice> or CII <CrossIndustryInvoice> (the XML
+    inside a Factur-X PDF). Deduped by (supplier, number)."""
+    from features import cabinet_os as co
+    co.assert_can_see_tenant(token_data.email, tenant_id)
+    parsed = parse_einvoice_xml(body.get("content", ""))
+    if not parsed:
+        raise HTTPException(422, "XML non reconnu — attendu UBL Invoice ou "
+                                 "CII CrossIndustryInvoice (Factur-X).")
+    dup = _db.fact_received_invoices.find_one({
+        "tenant_id": tenant_id, "number": parsed["number"],
+        "supplier.name": parsed["supplier"]})
+    if dup:
+        return {"ok": True, "imported": 0, "duplicate": True}
+    _db.fact_received_invoices.insert_one({
+        "id": str(uuid4()), "tenant_id": tenant_id,
+        "supplier": {"name": parsed["supplier"], "siren": "", "is_company": True},
+        "number": parsed["number"], "date": parsed["date"],
+        "total_ht": parsed["total_ht"], "total_vat": parsed["total_vat"],
+        "total_ttc": parsed["total_ttc"],
+        "state": "received", "source": "import_xml",
+        "saisie_status": "pending", "received_at": _now()})
+    return {"ok": True, "imported": 1, "invoice": parsed}
 
 
 # ==========================================================================

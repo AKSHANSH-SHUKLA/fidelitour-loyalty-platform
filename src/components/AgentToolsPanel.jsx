@@ -204,10 +204,25 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
     const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
     setBusy('imp-inv');
     try {
-      const text = await _readText(f);
-      const fmt = _ext(f.name) === 'txt' || text.includes('EcritureNum') ? 'fec' : 'csv';
-      const r = await cabinetOsAPI.importInvoices(tenantId, text, fmt);
-      toast(true, `${r.data.imported} facture(s) importée(s).`); await refresh();
+      let r;
+      if (_ext(f.name) === 'xlsx') {
+        const b64 = await new Promise((res, rej) => {
+          const fr = new FileReader();
+          fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej;
+          fr.readAsDataURL(f);
+        });
+        r = await cabinetOsAPI.importInvoicesXlsx(tenantId, b64);
+      } else if (_ext(f.name) === 'xml') {
+        const text = await _readText(f);
+        r = await cabinetOsAPI.importEinvoiceXml(tenantId, text);
+      } else {
+        const text = await _readText(f);
+        const fmt = _ext(f.name) === 'txt' || text.includes('EcritureNum') ? 'fec' : 'csv';
+        r = await cabinetOsAPI.importInvoices(tenantId, text, fmt);
+      }
+      toast(true, r.data.duplicate ? 'Déjà importée (doublon ignoré).'
+        : `${r.data.imported} facture(s) importée(s).`);
+      await refresh();
     } catch (err) { toast(false, err?.response?.data?.detail || 'Import impossible.'); }
     setBusy('');
   };
@@ -274,8 +289,8 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
         <div className="text-xs font-semibold text-[#57534E] mb-2">Données du dossier</div>
         <div className="flex gap-2 flex-wrap">
           <label className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer" style={PLUM}>
-            {busy === 'imp-inv' ? 'Import…' : '⬆︎ Importer factures (CSV/FEC)'}
-            <input type="file" accept=".csv,.txt" className="hidden" onChange={onImportInvoices} />
+            {busy === 'imp-inv' ? 'Import…' : '⬆︎ Importer factures (CSV/FEC/XLSX/XML)'}
+            <input type="file" accept=".csv,.txt,.xlsx,.xml" className="hidden" onChange={onImportInvoices} />
           </label>
           <label className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer" style={PLUM}>
             {busy === 'imp-bank' ? 'Import…' : '⬆︎ Importer relevé (CSV/OFX)'}

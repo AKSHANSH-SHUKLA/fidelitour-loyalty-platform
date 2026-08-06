@@ -267,6 +267,31 @@ def compute_bouclier(tenant: Dict[str, Any]) -> Dict[str, Any]:
     for er in _db.fact_ereports.find({"tenant_id": tid}):
         for v in (er.get("totals_by_vat") or {}).values():
             ventes_ttc += float(v or 0)
+    # NAF-aware version when possible: the SIMULATED AUDIT (reconstitution).
+    # achats × coefficient sectoriel = CA attendu ; declared below the band's
+    # low end → the gap an inspector would presume. Falls back to the plain
+    # 80 % ratio when no NAF/coefficient is available.
+    recon = None
+    try:
+        from features import coefficients as coefs
+        recon = coefs.reconstitution(_db, tenant)
+    except Exception:
+        recon = None
+    if recon is not None:
+        if recon["flag"]:
+            score -= 12
+            alerts.append({"level": "amber",
+                           "message": (f"Reconstitution simulée ({recon['coefficient']['label']}) : "
+                                       f"vos achats de {recon['achats']:.0f} € impliquent un CA attendu de "
+                                       f"{recon['expected_min']:.0f}–{recon['expected_max']:.0f} € ; "
+                                       f"CA déclaré : {recon['declared']:.0f} €. "
+                                       "Toutes les ventes (y compris en espèces) sont-elles déclarées ?"),
+                           "fix_action": None})
+            breakdown.append({"level": "amber",
+                              "label": f"Écart de reconstitution ~{recon['gap']:.0f} € "
+                                       f"({recon['coefficient']['source']})",
+                              "points": -12})
+        achats_ttc = 0  # handled — skip the generic ratio below
     try:
         seuil_av = float(tenant.get("achats_ventes_seuil") or 0.80)
     except (TypeError, ValueError):
