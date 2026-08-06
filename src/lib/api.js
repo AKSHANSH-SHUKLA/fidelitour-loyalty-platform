@@ -304,6 +304,9 @@ export const cabinetOsAPI = {
   // Coefficients sectoriels — la reconstitution simulée.
   learnCoefficients: () => api.post('/cabinet/coefficients/learn'),
   coefficients: () => api.get('/cabinet/coefficients'),
+  // OCR d'une facture de VENTE (papier émise par le client) → fact_invoices.
+  ocrVente: (tenantId, imageDataUrl) =>
+    api.post('/cabinet/dossiers/' + tenantId + '/ocr-vente', { image: imageDataUrl }),
 };
 
 /** S9 — grille de répartition: who does what on each dossier. */

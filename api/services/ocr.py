@@ -161,26 +161,44 @@ def _call_vision(image_b64: str, mime: str) -> dict:
     return _parse_json(content)
 
 
-def extract_invoice(image_b64: str, mime: str = "image/jpeg") -> dict:
+def extract_invoice(image_b64: str, mime: str = "image/jpeg",
+                    kind: str = "achat") -> dict:
     """Read one image into structured fields. Never raises.
+
+    kind: "achat" (supplier invoice — default) or "vente" (an invoice the
+    business ITSELF issued, photographed to backfill history). For a vente
+    the counterparty we extract is the CUSTOMER, and we ask the model for it;
+    the normalized field name stays `supplier_name` (generic counterparty)
+    so the pipeline and the test seam stay unchanged.
 
     Returns a normalized record with `ok` and `confidence`, or
     {ok: False, no_op: True} when no provider is configured.
     """
-    if _force_extract is not None:
-        return _normalize(_force_extract(image_b64, mime))
-
-    if not is_configured():
-        return {"ok": False, "no_op": True, "confidence": 0.0,
-                "error": "ocr_not_configured"}
-    if not image_b64:
-        return {"ok": False, "confidence": 0.0, "error": "empty_image"}
-
+    global _PROMPT
+    prompt_backup = _PROMPT
+    if kind == "vente":
+        # swap the counterparty wording for this call only (restored in finally)
+        _PROMPT = _PROMPT.replace(
+            "supplier_name (string), supplier_siren (9 digits or empty)",
+            "supplier_name (string — here: the CUSTOMER the invoice is billed to), "
+            "supplier_siren (customer SIREN, 9 digits or empty)")
     try:
-        raw = _call_vision(image_b64, mime)
-        if not raw:
-            return {"ok": False, "confidence": 0.0, "error": "no_json_from_model"}
-        return _normalize(raw)
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("OCR extraction failed: %s", exc)
-        return {"ok": False, "confidence": 0.0, "error": str(exc)[:200]}
+        if _force_extract is not None:
+            return _normalize(_force_extract(image_b64, mime))
+
+        if not is_configured():
+            return {"ok": False, "no_op": True, "confidence": 0.0,
+                    "error": "ocr_not_configured"}
+        if not image_b64:
+            return {"ok": False, "confidence": 0.0, "error": "empty_image"}
+
+        try:
+            raw = _call_vision(image_b64, mime)
+            if not raw:
+                return {"ok": False, "confidence": 0.0, "error": "no_json_from_model"}
+            return _normalize(raw)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("OCR extraction failed: %s", exc)
+            return {"ok": False, "confidence": 0.0, "error": str(exc)[:200]}
+    finally:
+        _PROMPT = prompt_backup

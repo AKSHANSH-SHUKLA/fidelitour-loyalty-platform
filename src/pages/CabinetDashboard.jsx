@@ -48,6 +48,7 @@ export default function CabinetDashboard() {
   const [runningAgent, setRunningAgent] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
   const [canOnboard, setCanOnboard] = useState(false);
+  const [me, setMe] = useState(null);                 // my membership (role, name)
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,7 +69,7 @@ export default function CabinetDashboard() {
       .then((r) => setReviewCount(r?.data?.count ?? 0))
       .catch(() => {});
     cabinetOsAPI.me()
-      .then((r) => setCanOnboard(!!r?.data?.can?.assign))
+      .then((r) => { setCanOnboard(!!r?.data?.can?.assign); setMe(r?.data || null); })
       .catch(() => {});
     setLoading(false);
   }, []);
@@ -267,6 +268,41 @@ export default function CabinetDashboard() {
         )}
 
         {/* totals */}
+        {/* Ma journée — role-aware greeting: who I am, what needs ME today. */}
+        <div className="bg-white border rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap"
+             style={{ borderColor: '#E7E1D5' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0"
+               style={{ background: 'rgba(78,31,68,.08)', color: '#4E1F44' }}>
+            {String(me?.membership?.full_name || me?.full_name || 'C').charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-[180px]">
+            <div className="font-bold text-sm text-[#1C1917]">
+              Bonjour {me?.membership?.full_name || me?.full_name || ''} 👋
+            </div>
+            <div className="text-[11px] text-[#8B8680]">
+              {{ expert_comptable: 'Expert-comptable', superviseur: 'Superviseur',
+                 collaborateur: 'Collaborateur', assistant: 'Assistant' }[
+                 me?.membership?.role || me?.role] || 'Cabinet'}
+              {' · '}{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+          </div>
+          {(me?.membership?.role || me?.role) === 'assistant' ? (
+            <span className="text-xs text-[#57534E]">
+              📷 Ouvrez un dossier et photographiez les factures — l'agent fait le reste.
+            </span>
+          ) : reviewCount > 0 ? (
+            <button onClick={() => navigate('/cabinet/revue')}
+                    className="text-xs font-semibold px-3 py-2 rounded-xl text-white"
+                    style={{ background: '#C0392B' }}>
+              {reviewCount} facture(s) attendent votre validation →
+            </button>
+          ) : (
+            <span className="text-xs font-semibold" style={{ color: '#2F7A52' }}>
+              ✓ Rien n'attend votre validation
+            </span>
+          )}
+        </div>
+
         <GuideBox
           title="Nouveau ici ? Le tour en 5 étapes"
           steps={[
@@ -348,6 +384,36 @@ export default function CabinetDashboard() {
       {drill && (
         <DrillModal data={drill} onClose={() => setDrill(null)}
                     onToast={(ok, msg) => { setToast({ ok, msg }); setTimeout(() => setToast(null), 7000); }}
+                    onOcr={async (tid, file, vente) => {
+                      try {
+                        const dataUrl = await new Promise((res, rej) => {
+                          const fr = new FileReader();
+                          fr.onload = () => res(fr.result); fr.onerror = rej;
+                          fr.readAsDataURL(file);
+                        });
+                        const r = vente
+                          ? await cabinetOsAPI.ocrVente(tid, dataUrl)
+                          : await cabinetOsAPI.ocrIngest(tid, { image: dataUrl });
+                        const c = Math.round((r.data.confidence || 0) * 100);
+                        setToast({ ok: true, msg: r.data.needs_review
+                          ? `Lu (confiance ${c} %) — à vérifier.`
+                          : `Lu (confiance ${c} %) — rangé ✓` });
+                        await openClient(tid);
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Lecture impossible (OCR non configuré ?).' });
+                      }
+                      setTimeout(() => setToast(null), 7000);
+                    }}
+                    onSyncRec={async (tid) => {
+                      try {
+                        const r = await cabinetOsAPI.syncReceived(tid);
+                        setToast({ ok: true, msg: `${r.data.synced} facture(s) fournisseur récupérée(s) (PA : ${r.data.pa_provider}).` });
+                        await openClient(tid);
+                      } catch (e) {
+                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Synchronisation impossible.' });
+                      }
+                      setTimeout(() => setToast(null), 7000);
+                    }}
                     onReview={validateInvoice} reviewing={reviewing}
                     onActFor={actForClient} acting={acting}
                     onCreditNote={createCreditNote} crediting={crediting}
@@ -527,7 +593,7 @@ function Stat({ label, value, tone = '#1C1917' }) {
 
 function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                      onCreditNote, crediting, onOpenGrille, onExportFec, onNewInvoice,
-                     docReqs, onAskDoc, onDocReceived, onToast,
+                     docReqs, onAskDoc, onDocReceived, onToast, onOcr, onSyncRec,
                      subs, onNewSub, onToggleSub, onRunBilling }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
@@ -536,7 +602,15 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
   const [room, setRoom] = useState(null);
   const [agentN, setAgentN] = useState(0);
   const ROOM_TITLES = { agent: "L'agent a préparé", ventes: 'Ventes (factures client)',
-                        pieces: 'Pièces attendues', abos: 'Abonnements' };
+                        pieces: 'Pièces attendues', abos: 'Abonnements',
+                        achats: 'Achats (fournisseurs)', indicateurs: 'Indicateurs & alertes' };
+  // Ventes: unpaid first — "à encaisser d'abord" (MyFiteco: impayés en un clin d'œil)
+  const sortedInv = [...(data.invoices || [])].sort((a, b) =>
+    ((a.payment_status === 'paid') - (b.payment_status === 'paid'))
+    || ((a.review_status === 'validated') - (b.review_status === 'validated')));
+  const unpaid = (data.invoices || []).filter(
+    (i) => i.review_status === 'validated' && i.payment_status !== 'paid');
+  const unpaidTot = unpaid.reduce((a, i) => a + (i.total_ttc || 0), 0);
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
          style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
@@ -602,9 +676,13 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                        count={(data.invoices || []).length}
                        badge={(data.invoices || []).filter((i) => i.review_status !== 'validated').length}
                        onClick={() => setRoom('ventes')} />
+              <HubCard icon="📥" title="Achats (fournisseurs)" desc="factures reçues + tickets photographiés"
+                       count={(data.received || []).length} onClick={() => setRoom('achats')} />
               <HubCard icon="📨" title="Pièces attendues" desc="l'agent relance le client tout seul"
                        badge={(docReqs?.requests || []).filter((r) => r.status === 'pending').length}
                        onClick={() => setRoom('pieces')} />
+              <HubCard icon="📊" title="Indicateurs & alertes" desc="bouclier fiscal, reconstitution, impayés"
+                       badge={(s.alerts || []).length} onClick={() => setRoom('indicateurs')} />
               <HubCard icon="🔁" title="Abonnements" desc="« chaque mois, le X, facturer Y à Z »"
                        count={(subs || []).length} onClick={() => setRoom('abos')} />
             </div>
@@ -788,6 +866,28 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
 
         {room === 'ventes' && (
         <div className="p-5">
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(192,57,43,.35)' : '#E7E1D5' }}>
+              <div className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>
+                {unpaidTot.toFixed(0)} €
+              </div>
+              <div className="text-[10.5px] text-[#8B8680]">impayés ({unpaid.length} facture{unpaid.length > 1 ? 's' : ''})</div>
+            </div>
+            <div className="rounded-xl border p-3" style={{ borderColor: '#E7E1D5' }}>
+              <div className="text-lg font-extrabold text-[#1C1917]">{(data.invoices || []).length}</div>
+              <div className="text-[10.5px] text-[#8B8680]">factures émises</div>
+            </div>
+            <label className="rounded-xl border p-3 cursor-pointer text-center flex flex-col justify-center"
+                   style={{ borderColor: '#D8CBB8', borderStyle: 'dashed' }}>
+              <span className="text-lg">📷</span>
+              <span className="text-[10.5px] font-semibold" style={{ color: '#4E1F44' }}>
+                Photographier une facture de vente (papier)
+              </span>
+              <input type="file" accept="image/*" className="hidden"
+                     onChange={(e) => { const f = e.target.files && e.target.files[0]; e.target.value = '';
+                       if (f && onOcr) onOcr(s.tenant_id, f, true); }} />
+            </label>
+          </div>
           {(s.alerts || []).length > 0 && (
             <ul className="space-y-1.5 mb-4">
               {s.alerts.map((a, i) => (
@@ -803,7 +903,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             <div className="text-sm text-[#8B8680]">Aucune facture.</div>
           ) : (
             <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
-              {data.invoices.map((inv) => {
+              {sortedInv.map((inv) => {
                 const credited = (data.credit_notes || []).some((c) => c.original_invoice_id === inv.id);
                 const busy = reviewing === inv.id;
                 return (
@@ -860,20 +960,92 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             </>
           )}
 
-          {(data.received || []).length > 0 && (
-            <>
-              <h4 className="text-sm font-bold text-[#1C1917] mt-4 mb-2">Factures reçues (fournisseurs)</h4>
-              <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
-                {data.received.map((r) => (
-                  <div key={r.id} className="py-2 flex items-center gap-2 text-sm">
-                    <span className="font-semibold text-[#1C1917] w-28 shrink-0">{r.number || '—'}</span>
-                    <span className="flex-1 text-[#57534E] truncate">{r.supplier?.name || '—'}</span>
-                    <span className="text-[#1C1917] w-20 text-right">{(r.total_ttc ?? 0).toFixed(2)} €</span>
-                  </div>
-                ))}
+        </div>
+        )}
+
+        {/* ── Room: ACHATS — photograph, sync, list supplier invoices ────── */}
+        {room === 'achats' && (
+        <div className="p-5">
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <label className="rounded-xl border p-4 cursor-pointer text-center"
+                   style={{ borderColor: '#2F6FB3', borderStyle: 'dashed' }}>
+              <div className="text-xl">📷</div>
+              <div className="text-xs font-bold" style={{ color: '#2F6FB3' }}>
+                Photographier une facture fournisseur
               </div>
-            </>
+              <div className="text-[10px] text-[#8B8680]">même un ticket de caisse (Metro, Carrefour…)</div>
+              <input type="file" accept="image/*" className="hidden"
+                     onChange={(e) => { const f = e.target.files && e.target.files[0]; e.target.value = '';
+                       if (f && onOcr) onOcr(s.tenant_id, f, false); }} />
+            </label>
+            <button onClick={() => onSyncRec && onSyncRec(s.tenant_id)}
+                    className="rounded-xl border p-4 text-center" style={{ borderColor: '#E7E1D5' }}>
+              <div className="text-xl">🔄</div>
+              <div className="text-xs font-bold text-[#57534E]">Synchroniser les e-factures</div>
+              <div className="text-[10px] text-[#8B8680]">récupère depuis la plateforme du client</div>
+            </button>
+          </div>
+          <h4 className="text-sm font-bold text-[#1C1917] mb-2">
+            Factures reçues ({(data.received || []).length})
+          </h4>
+          {(data.received || []).length === 0 ? (
+            <div className="text-xs text-[#8B8680]">
+              Rien encore — photographiez un ticket ou synchronisez. Dès septembre 2026, les
+              e-factures des fournisseurs arriveront ici toutes seules.
+            </div>
+          ) : (
+            <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+              {data.received.map((r) => (
+                <div key={r.id} className="py-2 flex items-center gap-2 text-sm">
+                  <span className="font-semibold text-[#1C1917] w-28 shrink-0 truncate">{r.number || '—'}</span>
+                  <span className="flex-1 text-[#57534E] truncate">{r.supplier?.name || '—'}</span>
+                  {r.source === 'ocr' && <span className="text-[10px]">📷</span>}
+                  <span className="text-[#1C1917] w-20 text-right">{(r.total_ttc ?? 0).toFixed(2)} €</span>
+                </div>
+              ))}
+            </div>
           )}
+        </div>
+        )}
+
+        {/* ── Room: INDICATEURS — the score, spelled out ─────────────────── */}
+        {room === 'indicateurs' && (
+        <div className="p-5">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="text-4xl font-extrabold" style={{ color: b.c }}>{s.score}<span className="text-base text-[#8B8680]">/100</span></div>
+            <div>
+              <div className="text-sm font-bold" style={{ color: b.c }}><LiveText>{b.label}</LiveText></div>
+              <div className="text-[11px] text-[#8B8680]">Bouclier fiscal — ce que verrait un contrôle. Indicateur informatif, ni conseil fiscal ni ECF.</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(192,57,43,.35)' : '#E7E1D5' }}>
+              <div className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>{unpaidTot.toFixed(0)} €</div>
+              <div className="text-[10.5px] text-[#8B8680]">impayés clients à encaisser</div>
+            </div>
+            <div className="rounded-xl border p-3" style={{ borderColor: '#E7E1D5' }}>
+              <div className="text-lg font-extrabold text-[#1C1917]">{(data.received || []).length}</div>
+              <div className="text-[10.5px] text-[#8B8680]">pièces d'achat au dossier</div>
+            </div>
+          </div>
+          <h4 className="text-sm font-bold text-[#1C1917] mb-2">Points de vigilance ({(s.alerts || []).length})</h4>
+          {(s.alerts || []).length === 0 ? (
+            <div className="text-xs" style={{ color: '#2F7A52' }}>✓ Aucune anomalie — dossier cohérent.</div>
+          ) : (
+            <ul className="space-y-1.5">
+              {s.alerts.map((a, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" style={{ color: BAND[a.level]?.c }} />
+                  <LiveText className="text-[#44403C]">{a.message}</LiveText>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button onClick={() => setRoom('agent')}
+                  className="mt-4 text-xs font-semibold px-3 py-2 rounded-xl border"
+                  style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+            🤖 Calculer la TVA / lancer les contrôles → L'agent a préparé
+          </button>
         </div>
         )}
       </div>

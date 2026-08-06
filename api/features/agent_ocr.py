@@ -139,3 +139,74 @@ def owner_ocr(body: Dict[str, Any],
     from features import facturation as F
     t = F._require_facturation(token_data)
     return _ingest(t["id"], body, actor=token_data)
+
+
+# --------------------------------------------------------------------------
+# VENTE — photograph an invoice the business ITSELF issued (paper history).
+# It becomes a SALES record (fact_invoices), never transmitted to a PA
+# (pa_status="imported"): it documents a sale that already happened.
+# --------------------------------------------------------------------------
+
+def _ingest_vente(tenant_id: str, body: Dict[str, Any], *, actor,
+                  triggered_by=None) -> Dict[str, Any]:
+    from services import ocr
+    image = (body.get("image") or "").strip()
+    if not image:
+        raise HTTPException(422, "Aucune image fournie.")
+    image_b64, mime = _strip_data_url(image)
+    result = ocr.extract_invoice(image_b64, body.get("mime") or mime, kind="vente")
+    if not result.get("ok"):
+        if result.get("no_op"):
+            raise HTTPException(503, "OCR non configuré (clé du modèle absente).")
+        raise HTTPException(422, f"Lecture impossible : {result.get('error', 'inconnue')}")
+
+    conf = float(result.get("confidence") or 0)
+    status = "auto" if conf >= _threshold() else "needs_review"
+    seq = _db.fact_invoices.count_documents({"tenant_id": tenant_id,
+                                             "source": "ocr_vente"}) + 1
+    inv = {
+        "id": str(uuid4()), "tenant_id": tenant_id,
+        "number": result["invoice_number"] or f"IMP-{seq:04d}",
+        "date": result["date"],
+        "buyer": {"name": result["supplier_name"],           # counterparty = customer
+                  "siren": result["supplier_siren"], "is_company": True},
+        "lines": [{"description": "Facture photographiée (import)",
+                   "quantity": 1, "unit_price": result["total_ht"],
+                   "vat_rate": result["vat_rate"],
+                   "line_total_ht": result["total_ht"]}],
+        "total_ht": result["total_ht"], "total_vat": result["total_vat"],
+        "total_ttc": result["total_ttc"],
+        "pa_status": "imported",                              # already issued on paper
+        "review_status": "unreviewed", "payment_status": "unpaid",
+        "source": "ocr_vente", "ocr_confidence": conf, "ocr_status": status,
+        "created_at": _now(),
+    }
+    _db.fact_invoices.insert_one(dict(inv))
+    inv.pop("_id", None)
+    _audit("agent.ocr_vente", tenant_id=tenant_id, actor=actor,
+           object_kind="invoice", object_id=inv["id"],
+           after={"client": inv["buyer"]["name"], "ttc": inv["total_ttc"],
+                  "confidence": conf, "status": status},
+           detail={"triggered_by": triggered_by} if triggered_by else None)
+    return {"ok": True, "invoice": inv,
+            "needs_review": status == "needs_review", "confidence": conf}
+
+
+@router.post("/api/cabinet/dossiers/{tenant_id}/ocr-vente")
+def cabinet_ocr_vente(tenant_id: str, body: Dict[str, Any],
+                      token_data=Depends(require_role(["comptable"]))):
+    """Cabinet photographs a SALES invoice the client issued on paper."""
+    from features import cabinet_os as co
+    co.assert_can_see_tenant(token_data.email, tenant_id)
+    m = co.current_membership(token_data.email)
+    co.ensure_agent(m["cabinet_id"])
+    return _ingest_vente(tenant_id, body, actor=co.agent_actor(m["cabinet_id"]),
+                         triggered_by=token_data.email)
+
+
+@router.post("/api/owner/facturation/ocr-vente")
+def owner_ocr_vente(body: Dict[str, Any],
+                    token_data=Depends(require_role(["business_owner", "manager"]))):
+    from features import facturation as F
+    t = F._require_facturation(token_data)
+    return _ingest_vente(t["id"], body, actor=token_data)
