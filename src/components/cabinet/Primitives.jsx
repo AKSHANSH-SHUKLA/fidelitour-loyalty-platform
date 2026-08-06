@@ -69,20 +69,26 @@ export function AnimatedNumber({ value = 0, duration = 900, suffix = '', classNa
   return <span key={text} className={className} style={style}>{text}</span>;
 }
 
-/** A glass stat tile with a big animated number. */
-export function StatTile({ label, value, tone, suffix = '', delay = 0, onClick }) {
+/** A glass stat tile with a big animated number. Acts as a FILTER when
+    `onClick` is given: `active` shows which slice the list below is showing. */
+export function StatTile({ label, value, tone, suffix = '', delay = 0, onClick, active }) {
   const c = { danger: MC.red, warn: MC.amber, ok: MC.green }[tone] || MC.ink;
   return (
     <Rise delay={delay}>
-      <button onClick={onClick} disabled={!onClick}
-              className="w-full text-left p-4 transition-transform duration-200 disabled:cursor-default"
-              style={{ ...glass(tone), cursor: onClick ? 'pointer' : 'default' }}
+      <button onClick={onClick} disabled={!onClick} aria-pressed={onClick ? !!active : undefined}
+              className="w-full text-left p-4 transition-transform duration-200 disabled:cursor-default relative"
+              style={{ ...glass(tone), cursor: onClick ? 'pointer' : 'default',
+                       outline: active ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
               onMouseEnter={(e) => onClick && (e.currentTarget.style.transform = 'translateY(-2px)')}
               onMouseLeave={(e) => (e.currentTarget.style.transform = 'none')}>
         <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-.02em', color: c, lineHeight: 1.05 }}>
           <AnimatedNumber value={value} suffix={suffix} />
         </div>
-        <div key={label} style={{ fontSize: 11.5, color: MC.ink3, marginTop: 4 }}>{label}</div>
+        <div key={label} style={{ fontSize: 11.5, color: active ? c : MC.ink3, marginTop: 4,
+                                  fontWeight: active ? 700 : 400 }}>{label}</div>
+        {onClick && !active && (
+          <div style={{ position: 'absolute', right: 12, top: 12, fontSize: 10, color: MC.ink3 }}>filtrer</div>
+        )}
       </button>
     </Rise>
   );

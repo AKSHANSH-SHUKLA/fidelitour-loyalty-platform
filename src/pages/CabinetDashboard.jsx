@@ -19,32 +19,65 @@ import { AmbientCanvas, Rise, StatTile, Panel, Pill as McPill, McButton, LiveDot
   from '../components/cabinet/Primitives';
 import CoachMarks, { tourSeen, resetTour } from '../components/cabinet/CoachMarks';
 import DemoMode from '../components/cabinet/DemoMode';
+import Sidebar, { useSidebar } from '../components/cabinet/Sidebar';
 
-/** The guided tour of the cabinet home — anchored to real elements. */
+/** Stat tile → which dossiers it filters to. */
+const FILTERS = {
+  all: { label: 'Tous les dossiers', match: () => true },
+  red: { label: 'Action requise', match: (c) => c.band === 'red' },
+  amber: { label: 'À vérifier', match: (c) => c.band === 'amber' },
+  green: { label: 'Conformes', match: (c) => c.band === 'green' },
+};
+
+/** The guided tour — one step per real control, nothing left unexplained. */
 const HOME_TOUR = [
-  { sel: '[data-tour="hero"]', title: 'Votre journée, en une ligne',
-    body: "En haut : qui vous êtes, et LA chose qui vous attend aujourd'hui. Si rien n'attend votre validation, c'est écrit en vert.",
+  { sel: '[data-tour="hero"]', title: '1. Votre journée, en une ligne',
+    body: "Qui vous êtes, et LA chose qui vous attend aujourd'hui. Si rien n'attend votre validation, c'est écrit en vert.",
     example: "un assistant voit « photographiez les factures », un expert-comptable voit « 2 factures à valider »." },
-  { sel: '[data-tour="nightstrip"]', title: "L'agent travaille la nuit",
-    body: "Pendant que le cabinet dort, l'agent relance les clients, lit les pièces, prépare les écritures et les contrôles. Cliquez pour revoir le déroulé.",
+  { sel: '[data-tour="nightstrip"]', title: "2. L'agent travaille la nuit",
+    body: "Pendant que le cabinet dort, l'agent relance les clients, lit les pièces, prépare les écritures et les contrôles. Cliquez pour revoir le déroulé, capture par capture.",
     example: "au réveil : 7 pièces lues, 7 écritures prêtes, 1 anomalie signalée — il ne reste qu'à valider." },
-  { sel: '[data-tour="stats"]', title: 'Les 4 chiffres qui comptent',
-    body: "Dossiers suivis, action requise (rouge), à vérifier (orange), conformes (vert). Cliquez « Action requise » pour ouvrir les cas.",
-    example: null },
-  { sel: '[data-tour="dossiers"]', title: 'Vos dossiers clients',
-    body: "Chaque ligne est un client : sa pastille de santé, son score, et le travail en attente. Cliquez pour entrer dans le dossier.",
+  { sel: '[data-tour="stats"]', title: '3. Les 4 chiffres — et ils filtrent',
+    body: "Dossiers suivis, action requise (rouge), à vérifier (orange), conformes (vert). Cliquez un chiffre : la liste en dessous ne garde que ces dossiers-là.",
+    example: "cliquez « À vérifier · 5 » → les 5 dossiers concernés s'affichent seuls." },
+  { sel: '[data-tour="priority"]', title: '4. À traiter en priorité',
+    body: "Ce que l'agent a repéré comme le plus urgent, tous dossiers confondus. Cliquez le nom du client pour ouvrir son dossier directement à l'endroit du problème.",
+    example: "« BOUYGUES — Conformité DGFiP non activée » → un clic et vous y êtes." },
+  { sel: '[data-tour="dossiers"]', title: '5. Vos dossiers clients',
+    body: "Chaque ligne : la pastille de santé, le score sur 100, le travail en attente, et le volume de factures. Cliquez pour entrer dans le dossier.",
     example: "« BOUYGUES · 72/100 · 2 à revoir » — deux factures attendent une validation humaine." },
-  { sel: '[data-tour="relances"]', title: 'Lancer les relances',
+  { sel: '[data-tour="nav-home"]', title: '6. Le menu — Pilotage',
+    body: "La colonne de gauche regroupe tout. « Accueil » remet la vue à zéro et enlève tout filtre.",
+    example: null },
+  { sel: '[data-tour="nav-dossiers"]', title: '7. Mes dossiers',
+    body: "Le nombre de dossiers que suit le cabinet. Cliquez pour sauter directement à la liste.",
+    example: null },
+  { sel: '[data-tour="nav-review"]', title: '8. À valider — la règle des 4 yeux',
+    body: "Au-dessus d'un seuil, celui qui prépare une facture ne peut pas la valider lui-même. Cette file, c'est ce qui attend VOTRE signature.",
+    example: "Léa prépare une facture de 2 400 € → c'est Rousseau ou Sophie qui doit la valider." },
+  { sel: '[data-tour="nav-cases"]', title: '9. Cas ouverts',
+    body: "Le centre d'exceptions : chaque échec devient un cas daté et assignable — facture rejetée par la plateforme, pièce jamais reçue après 3 relances…",
+    example: "3 relances sans réponse → un cas s'ouvre pour qu'un humain appelle le client." },
+  { sel: '[data-tour="nav-team"]', title: '10. Mon équipe',
+    body: "Créez les comptes de vos collaborateurs, choisissez leur rôle et leur pôle, attribuez les dossiers. Chacun ne voit que ce qui le concerne.",
+    example: "un assistant produit mais ne valide pas ; l'expert-comptable est le seul à signer." },
+  { sel: '[data-tour="nav-relances"]', title: '11. Lancer les relances',
     body: "Un clic et l'agent écrit à TOUS les clients qui doivent une pièce — au bon moment pour chacun, par email ou WhatsApp.",
     example: "un bon payeur est relancé doucement et tard ; un retardataire, tôt et fermement." },
-  { sel: '[data-tour="newclient"]', title: 'Ajouter des clients',
-    body: "« + Nouveau client » avec le SIREN (le reste se remplit tout seul), ou « Importer clients » pour créer 45 dossiers d'un coup depuis un CSV.",
+  { sel: '[data-tour="nav-newclient"]', title: '12. Nouveau client',
+    body: "Saisissez le SIREN : raison sociale, adresse et code NAF se remplissent tout seuls. Le dossier et le mandat sont créés en une étape.",
     example: null },
-  { sel: '[data-tour="review"]', title: 'La file « À valider »',
-    body: "La règle des 4 yeux : au-dessus d'un seuil, celui qui prépare ne peut pas valider. Cette file, c'est ce qui attend VOTRE signature.",
+  { sel: '[data-tour="nav-import"]', title: '13. Importer des clients',
+    body: "Un fichier CSV (raison sociale, SIREN, email, plateforme) et tous vos dossiers se créent d'un coup — avec leur plateforme agréée respective.",
+    example: "45 clients importés en 30 secondes au lieu de 45 saisies manuelles." },
+  { sel: '[data-tour="nav-export"]', title: '14. Exporter tout (CSV)',
+    body: "L'ensemble de vos dossiers et de leurs indicateurs dans un fichier, pour votre tableur ou votre reporting interne.",
     example: null },
-  { sel: '[data-tour="demo"]', title: 'Le mode démo',
-    body: "Rejouez une nuit complète de travail de l'agent sur des données fictives — parfait pour montrer FidClic à un client sans toucher à ses données.",
+  { sel: '[data-tour="nav-demo"]', title: '15. Mode démo',
+    body: "Rejouez une nuit complète de travail de l'agent, avec les captures réelles de chaque étape — parfait pour montrer FidClic sans toucher aux données d'un client.",
+    example: null },
+  { sel: '[data-tour="nav-tour"]', title: '16. Cette visite, quand vous voulez',
+    body: "Ce bouton relance la visite guidée à tout moment. Vous pouvez aussi la quitter avec Échap et la reprendre plus tard.",
     example: null },
 ];
 
@@ -86,6 +119,8 @@ export default function CabinetDashboard() {
   const [askDocFor, setAskDocFor] = useState(null);   // {tenant_id, name} → AskPieceModal
   const [showTour, setShowTour] = useState(false);
   const [showDemo, setShowDemo] = useState(false);
+  const [filter, setFilter] = useState('all');       // stat tiles filter the list
+  const [sidebarOpen, toggleSidebar] = useSidebar();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -211,117 +246,59 @@ export default function CabinetDashboard() {
   };
 
   const totals = data?.totals || {};
+  const shownClients = (data?.clients || []).filter(FILTERS[filter].match);
+  const shownAlerts = filter === 'all'
+    ? alerts
+    : alerts.filter((a) => shownClients.some((c) => c.tenant_id === a.tenant_id));
+  const applyFilter = (f) => {
+    setFilter(f);
+    setTimeout(() => document.querySelector('[data-tour="dossiers"]')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
 
   return (
     <div className="min-h-screen relative" style={{ color: MC.ink }}>
       <AmbientCanvas />
       <div className="relative">
-      {/* header */}
-      <header className="flex items-center justify-between px-6 py-4 flex-wrap gap-2"
-              style={{ borderBottom: `1px solid ${MC.stroke}`, backdropFilter: 'blur(12px)' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-               style={{ background: `linear-gradient(135deg, ${MC.indigo}, #5B5BE8)`,
-                        boxShadow: '0 8px 22px -10px rgba(124,124,248,.9)' }}>
-            <Building2 size={16} color="#fff" />
-          </div>
-          <span className="font-bold" style={{ color: MC.ink }}>Espace Cabinet</span>
-          <span className="hidden sm:flex items-center gap-1.5 ml-2"
-                style={{ fontSize: 11, color: MC.ink3 }}>
-            <LiveDot /> agent en veille
-          </span>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <button data-tour="demo" onClick={() => setShowDemo(true)}
-                  className="text-sm font-semibold px-3 py-2 rounded-xl"
-                  style={{ background: 'rgba(124,124,248,.14)', color: '#CFCBFF',
-                           border: '1px solid rgba(124,124,248,.35)' }}>
-            ▶ Mode démo
-          </button>
-          <button onClick={() => { resetTour('cabinet-home'); setShowTour(true); }}
-                  className="text-sm font-semibold px-3 py-2 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2,
-                           border: `1px solid ${MC.stroke}` }}>
-            ? Visite guidée
-          </button>
-          <button data-tour="review" onClick={() => navigate('/cabinet/revue')}
-                  className="text-sm font-semibold flex items-center gap-1.5"
-                  style={{ color: MC.ink2 }}>
-            À valider
-            {reviewCount > 0 && (
-              <LiveText className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ color: '#04121B', background: MC.green }}>{String(reviewCount)}</LiveText>
-            )}
-          </button>
-          <button onClick={() => navigate('/cabinet/cas')}
-                  className="text-sm font-semibold flex items-center gap-1.5" style={{ color: MC.ink2 }}>
-            <AlertTriangle size={15} /> Cas
-            {openCases > 0 && (
-              <LiveText className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ color: '#fff', background: MC.red }}>{String(openCases)}</LiveText>
-            )}
-          </button>
-          <button onClick={() => navigate('/cabinet/equipe')}
-                  className="text-sm font-semibold" style={{ color: MC.ink2 }}>
-            Équipe
-          </button>
-          {canOnboard && (
-            <button disabled={runningAgent}
-                    onClick={async () => {
-                      setRunningAgent(true);
-                      try {
-                        const r = await cabinetOsAPI.runCollection();
-                        setToast({ ok: true,
-                                   msg: `Agent : ${r.data.emails_sent} email(s) envoyé(s), ${r.data.cases_opened} cas escaladé(s), ${r.data.waiting_not_due} en attente (pas encore l'heure de relancer).` });
-                      } catch (e) {
-                        setToast({ ok: false, msg: e?.response?.data?.detail || 'Relances impossibles.' });
-                      } finally {
-                        setRunningAgent(false);
-                        setTimeout(() => setToast(null), 9000);
-                      }
-                    }}
-                    data-tour="relances"
-                    className="text-sm font-semibold px-3 py-2 rounded-xl disabled:opacity-50"
-                    style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2, border: `1px solid ${MC.stroke}` }}>
-              {runningAgent ? '🤖 …' : '🤖 Lancer les relances'}
-            </button>
-          )}
-          {canOnboard && (
-            <button data-tour="newclient" onClick={() => setShowNewClient(true)}
-                    className="text-sm font-semibold px-3 py-2 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2, border: `1px solid ${MC.stroke}` }}>
-              + Nouveau client
-            </button>
-          )}
-          {canOnboard && (
-            <label className="text-sm font-semibold px-3 py-2 rounded-xl cursor-pointer"
-                   style={{ background: 'rgba(255,255,255,.06)', color: MC.ink2, border: `1px solid ${MC.stroke}` }}
-                   title="Importer plusieurs clients d'un coup (CSV : raison sociale, siren, email, pa)">
-              ⬆︎ Importer clients
-              <input type="file" accept=".csv,.txt" className="hidden" onChange={async (e) => {
-                const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
-                try {
-                  const text = await f.text();
-                  const r = await cabinetOsAPI.importClients(text);
-                  setToast({ ok: true, msg: `${r.data.created} client(s) importé(s)` + (r.data.skipped ? `, ${r.data.skipped} ignoré(s).` : '.') });
-                  await load();
-                } catch (err) {
-                  setToast({ ok: false, msg: err?.response?.data?.detail || 'Import impossible.' });
-                }
-                setTimeout(() => setToast(null), 8000);
-              }} />
-            </label>
-          )}
-          <a href={comptableAPI.exportUrl}
-             className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-white"
-             style={{ background: `linear-gradient(135deg, ${MC.indigo}, #5B5BE8)`,
-                      boxShadow: '0 10px 26px -14px rgba(124,124,248,.9)' }}>
-            <Download size={15} /> Exporter tout (CSV)
-          </a>
-          <button onClick={() => { logout(); navigate('/login'); }}
-                  className="text-sm" style={{ color: MC.ink3 }}>Se déconnecter</button>
-        </div>
-      </header>
+      <div className="flex">
+      <Sidebar
+        open={sidebarOpen} onToggle={toggleSidebar} active="home" canOnboard={canOnboard}
+        counts={{ dossiers: totals.count ?? 0, review: reviewCount, cases: openCases }}
+        onHome={() => { setFilter('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        onDossiers={() => { setFilter('all');
+          document.querySelector('[data-tour="dossiers"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+        onReview={() => navigate('/cabinet/revue')}
+        onCases={() => navigate('/cabinet/cas')}
+        onTeam={() => navigate('/cabinet/equipe')}
+        onNewClient={() => setShowNewClient(true)}
+        exportUrl={comptableAPI.exportUrl}
+        relancesBusy={runningAgent}
+        onRelances={async () => {
+          setRunningAgent(true);
+          try {
+            const r = await cabinetOsAPI.runCollection();
+            setToast({ ok: true, msg: `Agent : ${r.data.emails_sent} email(s) envoyé(s), ${r.data.cases_opened} cas escaladé(s), ${r.data.waiting_not_due} en attente (pas encore l'heure de relancer).` });
+          } catch (e) {
+            setToast({ ok: false, msg: e?.response?.data?.detail || 'Relances impossibles.' });
+          } finally { setRunningAgent(false); setTimeout(() => setToast(null), 9000); }
+        }}
+        onImportClients={async (e) => {
+          const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+          try {
+            const text = await f.text();
+            const r = await cabinetOsAPI.importClients(text);
+            setToast({ ok: true, msg: `${r.data.created} client(s) importé(s)` + (r.data.skipped ? `, ${r.data.skipped} ignoré(s).` : '.') });
+            await load();
+          } catch (err) {
+            setToast({ ok: false, msg: err?.response?.data?.detail || 'Import impossible.' });
+          }
+          setTimeout(() => setToast(null), 8000);
+        }}
+        onDemo={() => setShowDemo(true)}
+        onTour={() => { resetTour('cabinet-home'); setShowTour(true); }}
+        onLogout={() => { logout(); navigate('/login'); }} />
+
+      <div className="flex-1 min-w-0">
 
       <main className="max-w-4xl mx-auto px-4 pb-16 pt-5">
         {toast && (
@@ -392,20 +369,41 @@ export default function CabinetDashboard() {
           </button>
         </Rise>
 
-        <div data-tour="stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <StatTile label="Dossiers suivis" value={totals.count ?? 0} delay={80} />
+        {/* Clicking a tile FILTERS the dossier list below — the number and the
+            list are the same fact, so they must be the same control. */}
+        <div data-tour="stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <StatTile label={filter === 'all' ? 'Dossiers suivis' : 'Tous les dossiers'}
+                    value={totals.count ?? 0} delay={80}
+                    active={filter === 'all'} onClick={() => applyFilter('all')} />
           <StatTile label="Action requise" value={totals.red ?? 0} tone="danger" delay={140}
-                    onClick={() => navigate('/cabinet/cas')} />
-          <StatTile label="À vérifier" value={totals.amber ?? 0} tone="warn" delay={200} />
-          <StatTile label="Conformes" value={totals.green ?? 0} tone="ok" delay={260} />
+                    active={filter === 'red'} onClick={() => applyFilter('red')} />
+          <StatTile label="À vérifier" value={totals.amber ?? 0} tone="warn" delay={200}
+                    active={filter === 'amber'} onClick={() => applyFilter('amber')} />
+          <StatTile label="Conformes" value={totals.green ?? 0} tone="ok" delay={260}
+                    active={filter === 'green'} onClick={() => applyFilter('green')} />
         </div>
+        {filter !== 'all' && (
+          <div className="mb-4 flex items-center gap-2">
+            <span key={`f-${filter}-${shownClients.length}`}
+                  style={{ fontSize: 12, color: MC.ink2 }}>
+              {`Filtre : ${FILTERS[filter].label} — ${shownClients.length} dossier(s)`}
+            </span>
+            <button onClick={() => applyFilter('all')}
+                    style={{ fontSize: 11.5, fontWeight: 700, color: MC.indigo, cursor: 'pointer',
+                             background: 'rgba(124,124,248,.14)', border: '1px solid rgba(124,124,248,.35)',
+                             borderRadius: 999, padding: '3px 10px' }}>
+              ✕ Tout afficher
+            </button>
+          </div>
+        )}
 
         {/* alerts feed */}
-        {alerts.length > 0 && (
+        {shownAlerts.length > 0 && (
           <Panel title="À traiter en priorité" delay={320} className="mb-5" tone="warn"
-                 right={<button onClick={load} style={{ color: MC.ink3 }}><RefreshCw size={15} /></button>}>
+                 right={<button onClick={load} style={{ color: MC.ink3 }} aria-label="Rafraîchir"><RefreshCw size={15} /></button>}>
+            <div data-tour="priority">
             <ul className="space-y-2">
-              {alerts.slice(0, 8).map((a, i) => (
+              {shownAlerts.slice(0, 8).map((a, i) => (
                 <li key={i} className="flex items-center gap-2 text-[13px]">
                   <AlertTriangle size={13} style={{ color: statusColor[a.level] || MC.amber }} className="shrink-0" />
                   <button onClick={() => openClient(a.tenant_id)}
@@ -414,22 +412,26 @@ export default function CabinetDashboard() {
                 </li>
               ))}
             </ul>
+            </div>
           </Panel>
         )}
 
         {/* client list */}
-        <Panel delay={380} data-tour="dossiers"
-               title={`Mes dossiers (${totals.count ?? 0})`}>
+        <Panel delay={380}
+               title={filter === 'all' ? `Mes dossiers (${totals.count ?? 0})`
+                                       : `${FILTERS[filter].label} (${shownClients.length})`}>
           <div data-tour="dossiers">
           {loading ? (
             <div className="py-10 text-center text-sm" style={{ color: MC.ink3 }}>Chargement…</div>
-          ) : (data?.clients || []).length === 0 ? (
+          ) : shownClients.length === 0 ? (
             <div className="py-10 text-center text-sm" style={{ color: MC.ink3 }}>
-              Aucun dossier lié. Importez votre liste de clients, ou ajoutez-en un.
+              {filter === 'all'
+                ? 'Aucun dossier lié. Importez votre liste de clients, ou ajoutez-en un.'
+                : 'Aucun dossier dans cette catégorie.'}
             </div>
           ) : (
             <div className="space-y-2">
-              {data.clients.map((c, idx) => {
+              {shownClients.map((c, idx) => {
                 const dot = statusColor[c.band] || MC.amber;
                 return (
                   <button key={c.tenant_id} onClick={() => openClient(c.tenant_id)}
@@ -620,7 +622,9 @@ export default function CabinetDashboard() {
                          }
                        }} />
       )}
-      </div>
+      </div>{/* flex-1 main column */}
+      </div>{/* flex row with sidebar */}
+      </div>{/* relative */}
     </div>
   );
 }
