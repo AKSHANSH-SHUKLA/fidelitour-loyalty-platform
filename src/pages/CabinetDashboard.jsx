@@ -531,6 +531,12 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                      subs, onNewSub, onToggleSub, onRunBilling }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
+  // Hub navigation (façon MyFiteco): the dossier opens on CARDS, one per "room".
+  // Clicking a card shows ONLY that room, with a back button. No more stacking.
+  const [room, setRoom] = useState(null);
+  const [agentN, setAgentN] = useState(0);
+  const ROOM_TITLES = { agent: "L'agent a préparé", ventes: 'Ventes (factures client)',
+                        pieces: 'Pièces attendues', abos: 'Abonnements' };
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
          style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
@@ -565,8 +571,56 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             <button onClick={onClose} className="text-[#8B8680]"><X size={20} /></button>
           </div>
         </div>
+
+        {/* ── The HUB: cards with counters, one per room ─────────────────── */}
+        {room !== null && (
+          <div className="px-5 pt-3 pb-1 flex items-center gap-3">
+            <button onClick={() => setRoom(null)}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-xl border"
+                    style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+              ← Retour au dossier
+            </button>
+            <span className="text-sm font-bold text-[#1C1917]">{ROOM_TITLES[room]}</span>
+          </div>
+        )}
+        {room === null && (
+          <div className="p-5">
+            {(s.alerts || []).length > 0 && (
+              <ul className="space-y-1 mb-4">
+                {s.alerts.slice(0, 3).map((a, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs">
+                    <AlertTriangle size={13} style={{ color: BAND[a.level]?.c }} />
+                    <LiveText className="text-[#44403C]">{a.message}</LiveText>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="grid md:grid-cols-2 gap-3">
+              <HubCard icon="🤖" title="L'agent a préparé" desc="écritures, rapprochements, conseils — à valider"
+                       badge={agentN} accent onClick={() => setRoom('agent')} />
+              <HubCard icon="📤" title="Ventes (factures client)" desc="créer, envoyer, suivre les paiements"
+                       count={(data.invoices || []).length}
+                       badge={(data.invoices || []).filter((i) => i.review_status !== 'validated').length}
+                       onClick={() => setRoom('ventes')} />
+              <HubCard icon="📨" title="Pièces attendues" desc="l'agent relance le client tout seul"
+                       badge={(docReqs?.requests || []).filter((r) => r.status === 'pending').length}
+                       onClick={() => setRoom('pieces')} />
+              <HubCard icon="🔁" title="Abonnements" desc="« chaque mois, le X, facturer Y à Z »"
+                       count={(subs || []).length} onClick={() => setRoom('abos')} />
+            </div>
+            <button onClick={() => setRoom('agent')}
+                    className="mt-4 w-full text-sm font-semibold py-3 rounded-2xl text-white"
+                    style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
+              📷 Photographier une facture — l'agent la lit et la range
+            </button>
+            <div className="mt-3 text-center text-[11px] text-[#8B8680]">
+              Chaque carte est une pièce du dossier — cliquez pour entrer, « Retour » pour ressortir.
+            </div>
+          </div>
+        )}
+
         {/* S12 — pièces manquantes: what the agent is chasing for this client */}
-        {docReqs && (
+        {room === 'pieces' && docReqs && (
           <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
             <GuideBox
               title="Pièces manquantes — comment ça marche ?"
@@ -631,11 +685,17 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
           </div>
         )}
 
-        {/* Chapter 4 + 8 + TVA — the agent's autonomous work for this dossier */}
-        {s.tenant_id && <AgentToolsPanel tenantId={s.tenant_id} onToast={onToast} />}
+        {/* Chapter 4 + 8 + TVA — the agent's autonomous work for this dossier.
+            Always mounted (so the hub badge knows the count on first open),
+            but only VISIBLE in the 'agent' room. */}
+        {s.tenant_id && (
+          <div style={{ display: room === 'agent' ? 'block' : 'none' }}>
+            <AgentToolsPanel tenantId={s.tenant_id} onToast={onToast} onCounts={setAgentN} />
+          </div>
+        )}
 
         {/* S13 — abonnements: the standing instructions the agent executes */}
-        {subs !== null && (
+        {room === 'abos' && subs !== null && (
           <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-bold text-[#1C1917]">Abonnements (facturation récurrente)</div>
@@ -691,7 +751,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             with the business, but in practice the accountant is the one who
             tracks the deadline — so both sides get the button, and the audit log
             records who actually pressed it. */}
-        {onActFor && (
+        {room === 'ventes' && onActFor && (
           <div className="px-5 pt-4 flex flex-wrap gap-2 border-b pb-4" style={{ borderColor: '#F2ECE0' }}>
             {onNewInvoice && (
               <button onClick={() => onNewInvoice(s.tenant_id)}
@@ -726,6 +786,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
           </div>
         )}
 
+        {room === 'ventes' && (
         <div className="p-5">
           {(s.alerts || []).length > 0 && (
             <ul className="space-y-1.5 mb-4">
@@ -814,7 +875,32 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             </>
           )}
         </div>
+        )}
       </div>
     </div>
+  );
+}
+
+/** One "room" card on the dossier hub — icon, label, counter, badge. */
+function HubCard({ icon, title, desc, count, badge, accent, onClick }) {
+  return (
+    <button onClick={onClick}
+            className="flex items-center gap-3 text-left rounded-2xl border p-4 bg-white hover:shadow transition"
+            style={{ borderColor: accent ? '#7A3E70' : '#E7E1D5', borderWidth: accent ? 2 : 1 }}>
+      <span className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+            style={{ background: 'rgba(78,31,68,.08)' }}>{icon}</span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm font-bold text-[#1C1917]">{title}</span>
+        <span className="block text-[11px] text-[#8B8680] truncate">{desc}</span>
+      </span>
+      {badge > 0 && (
+        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
+              style={{ background: 'rgba(192,57,43,.12)', color: '#C0392B' }}>{badge}</span>
+      )}
+      {!(badge > 0) && (count ?? null) !== null && (
+        <span className="text-xs font-semibold text-[#57534E] shrink-0">{count}</span>
+      )}
+      <ChevronRight size={16} style={{ color: '#C9C2B4' }} className="shrink-0" />
+    </button>
   );
 }

@@ -18,7 +18,7 @@ const GREY = { borderColor: '#E7E1D5', color: '#57534E' };
 
 function money(n) { return (Number(n) || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'; }
 
-export default function AgentToolsPanel({ tenantId, onToast }) {
+export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
   const [saisie, setSaisie] = useState([]);
   const [conseils, setConseils] = useState([]);
   const [notes, setNotes] = useState([]);
@@ -52,6 +52,12 @@ export default function AgentToolsPanel({ tenantId, onToast }) {
       setLettrage(lt.data.matches || []);
       setFindings(gd.data.findings || []);
       setRevision((rv.data.reports || [])[0] || null);
+      if (onCounts) {
+        onCounts((se.data.entries || []).filter((x) => x.status === 'proposed').length
+          + (lt.data.matches || []).filter((x) => x.status === 'proposed').length
+          + (co.data.conseils || []).filter((x) => x.status === 'open').length
+          + (gd.data.findings || []).filter((x) => x.status === 'open').length);
+      }
     } catch { /* non-fatal */ }
   };
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [tenantId]);
