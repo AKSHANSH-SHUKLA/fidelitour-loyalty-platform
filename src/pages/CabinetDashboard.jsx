@@ -268,38 +268,42 @@ export default function CabinetDashboard() {
         )}
 
         {/* totals */}
-        {/* Ma journée — role-aware greeting: who I am, what needs ME today. */}
-        <div className="bg-white border rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap"
+        {/* Ma journée — role-aware greeting. KEYED by its dynamic content so a
+            change REMOUNTS the subtree — the page translator replaces text
+            nodes in place, and React's insertBefore crashes if we patch them
+            (same bug LiveText fixes; here the whole card is the unit). */}
+        <div key={`hero-${me?.membership?.full_name || me?.full_name || ''}-${me?.membership?.role || me?.role || ''}-${reviewCount}`}
+             className="bg-white border rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap"
              style={{ borderColor: '#E7E1D5' }}>
           <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0"
                style={{ background: 'rgba(78,31,68,.08)', color: '#4E1F44' }}>
-            {String(me?.membership?.full_name || me?.full_name || 'C').charAt(0).toUpperCase()}
+            <LiveText>{String(me?.membership?.full_name || me?.full_name || 'C').charAt(0).toUpperCase()}</LiveText>
           </div>
           <div className="flex-1 min-w-[180px]">
-            <div className="font-bold text-sm text-[#1C1917]">
-              Bonjour {me?.membership?.full_name || me?.full_name || ''} 👋
-            </div>
-            <div className="text-[11px] text-[#8B8680]">
-              {{ expert_comptable: 'Expert-comptable', superviseur: 'Superviseur',
-                 collaborateur: 'Collaborateur', assistant: 'Assistant' }[
-                 me?.membership?.role || me?.role] || 'Cabinet'}
-              {' · '}{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </div>
+            <LiveText as="div" className="font-bold text-sm text-[#1C1917]">
+              {`Bonjour ${me?.membership?.full_name || me?.full_name || ''} 👋`}
+            </LiveText>
+            <LiveText as="div" className="text-[11px] text-[#8B8680]">
+              {`${{ expert_comptable: 'Expert-comptable', superviseur: 'Superviseur',
+                    collaborateur: 'Collaborateur', assistant: 'Assistant' }[
+                    me?.membership?.role || me?.role] || 'Cabinet'} · ${
+                 new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+            </LiveText>
           </div>
           {(me?.membership?.role || me?.role) === 'assistant' ? (
-            <span className="text-xs text-[#57534E]">
+            <LiveText as="span" className="text-xs text-[#57534E]">
               📷 Ouvrez un dossier et photographiez les factures — l'agent fait le reste.
-            </span>
+            </LiveText>
           ) : reviewCount > 0 ? (
             <button onClick={() => navigate('/cabinet/revue')}
                     className="text-xs font-semibold px-3 py-2 rounded-xl text-white"
                     style={{ background: '#C0392B' }}>
-              {reviewCount} facture(s) attendent votre validation →
+              <LiveText>{`${reviewCount} facture(s) attendent votre validation →`}</LiveText>
             </button>
           ) : (
-            <span className="text-xs font-semibold" style={{ color: '#2F7A52' }}>
+            <LiveText as="span" className="text-xs font-semibold" style={{ color: '#2F7A52' }}>
               ✓ Rien n'attend votre validation
-            </span>
+            </LiveText>
           )}
         </div>
 
@@ -868,13 +872,15 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
         <div className="p-5">
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(192,57,43,.35)' : '#E7E1D5' }}>
-              <div className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>
-                {unpaidTot.toFixed(0)} €
-              </div>
-              <div className="text-[10.5px] text-[#8B8680]">impayés ({unpaid.length} facture{unpaid.length > 1 ? 's' : ''})</div>
+              <LiveText as="div" className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>
+                {`${unpaidTot.toFixed(0)} €`}
+              </LiveText>
+              <LiveText as="div" className="text-[10.5px] text-[#8B8680]">
+                {`impayés (${unpaid.length} facture${unpaid.length > 1 ? 's' : ''})`}
+              </LiveText>
             </div>
             <div className="rounded-xl border p-3" style={{ borderColor: '#E7E1D5' }}>
-              <div className="text-lg font-extrabold text-[#1C1917]">{(data.invoices || []).length}</div>
+              <LiveText as="div" className="text-lg font-extrabold text-[#1C1917]">{String((data.invoices || []).length)}</LiveText>
               <div className="text-[10.5px] text-[#8B8680]">factures émises</div>
             </div>
             <label className="rounded-xl border p-3 cursor-pointer text-center flex flex-col justify-center"
@@ -1012,7 +1018,9 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
         {room === 'indicateurs' && (
         <div className="p-5">
           <div className="flex items-center gap-4 mb-4">
-            <div className="text-4xl font-extrabold" style={{ color: b.c }}>{s.score}<span className="text-base text-[#8B8680]">/100</span></div>
+            <div className="text-4xl font-extrabold" style={{ color: b.c }}>
+              <LiveText>{String(s.score)}</LiveText><span className="text-base text-[#8B8680]">/100</span>
+            </div>
             <div>
               <div className="text-sm font-bold" style={{ color: b.c }}><LiveText>{b.label}</LiveText></div>
               <div className="text-[11px] text-[#8B8680]">Bouclier fiscal — ce que verrait un contrôle. Indicateur informatif, ni conseil fiscal ni ECF.</div>
@@ -1020,11 +1028,11 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
           </div>
           <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(192,57,43,.35)' : '#E7E1D5' }}>
-              <div className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>{unpaidTot.toFixed(0)} €</div>
+              <LiveText as="div" className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>{`${unpaidTot.toFixed(0)} €`}</LiveText>
               <div className="text-[10.5px] text-[#8B8680]">impayés clients à encaisser</div>
             </div>
             <div className="rounded-xl border p-3" style={{ borderColor: '#E7E1D5' }}>
-              <div className="text-lg font-extrabold text-[#1C1917]">{(data.received || []).length}</div>
+              <LiveText as="div" className="text-lg font-extrabold text-[#1C1917]">{String((data.received || []).length)}</LiveText>
               <div className="text-[10.5px] text-[#8B8680]">pièces d'achat au dossier</div>
             </div>
           </div>
@@ -1066,11 +1074,11 @@ function HubCard({ icon, title, desc, count, badge, accent, onClick }) {
         <span className="block text-[11px] text-[#8B8680] truncate">{desc}</span>
       </span>
       {badge > 0 && (
-        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
-              style={{ background: 'rgba(192,57,43,.12)', color: '#C0392B' }}>{badge}</span>
+        <LiveText className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
+              style={{ background: 'rgba(192,57,43,.12)', color: '#C0392B' }}>{String(badge)}</LiveText>
       )}
       {!(badge > 0) && (count ?? null) !== null && (
-        <span className="text-xs font-semibold text-[#57534E] shrink-0">{count}</span>
+        <LiveText className="text-xs font-semibold text-[#57534E] shrink-0">{String(count)}</LiveText>
       )}
       <ChevronRight size={16} style={{ color: '#C9C2B4' }} className="shrink-0" />
     </button>
