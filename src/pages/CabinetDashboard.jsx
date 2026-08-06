@@ -121,6 +121,21 @@ export default function CabinetDashboard() {
   const [showDemo, setShowDemo] = useState(false);
   const [filter, setFilter] = useState('all');       // stat tiles filter the list
   const [sidebarOpen, toggleSidebar] = useSidebar();
+  // Which sidebar entry is lit. On this route only "Accueil" and "Mes dossiers"
+  // are reachable (the others navigate away), so it is local state, not a route.
+  const [navSel, setNavSel] = useState('home');
+
+  // The sidebar lives on every cabinet page, but the demo, the tour and the
+  // "new client" form only exist here — so from another page those entries
+  // navigate back with a flag, which we consume once and strip from the URL.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (!q.has('demo') && !q.has('tour') && !q.has('new')) return;
+    if (q.has('demo')) setShowDemo(true);
+    if (q.has('tour')) setShowTour(true);
+    if (q.has('new')) setShowNewClient(true);
+    window.history.replaceState({}, '', '/cabinet');
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -262,10 +277,10 @@ export default function CabinetDashboard() {
       <div className="relative">
       <div className="flex">
       <Sidebar
-        open={sidebarOpen} onToggle={toggleSidebar} active="home" canOnboard={canOnboard}
+        open={sidebarOpen} onToggle={toggleSidebar} active={navSel} canOnboard={canOnboard}
         counts={{ dossiers: totals.count ?? 0, review: reviewCount, cases: openCases }}
-        onHome={() => { setFilter('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-        onDossiers={() => { setFilter('all');
+        onHome={() => { setNavSel('home'); setFilter('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        onDossiers={() => { setNavSel('dossiers'); setFilter('all');
           document.querySelector('[data-tour="dossiers"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
         onReview={() => navigate('/cabinet/revue')}
         onCases={() => navigate('/cabinet/cas')}

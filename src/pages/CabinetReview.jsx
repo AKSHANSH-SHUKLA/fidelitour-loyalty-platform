@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, RefreshCw, ShieldAlert } from 'lucide-react';
+import { RefreshCw, ShieldAlert } from 'lucide-react';
 import { comptableAPI, facturationAPI, cabinetOsAPI } from '../lib/api';
 import LiveText from '../components/LiveText';
+import CabinetShell from '../components/cabinet/CabinetShell';
+import { MC, glass } from '../components/cabinet/mc';
+import { Panel, Pill, McButton, Rise } from '../components/cabinet/Primitives';
 
 /**
  * CabinetReview — the review queue (route: /cabinet/revue).
@@ -17,9 +19,11 @@ import LiveText from '../components/LiveText';
  *   If validating a row would violate the seuil rule FOR ME (I prepared it
  *   and it is at/above the cabinet threshold), the button is disabled with
  *   the reason — the rule teaches itself instead of bouncing a click.
+ *
+ * It sits inside CabinetShell so the sidebar, the palette and the ambient
+ * canvas are the same object as on every other cabinet screen.
  */
 export default function CabinetReview() {
-  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [me, setMe] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -64,116 +68,108 @@ export default function CabinetReview() {
 
   const isEC = ['admin', 'expert_comptable'].includes(me?.membership?.role);
   const canValidate = me?.can?.validate;
+  const queue = data?.queue || [];
 
   return (
-    <div className="min-h-screen" style={{
-      background: 'radial-gradient(1200px 500px at 85% -10%, rgba(47,122,82,.06), transparent 60%), #FBF7EF',
-    }}>
-      <header className="flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate('/cabinet')} className="text-[#57534E] hover:text-[#1C1917] mr-1">
-            <ArrowLeft size={20} />
-          </button>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-               style={{ background: 'linear-gradient(135deg,#2F7A52,#1D4D33)' }}>
-            <CheckCircle2 size={16} color="#fff" />
-          </div>
-          <span className="font-bold text-[#1C1917]">À valider</span>
-          {data && (
-            <LiveText className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ color: '#2F7A52', background: 'rgba(63,156,107,.12)' }}>
-              {String(data.count)}
-            </LiveText>
-          )}
+    <CabinetShell
+      title="À valider"
+      subtitle="La file de revue du cabinet — la plus ancienne d'abord, c'est l'ordre dans lequel on doit travailler."
+      headerRight={
+        <>
+          {data && <Pill tone={data.count ? 'warn' : 'ok'}>{`${data.count} en attente`}</Pill>}
+          <McButton variant="ghost" size="sm" onClick={load} title="Rafraîchir">
+            <RefreshCw size={14} style={{ display: 'inline', verticalAlign: '-2px' }} />
+          </McButton>
+        </>
+      }>
+
+      {toast && (
+        <div className="mb-4 rounded-2xl px-4 py-3 text-sm"
+             style={toast.ok
+               ? { background: 'rgba(61,220,151,.12)', border: '1px solid rgba(61,220,151,.35)', color: MC.green }
+               : { background: 'rgba(255,107,107,.10)', border: '1px solid rgba(255,107,107,.35)', color: MC.red }}>
+          <LiveText>{(toast.ok ? '✓ ' : '⚠ ') + toast.msg}</LiveText>
         </div>
-        <button onClick={load} className="text-[#8B8680] hover:text-[#1C1917]"><RefreshCw size={16} /></button>
-      </header>
+      )}
 
-      <main className="max-w-4xl mx-auto px-4 pb-16">
-        {toast && (
-          <div className="mb-4 rounded-2xl px-4 py-3 text-sm border"
-               style={toast.ok
-                 ? { background: 'rgba(63,156,107,.10)', borderColor: 'rgba(63,156,107,.35)', color: '#2F7A52' }
-                 : { background: 'rgba(192,57,43,.08)', borderColor: 'rgba(192,57,43,.30)', color: '#C0392B' }}>
-            <LiveText>{(toast.ok ? '✓ ' : '⚠ ') + toast.msg}</LiveText>
-          </div>
-        )}
-
-        {/* four-eyes policy strip */}
-        <div className="rounded-2xl bg-white border px-4 py-3 mb-5 flex items-center gap-3 flex-wrap"
-             style={{ borderColor: '#ECE3D2' }}>
-          <ShieldAlert size={16} style={{ color: '#B8860B' }} />
-          <div className="text-xs text-[#57534E] flex-1 min-w-[220px]">
+      {/* four-eyes policy strip — the rule stated where it is enforced */}
+      <Panel tone="warn" className="mb-4">
+        <div className="flex items-start gap-3 flex-wrap">
+          <ShieldAlert size={16} style={{ color: MC.amber, marginTop: 2 }} />
+          <div style={{ fontSize: 12.5, color: MC.ink2, lineHeight: 1.6, flex: 1, minWidth: 240 }}>
             <LiveText>
               {`Règle des quatre yeux : au-delà de ${data?.seuil ?? 1000} € TTC, une facture doit être validée par une autre personne que celle qui l'a préparée. En dessous, l'auto-validation est autorisée mais marquée dans l'historique.`}
             </LiveText>
           </div>
           {isEC && (
             <div className="flex items-center gap-2">
-              <input className="fld-sm w-24" placeholder={String(data?.seuil ?? 1000)}
+              <input className="fld-mc w-24" placeholder={String(data?.seuil ?? 1000)}
                      value={seuilDraft} onChange={(e) => setSeuilDraft(e.target.value)} />
-              <button onClick={saveSeuil} disabled={!seuilDraft}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-40"
-                      style={{ background: '#2F7A52' }}>
+              <McButton size="sm" onClick={saveSeuil} disabled={!seuilDraft}
+                        style={!seuilDraft ? { opacity: .4 } : undefined}>
                 Changer le seuil
-              </button>
+              </McButton>
             </div>
           )}
         </div>
+      </Panel>
 
-        <div className="space-y-2.5">
-          {(data?.queue || []).length === 0 ? (
-            <div className="rounded-3xl bg-white border px-5 py-12 text-center text-sm text-[#8B8680]"
-                 style={{ borderColor: '#ECE3D2' }}>
-              Rien à valider — la corbeille est vide. 🎉
+      <div className="space-y-2.5">
+        {queue.length === 0 ? (
+          <Rise>
+            <div style={{ ...glass('ok'), padding: '44px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: MC.green, marginBottom: 4 }}>
+                Rien à valider
+              </div>
+              <div style={{ fontSize: 12.5, color: MC.ink3 }}>
+                La file est vide — les agents n'ont rien laissé en attente.
+              </div>
             </div>
-          ) : data.queue.map((inv) => (
-            <div key={inv.id} className="rounded-2xl bg-white border p-4"
-                 style={{ borderColor: inv.four_eyes_blocked_for_me ? 'rgba(184,134,11,.45)' : '#ECE3D2' }}>
+          </Rise>
+        ) : queue.map((inv, i) => (
+          <Rise key={inv.id} delay={i * 40}>
+            <div style={{ ...glass(inv.four_eyes_blocked_for_me ? 'warn' : undefined), padding: 15 }}>
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-[#1C1917]">{inv.number}</span>
-                    <LiveText className="text-xs text-[#57534E]">{inv.client_name || ''}</LiveText>
-                    <span className="text-xs font-semibold text-[#1C1917]">
-                      {Number(inv.total_ttc).toLocaleString('fr-FR')} € TTC
+                    <span key={inv.number} style={{ fontWeight: 700, color: MC.ink, fontSize: 14 }}>{inv.number}</span>
+                    <LiveText style={{ fontSize: 12.5, color: MC.ink2 }}>{inv.client_name || ''}</LiveText>
+                    <span key={`amt-${inv.id}`} style={{ fontSize: 12.5, fontWeight: 700, color: MC.ink,
+                      fontVariantNumeric: 'tabular-nums' }}>
+                      {`${Number(inv.total_ttc).toLocaleString('fr-FR')} € TTC`}
                     </span>
                     {inv.four_eyes_blocked_for_me && (
-                      <LiveText className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                                style={{ color: '#B8860B', background: 'rgba(184,134,11,.12)' }}>
-                        Quatre yeux — préparée par vous
-                      </LiveText>
+                      <Pill tone="warn">Quatre yeux — préparée par vous</Pill>
                     )}
                   </div>
-                  <div className="text-[11px] text-[#8B8680] mt-0.5">
+                  <div style={{ fontSize: 11, color: MC.ink3, marginTop: 3 }}>
                     <LiveText>{`Préparée par ${inv.created_by_label || inv.created_by || '—'} · ${inv.date || ''} · statut PA : ${inv.pa_status || '—'}`}</LiveText>
                   </div>
                 </div>
                 {canValidate && (
                   <div className="flex gap-2">
-                    <button disabled={busy === inv.id || inv.four_eyes_blocked_for_me}
-                            title={inv.four_eyes_blocked_for_me
-                              ? 'Vous avez préparé cette facture — un autre validateur est requis.' : ''}
-                            onClick={() => act(inv, 'validated')}
-                            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-40"
-                            style={{ background: '#2F7A52' }}>
+                    <McButton size="sm" variant="ok"
+                              disabled={busy === inv.id || inv.four_eyes_blocked_for_me}
+                              style={(busy === inv.id || inv.four_eyes_blocked_for_me) ? { opacity: .4 } : undefined}
+                              title={inv.four_eyes_blocked_for_me
+                                ? 'Vous avez préparé cette facture — un autre validateur est requis.' : ''}
+                              onClick={() => act(inv, 'validated')}>
                       Valider
-                    </button>
-                    <button disabled={busy === inv.id}
-                            onClick={() => act(inv, 'correction_required')}
-                            className="text-xs px-3 py-1.5 rounded-lg border disabled:opacity-50"
-                            style={{ borderColor: 'rgba(192,57,43,.4)', color: '#C0392B' }}>
+                    </McButton>
+                    <McButton size="sm" variant="ghost" disabled={busy === inv.id}
+                              style={busy === inv.id ? { opacity: .5 } : { color: MC.red, borderColor: 'rgba(255,107,107,.35)' }}
+                              onClick={() => act(inv, 'correction_required')}>
                       Demander correction
-                    </button>
+                    </McButton>
                   </div>
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      </main>
+          </Rise>
+        ))}
+      </div>
 
-      <style>{`.fld-sm{border:1px solid #E7E1D5;border-radius:10px;padding:6px 10px;font-size:12px;color:#1C1917;background:#FCFAF5;outline:none}.fld-sm:focus{border-color:#2F7A52}`}</style>
-    </div>
+      <style>{`.fld-mc{border:1px solid ${MC.stroke};border-radius:10px;padding:6px 10px;font-size:12px;color:${MC.ink};background:rgba(255,255,255,.05);outline:none}.fld-mc:focus{border-color:${MC.indigo}}.fld-mc::placeholder{color:${MC.ink3}}`}</style>
+    </CabinetShell>
   );
 }

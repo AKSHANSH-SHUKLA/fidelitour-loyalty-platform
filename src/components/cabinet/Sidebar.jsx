@@ -106,12 +106,13 @@ export default function Sidebar({
       <Item icon={LayoutDashboard} label="Accueil" open={open} active={active === 'home'}
             onClick={onHome} tourId="nav-home" />
       <Item icon={FolderOpen} label="Mes dossiers" open={open} badge={counts.dossiers}
-            badgeTone="accent" onClick={onDossiers} tourId="nav-dossiers" />
+            badgeTone="accent" active={active === 'dossiers'} onClick={onDossiers} tourId="nav-dossiers" />
       <Item icon={CheckCircle2} label="À valider" open={open} badge={counts.review}
-            badgeTone="ok" onClick={onReview} tourId="nav-review" />
+            badgeTone="ok" active={active === 'review'} onClick={onReview} tourId="nav-review" />
       <Item icon={AlertTriangle} label="Cas ouverts" open={open} badge={counts.cases}
-            onClick={onCases} tourId="nav-cases" />
-      <Item icon={Users} label="Mon équipe" open={open} onClick={onTeam} tourId="nav-team" />
+            active={active === 'cases'} onClick={onCases} tourId="nav-cases" />
+      <Item icon={Users} label="Mon équipe" open={open} active={active === 'team'}
+            onClick={onTeam} tourId="nav-team" />
 
       <GroupLabel open={open}>Données</GroupLabel>
       {canOnboard && (
