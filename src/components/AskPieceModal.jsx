@@ -7,6 +7,7 @@
  * can't be avoided (email/phone/precision).
  */
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 const PIECES = [
   'Relevé bancaire',
@@ -136,17 +137,17 @@ export default function AskPieceModal({ clientName, onClose, onSubmit }) {
           </div>
         </div>
 
+        {/* shadcn/ui Button — first live use of the design-system layer.
+            Keeps FidClic's blue via className so nothing looks off-brand. */}
         <div className="px-5 pb-5 flex gap-2">
-          <button onClick={onClose}
-                  className="flex-1 text-sm font-semibold py-2.5 rounded-xl border"
-                  style={{ borderColor: '#E0DCE8', color: '#57534E' }}>
+          <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl">
             Annuler
-          </button>
-          <button onClick={submit} disabled={busy || (piece === 'Autre…' && !autre.trim())}
-                  className="flex-1 text-sm font-semibold py-2.5 rounded-xl text-white disabled:opacity-50"
+          </Button>
+          <Button onClick={submit} disabled={busy || (piece === 'Autre…' && !autre.trim())}
+                  className="flex-1 rounded-xl text-white hover:opacity-90"
                   style={{ background: '#2F6FB3' }}>
             {busy ? 'Enregistrement…' : 'Demander la pièce'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
