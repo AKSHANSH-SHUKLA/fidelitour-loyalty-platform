@@ -1167,9 +1167,12 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             Four, not five. The fifth was "Plus", whose contents were already on
             Synthèse; a tab that leads somewhere you can already reach costs a
             decision and returns nothing. Synthèse now IS the "everything" tab.  */}
-        <div className="sticky bottom-0 z-10 mc-surface px-2 pt-1.5 grid grid-cols-4 mt-auto"
+        <div className="sticky bottom-0 z-10 mc-surface mt-auto"
              style={{ borderTop: `1px solid ${MC.stroke}`,
                       paddingBottom: 'max(6px, env(safe-area-inset-bottom))' }}>
+        {/* The bar tracks the content column. Full-bleed on desktop turned each
+            tab into a 370px slab, which reads as a toolbar, not a tab bar. */}
+        <div className="w-full max-w-2xl mx-auto px-2 pt-1.5 grid grid-cols-4">
           {[[null, '🗂️', 'Synthèse'], ['achats', '🛒', 'Achats'],
             ['ventes', '📤', 'Ventes'], ['agent', '🤖', 'Agent']].map(([r, ic, lb]) => {
             // A sub-room opened from the hub keeps Synthèse lit — you are still
@@ -1187,6 +1190,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
               </button>
             );
           })}
+        </div>
         </div>
       </div>
 
@@ -1247,9 +1251,14 @@ function DossierSkin() {
       .hub-card:hover{transform:translateY(-2px);background:${MC.glassStrong}}
       .hub-card:active{transform:scale(.99)}
       [class*="divide-y"] > * + *{border-top-color:${MC.stroke} !important}
-      .fld,.fld-sm,input,select,textarea{color-scheme:dark}
+      /* Any control the room markup renders, whatever class it carries. A single
+         white select in a dark sheet is the thing the eye lands on first. */
+      input,select,textarea{color-scheme:dark;background:rgba(255,255,255,.06);
+        color:${MC.ink};border:1px solid ${MC.stroke};border-radius:10px}
+      input:focus,select:focus,textarea:focus{outline:none;border-color:${MC.indigo}}
       input::placeholder,textarea::placeholder{color:${MC.ink3}}
       select option{background:#0D1428;color:${MC.ink}}
+      input[type=file]{background:none;border:none}
     `}</style>
   );
 }
