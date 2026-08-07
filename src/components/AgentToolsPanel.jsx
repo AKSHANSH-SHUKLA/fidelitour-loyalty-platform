@@ -12,9 +12,9 @@ import { useEffect, useState } from 'react';
 import { cabinetOsAPI } from '../lib/api';
 import GuideBox from './GuideBox';
 
-const CARD = { borderColor: '#F2ECE0' };
-const PLUM = { borderColor: '#D8CBB8', color: '#4E1F44' };
-const GREY = { borderColor: '#E7E1D5', color: '#57534E' };
+const CARD = { borderColor: 'rgba(255,255,255,.10)' };
+const PLUM = { borderColor: 'rgba(255,255,255,.18)', color: '#C77DFF' };
+const GREY = { borderColor: 'rgba(255,255,255,.10)', color: '#B9C2D6' };
 
 function money(n) { return (Number(n) || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €'; }
 
@@ -255,8 +255,8 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
 
   return (
     <div className="px-5 pt-4 pb-4 border-b" style={CARD}>
-      <div className="text-sm font-bold text-[#1C1917] mb-3">
-        L'agent FidClic <span className="text-[11px] font-normal text-[#8B8680]">— il prépare, vous validez</span>
+      <div className="text-sm font-bold text-[#F8FAFC] mb-3">
+        L'agent FidClic <span className="text-[11px] font-normal text-[#7C879F]">— il prépare, vous validez</span>
       </div>
 
       <GuideBox
@@ -274,19 +274,19 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
       {/* Multi-PA — chaque client sur SA plateforme agréée */}
       {paList.length > 0 && (
         <div className="mb-4 flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-[#57534E]">Plateforme (PA) du client :</span>
+          <span className="text-xs font-semibold text-[#B9C2D6]">Plateforme (PA) du client :</span>
           <select value={pa} onChange={(e) => changePa(e.target.value)}
-                  className="text-xs border rounded-lg px-2 py-1" style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+                  className="text-xs border rounded-lg px-2 py-1" style={{ borderColor: 'rgba(255,255,255,.18)', color: '#C77DFF' }}>
             <option value="">— choisir —</option>
             {paList.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
-          <span className="text-[10px] text-[#8B8680]">FidClic route chaque client vers SA PA automatiquement.</span>
+          <span className="text-[10px] text-[#7C879F]">FidClic route chaque client vers SA PA automatiquement.</span>
         </div>
       )}
 
       {/* Import / récupération de données */}
       <div className="mb-4">
-        <div className="text-xs font-semibold text-[#57534E] mb-2">Données du dossier</div>
+        <div className="text-xs font-semibold text-[#B9C2D6] mb-2">Données du dossier</div>
         <div className="flex gap-2 flex-wrap">
           <label className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer" style={PLUM}>
             {busy === 'imp-inv' ? 'Import…' : '⬆︎ Importer factures (CSV/FEC/XLSX/XML)'}
@@ -306,7 +306,7 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
       {/* Chapter 4 — OCR + Saisie */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-semibold text-[#57534E]">Factures fournisseurs (OCR + saisie)</div>
+          <div className="text-xs font-semibold text-[#B9C2D6]">Factures fournisseurs (OCR + saisie)</div>
           <div className="flex gap-2">
             <label className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer"
                    style={PLUM}>
@@ -320,19 +320,19 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
           </div>
         </div>
         {pendingSaisie.length === 0 ? (
-          <div className="text-xs text-[#8B8680]">Aucune écriture en attente. Lisez une facture, puis « Proposer les écritures ».</div>
+          <div className="text-xs text-[#7C879F]">Aucune écriture en attente. Lisez une facture, puis « Proposer les écritures ».</div>
         ) : (
           <div className="space-y-1.5">
             {pendingSaisie.map((e) => (
               <div key={e.id} className="flex items-center gap-2 text-xs flex-wrap">
-                <span className="font-semibold text-[#1C1917]">{e.supplier || 'Fournisseur'}</span>
-                <span className="text-[#8B8680]">{e.piece_ref}</span>
-                <span className={e.balanced ? 'text-[#2F7A52]' : 'text-[#C0392B]'}>
+                <span className="font-semibold text-[#F8FAFC]">{e.supplier || 'Fournisseur'}</span>
+                <span className="text-[#7C879F]">{e.piece_ref}</span>
+                <span className={e.balanced ? 'text-[#3DDC97]' : 'text-[#FF6B6B]'}>
                   {e.balanced ? 'équilibrée' : 'déséquilibrée'} · {money(e.total_debit)}
                 </span>
                 <button onClick={() => validate(e.id)}
                         className="ml-auto text-[10px] font-semibold px-2 py-1 rounded-lg border"
-                        style={{ borderColor: 'rgba(63,156,107,.4)', color: '#2F7A52' }}>
+                        style={{ borderColor: 'rgba(61,220,151,.4)', color: '#3DDC97' }}>
                   Valider ✓
                 </button>
               </div>
@@ -344,7 +344,7 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
       {/* Chapter 8 — Le Conseiller + La Mémoire */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-semibold text-[#57534E]">Le Conseiller (opportunités) &amp; La Mémoire</div>
+          <div className="text-xs font-semibold text-[#B9C2D6]">Le Conseiller (opportunités) &amp; La Mémoire</div>
           <div className="flex gap-2">
             <button onClick={addNote} className="text-xs px-2.5 py-1.5 rounded-lg border" style={GREY}>+ Note</button>
             <button onClick={runConseiller} disabled={busy === 'conseil'}
@@ -354,16 +354,16 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
           </div>
         </div>
         {openConseils.length === 0 ? (
-          <div className="text-xs text-[#8B8680]">Aucune opportunité en attente.</div>
+          <div className="text-xs text-[#7C879F]">Aucune opportunité en attente.</div>
         ) : (
           <div className="space-y-1.5">
             {openConseils.map((c) => (
               <div key={c.id} className="text-xs rounded-lg p-2" style={{ background: 'rgba(224,169,43,.08)' }}>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#1C1917]">{c.title}</span>
-                  <button onClick={() => dismiss(c.id)} className="ml-auto text-[10px] text-[#8B8680]">Ignorer</button>
+                  <span className="font-semibold text-[#F8FAFC]">{c.title}</span>
+                  <button onClick={() => dismiss(c.id)} className="ml-auto text-[10px] text-[#7C879F]">Ignorer</button>
                 </div>
-                <div className="text-[#57534E] mt-0.5">{c.message}</div>
+                <div className="text-[#B9C2D6] mt-0.5">{c.message}</div>
               </div>
             ))}
           </div>
@@ -372,7 +372,7 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
           <div className="mt-2 flex flex-wrap gap-1.5">
             {notes.map((n) => (
               <span key={n.id} className="text-[10px] px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(87,83,78,.08)', color: '#57534E' }}
+                    style={{ background: 'rgba(87,83,78,.08)', color: '#B9C2D6' }}
                     title={n.kind}>📌 {n.text}</span>
             ))}
           </div>
@@ -382,23 +382,23 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
       {/* Le Lettrage — rapprochement bancaire */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-semibold text-[#57534E]">Le Lettrage (rapprochement bancaire)</div>
+          <div className="text-xs font-semibold text-[#B9C2D6]">Le Lettrage (rapprochement bancaire)</div>
           <button onClick={runLettrage} disabled={busy === 'lettrage'}
                   className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border" style={PLUM}>
             🤖 Rapprocher
           </button>
         </div>
         {pendingLettrage.length === 0 ? (
-          <div className="text-xs text-[#8B8680]">Aucun rapprochement en attente.</div>
+          <div className="text-xs text-[#7C879F]">Aucun rapprochement en attente.</div>
         ) : (
           <div className="space-y-1.5">
             {pendingLettrage.map((x) => (
               <div key={x.id} className="flex items-center gap-2 text-xs flex-wrap">
-                <span className="font-semibold text-[#1C1917]">{x.invoice_number}</span>
-                <span className="text-[#8B8680]">{money(x.amount)} · {x.basis} · {Math.round((x.confidence || 0) * 100)}%</span>
+                <span className="font-semibold text-[#F8FAFC]">{x.invoice_number}</span>
+                <span className="text-[#7C879F]">{money(x.amount)} · {x.basis} · {Math.round((x.confidence || 0) * 100)}%</span>
                 <button onClick={() => validateLettrage(x.id)}
                         className="ml-auto text-[10px] font-semibold px-2 py-1 rounded-lg border"
-                        style={{ borderColor: 'rgba(63,156,107,.4)', color: '#2F7A52' }}>
+                        style={{ borderColor: 'rgba(61,220,151,.4)', color: '#3DDC97' }}>
                   Valider ✓
                 </button>
               </div>
@@ -410,24 +410,24 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
       {/* Le Gardien — points de vigilance */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-semibold text-[#57534E]">Le Gardien (points de vigilance)</div>
+          <div className="text-xs font-semibold text-[#B9C2D6]">Le Gardien (points de vigilance)</div>
           <button onClick={runGardien} disabled={busy === 'gardien'}
                   className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border" style={PLUM}>
             🤖 Contrôler
           </button>
         </div>
         {openFindings.length === 0 ? (
-          <div className="text-xs text-[#8B8680]">Aucune anomalie signalée.</div>
+          <div className="text-xs text-[#7C879F]">Aucune anomalie signalée.</div>
         ) : (
           <div className="space-y-1.5">
             {openFindings.map((f) => (
               <div key={f.id} className="text-xs rounded-lg p-2"
-                   style={{ background: f.severity === 'warning' ? 'rgba(192,57,43,.07)' : 'rgba(224,169,43,.08)' }}>
+                   style={{ background: f.severity === 'warning' ? 'rgba(255,107,107,.07)' : 'rgba(224,169,43,.08)' }}>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#1C1917]">{f.title}</span>
-                  <button onClick={() => resolveFinding(f.id)} className="ml-auto text-[10px] text-[#8B8680]">Résoudre</button>
+                  <span className="font-semibold text-[#F8FAFC]">{f.title}</span>
+                  <button onClick={() => resolveFinding(f.id)} className="ml-auto text-[10px] text-[#7C879F]">Résoudre</button>
                 </div>
-                <div className="text-[#57534E] mt-0.5">{f.message}</div>
+                <div className="text-[#B9C2D6] mt-0.5">{f.message}</div>
               </div>
             ))}
           </div>
@@ -437,18 +437,18 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
       {/* Le Réviseur — revue avant validation */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-semibold text-[#57534E]">Le Réviseur (revue avant validation)</div>
+          <div className="text-xs font-semibold text-[#B9C2D6]">Le Réviseur (revue avant validation)</div>
           <button onClick={runRevision} disabled={busy === 'revision'}
                   className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border" style={PLUM}>
             🤖 Réviser
           </button>
         </div>
         {!revision ? (
-          <div className="text-xs text-[#8B8680]">Aucune revue lancée.</div>
+          <div className="text-xs text-[#7C879F]">Aucune revue lancée.</div>
         ) : (
-          <div className="text-xs text-[#57534E]">
-            {revision.reviewed} facture(s) revue(s) · <b className="text-[#2F7A52]">{revision.ready} prête(s)</b> ·
-            <b className="text-[#C0392B]"> {revision.to_fix} à corriger</b>
+          <div className="text-xs text-[#B9C2D6]">
+            {revision.reviewed} facture(s) revue(s) · <b className="text-[#3DDC97]">{revision.ready} prête(s)</b> ·
+            <b className="text-[#FF6B6B]"> {revision.to_fix} à corriger</b>
           </div>
         )}
       </div>
@@ -456,26 +456,26 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
       {/* TVA / CA3 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-semibold text-[#57534E]">TVA / CA3</div>
+          <div className="text-xs font-semibold text-[#B9C2D6]">TVA / CA3</div>
           <button onClick={runTva} disabled={busy === 'tva'}
                   className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border" style={PLUM}>
             🤖 Calculer la TVA
           </button>
         </div>
         {tva.length === 0 ? (
-          <div className="text-xs text-[#8B8680]">Aucune déclaration calculée.</div>
+          <div className="text-xs text-[#7C879F]">Aucune déclaration calculée.</div>
         ) : (
           <div className="space-y-1.5">
             {tva.map((d) => (
               <div key={d.id} className="flex items-center gap-2 text-xs flex-wrap">
-                <span className="text-[#8B8680]">{d.period_start} → {d.period_end}</span>
-                <span className="text-[#8B8680]">collectée {money(d.tva_collectee)} · déductible {money(d.tva_deductible)}</span>
+                <span className="text-[#7C879F]">{d.period_start} → {d.period_end}</span>
+                <span className="text-[#7C879F]">collectée {money(d.tva_collectee)} · déductible {money(d.tva_deductible)}</span>
                 <span className="font-semibold ml-auto"
-                      style={{ color: d.sens === 'a_payer' ? '#C0392B' : '#2F7A52' }}>
+                      style={{ color: d.sens === 'a_payer' ? '#FF6B6B' : '#3DDC97' }}>
                   {d.sens === 'a_payer' ? `à payer ${money(d.tva_nette)}` : `crédit ${money(d.credit_a_reporter)}`}
                 </span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full"
-                      style={{ background: 'rgba(139,134,128,.12)', color: '#57534E' }}>brouillon</span>
+                      style={{ background: 'rgba(139,134,128,.12)', color: '#B9C2D6' }}>brouillon</span>
               </div>
             ))}
           </div>
@@ -488,9 +488,9 @@ export default function AgentToolsPanel({ tenantId, onToast, onCounts }) {
   );
 }
 
-const _L = { display: 'block', fontSize: 12, fontWeight: 600, color: '#57534E', marginBottom: 4 };
-const _I = { width: '100%', border: '1px solid #E0DCE8', borderRadius: 12, padding: '10px 12px',
-             fontSize: 14, background: '#FBFAFE', color: '#1C1917', outline: 'none' };
+const _L = { display: 'block', fontSize: 12, fontWeight: 600, color: '#B9C2D6', marginBottom: 4 };
+const _I = { width: '100%', border: '1px solid rgba(255,255,255,.14)', borderRadius: 12, padding: '10px 12px',
+             fontSize: 14, background: 'rgba(255,255,255,.05)', color: '#F8FAFC', outline: 'none' };
 
 /** Elegant period picker for the CA3 — month or quarter, zero typing. */
 function PeriodModal({ onClose, onSubmit }) {
@@ -519,14 +519,14 @@ function PeriodModal({ onClose, onSubmit }) {
   };
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: '#EFECF6' }}>
+         style={{ background: 'rgba(4,6,15,.82)' }} onClick={onClose}>
+      <div className="mc-surface rounded-3xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'rgba(255,255,255,.08)' }}>
           <span className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                style={{ background: '#E8EDFB' }}>🧮</span>
+                style={{ background: 'rgba(124,124,248,.16)' }}>🧮</span>
           <div>
-            <div className="font-bold text-[15px] text-[#1C1917]">Calculer la TVA (CA3)</div>
-            <div className="text-[11px] text-[#8B8680]">l'agent prépare un brouillon — il ne déclare rien</div>
+            <div className="font-bold text-[15px] text-[#F8FAFC]">Calculer la TVA (CA3)</div>
+            <div className="text-[11px] text-[#7C879F]">l'agent prépare un brouillon — il ne déclare rien</div>
           </div>
         </div>
         <div className="px-5 py-4 space-y-3.5">
@@ -534,9 +534,9 @@ function PeriodModal({ onClose, onSubmit }) {
             {[['mois', 'Par mois'], ['trimestre', 'Par trimestre']].map(([v, l]) => (
               <button key={v} onClick={() => setMode(v)}
                       className="flex-1 text-xs font-semibold py-2 rounded-xl border"
-                      style={{ borderColor: mode === v ? '#2F6FB3' : '#E0DCE8',
-                               color: mode === v ? '#2F6FB3' : '#57534E',
-                               background: mode === v ? 'rgba(47,111,179,.06)' : '#fff' }}>
+                      style={{ borderColor: mode === v ? '#7C7CF8' : 'rgba(255,255,255,.14)',
+                               color: mode === v ? '#7C7CF8' : '#B9C2D6',
+                               background: mode === v ? 'rgba(124,124,248,.06)' : '#fff' }}>
                 {l}
               </button>
             ))}
@@ -570,10 +570,10 @@ function PeriodModal({ onClose, onSubmit }) {
         </div>
         <div className="px-5 pb-5 flex gap-2">
           <button onClick={onClose} className="flex-1 text-sm font-semibold py-2.5 rounded-xl border"
-                  style={{ borderColor: '#E0DCE8', color: '#57534E' }}>Annuler</button>
+                  style={{ borderColor: 'rgba(255,255,255,.14)', color: '#B9C2D6' }}>Annuler</button>
           <button onClick={go} disabled={busy}
                   className="flex-1 text-sm font-semibold py-2.5 rounded-xl text-white disabled:opacity-50"
-                  style={{ background: '#2F6FB3' }}>{busy ? 'Calcul…' : 'Calculer'}</button>
+                  style={{ background: '#7C7CF8' }}>{busy ? 'Calcul…' : 'Calculer'}</button>
         </div>
       </div>
     </div>
@@ -595,14 +595,14 @@ function NoteModal({ onClose, onSubmit }) {
   };
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: '#EFECF6' }}>
+         style={{ background: 'rgba(4,6,15,.82)' }} onClick={onClose}>
+      <div className="mc-surface rounded-3xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'rgba(255,255,255,.08)' }}>
           <span className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                style={{ background: '#E8EDFB' }}>📌</span>
+                style={{ background: 'rgba(124,124,248,.16)' }}>📌</span>
           <div>
-            <div className="font-bold text-[15px] text-[#1C1917]">Note pour La Mémoire</div>
-            <div className="text-[11px] text-[#8B8680]">visible par toute l'équipe, pour toujours</div>
+            <div className="font-bold text-[15px] text-[#F8FAFC]">Note pour La Mémoire</div>
+            <div className="text-[11px] text-[#7C879F]">visible par toute l'équipe, pour toujours</div>
           </div>
         </div>
         <div className="px-5 py-4 space-y-3.5">
@@ -621,10 +621,10 @@ function NoteModal({ onClose, onSubmit }) {
         </div>
         <div className="px-5 pb-5 flex gap-2">
           <button onClick={onClose} className="flex-1 text-sm font-semibold py-2.5 rounded-xl border"
-                  style={{ borderColor: '#E0DCE8', color: '#57534E' }}>Annuler</button>
+                  style={{ borderColor: 'rgba(255,255,255,.14)', color: '#B9C2D6' }}>Annuler</button>
           <button onClick={go} disabled={busy || !text.trim()}
                   className="flex-1 text-sm font-semibold py-2.5 rounded-xl text-white disabled:opacity-50"
-                  style={{ background: '#2F6FB3' }}>
+                  style={{ background: '#7C7CF8' }}>
             {busy ? 'Ajout…' : 'Ajouter la note'}
           </button>
         </div>

@@ -16,9 +16,9 @@ import LiveText from './LiveText';
 
 const FREQ = { monthly: 'Mensuel', annual: 'Annuel', continuous: 'Continu' };
 const DOMAIN_COLORS = {
-  compta: { c: '#2F6FB3', bg: 'rgba(47,111,179,.10)', label: 'Compta' },
-  social: { c: '#2F7A52', bg: 'rgba(63,156,107,.10)', label: 'Paie' },
-  juridique: { c: '#7A3E70', bg: 'rgba(122,62,112,.10)', label: 'Juridique' },
+  compta: { c: '#7C7CF8', bg: 'rgba(124,124,248,.10)', label: 'Compta' },
+  social: { c: '#3DDC97', bg: 'rgba(61,220,151,.10)', label: 'Paie' },
+  juridique: { c: '#C77DFF', bg: 'rgba(199,125,255,.10)', label: 'Juridique' },
 };
 
 export default function GrilleModal({ tenantId, clientName, members, onClose }) {
@@ -62,23 +62,23 @@ export default function GrilleModal({ tenantId, clientName, members, onClose }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[88vh] overflow-auto p-6"
+         style={{ background: 'rgba(4,6,15,.82)' }} onClick={onClose}>
+      <div className="mc-surface rounded-3xl w-full max-w-2xl max-h-[88vh] overflow-auto p-6"
            onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                 style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+                 style={{ background: 'linear-gradient(135deg,#C77DFF,#C77DFF)' }}>
               <ClipboardList size={16} color="#fff" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-[#1C1917] leading-tight">Répartition des tâches</h3>
-              <div className="text-xs text-[#8B8680]">{clientName}</div>
+              <h3 className="text-lg font-bold text-[#F8FAFC] leading-tight">Répartition des tâches</h3>
+              <div className="text-xs text-[#7C879F]">{clientName}</div>
             </div>
           </div>
-          <button onClick={onClose} className="text-[#8B8680] hover:text-[#1C1917]"><X size={18} /></button>
+          <button onClick={onClose} className="text-[#7C879F] hover:text-[#F8FAFC]"><X size={18} /></button>
         </div>
-        <p className="text-xs text-[#8B8680] mb-4 mt-2">
+        <p className="text-xs text-[#7C879F] mb-4 mt-2">
           Qui fait quoi sur ce dossier — cabinet, client ou tiers. Attribuer une tâche à un
           membre lui donne accès au dossier. Sans choix explicite, la tâche revient au
           responsable du dossier (<em>défaut</em>).
@@ -87,27 +87,27 @@ export default function GrilleModal({ tenantId, clientName, members, onClose }) 
         {toast && (
           <div className="mb-3 rounded-xl px-3 py-2 text-xs border"
                style={toast.ok
-                 ? { background: 'rgba(184,134,11,.08)', borderColor: 'rgba(184,134,11,.3)', color: '#B8860B' }
-                 : { background: 'rgba(192,57,43,.08)', borderColor: 'rgba(192,57,43,.3)', color: '#C0392B' }}>
+                 ? { background: 'rgba(245,184,81,.08)', borderColor: 'rgba(245,184,81,.3)', color: '#F5B851' }
+                 : { background: 'rgba(255,107,107,.08)', borderColor: 'rgba(255,107,107,.3)', color: '#FF6B6B' }}>
             <LiveText>{toast.msg}</LiveText>
           </div>
         )}
 
         {rows === null ? (
-          <div className="py-10 text-center text-sm text-[#8B8680]">Chargement…</div>
+          <div className="py-10 text-center text-sm text-[#7C879F]">Chargement…</div>
         ) : (
-          <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+          <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
             {rows.map((t) => {
               const dom = DOMAIN_COLORS[t.domain] || DOMAIN_COLORS.compta;
               return (
                 <div key={t.task_type} className="py-2.5 flex items-center gap-3 flex-wrap">
                   <div className="flex-1 min-w-[200px]">
-                    <div className="text-sm font-semibold text-[#1C1917] flex items-center gap-2">
+                    <div className="text-sm font-semibold text-[#F8FAFC] flex items-center gap-2">
                       <LiveText>{t.label_fr}</LiveText>
                       <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
                             style={{ color: dom.c, background: dom.bg }}>{dom.label}</span>
                     </div>
-                    <div className="text-[10px] text-[#A8A29E]">
+                    <div className="text-[10px] text-[#7C879F]">
                       {FREQ[t.frequency] || t.frequency}
                       {!t.explicit && t.assignee_name ? ' · défaut' : ''}
                     </div>
@@ -129,7 +129,7 @@ export default function GrilleModal({ tenantId, clientName, members, onClose }) 
                       <option value="__tiers">Tiers…</option>
                     </select>
                   ) : (
-                    <span className="text-xs font-semibold text-[#57534E]">
+                    <span className="text-xs font-semibold text-[#B9C2D6]">
                       {t.assignee_name || 'Non attribué'}
                     </span>
                   )}
@@ -138,7 +138,7 @@ export default function GrilleModal({ tenantId, clientName, members, onClose }) 
             })}
           </div>
         )}
-        <style>{`.fld-sm{border:1px solid #E7E1D5;border-radius:10px;padding:6px 10px;font-size:12px;color:#1C1917;background:#FCFAF5;outline:none;max-width:220px}.fld-sm:focus{border-color:#7A3E70}`}</style>
+        <style>{`.fld-sm{border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:6px 10px;font-size:12px;color:#F8FAFC;background:rgba(255,255,255,.05);outline:none;max-width:220px}.fld-sm:focus{border-color:#C77DFF}`}</style>
       </div>
     </div>
   );

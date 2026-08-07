@@ -44,20 +44,20 @@ export default function NewSubscriptionModal({ tenantId, onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-auto p-6"
+         style={{ background: 'rgba(4,6,15,.82)' }} onClick={onClose}>
+      <div className="mc-surface rounded-3xl w-full max-w-lg max-h-[90vh] overflow-auto p-6"
            onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                 style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
+                 style={{ background: 'linear-gradient(135deg,#7C7CF8,#5B5BE8)' }}>
               <Repeat size={16} color="#fff" />
             </div>
-            <h3 className="text-lg font-bold text-[#1C1917]">Nouvel abonnement</h3>
+            <h3 className="text-lg font-bold text-[#F8FAFC]">Nouvel abonnement</h3>
           </div>
-          <button onClick={onClose} className="text-[#8B8680] hover:text-[#1C1917]"><X size={18} /></button>
+          <button onClick={onClose} className="text-[#7C879F] hover:text-[#F8FAFC]"><X size={18} /></button>
         </div>
-        <p className="text-xs text-[#8B8680] mb-4">
+        <p className="text-xs text-[#7C879F] mb-4">
           Vous approuvez UNE FOIS le montant, le client et le jour. Ensuite l'agent
           prépare la facture chaque mois — en brouillon, à valider par un humain.
           L'agent n'inventera jamais un chiffre : il recopie cette instruction.
@@ -122,22 +122,22 @@ export default function NewSubscriptionModal({ tenantId, onClose, onCreated }) {
             </label>
           </div>
           {ht > 0 && (
-            <div className="text-xs text-[#57534E]">
+            <div className="text-xs text-[#B9C2D6]">
               Chaque mois : <strong>{ht.toFixed(2)} € HT</strong> → {ttc.toFixed(2)} € TTC
             </div>
           )}
         </div>
 
-        {err && <div className="text-sm mt-3" style={{ color: '#C0392B' }}>{err}</div>}
+        {err && <div className="text-sm mt-3" style={{ color: '#FF6B6B' }}>{err}</div>}
 
         <button onClick={submit}
                 disabled={busy || !form.label || !form.buyer_name || !form.buyer_address || !(ht > 0)}
                 className="w-full mt-4 py-3 rounded-2xl text-white font-semibold disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
+                style={{ background: 'linear-gradient(135deg,#7C7CF8,#5B5BE8)' }}>
           {busy ? 'Enregistrement…' : "Approuver l'instruction permanente"}
         </button>
 
-        <style>{`.lbl{font-size:11px;font-weight:500;color:#57534E}.fld{width:100%;border:1px solid #E7E1D5;border-radius:12px;padding:9px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none;margin-top:3px}.fld:focus{border-color:#2F6FB3}`}</style>
+        <style>{`.lbl{font-size:11px;font-weight:500;color:#B9C2D6}.fld{width:100%;border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:9px 12px;font-size:14px;color:#F8FAFC;background:rgba(255,255,255,.05);outline:none;margin-top:3px}.fld:focus{border-color:#7C7CF8}`}</style>
       </div>
     </div>
   );

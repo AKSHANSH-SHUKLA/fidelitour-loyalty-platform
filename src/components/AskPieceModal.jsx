@@ -22,9 +22,9 @@ const PIECES = [
 const MOIS = ['—', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
   'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
-const L = { display: 'block', fontSize: 12, fontWeight: 600, color: '#57534E', marginBottom: 4 };
-const I = { width: '100%', border: '1px solid #E0DCE8', borderRadius: 12, padding: '10px 12px',
-            fontSize: 14, background: '#FBFAFE', color: '#1C1917', outline: 'none' };
+const L = { display: 'block', fontSize: 12, fontWeight: 600, color: '#B9C2D6', marginBottom: 4 };
+const I = { width: '100%', border: '1px solid rgba(255,255,255,.14)', borderRadius: 12, padding: '10px 12px',
+            fontSize: 14, background: 'rgba(255,255,255,.05)', color: '#F8FAFC', outline: 'none' };
 
 export default function AskPieceModal({ clientName, onClose, onSubmit }) {
   const now = new Date();
@@ -57,15 +57,15 @@ export default function AskPieceModal({ clientName, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden"
+         style={{ background: 'rgba(4,6,15,.82)' }} onClick={onClose}>
+      <div className="mc-surface rounded-3xl w-full max-w-md overflow-hidden"
            onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: '#EFECF6' }}>
+        <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'rgba(255,255,255,.08)' }}>
           <span className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                style={{ background: '#E8EDFB' }}>📨</span>
+                style={{ background: 'rgba(124,124,248,.16)' }}>📨</span>
           <div>
-            <div className="font-bold text-[15px] text-[#1C1917]">Demander une pièce</div>
-            <div className="text-[11px] text-[#8B8680]">
+            <div className="font-bold text-[15px] text-[#F8FAFC]">Demander une pièce</div>
+            <div className="text-[11px] text-[#7C879F]">
               {clientName ? `à ${clientName} — ` : ''}l'agent relancera tout seul au bon moment
             </div>
           </div>
@@ -107,8 +107,8 @@ export default function AskPieceModal({ clientName, onClose, onSubmit }) {
             </div>
           </div>
 
-          <div className="rounded-2xl p-3.5 space-y-3" style={{ background: '#F7F5FC' }}>
-            <div className="text-[11.5px] font-bold text-[#57534E]">Comment joindre le client ?</div>
+          <div className="rounded-2xl p-3.5 space-y-3" style={{ background: 'rgba(255,255,255,.05)' }}>
+            <div className="text-[11.5px] font-bold text-[#B9C2D6]">Comment joindre le client ?</div>
             <div>
               <label style={L}>Email <span style={{ fontWeight: 400 }}>(vide = compte client connu)</span></label>
               <input type="email" style={I} value={email} onChange={(e) => setEmail(e.target.value)}
@@ -132,8 +132,8 @@ export default function AskPieceModal({ clientName, onClose, onSubmit }) {
             </div>
           </div>
 
-          <div className="text-[11px] text-[#8B8680] px-1">
-            Sera enregistré : <b className="text-[#4E1F44]">{label}</b>
+          <div className="text-[11px] text-[#7C879F] px-1">
+            Sera enregistré : <b className="text-[#C77DFF]">{label}</b>
           </div>
         </div>
 
@@ -145,7 +145,7 @@ export default function AskPieceModal({ clientName, onClose, onSubmit }) {
           </Button>
           <Button onClick={submit} disabled={busy || (piece === 'Autre…' && !autre.trim())}
                   className="flex-1 rounded-xl text-white hover:opacity-90"
-                  style={{ background: '#2F6FB3' }}>
+                  style={{ background: '#7C7CF8' }}>
             {busy ? 'Enregistrement…' : 'Demander la pièce'}
           </Button>
         </div>

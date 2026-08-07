@@ -67,20 +67,20 @@ export default function NewClientModal({ members, onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-         style={{ background: 'rgba(28,25,23,.45)' }} onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-auto p-6"
+         style={{ background: 'rgba(4,6,15,.82)' }} onClick={onClose}>
+      <div className="mc-surface rounded-3xl w-full max-w-lg max-h-[90vh] overflow-auto p-6"
            onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                 style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+                 style={{ background: 'linear-gradient(135deg,#C77DFF,#C77DFF)' }}>
               <Building2 size={16} color="#fff" />
             </div>
-            <h3 className="text-lg font-bold text-[#1C1917]">Nouveau client</h3>
+            <h3 className="text-lg font-bold text-[#F8FAFC]">Nouveau client</h3>
           </div>
-          <button onClick={onClose} className="text-[#8B8680] hover:text-[#1C1917]"><X size={18} /></button>
+          <button onClick={onClose} className="text-[#7C879F] hover:text-[#F8FAFC]"><X size={18} /></button>
         </div>
-        <p className="text-xs text-[#8B8680] mb-4">
+        <p className="text-xs text-[#7C879F] mb-4">
           Saisissez le SIREN — l'annuaire officiel remplit le reste. Le client n'a
           rien à faire : dossier et mandat sont créés immédiatement.
         </p>
@@ -91,13 +91,13 @@ export default function NewClientModal({ members, onClose, onCreated }) {
                    onChange={(e) => setSiren(e.target.value)}
                    placeholder="SIREN (9 chiffres)" />
             <div className="text-[10px] mt-0.5"
-                 style={{ color: digits.length === 9 ? '#2F7A52' : '#A8A29E' }}>
+                 style={{ color: digits.length === 9 ? '#3DDC97' : '#7C879F' }}>
               {digits.length}/9 chiffres
             </div>
           </div>
           <button onClick={lookup} disabled={digits.length !== 9 || looking}
                   className="h-[42px] px-4 rounded-xl text-white text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-40 shrink-0"
-                  style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+                  style={{ background: 'linear-gradient(135deg,#C77DFF,#C77DFF)' }}>
             <Search size={14} /> {looking ? '…' : 'Rechercher'}
           </button>
         </div>
@@ -106,7 +106,7 @@ export default function NewClientModal({ members, onClose, onCreated }) {
           <div className="mt-4 space-y-2.5">
             {!manual && (
               <div className="rounded-xl px-3 py-2 text-[11px]"
-                   style={{ background: 'rgba(63,156,107,.08)', color: '#2F7A52' }}>
+                   style={{ background: 'rgba(61,220,151,.08)', color: '#3DDC97' }}>
                 ✓ Entreprise trouvée dans l'annuaire officiel — vérifiez et complétez si besoin.
               </div>
             )}
@@ -147,24 +147,24 @@ export default function NewClientModal({ members, onClose, onCreated }) {
               <input className="fld" type="email" value={clientEmail}
                      onChange={(e) => setClientEmail(e.target.value)}
                      placeholder="patron@boulangerie.fr" />
-              <span className="text-[10px] text-[#A8A29E]">
+              <span className="text-[10px] text-[#7C879F]">
                 Sans email, le dossier vit quand même — vous agissez pour le client via le mandat.
               </span>
             </label>
           </div>
         )}
 
-        {err && <div className="text-sm mt-3" style={{ color: '#C0392B' }}>{err}</div>}
+        {err && <div className="text-sm mt-3" style={{ color: '#FF6B6B' }}>{err}</div>}
 
         {company && (
           <button onClick={create} disabled={creating || !(company.legal_name || '').trim()}
                   className="w-full mt-4 py-3 rounded-2xl text-white font-semibold disabled:opacity-40"
-                  style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+                  style={{ background: 'linear-gradient(135deg,#C77DFF,#C77DFF)' }}>
             {creating ? 'Création…' : 'Créer le dossier client'}
           </button>
         )}
 
-        <style>{`.lbl{font-size:11px;font-weight:500;color:#57534E}.fld{width:100%;border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none;margin-top:3px}.fld:focus{border-color:#7A3E70}`}</style>
+        <style>{`.lbl{font-size:11px;font-weight:500;color:#B9C2D6}.fld{width:100%;border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:10px 12px;font-size:14px;color:#F8FAFC;background:rgba(255,255,255,.05);outline:none;margin-top:3px}.fld:focus{border-color:#C77DFF}`}</style>
       </div>
     </div>
   );

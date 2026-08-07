@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Building2, ShieldCheck, AlertTriangle, Download, RefreshCw, X, ChevronRight,
+  Building2, ShieldCheck, AlertTriangle, Download, RefreshCw, X, ChevronRight, ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { comptableAPI, facturationAPI, cabinetExtraAPI, casesAPI, cabinetOsAPI } from '../lib/api';
@@ -708,13 +708,19 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                      subs, onNewSub, onToggleSub, onRunBilling }) {
   const s = data.summary || {};
   const b = BAND[s.band] || BAND.amber;
-  // Hub navigation (façon MyFiteco): the dossier opens on CARDS, one per "room".
-  // Clicking a card shows ONLY that room, with a back button. No more stacking.
+  // Hub navigation: the dossier opens on CARDS, one per "room". Clicking a card
+  // shows ONLY that room, with a back button to the hub. No stacking.
+  //
+  // There used to be a fifth "Plus" tab that re-listed Indicateurs, Pièces and
+  // Abonnements — the exact three cards already on this hub. A second door into
+  // the same room is not extra navigation, it is a reason to hesitate. Plus is
+  // gone; Export FEC and Répartition des tâches (its only unique entries) moved
+  // onto the hub, which had the room for them.
   const [room, setRoom] = useState(null);
   const [agentN, setAgentN] = useState(0);
   const ROOM_TITLES = { agent: "L'agent a préparé", ventes: 'Ventes',
                         pieces: 'Pièces attendues', abos: 'Abonnements',
-                        achats: 'Achats', indicateurs: 'Indicateurs', plus: 'Plus' };
+                        achats: 'Achats', indicateurs: 'Indicateurs' };
   // Ventes: unpaid first — "à encaisser d'abord" (MyFiteco: impayés en un clin d'œil)
   const sortedInv = [...(data.invoices || [])].sort((a, b) =>
     ((a.payment_status === 'paid') - (b.payment_status === 'paid'))
@@ -723,31 +729,39 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
     (i) => i.review_status === 'validated' && i.payment_status !== 'paid');
   const unpaidTot = unpaid.reduce((a, i) => a + (i.total_ttc || 0), 0);
   return (
-    <div className="fixed inset-0 z-50 overflow-auto" style={{ background: '#F3F1FA' }}>
-      <div className="min-h-full flex flex-col">
-        {/* MyFiteco-style top bar: blue home → CLIENT NAME, score chip right */}
-        <div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center gap-3"
-             style={{ borderColor: '#E7E1D5' }}>
+    <div className="fixed inset-0 z-50 overflow-auto" style={{ background: MC.bg, color: MC.ink }}>
+      <DossierSkin />
+      <AmbientCanvas />
+      <div className="min-h-full flex flex-col relative">
+        {/* Top bar: home → CLIENT NAME, score chip right */}
+        <div className="sticky top-0 z-10 mc-surface px-4 py-3 flex items-center gap-3"
+             style={{ borderBottom: `1px solid ${MC.stroke}` }}>
           <button onClick={onClose} aria-label="Retour à la liste"
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg shrink-0"
-                  style={{ background: '#2F6FB3' }}>🏠</button>
-          <span style={{ color: '#C9C2B4' }}>›</span>
-          <span className="font-extrabold text-[#1C1917] tracking-wide uppercase truncate">{s.name}</span>
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg shrink-0 cursor-pointer"
+                  style={{ background: `linear-gradient(135deg, ${MC.indigo}, #5B5BE8)`,
+                           boxShadow: '0 8px 22px -10px rgba(124,124,248,.9)' }}>
+            <ArrowLeft size={18} />
+          </button>
+          <span style={{ color: MC.ink3 }}>›</span>
+          <span className="font-extrabold tracking-wide uppercase truncate"
+                style={{ color: MC.ink }}>{s.name}</span>
           <span className="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0"
-                style={{ color: b.c, background: '#F3F1FA' }}>
+                style={{ color: b.c, background: 'rgba(255,255,255,.07)',
+                         border: `1px solid ${MC.stroke}` }}>
             <LiveText>{`${s.score}/100`}</LiveText>
           </span>
         </div>
 
         <div className="w-full max-w-2xl mx-auto px-4 pb-6 pt-5 flex-1">
-        <h2 className="text-2xl font-extrabold text-[#1C1917] mb-4">
+        <h2 className="text-2xl font-extrabold text-[#F8FAFC] mb-4">
           <LiveText>{ROOM_TITLES[room] || 'Synthèse'}</LiveText>
         </h2>
         {['pieces', 'abos', 'indicateurs'].includes(room) && (
-          <button onClick={() => setRoom('plus')}
-                  className="mb-3 text-xs font-semibold px-3 py-1.5 rounded-xl border bg-white"
-                  style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
-            ← Retour
+          <button onClick={() => setRoom(null)}
+                  className="mb-3 text-xs font-semibold px-3 py-1.5 rounded-xl cursor-pointer"
+                  style={{ border: `1px solid ${MC.stroke}`, background: 'rgba(255,255,255,.06)',
+                           color: MC.ink2 }}>
+            ← Synthèse
           </button>
         )}
         {room === null && (
@@ -757,7 +771,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                 {s.alerts.slice(0, 3).map((a, i) => (
                   <li key={i} className="flex items-center gap-2 text-xs">
                     <AlertTriangle size={13} style={{ color: BAND[a.level]?.c }} />
-                    <LiveText className="text-[#44403C]">{a.message}</LiveText>
+                    <LiveText className="text-[#B9C2D6]">{a.message}</LiveText>
                   </li>
                 ))}
               </ul>
@@ -777,14 +791,22 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                      badge={(s.alerts || []).length} onClick={() => setRoom('indicateurs')} />
             <HubCard icon="🔁" title="Abonnements" desc="« chaque mois, le X, facturer Y à Z »"
                      count={(subs || []).length} onClick={() => setRoom('abos')} />
+            {onOpenGrille && (
+              <HubCard icon="👥" title="Répartition des tâches" desc="qui fait quoi sur ce dossier"
+                       onClick={() => onOpenGrille(s.tenant_id, s.name)} />
+            )}
+            {onExportFec && (
+              <HubCard icon="🧾" title="Export FEC" desc="le fichier que Sage / Cegid importent"
+                       onClick={() => onExportFec(s.tenant_id, s.name)} />
+            )}
           </div>
         )}
 
-        <div className={room && room !== 'plus' ? 'bg-white rounded-3xl border overflow-hidden' : ''}
-             style={{ borderColor: '#E7E1D5' }}>
+        <div className={room ? 'overflow-hidden' : ''}
+             style={room ? { ...glass(), borderRadius: 20 } : undefined}>
         {/* S12 — pièces manquantes: what the agent is chasing for this client */}
         {room === 'pieces' && docReqs && (
-          <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
+          <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
             <GuideBox
               title="Pièces manquantes — comment ça marche ?"
               steps={[
@@ -795,34 +817,34 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
               ]}
               example="« Relevé bancaire juillet » demandé le 1er → l'agent relance le 5, le 9… → reçu le 10 → vous cliquez Reçu ✓. Zéro email écrit à la main." />
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-bold text-[#1C1917]">
+              <div className="text-sm font-bold text-[#F8FAFC]">
                 Pièces manquantes
                 <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ color: docReqs.reliability >= 80 ? '#2F7A52' : docReqs.reliability >= 50 ? '#B8860B' : '#C0392B',
+                      style={{ color: docReqs.reliability >= 80 ? '#3DDC97' : docReqs.reliability >= 50 ? '#F5B851' : '#FF6B6B',
                                background: 'rgba(139,134,128,.10)' }}>
                   Fiabilité client : {docReqs.reliability}/100
                 </span>
               </div>
               <button onClick={() => onAskDoc(s.tenant_id)}
                       className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border"
-                      style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+                      style={{ borderColor: 'rgba(255,255,255,.18)', color: '#C77DFF' }}>
                 + Demander une pièce
               </button>
             </div>
             {(docReqs.requests || []).length === 0 ? (
-              <div className="text-xs text-[#8B8680]">Rien en attente.</div>
+              <div className="text-xs text-[#7C879F]">Rien en attente.</div>
             ) : (
               <div className="space-y-1.5">
                 {docReqs.requests.map((rq) => (
                   <div key={rq.id} className="flex items-center gap-2 text-xs flex-wrap">
                     <span className="w-2 h-2 rounded-full shrink-0"
-                          style={{ background: rq.status === 'received' ? '#3F9C6B'
-                                   : rq.status === 'escalated' ? '#C0392B' : '#E0A92B' }} />
-                    <span className="font-semibold text-[#1C1917]">{rq.label}</span>
-                    <span className="text-[#8B8680]">pour le {rq.due_date}</span>
+                          style={{ background: rq.status === 'received' ? '#3DDC97'
+                                   : rq.status === 'escalated' ? '#FF6B6B' : '#F5B851' }} />
+                    <span className="font-semibold text-[#F8FAFC]">{rq.label}</span>
+                    <span className="text-[#7C879F]">pour le {rq.due_date}</span>
                     {(rq.reminders || []).length > 0 && rq.status === 'pending' && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
-                            style={{ color: '#57534E', background: 'rgba(87,83,78,.08)' }}>
+                            style={{ color: '#B9C2D6', background: 'rgba(87,83,78,.08)' }}>
                         🤖 {rq.reminders.length} relance(s)
                         {(rq.reminders || []).some((rm) => rm.channel === 'whatsapp') && (
                           <WhatsAppIcon size={12} title="Relance envoyée par WhatsApp" />
@@ -830,14 +852,14 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                       </span>
                     )}
                     {rq.status === 'escalated' && (
-                      <span className="text-[10px] font-semibold" style={{ color: '#C0392B' }}>
+                      <span className="text-[10px] font-semibold" style={{ color: '#FF6B6B' }}>
                         escaladé — voir Cas
                       </span>
                     )}
                     {rq.status === 'pending' && (
                       <button onClick={() => onDocReceived(s.tenant_id, rq.id)}
                               className="ml-auto text-[10px] font-semibold px-2 py-1 rounded-lg border"
-                              style={{ borderColor: 'rgba(63,156,107,.4)', color: '#2F7A52' }}>
+                              style={{ borderColor: 'rgba(61,220,151,.4)', color: '#3DDC97' }}>
                         Reçu ✓
                       </button>
                     )}
@@ -859,25 +881,25 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
 
         {/* S13 — abonnements: the standing instructions the agent executes */}
         {room === 'abos' && subs !== null && (
-          <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: '#F2ECE0' }}>
+          <div className="px-5 pt-4 pb-4 border-b" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-bold text-[#1C1917]">Abonnements (facturation récurrente)</div>
+              <div className="text-sm font-bold text-[#F8FAFC]">Abonnements (facturation récurrente)</div>
               <div className="flex gap-2">
                 <button onClick={() => onRunBilling(s.tenant_id)}
                         className="text-xs px-2.5 py-1.5 rounded-lg border"
-                        style={{ borderColor: '#E7E1D5', color: '#57534E' }}
+                        style={{ borderColor: 'rgba(255,255,255,.10)', color: '#B9C2D6' }}
                         title="Exécute toutes les instructions dues — l'agent prépare des brouillons, il ne transmet rien.">
                   🤖 Exécuter maintenant
                 </button>
                 <button onClick={() => onNewSub(s.tenant_id)}
                         className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border"
-                        style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+                        style={{ borderColor: 'rgba(255,255,255,.18)', color: '#C77DFF' }}>
                   + Nouvel abonnement
                 </button>
               </div>
             </div>
             {subs.length === 0 ? (
-              <div className="text-xs text-[#8B8680]">
+              <div className="text-xs text-[#7C879F]">
                 Aucune instruction permanente — « chaque mois, le X, facturer Y à Z ».
               </div>
             ) : (
@@ -887,19 +909,19 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                   return (
                     <div key={sb.id} className="flex items-center gap-2 text-xs flex-wrap">
                       <span className="w-2 h-2 rounded-full shrink-0"
-                            style={{ background: sb.active ? '#3F9C6B' : '#8B8680' }} />
-                      <span className="font-semibold text-[#1C1917]">{sb.label}</span>
-                      <span className="text-[#57534E]">{ht.toFixed(2)} € HT · le {sb.day_of_month} du mois</span>
-                      <span className="text-[#8B8680]">→ {sb.buyer?.name}</span>
+                            style={{ background: sb.active ? '#3DDC97' : '#7C879F' }} />
+                      <span className="font-semibold text-[#F8FAFC]">{sb.label}</span>
+                      <span className="text-[#B9C2D6]">{ht.toFixed(2)} € HT · le {sb.day_of_month} du mois</span>
+                      <span className="text-[#7C879F]">→ {sb.buyer?.name}</span>
                       {sb.last_run_ym && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full"
-                              style={{ color: '#57534E', background: 'rgba(87,83,78,.08)' }}>
+                              style={{ color: '#B9C2D6', background: 'rgba(87,83,78,.08)' }}>
                           dernier : {sb.last_run_ym}
                         </span>
                       )}
                       <button onClick={() => onToggleSub(s.tenant_id, sb.id, !sb.active)}
                               className="ml-auto text-[10px] px-2 py-1 rounded-lg border"
-                              style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+                              style={{ borderColor: 'rgba(255,255,255,.10)', color: '#B9C2D6' }}>
                         {sb.active ? 'Mettre en pause' : 'Réactiver'}
                       </button>
                     </div>
@@ -915,35 +937,35 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
             tracks the deadline — so both sides get the button, and the audit log
             records who actually pressed it. */}
         {room === 'ventes' && onActFor && (
-          <div className="px-5 pt-4 flex flex-wrap gap-2 border-b pb-4" style={{ borderColor: '#F2ECE0' }}>
+          <div className="px-5 pt-4 flex flex-wrap gap-2 border-b pb-4" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
             {onNewInvoice && (
               <button onClick={() => onNewInvoice(s.tenant_id)}
                       className="text-xs font-semibold px-3 py-2 rounded-xl text-white"
-                      style={{ background: 'linear-gradient(135deg,#2F6FB3,#1E4E86)' }}>
+                      style={{ background: 'linear-gradient(135deg,#7C7CF8,#5B5BE8)' }}>
                 + Nouvelle facture
               </button>
             )}
             <button onClick={() => onActFor('ereporting', s.tenant_id)}
                     disabled={acting === 'ereporting'}
                     className="text-xs font-semibold px-3 py-2 rounded-xl text-white disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
+                    style={{ background: 'linear-gradient(135deg,#C77DFF,#C77DFF)' }}>
               {acting === 'ereporting' ? 'Envoi…' : "Envoyer l'e-reporting"}
             </button>
             {!s.dgfip_activated && (
               <button onClick={() => onActFor('activate', s.tenant_id)}
                       disabled={acting === 'activate'}
                       className="text-xs font-semibold px-3 py-2 rounded-xl text-white disabled:opacity-50"
-                      style={{ background: 'linear-gradient(135deg,#3F9C6B,#2F7A52)' }}>
+                      style={{ background: 'linear-gradient(135deg,#3DDC97,#3DDC97)' }}>
                 {acting === 'activate' ? 'Activation…' : 'Activer conformité DGFiP'}
               </button>
             )}
             <button onClick={() => onActFor('received', s.tenant_id)}
                     disabled={acting === 'received'}
                     className="text-xs px-3 py-2 rounded-xl border disabled:opacity-50"
-                    style={{ borderColor: '#E7E1D5', color: '#57534E' }}>
+                    style={{ borderColor: 'rgba(255,255,255,.10)', color: '#B9C2D6' }}>
               {acting === 'received' ? 'Simulation…' : 'Simuler une facture reçue'}
             </button>
-            <span className="text-[10px] self-center" style={{ color: '#A8A29E' }}>
+            <span className="text-[10px] self-center" style={{ color: '#7C879F' }}>
               Actions effectuées pour le compte du client — tracées dans l'historique.
             </span>
           </div>
@@ -952,22 +974,22 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
         {room === 'ventes' && (
         <div className="p-5">
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(192,57,43,.35)' : '#E7E1D5' }}>
-              <LiveText as="div" className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>
+            <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(255,107,107,.35)' : 'rgba(255,255,255,.10)' }}>
+              <LiveText as="div" className="text-lg font-extrabold" style={{ color: unpaid.length ? '#FF6B6B' : '#3DDC97' }}>
                 {`${unpaidTot.toFixed(0)} €`}
               </LiveText>
-              <LiveText as="div" className="text-[10.5px] text-[#8B8680]">
+              <LiveText as="div" className="text-[10.5px] text-[#7C879F]">
                 {`impayés (${unpaid.length} facture${unpaid.length > 1 ? 's' : ''})`}
               </LiveText>
             </div>
-            <div className="rounded-xl border p-3" style={{ borderColor: '#E7E1D5' }}>
-              <LiveText as="div" className="text-lg font-extrabold text-[#1C1917]">{String((data.invoices || []).length)}</LiveText>
-              <div className="text-[10.5px] text-[#8B8680]">factures émises</div>
+            <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
+              <LiveText as="div" className="text-lg font-extrabold text-[#F8FAFC]">{String((data.invoices || []).length)}</LiveText>
+              <div className="text-[10.5px] text-[#7C879F]">factures émises</div>
             </div>
             <label className="rounded-xl border p-3 cursor-pointer text-center flex flex-col justify-center"
-                   style={{ borderColor: '#D8CBB8', borderStyle: 'dashed' }}>
+                   style={{ borderColor: 'rgba(255,255,255,.18)', borderStyle: 'dashed' }}>
               <span className="text-lg">📷</span>
-              <span className="text-[10.5px] font-semibold" style={{ color: '#4E1F44' }}>
+              <span className="text-[10.5px] font-semibold" style={{ color: '#C77DFF' }}>
                 Photographier une facture de vente (papier)
               </span>
               <input type="file" accept="image/*" className="hidden"
@@ -980,26 +1002,26 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
               {s.alerts.map((a, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm">
                   <AlertTriangle size={14} style={{ color: BAND[a.level]?.c }} />
-                  <LiveText className="text-[#44403C]">{a.message}</LiveText>
+                  <LiveText className="text-[#B9C2D6]">{a.message}</LiveText>
                 </li>
               ))}
             </ul>
           )}
-          <h4 className="text-sm font-bold text-[#1C1917] mb-2">Factures émises</h4>
+          <h4 className="text-sm font-bold text-[#F8FAFC] mb-2">Factures émises</h4>
           {(data.invoices || []).length === 0 ? (
-            <div className="text-sm text-[#8B8680]">Aucune facture.</div>
+            <div className="text-sm text-[#7C879F]">Aucune facture.</div>
           ) : (
-            <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+            <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
               {sortedInv.map((inv) => {
                 const credited = (data.credit_notes || []).some((c) => c.original_invoice_id === inv.id);
                 const busy = reviewing === inv.id;
                 return (
                   <div key={inv.id} className="py-2.5 flex items-center gap-2 text-sm flex-wrap">
-                    <span className="font-semibold text-[#1C1917] w-24 shrink-0">{inv.number}</span>
-                    <span className="flex-1 min-w-[100px] text-[#57534E] truncate flex items-center gap-1.5">
+                    <span className="font-semibold text-[#F8FAFC] w-24 shrink-0">{inv.number}</span>
+                    <span className="flex-1 min-w-[100px] text-[#B9C2D6] truncate flex items-center gap-1.5">
                       {inv.buyer?.name || '—'} <Chan channel={inv.channel} />
                     </span>
-                    <span className="text-[#1C1917] w-20 text-right shrink-0">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
+                    <span className="text-[#F8FAFC] w-20 text-right shrink-0">{(inv.total_ttc ?? 0).toFixed(2)} €</span>
                     <Pill state={credited ? 'credited' : (inv.pa_status || inv.state)} />
                     <MiniChip value={inv.review_status} map={REVIEW_MAP} />
                     <MiniChip value={inv.payment_status} map={PAY_MAP} />
@@ -1008,7 +1030,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                     {inv.review_status !== 'validated' && onReview && (
                       <button disabled={busy} onClick={() => onReview(inv.id, 'validated')}
                         className="text-[11px] font-semibold px-2 py-1 rounded-lg text-white disabled:opacity-50 shrink-0"
-                        style={{ background: '#2F7A52' }}>
+                        style={{ background: '#3DDC97' }}>
                         {busy ? '…' : 'Valider'}
                       </button>
                     )}
@@ -1020,7 +1042,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
                       <button disabled={crediting === inv.id}
                               onClick={() => onCreditNote(inv.id, inv.number)}
                               className="text-[11px] font-semibold px-2 py-1 rounded-lg border disabled:opacity-50 shrink-0"
-                              style={{ borderColor: '#C0392B', color: '#C0392B' }}>
+                              style={{ borderColor: '#FF6B6B', color: '#FF6B6B' }}>
                         {crediting === inv.id ? '…' : 'Créer un avoir'}
                       </button>
                     )}
@@ -1032,13 +1054,13 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
 
           {(data.credit_notes || []).length > 0 && (
             <>
-              <h4 className="text-sm font-bold text-[#1C1917] mt-4 mb-2">Avoirs émis</h4>
-              <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+              <h4 className="text-sm font-bold text-[#F8FAFC] mt-4 mb-2">Avoirs émis</h4>
+              <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
                 {data.credit_notes.map((cn) => (
                   <div key={cn.id} className="py-2 flex items-center gap-2 text-sm">
-                    <span className="font-semibold text-[#1C1917] w-28 shrink-0">{cn.number}</span>
-                    <span className="flex-1 text-[#57534E] truncate">corrige {cn.original_number}</span>
-                    <span className="w-20 text-right font-semibold" style={{ color: '#C0392B' }}>
+                    <span className="font-semibold text-[#F8FAFC] w-28 shrink-0">{cn.number}</span>
+                    <span className="flex-1 text-[#B9C2D6] truncate">corrige {cn.original_number}</span>
+                    <span className="w-20 text-right font-semibold" style={{ color: '#FF6B6B' }}>
                       −{Math.abs(cn.amount_ttc ?? 0).toFixed(2)} €
                     </span>
                   </div>
@@ -1055,39 +1077,39 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
         <div className="p-5">
           <div className="grid grid-cols-2 gap-2 mb-4">
             <label className="rounded-xl border p-4 cursor-pointer text-center"
-                   style={{ borderColor: '#2F6FB3', borderStyle: 'dashed' }}>
+                   style={{ borderColor: '#7C7CF8', borderStyle: 'dashed' }}>
               <div className="text-xl">📷</div>
-              <div className="text-xs font-bold" style={{ color: '#2F6FB3' }}>
+              <div className="text-xs font-bold" style={{ color: '#7C7CF8' }}>
                 Photographier une facture fournisseur
               </div>
-              <div className="text-[10px] text-[#8B8680]">même un ticket de caisse (Metro, Carrefour…)</div>
+              <div className="text-[10px] text-[#7C879F]">même un ticket de caisse (Metro, Carrefour…)</div>
               <input type="file" accept="image/*" className="hidden"
                      onChange={(e) => { const f = e.target.files && e.target.files[0]; e.target.value = '';
                        if (f && onOcr) onOcr(s.tenant_id, f, false); }} />
             </label>
             <button onClick={() => onSyncRec && onSyncRec(s.tenant_id)}
-                    className="rounded-xl border p-4 text-center" style={{ borderColor: '#E7E1D5' }}>
+                    className="rounded-xl border p-4 text-center" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
               <div className="text-xl">🔄</div>
-              <div className="text-xs font-bold text-[#57534E]">Synchroniser les e-factures</div>
-              <div className="text-[10px] text-[#8B8680]">récupère depuis la plateforme du client</div>
+              <div className="text-xs font-bold text-[#B9C2D6]">Synchroniser les e-factures</div>
+              <div className="text-[10px] text-[#7C879F]">récupère depuis la plateforme du client</div>
             </button>
           </div>
-          <h4 className="text-sm font-bold text-[#1C1917] mb-2">
+          <h4 className="text-sm font-bold text-[#F8FAFC] mb-2">
             Factures reçues ({(data.received || []).length})
           </h4>
           {(data.received || []).length === 0 ? (
-            <div className="text-xs text-[#8B8680]">
+            <div className="text-xs text-[#7C879F]">
               Rien encore — photographiez un ticket ou synchronisez. Dès septembre 2026, les
               e-factures des fournisseurs arriveront ici toutes seules.
             </div>
           ) : (
-            <div className="divide-y" style={{ borderColor: '#F2ECE0' }}>
+            <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
               {data.received.map((r) => (
                 <div key={r.id} className="py-2 flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-[#1C1917] w-28 shrink-0 truncate">{r.number || '—'}</span>
-                  <span className="flex-1 text-[#57534E] truncate">{r.supplier?.name || '—'}</span>
+                  <span className="font-semibold text-[#F8FAFC] w-28 shrink-0 truncate">{r.number || '—'}</span>
+                  <span className="flex-1 text-[#B9C2D6] truncate">{r.supplier?.name || '—'}</span>
                   {r.source === 'ocr' && <span className="text-[10px]">📷</span>}
-                  <span className="text-[#1C1917] w-20 text-right">{(r.total_ttc ?? 0).toFixed(2)} €</span>
+                  <span className="text-[#F8FAFC] w-20 text-right">{(r.total_ttc ?? 0).toFixed(2)} €</span>
                 </div>
               ))}
             </div>
@@ -1100,79 +1122,66 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
         <div className="p-5">
           <div className="flex items-center gap-4 mb-4">
             <div className="text-4xl font-extrabold" style={{ color: b.c }}>
-              <LiveText>{String(s.score)}</LiveText><span className="text-base text-[#8B8680]">/100</span>
+              <LiveText>{String(s.score)}</LiveText><span className="text-base text-[#7C879F]">/100</span>
             </div>
             <div>
               <div className="text-sm font-bold" style={{ color: b.c }}><LiveText>{b.label}</LiveText></div>
-              <div className="text-[11px] text-[#8B8680]">Bouclier fiscal — ce que verrait un contrôle. Indicateur informatif, ni conseil fiscal ni ECF.</div>
+              <div className="text-[11px] text-[#7C879F]">Bouclier fiscal — ce que verrait un contrôle. Indicateur informatif, ni conseil fiscal ni ECF.</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(192,57,43,.35)' : '#E7E1D5' }}>
-              <LiveText as="div" className="text-lg font-extrabold" style={{ color: unpaid.length ? '#C0392B' : '#2F7A52' }}>{`${unpaidTot.toFixed(0)} €`}</LiveText>
-              <div className="text-[10.5px] text-[#8B8680]">impayés clients à encaisser</div>
+            <div className="rounded-xl border p-3" style={{ borderColor: unpaid.length ? 'rgba(255,107,107,.35)' : 'rgba(255,255,255,.10)' }}>
+              <LiveText as="div" className="text-lg font-extrabold" style={{ color: unpaid.length ? '#FF6B6B' : '#3DDC97' }}>{`${unpaidTot.toFixed(0)} €`}</LiveText>
+              <div className="text-[10.5px] text-[#7C879F]">impayés clients à encaisser</div>
             </div>
-            <div className="rounded-xl border p-3" style={{ borderColor: '#E7E1D5' }}>
-              <LiveText as="div" className="text-lg font-extrabold text-[#1C1917]">{String((data.received || []).length)}</LiveText>
-              <div className="text-[10.5px] text-[#8B8680]">pièces d'achat au dossier</div>
+            <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(255,255,255,.10)' }}>
+              <LiveText as="div" className="text-lg font-extrabold text-[#F8FAFC]">{String((data.received || []).length)}</LiveText>
+              <div className="text-[10.5px] text-[#7C879F]">pièces d'achat au dossier</div>
             </div>
           </div>
-          <h4 className="text-sm font-bold text-[#1C1917] mb-2">Points de vigilance ({(s.alerts || []).length})</h4>
+          <h4 className="text-sm font-bold text-[#F8FAFC] mb-2">Points de vigilance ({(s.alerts || []).length})</h4>
           {(s.alerts || []).length === 0 ? (
-            <div className="text-xs" style={{ color: '#2F7A52' }}>✓ Aucune anomalie — dossier cohérent.</div>
+            <div className="text-xs" style={{ color: '#3DDC97' }}>✓ Aucune anomalie — dossier cohérent.</div>
           ) : (
             <ul className="space-y-1.5">
               {s.alerts.map((a, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm">
                   <AlertTriangle size={14} className="mt-0.5 shrink-0" style={{ color: BAND[a.level]?.c }} />
-                  <LiveText className="text-[#44403C]">{a.message}</LiveText>
+                  <LiveText className="text-[#B9C2D6]">{a.message}</LiveText>
                 </li>
               ))}
             </ul>
           )}
           <button onClick={() => setRoom('agent')}
                   className="mt-4 text-xs font-semibold px-3 py-2 rounded-xl border"
-                  style={{ borderColor: '#D8CBB8', color: '#4E1F44' }}>
+                  style={{ borderColor: 'rgba(255,255,255,.18)', color: '#C77DFF' }}>
             🤖 Calculer la TVA / lancer les contrôles → L'agent a préparé
           </button>
         </div>
         )}
         </div>
 
-        {/* ── Tab: PLUS — everything else, stacked MyFiteco-style ────────── */}
-        {room === 'plus' && (
-          <div className="flex flex-col gap-3">
-            <HubCard icon="📨" title="Pièces attendues" desc="l'agent relance le client tout seul"
-                     badge={(docReqs?.requests || []).filter((r) => r.status === 'pending').length}
-                     onClick={() => setRoom('pieces')} />
-            <HubCard icon="📊" title="Indicateurs" desc="bouclier fiscal, reconstitution, impayés"
-                     badge={(s.alerts || []).length} onClick={() => setRoom('indicateurs')} />
-            <HubCard icon="🔁" title="Abonnements" desc="« chaque mois, le X, facturer Y à Z »"
-                     count={(subs || []).length} onClick={() => setRoom('abos')} />
-            {onExportFec && (
-              <HubCard icon="🧾" title="Export FEC" desc="le fichier que Sage / Cegid importent"
-                       onClick={() => onExportFec(s.tenant_id, s.name)} />
-            )}
-            {onOpenGrille && (
-              <HubCard icon="👥" title="Répartition des tâches" desc="qui fait quoi sur ce dossier"
-                       onClick={() => onOpenGrille(s.tenant_id, s.name)} />
-            )}
-          </div>
-        )}
         </div>
 
-        {/* ── MyFiteco-style bottom navigation — the 5 tabs ──────────────── */}
-        <div className="sticky bottom-0 z-10 bg-white border-t px-2 pt-1.5 grid grid-cols-5 mt-auto"
-             style={{ borderColor: '#E7E1D5', paddingBottom: 'max(6px, env(safe-area-inset-bottom))' }}>
-          {[[null, '🗂️', 'Synthèse'], ['achats', '🛒', 'Achats'], ['ventes', '📤', 'Ventes'],
-            ['agent', '🤖', 'Agent'], ['plus', '⋯', 'Plus']].map(([r, ic, lb]) => {
+        {/* ── Bottom navigation — four tabs ──────────────────────────────
+            Four, not five. The fifth was "Plus", whose contents were already on
+            Synthèse; a tab that leads somewhere you can already reach costs a
+            decision and returns nothing. Synthèse now IS the "everything" tab.  */}
+        <div className="sticky bottom-0 z-10 mc-surface px-2 pt-1.5 grid grid-cols-4 mt-auto"
+             style={{ borderTop: `1px solid ${MC.stroke}`,
+                      paddingBottom: 'max(6px, env(safe-area-inset-bottom))' }}>
+          {[[null, '🗂️', 'Synthèse'], ['achats', '🛒', 'Achats'],
+            ['ventes', '📤', 'Ventes'], ['agent', '🤖', 'Agent']].map(([r, ic, lb]) => {
+            // A sub-room opened from the hub keeps Synthèse lit — you are still
+            // "inside" it, and nothing else on the bar would be true.
             const active = room === r
-              || (r === 'plus' && ['pieces', 'abos', 'indicateurs'].includes(room));
+              || (r === null && ['pieces', 'abos', 'indicateurs'].includes(room));
             return (
               <button key={String(lb)} onClick={() => setRoom(r)}
-                      className="flex flex-col items-center py-1 rounded-xl"
-                      style={{ color: active ? '#2F6FB3' : '#8B8680',
-                               background: active ? 'rgba(47,111,179,.08)' : 'transparent' }}>
+                      className="flex flex-col items-center py-1.5 rounded-xl cursor-pointer"
+                      style={{ color: active ? MC.indigo : MC.ink3,
+                               background: active ? 'rgba(124,124,248,.12)' : 'transparent',
+                               transition: `background .22s ${EASE}, color .22s ${EASE}` }}>
                 <span className="text-lg leading-none">{ic}</span>
                 <span className="text-[10px] font-semibold mt-0.5">{lb}</span>
               </button>
@@ -1183,8 +1192,9 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
 
       {/* Floating 📷 — photograph a piece from anywhere in the dossier.
           On the Ventes tab it files a SALES invoice, everywhere else a purchase. */}
-      <label className="fixed bottom-20 right-5 w-14 h-14 rounded-2xl flex items-center justify-center text-2xl cursor-pointer"
-             style={{ background: '#2F6FB3', boxShadow: '0 8px 20px rgba(47,111,179,.45)' }}
+      <label className="fixed bottom-20 right-5 w-14 h-14 rounded-2xl flex items-center justify-center text-2xl cursor-pointer z-20"
+             style={{ background: `linear-gradient(135deg, ${MC.indigo}, #5B5BE8)`,
+                      boxShadow: '0 14px 34px -12px rgba(124,124,248,.95)' }}
              title={room === 'ventes' ? 'Photographier une facture de vente'
                     : 'Photographier une facture fournisseur / un ticket'}>
         <span>📷</span>
@@ -1199,23 +1209,47 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
 /** One "room" card on the dossier hub — icon, label, counter, badge. */
 function HubCard({ icon, title, desc, count, badge, accent, onClick }) {
   return (
-    <button onClick={onClick}
-            className="flex items-center gap-3 text-left rounded-2xl border p-4 bg-white hover:shadow transition"
-            style={{ borderColor: accent ? '#2F6FB3' : '#EAE7F2', borderWidth: accent ? 2 : 1 }}>
+    <button onClick={onClick} className="hub-card flex items-center gap-3 text-left p-4 cursor-pointer"
+            style={{ ...glass(accent ? 'accent' : undefined), borderRadius: 16 }}>
       <span className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0"
-            style={{ background: '#E8EDFB' }}>{icon}</span>
+            style={{ background: accent ? 'rgba(124,124,248,.22)' : 'rgba(255,255,255,.07)',
+                     border: `1px solid ${MC.stroke}` }}>{icon}</span>
       <span className="flex-1 min-w-0">
-        <span className="block text-sm font-bold text-[#1C1917]">{title}</span>
-        <span className="block text-[11px] text-[#8B8680] truncate">{desc}</span>
+        <span className="block text-sm font-bold" style={{ color: MC.ink }}>{title}</span>
+        <span className="block text-[11px] truncate" style={{ color: MC.ink3 }}>{desc}</span>
       </span>
       {badge > 0 && (
         <LiveText className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
-              style={{ background: 'rgba(192,57,43,.12)', color: '#C0392B' }}>{String(badge)}</LiveText>
+              style={{ background: 'rgba(255,107,107,.16)', color: MC.red }}>{String(badge)}</LiveText>
       )}
       {!(badge > 0) && (count ?? null) !== null && (
-        <LiveText className="text-xs font-semibold text-[#57534E] shrink-0">{String(count)}</LiveText>
+        <LiveText className="text-xs font-semibold shrink-0" style={{ color: MC.ink2 }}>{String(count)}</LiveText>
       )}
-      <ChevronRight size={16} style={{ color: '#C9C2B4' }} className="shrink-0" />
+      <ChevronRight size={16} style={{ color: MC.ink3 }} className="shrink-0" />
     </button>
+  );
+}
+
+/**
+ * DossierSkin — the one place the dossier's dark surfaces are defined.
+ *
+ * The dossier used to open as a light lavender sheet on top of a dark navy
+ * dashboard, which read as landing on a different product mid-click. Rather
+ * than rewrite ~450 lines of utility classes, the handful of surface classes
+ * those lines already use (`mc-surface`, `divide-y`, form fields) are redefined
+ * here in the mission-control language, so the whole dossier inherits it.
+ */
+function DossierSkin() {
+  return (
+    <style>{`
+      .mc-surface{background:${MC.glass};backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+      .hub-card{transition:transform .2s ${EASE}, box-shadow .2s ${EASE}, background .2s ${EASE}}
+      .hub-card:hover{transform:translateY(-2px);background:${MC.glassStrong}}
+      .hub-card:active{transform:scale(.99)}
+      [class*="divide-y"] > * + *{border-top-color:${MC.stroke} !important}
+      .fld,.fld-sm,input,select,textarea{color-scheme:dark}
+      input::placeholder,textarea::placeholder{color:${MC.ink3}}
+      select option{background:#0D1428;color:${MC.ink}}
+    `}</style>
   );
 }
