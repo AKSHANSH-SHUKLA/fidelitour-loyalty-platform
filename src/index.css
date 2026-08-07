@@ -389,6 +389,36 @@ textarea::placeholder {
   opacity: 0.7;
 }
 
+/* Dark-surface forms (Espace Cabinet).
+   The defaults above are written for the light product and, thanks to the
+   :not() chain, outrank any single class a component can add. So a form on a
+   dark sheet rendered as white boxes. Rather than fight it per component,
+   anything inside .mc-dark opts into the mission-control palette here, at
+   matching specificity. Add the class once on a page root; modals rendered
+   inside that tree inherit it. */
+.mc-dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+.mc-dark textarea,
+.mc-dark select {
+  color: #F8FAFC;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  color-scheme: dark;
+}
+.mc-dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover,
+.mc-dark textarea:hover,
+.mc-dark select:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.mc-dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
+.mc-dark textarea:focus,
+.mc-dark select:focus {
+  border-color: #7C7CF8;
+  box-shadow: 0 0 0 3px rgba(124, 124, 248, 0.18);
+}
+.mc-dark input::placeholder,
+.mc-dark textarea::placeholder { color: #7C879F; opacity: 1; }
+.mc-dark select option { background: #0D1428; color: #F8FAFC; }
+
 /* Premium button utility classes — use these instead of hand-rolling
    button styles per component. Three flavours: primary (brand), secondary
    (hairline), ghost (text-only). All share the same height + radius

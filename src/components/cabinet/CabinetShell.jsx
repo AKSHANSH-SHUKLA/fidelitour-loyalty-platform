@@ -51,7 +51,7 @@ export default function CabinetShell({ title, subtitle, headerRight, children,
   };
 
   return (
-    <div className="min-h-screen relative" style={{ color: MC.ink }}>
+    <div className="mc-dark min-h-screen relative" style={{ color: MC.ink }}>
       <AmbientCanvas />
       <div className="relative flex">
         <Sidebar

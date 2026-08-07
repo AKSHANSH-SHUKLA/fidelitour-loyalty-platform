@@ -272,7 +272,7 @@ export default function CabinetDashboard() {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ color: MC.ink }}>
+    <div className="mc-dark min-h-screen relative" style={{ color: MC.ink }}>
       <AmbientCanvas />
       <div className="relative">
       <div className="flex">
@@ -729,7 +729,7 @@ function DrillModal({ data, onClose, onReview, reviewing, onActFor, acting,
     (i) => i.review_status === 'validated' && i.payment_status !== 'paid');
   const unpaidTot = unpaid.reduce((a, i) => a + (i.total_ttc || 0), 0);
   return (
-    <div className="fixed inset-0 z-50 overflow-auto" style={{ background: MC.bg, color: MC.ink }}>
+    <div className="mc-dark fixed inset-0 z-50 overflow-auto" style={{ background: MC.bg, color: MC.ink }}>
       <DossierSkin />
       <AmbientCanvas />
       <div className="min-h-full flex flex-col relative">
@@ -1251,13 +1251,8 @@ function DossierSkin() {
       .hub-card:hover{transform:translateY(-2px);background:${MC.glassStrong}}
       .hub-card:active{transform:scale(.99)}
       [class*="divide-y"] > * + *{border-top-color:${MC.stroke} !important}
-      /* Any control the room markup renders, whatever class it carries. A single
-         white select in a dark sheet is the thing the eye lands on first. */
-      input,select,textarea{color-scheme:dark;background:rgba(255,255,255,.06);
-        color:${MC.ink};border:1px solid ${MC.stroke};border-radius:10px}
-      input:focus,select:focus,textarea:focus{outline:none;border-color:${MC.indigo}}
-      input::placeholder,textarea::placeholder{color:${MC.ink3}}
-      select option{background:#0D1428;color:${MC.ink}}
+      /* Controls are handled by the .mc-dark scope in index.css, which is the
+         only place that can outrank the global light form defaults. */
       input[type=file]{background:none;border:none}
     `}</style>
   );
