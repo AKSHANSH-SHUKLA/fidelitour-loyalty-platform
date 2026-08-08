@@ -134,7 +134,7 @@ const BusinessHoursCard = () => {
         </h3>
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: C_PS.hairline }}>
           <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest"
-               style={{ color: C_PS.inkMute, background: '#FAF8F4', borderBottom: `1px solid ${C_PS.hairline}` }}>
+               style={{ color: C_PS.inkMute, background: '#FAFAF8', borderBottom: `1px solid ${C_PS.hairline}` }}>
             <span className="col-span-3">Jour</span>
             <span className="col-span-3">Ouverture</span>
             <span className="col-span-3">Fermeture</span>
@@ -213,7 +213,7 @@ const BusinessHoursCard = () => {
                 onClick={() => toggleHoliday(h)}
                 className="text-left p-3 rounded-lg border transition"
                 style={{
-                  background: h.closed ? '#FEF9E7' : 'white',
+                  background: h.closed ? '#F6E9E2' : 'white',
                   borderColor: h.closed ? '#E3A86988' : C_PS.hairline,
                 }}
               >
@@ -268,7 +268,7 @@ const BusinessHoursCard = () => {
           )}
           {annual.map((r, i) => (
             <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg border"
-                 style={{ background: '#FAF8F4', borderColor: C_PS.hairline }}>
+                 style={{ background: '#FAFAF8', borderColor: C_PS.hairline }}>
               <input
                 className="col-span-4 border rounded px-2 py-1.5 text-sm"
                 style={{ borderColor: C_PS.hairline }}

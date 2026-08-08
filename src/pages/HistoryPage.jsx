@@ -174,7 +174,7 @@ const HistoryPage = () => {
         <button
           onClick={() => setActiveTab('campaigns')}
           className={`pb-3 px-4 text-sm font-semibold border-b-2 transition ${
-            activeTab === 'campaigns' ? 'text-[#B85C38] border-[#B85C38]' : 'text-[#57534E] border-transparent hover:text-[#1C1917]'
+            activeTab === 'campaigns' ? 'text-[#B85C38] border-[#B85C38]' : 'text-[#57504A] border-transparent hover:text-[#171412]'
           }`}
         >
           <Mail size={14} className="inline mr-2" />
@@ -183,7 +183,7 @@ const HistoryPage = () => {
         <button
           onClick={() => setActiveTab('pushes')}
           className={`pb-3 px-4 text-sm font-semibold border-b-2 transition ${
-            activeTab === 'pushes' ? 'text-[#B85C38] border-[#B85C38]' : 'text-[#57534E] border-transparent hover:text-[#1C1917]'
+            activeTab === 'pushes' ? 'text-[#B85C38] border-[#B85C38]' : 'text-[#57504A] border-transparent hover:text-[#171412]'
           }`}
         >
           <Bell size={14} className="inline mr-2" />
@@ -193,13 +193,13 @@ const HistoryPage = () => {
 
       {/* Content */}
       {loading ? (
-        <div className="bg-white rounded-xl p-12 text-center text-[#57534E]" style={{ border: `1px solid ${C_PS.hairline}` }}>
+        <div className="bg-white rounded-xl p-12 text-center text-[#57504A]" style={{ border: `1px solid ${C_PS.hairline}` }}>
           Loading…
         </div>
       ) : activeTab === 'campaigns' ? (
         <div className="space-y-3">
           {campaigns.length === 0 && (
-            <div className="bg-white rounded-xl p-12 text-center text-[#57534E]" style={{ border: `1px solid ${C_PS.hairline}` }}>
+            <div className="bg-white rounded-xl p-12 text-center text-[#57504A]" style={{ border: `1px solid ${C_PS.hairline}` }}>
               No campaigns found for this period.
             </div>
           )}
@@ -240,7 +240,7 @@ const HistoryPage = () => {
       ) : (
         <div className="space-y-3">
           {pushes.length === 0 && (
-            <div className="bg-white rounded-xl p-12 text-center text-[#57534E]" style={{ border: `1px solid ${C_PS.hairline}` }}>
+            <div className="bg-white rounded-xl p-12 text-center text-[#57504A]" style={{ border: `1px solid ${C_PS.hairline}` }}>
               No push notifications found for this period.
             </div>
           )}
@@ -278,8 +278,8 @@ const Stat = ({ label, value, icon: Icon }) => (
   <div className="flex items-center gap-2">
     <Icon size={14} className="text-[#B85C38] shrink-0" />
     <div className="min-w-0">
-      <p className="text-[10px] uppercase font-bold tracking-widest text-[#57534E]">{label}</p>
-      <p className="text-sm font-bold text-[#1C1917]">{value ?? 0}</p>
+      <p className="text-[10px] uppercase font-bold tracking-widest text-[#57504A]">{label}</p>
+      <p className="text-sm font-bold text-[#171412]">{value ?? 0}</p>
     </div>
   </div>
 );

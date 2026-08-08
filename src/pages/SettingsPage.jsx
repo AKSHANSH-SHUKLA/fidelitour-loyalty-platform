@@ -145,7 +145,7 @@ const SettingsPage = () => {
             <SettingsNavigator />
 
             {message && (
-                <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-[#e8f3e5] border-[#E7E5E4] text-[#2d5016]' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-[#e8f3e5] border-[#E9E5E0] text-[#2d5016]' : 'bg-red-50 border-red-200 text-red-700'}`}>
                     {message.text}
                 </div>
             )}
@@ -153,30 +153,30 @@ const SettingsPage = () => {
             <form onSubmit={handleSave} className="space-y-8">
 
                 {/* Business Profile Section */}
-                <div id="settings-profile" className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden scroll-mt-24">
+                <div id="settings-profile" className="bg-white p-8 rounded-2xl border border-[#E9E5E0] shadow-sm relative overflow-hidden scroll-mt-24">
                     <div className="absolute right-0 top-0 w-32 h-32 bg-[#E3A869]/10 rounded-bl-full pointer-events-none"></div>
 
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-[#1C1917] flex items-center justify-center text-[#E3A869]">
+                        <div className="w-10 h-10 rounded-full bg-[#171412] flex items-center justify-center text-[#E3A869]">
                             <MapPin className="w-5 h-5" />
                         </div>
-                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">Business Profile</h2>
+                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#171412]">Business Profile</h2>
                     </div>
 
                     <div className="space-y-6 max-w-2xl">
                         <div>
-                            <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide">Business Name</label>
+                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide">Business Name</label>
                             <input
                                 type="text"
                                 value={settings.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
                                 placeholder="Your business name"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-[#1C1917] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide flex items-center gap-2">
                                 <Phone className="w-4 h-4" />
                                 Phone Number
                             </label>
@@ -185,12 +185,12 @@ const SettingsPage = () => {
                                 value={settings.phone}
                                 onChange={(e) => handleChange('phone', e.target.value)}
                                 placeholder="+33 1 23 45 67 89"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-[#1C1917] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide flex items-center gap-2">
                                 <MapPin className="w-4 h-4" />
                                 Physical Address
                             </label>
@@ -199,12 +199,12 @@ const SettingsPage = () => {
                                 value={settings.address}
                                 onChange={(e) => handleChange('address', e.target.value)}
                                 placeholder="Street address, city, postal code"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-[#1C1917] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-[#1C1917] mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide flex items-center gap-2">
                                 <Globe className="w-4 h-4" />
                                 Website URL
                             </label>
@@ -213,27 +213,27 @@ const SettingsPage = () => {
                                 value={settings.website}
                                 onChange={(e) => handleChange('website', e.target.value)}
                                 placeholder="https://www.yourwebsite.com"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-[#1C1917] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Join URL Section */}
-                <div id="settings-join" className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden scroll-mt-24">
+                <div id="settings-join" className="bg-white p-8 rounded-2xl border border-[#E9E5E0] shadow-sm relative overflow-hidden scroll-mt-24">
                     <div className="absolute right-0 top-0 w-32 h-32 bg-[#E3A869]/10 rounded-bl-full pointer-events-none"></div>
 
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-[#1C1917] flex items-center justify-center text-[#E3A869]">
+                        <div className="w-10 h-10 rounded-full bg-[#171412] flex items-center justify-center text-[#E3A869]">
                             <Share2 className="w-5 h-5" />
                         </div>
-                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">Customer Join Link</h2>
+                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#171412]">Customer Join Link</h2>
                     </div>
 
                     <div className="space-y-4 max-w-2xl">
-                        <p className="text-sm text-[#57534E]">Share this link with customers to join your loyalty program:</p>
+                        <p className="text-sm text-[#57504A]">Share this link with customers to join your loyalty program:</p>
                         <div className="flex items-center gap-3">
-                            <div className="flex-1 px-4 py-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4] text-sm font-mono text-[#1C1917] break-all">
+                            <div className="flex-1 px-4 py-3 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0] text-sm font-mono text-[#171412] break-all">
                                 {joinUrl}
                             </div>
                             <button
@@ -244,16 +244,16 @@ const SettingsPage = () => {
                                 Copy
                             </button>
                         </div>
-                        <p className="text-xs text-[#57534E]">Customers can scan the QR code or click this link to join your program.</p>
+                        <p className="text-xs text-[#57504A]">Customers can scan the QR code or click this link to join your program.</p>
 
                         {/* Print-ready join poster — owner downloads / prints, places on counter, customer scans. */}
                         <JoinQRPoster joinUrl={joinUrl} businessName={settings.name || 'Notre boutique'} />
                     </div>
 
                     {/* Per-channel pre-tagged links */}
-                    <div className="mt-8 pt-6 border-t border-[#E7E5E4]">
-                        <h3 className="text-lg font-bold font-['Cormorant_Garamond'] text-[#1C1917] mb-2">Per-channel links (auto-tagged)</h3>
-                        <p className="text-sm text-[#57534E] mb-4">
+                    <div className="mt-8 pt-6 border-t border-[#E9E5E0]">
+                        <h3 className="text-lg font-bold font-['Cormorant_Garamond'] text-[#171412] mb-2">Per-channel links (auto-tagged)</h3>
+                        <p className="text-sm text-[#57504A] mb-4">
                             Use these channel-specific URLs so every signup is attributed automatically — no need for the customer to pick a source.
                             Your analytics (Customer Map, Acquisition breakdown, Campaign targeting) will update in real time.
                         </p>
@@ -261,14 +261,14 @@ const SettingsPage = () => {
                             {channelLinks.map(({ key, label, emoji, desc }) => {
                                 const url = `${joinUrl}?src=${key}`;
                                 return (
-                                    <div key={key} className="p-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+                                    <div key={key} className="p-3 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
                                         <div className="flex items-start gap-3">
                                             <div className="text-2xl leading-none pt-1">{emoji}</div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="font-bold text-[#1C1917]">{label}</div>
-                                                <div className="text-xs text-[#57534E] mb-2">{desc}</div>
+                                                <div className="font-bold text-[#171412]">{label}</div>
+                                                <div className="text-xs text-[#57504A] mb-2">{desc}</div>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex-1 px-3 py-2 rounded bg-white border border-[#E7E5E4] text-xs font-mono text-[#1C1917] break-all">
+                                                    <div className="flex-1 px-3 py-2 rounded bg-white border border-[#E9E5E0] text-xs font-mono text-[#171412] break-all">
                                                         {url}
                                                     </div>
                                                     <button
@@ -380,14 +380,14 @@ function SettingsNavigator() {
     <div className="sticky top-2 z-30 bg-white/90 backdrop-blur rounded-2xl border shadow-sm p-3"
          style={{ borderColor: '#EFE9E0' }}>
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B8680' }}>
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8D857D' }}>
           Aller à :
         </span>
         {/* Dropdown for mobile / quick jump */}
         <select
           onChange={(e) => e.target.value && jumpTo(e.target.value)}
           className="flex-1 md:flex-none border rounded-lg px-3 py-1.5 text-sm font-medium"
-          style={{ borderColor: '#E7E5E4', background: 'white', minWidth: 220 }}
+          style={{ borderColor: '#E9E5E0', background: 'white', minWidth: 220 }}
           defaultValue=""
         >
           <option value="" disabled>Choisir une section…</option>
@@ -402,8 +402,8 @@ function SettingsNavigator() {
               key={s.id}
               type="button"
               onClick={() => jumpTo(s.id)}
-              className="px-2.5 py-1 text-[11px] font-semibold rounded-full border transition hover:bg-[#FAF8F4]"
-              style={{ borderColor: '#E7E5E4', color: '#3D2820' }}
+              className="px-2.5 py-1 text-[11px] font-semibold rounded-full border transition hover:bg-[#FAFAF8]"
+              style={{ borderColor: '#E9E5E0', color: '#3D2820' }}
             >
               {s.label}
             </button>
@@ -451,14 +451,14 @@ function OwnerGeoCard({ initial }) {
   };
 
   return (
-    <div className="bg-white p-8 rounded-2xl border border-[#E7E5E4] shadow-sm relative overflow-hidden">
+    <div className="bg-white p-8 rounded-2xl border border-[#E9E5E0] shadow-sm relative overflow-hidden">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-[#1C1917] flex items-center justify-center text-[#E3A869]">
+        <div className="w-10 h-10 rounded-full bg-[#171412] flex items-center justify-center text-[#E3A869]">
           <MapPin className="w-5 h-5" />
         </div>
-        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#1C1917]">Geolocalisation</h2>
+        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#171412]">Geolocalisation</h2>
       </div>
-      <p className="text-sm text-[#57534E] max-w-2xl mb-6">
+      <p className="text-sm text-[#57504A] max-w-2xl mb-6">
         Quand un client équipé de votre carte de fidélité passe dans votre rayon, <b>il</b> reçoit
         une notification push avec une offre personnalisée. Configurez le rayon et la fréquence
         ci-dessous pour adapter la stratégie à votre commerce.
@@ -466,10 +466,10 @@ function OwnerGeoCard({ initial }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-6">
         {/* Enable / Disable */}
-        <label className="p-4 rounded-lg border border-[#E7E5E4] flex items-center justify-between cursor-pointer hover:bg-[#FAF8F4]">
+        <label className="p-4 rounded-lg border border-[#E9E5E0] flex items-center justify-between cursor-pointer hover:bg-[#FAFAF8]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57534E]">Statut</p>
-            <p className="text-base font-bold" style={{ color: cfg.geo_enabled ? '#2d5016' : '#8B8680' }}>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57504A]">Statut</p>
+            <p className="text-base font-bold" style={{ color: cfg.geo_enabled ? '#2d5016' : '#8D857D' }}>
               {cfg.geo_enabled ? '✓ Activé' : '— Désactivé'}
             </p>
           </div>
@@ -482,20 +482,20 @@ function OwnerGeoCard({ initial }) {
         </label>
 
         {/* Audience — read-only (admin-only) */}
-        <div className="p-4 rounded-lg border border-[#E7E5E4] bg-[#F3EFE7]">
-          <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#7B3F00]">Audience</p>
-          <p className="text-base font-bold text-[#7B3F00]">
+        <div className="p-4 rounded-lg border border-[#E9E5E0] bg-[#F5F4F1]">
+          <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#96431F]">Audience</p>
+          <p className="text-base font-bold text-[#96431F]">
             {cfg.vip_geo_only ? '🎯 VIP uniquement' : (cfg.geo_enabled ? 'Tous les clients' : '—')}
           </p>
-          <p className="text-[10px] text-[#8B8680] mt-1">
+          <p className="text-[10px] text-[#8D857D] mt-1">
             Réglage géré par notre équipe — contactez-nous pour ajuster.
           </p>
         </div>
 
         {/* Radius slider */}
-        <div className="p-4 rounded-lg border border-[#E7E5E4] md:col-span-2">
+        <div className="p-4 rounded-lg border border-[#E9E5E0] md:col-span-2">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#57534E]">Rayon de notification</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#57504A]">Rayon de notification</p>
             <span className="text-base font-bold text-[#B85C38]">{cfg.geo_radius_meters || 500} m</span>
           </div>
           <input
@@ -508,16 +508,16 @@ function OwnerGeoCard({ initial }) {
             onChange={(e) => setCfg({ ...cfg, geo_radius_meters: parseInt(e.target.value, 10) })}
             className="w-full accent-[#B85C38]"
           />
-          <div className="flex justify-between text-[10px] text-[#8B8680] mt-1">
+          <div className="flex justify-between text-[10px] text-[#8D857D] mt-1">
             <span>50 m (très proche)</span>
             <span>2 km (large quartier)</span>
           </div>
         </div>
 
         {/* Cooldown slider */}
-        <div className="p-4 rounded-lg border border-[#E7E5E4] md:col-span-2">
+        <div className="p-4 rounded-lg border border-[#E9E5E0] md:col-span-2">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#57534E]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#57504A]">
               Délai entre deux notifications (par client)
             </p>
             <span className="text-base font-bold text-[#B85C38]">
@@ -534,7 +534,7 @@ function OwnerGeoCard({ initial }) {
             onChange={(e) => setCfg({ ...cfg, geo_cooldown_days: parseInt(e.target.value, 10) })}
             className="w-full accent-[#B85C38]"
           />
-          <div className="flex justify-between text-[10px] text-[#8B8680] mt-1">
+          <div className="flex justify-between text-[10px] text-[#8D857D] mt-1">
             <span>1 jour (intensif)</span>
             <span>30 jours (parcimonieux)</span>
           </div>
@@ -553,7 +553,7 @@ function OwnerGeoCard({ initial }) {
           variant="geo"
           caption="Preview — proximity notification"
         />
-        <div className="flex-1 text-sm space-y-2" style={{ color: '#7B3F00' }}>
+        <div className="flex-1 text-sm space-y-2" style={{ color: '#96431F' }}>
           <p className="font-bold">How does it work?</p>
           <p>
             When a customer with your loyalty card (and location permission granted)

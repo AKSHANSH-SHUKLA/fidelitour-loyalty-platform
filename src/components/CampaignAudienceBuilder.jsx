@@ -182,10 +182,10 @@ const CampaignAudienceBuilder = ({
   const [advOpen, setAdvOpen] = useState(false);
 
   return (
-    <div className="border-t pt-6 space-y-5" style={{ borderColor: '#E7E5E4' }}>
+    <div className="border-t pt-6 space-y-5" style={{ borderColor: '#E9E5E0' }}>
       <div className="flex items-center gap-2">
         <Users size={18} className="text-[#B85C38]" />
-        <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+        <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
           Audience
         </h3>
         <span className="text-xs ml-auto" style={{ color: C_PS.inkMute }}>
@@ -194,7 +194,7 @@ const CampaignAudienceBuilder = ({
       </div>
 
       {/* ---- Search picker ---- */}
-      <div className="rounded-lg p-4 space-y-3" style={{ background: '#F3EFE7', border: `1px solid ${C_PS.hairline}` }}>
+      <div className="rounded-lg p-4 space-y-3" style={{ background: '#F5F4F1', border: `1px solid ${C_PS.hairline}` }}>
         <label className="text-xs font-bold uppercase tracking-widest block" style={{ color: C_PS.inkMute }}>
           Pick specific customers (optional)
         </label>
@@ -227,7 +227,7 @@ const CampaignAudienceBuilder = ({
                   onMouseDown={() => addPick({
                     id: c.id, name: c.name, email: c.email, tier: c.tier,
                   })}
-                  className="w-full text-left px-3 py-2 hover:bg-[#F3EFE7] flex items-center justify-between gap-3"
+                  className="w-full text-left px-3 py-2 hover:bg-[#F5F4F1] flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: C_PS.inkDeep }}>{c.name}</p>
@@ -286,8 +286,8 @@ const CampaignAudienceBuilder = ({
                   className="px-3 py-1.5 rounded-full text-xs font-semibold transition border"
                   style={{
                     background: on ? '#B85C38' : 'white',
-                    color: on ? 'white' : '#57534E',
-                    borderColor: on ? '#B85C38' : '#E7E5E4',
+                    color: on ? 'white' : '#57504A',
+                    borderColor: on ? '#B85C38' : '#E9E5E0',
                   }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
@@ -322,7 +322,7 @@ const CampaignAudienceBuilder = ({
             value={F.customerStatus || ''}
             onChange={(e) => setF({ customerStatus: e.target.value || null })}
             className="border rounded-lg px-3 py-1.5 text-sm bg-white"
-            style={{ borderColor: '#E7E5E4', minWidth: 220 }}>
+            style={{ borderColor: '#E9E5E0', minWidth: 220 }}>
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -343,14 +343,14 @@ const CampaignAudienceBuilder = ({
             <Row label="Minimum points">
               <input type="number" min={0} value={F.minPoints || ''}
                 onChange={(e) => setF({ minPoints: parseInt(e.target.value || '0', 10) || 0 })}
-                className="w-32 border rounded-lg px-3 py-1.5 text-sm bg-white" style={{ borderColor: '#E7E5E4' }} />
+                className="w-32 border rounded-lg px-3 py-1.5 text-sm bg-white" style={{ borderColor: '#E9E5E0' }} />
             </Row>
 
             <Row label="Postal codes" hint="Comma-separated, e.g. 75001,75002">
               <input type="text" value={F.postalCodes || ''}
                 onChange={(e) => setF({ postalCodes: e.target.value })}
                 placeholder="75001,75002,75003"
-                className="w-full md:w-72 border rounded-lg px-3 py-1.5 text-sm bg-white" style={{ borderColor: '#E7E5E4' }} />
+                className="w-full md:w-72 border rounded-lg px-3 py-1.5 text-sm bg-white" style={{ borderColor: '#E9E5E0' }} />
             </Row>
 
             <Row label="Inactive for at least"
@@ -364,7 +364,7 @@ const CampaignAudienceBuilder = ({
                   })}
                   placeholder="e.g. 30"
                   className="w-32 border rounded-lg px-3 py-1.5 text-sm bg-white"
-                  style={{ borderColor: '#E7E5E4' }}
+                  style={{ borderColor: '#E9E5E0' }}
                 />
                 <span className="text-xs" style={{ color: C_PS.inkMute }}>days</span>
               </div>
@@ -380,8 +380,8 @@ const CampaignAudienceBuilder = ({
                       className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition border"
                       style={{
                         background: on ? '#B85C38' : 'white',
-                        color: on ? 'white' : '#57534E',
-                        borderColor: on ? '#B85C38' : '#E7E5E4',
+                        color: on ? 'white' : '#57504A',
+                        borderColor: on ? '#B85C38' : '#E9E5E0',
                       }}>
                       {m.slice(0, 3)}
                     </button>
@@ -429,14 +429,14 @@ const RangePair = ({ minVal, maxVal, onMinChange, onMaxChange, unit, step, minLa
       <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: C_PS.inkMute }}>{minLabel}</span>
       <input type="number" min={0} step={step} value={minVal}
         onChange={(e) => onMinChange(e.target.value === '' ? null : parseFloat(e.target.value))}
-        className="w-24 border rounded-lg px-2 py-1.5 text-sm bg-white" style={{ borderColor: '#E7E5E4' }} />
+        className="w-24 border rounded-lg px-2 py-1.5 text-sm bg-white" style={{ borderColor: '#E9E5E0' }} />
     </div>
     <span style={{ color: C_PS.inkMute }}>–</span>
     <div className="flex items-center gap-1">
       <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: C_PS.inkMute }}>{maxLabel}</span>
       <input type="number" min={0} step={step} value={maxVal}
         onChange={(e) => onMaxChange(e.target.value === '' ? null : parseFloat(e.target.value))}
-        className="w-24 border rounded-lg px-2 py-1.5 text-sm bg-white" style={{ borderColor: '#E7E5E4' }} />
+        className="w-24 border rounded-lg px-2 py-1.5 text-sm bg-white" style={{ borderColor: '#E9E5E0' }} />
     </div>
     <span className="text-xs" style={{ color: C_PS.inkMute }}>{unit}</span>
   </div>

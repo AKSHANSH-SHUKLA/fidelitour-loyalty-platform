@@ -95,7 +95,7 @@ export default function VisitsTwinChart({ controlledDays = null } = {}) {
                     key={o.days}
                     type="button"
                     onClick={() => { setOpt(o); setOpen(false); }}
-                    className="block w-full text-left px-3 py-1.5 text-[12px] hover:bg-[#FAF8F4]"
+                    className="block w-full text-left px-3 py-1.5 text-[12px] hover:bg-[#FAFAF8]"
                     style={{ color: o.days === opt.days ? 'var(--brand-deep)' : 'var(--ink)' }}
                   >
                     {o.label}
@@ -125,7 +125,7 @@ export default function VisitsTwinChart({ controlledDays = null } = {}) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: -10 }}>
-              <CartesianGrid stroke="#ECE8E1" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="#EFEDE9" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="idx" tickLine={false} axisLine={false}
                 tick={{ fontSize: 10, fill: '#9C9590' }}
@@ -139,12 +139,12 @@ export default function VisitsTwinChart({ controlledDays = null } = {}) {
               <Tooltip
                 cursor={{ fill: 'rgba(184,92,56,0.06)' }}
                 contentStyle={{
-                  background: '#FFFFFF', border: '1px solid #ECE8E1',
+                  background: '#FFFFFF', border: '1px solid #EFEDE9',
                   borderRadius: 8, padding: '6px 10px',
-                  fontSize: 12, color: '#1F1B1A',
+                  fontSize: 12, color: '#171412',
                   boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
                 }}
-                labelStyle={{ color: '#7A716C', fontSize: 10, marginBottom: 2 }}
+                labelStyle={{ color: '#8D857D', fontSize: 10, marginBottom: 2 }}
                 formatter={(v, name) => [v, name === 'visits' ? 'Visites totales' : 'Clients uniques']}
                 labelFormatter={(l) => `Période ${l}`}
               />

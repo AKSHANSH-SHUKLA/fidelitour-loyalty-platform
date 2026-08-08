@@ -423,13 +423,13 @@ export default function CustomerMapPage() {
       </div>
 
       {/* Filters row */}
-      <div className="bg-white border border-[#E7E5E4] rounded-xl p-4 space-y-3">
+      <div className="bg-white border border-[#E9E5E0] rounded-xl p-4 space-y-3">
         {/* Row 1 — branch selector (if multi-branch) + search + send-campaign CTA */}
         <div className="flex flex-wrap items-center gap-3">
           {branches.length > 1 && (
-            <div className="flex items-center gap-2 bg-[#F3EFE7] border border-[#E7E5E4] rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 bg-[#F5F4F1] border border-[#E9E5E0] rounded-lg px-3 py-2">
               <Building2 size={14} className="text-[#B85C38]" />
-              <label className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Branch</label>
+              <label className="text-xs font-bold text-[#57504A] uppercase tracking-wider">Branch</label>
               <select
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
@@ -443,13 +443,13 @@ export default function CustomerMapPage() {
             </div>
           )}
           <div className="flex items-center gap-2 flex-1 min-w-[220px]">
-            <Search size={16} className="text-[#8B8680]" />
+            <Search size={16} className="text-[#8D857D]" />
             <input
               type="text"
               placeholder="Search customer name, email or postal code…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 px-3 py-2 border border-[#E7E5E4] rounded text-sm outline-none focus:border-[#B85C38]"
+              className="flex-1 px-3 py-2 border border-[#E9E5E0] rounded text-sm outline-none focus:border-[#B85C38]"
             />
           </div>
           <button
@@ -467,11 +467,11 @@ export default function CustomerMapPage() {
         {/* Row 2 — tier / source / city / region / min visits / min paid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div>
-            <label className="block text-xs mb-1 text-[#57534E]">Tier</label>
+            <label className="block text-xs mb-1 text-[#57504A]">Tier</label>
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
             >
               <option value="all">All tiers</option>
               <option value="bronze">Bronze</option>
@@ -481,11 +481,11 @@ export default function CustomerMapPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57534E]">Source</label>
+            <label className="block text-xs mb-1 text-[#57504A]">Source</label>
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
             >
               <option value="all">All sources</option>
               {Object.entries(SOURCE_BADGES).map(([k, v]) => (
@@ -494,21 +494,21 @@ export default function CustomerMapPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57534E]">City / département</label>
+            <label className="block text-xs mb-1 text-[#57504A]">City / département</label>
             <input
               type="text"
               placeholder="Paris, Lyon, Tours…"
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57534E]">Region (vs. center)</label>
+            <label className="block text-xs mb-1 text-[#57504A]">Region (vs. center)</label>
             <select
               value={regionFilter}
               onChange={(e) => setRegionFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
             >
               <option value="all">All France</option>
               <option value="N">⬆ North</option>
@@ -518,7 +518,7 @@ export default function CustomerMapPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57534E]">Min visits</label>
+            <label className="block text-xs mb-1 text-[#57504A]">Min visits</label>
             <input
               type="number"
               inputMode="numeric"
@@ -526,11 +526,11 @@ export default function CustomerMapPage() {
               placeholder="0"
               value={minVisits}
               onChange={(e) => setMinVisits(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57534E]">Min amount paid (€)</label>
+            <label className="block text-xs mb-1 text-[#57504A]">Min amount paid (€)</label>
             <input
               type="number"
               inputMode="decimal"
@@ -539,7 +539,7 @@ export default function CustomerMapPage() {
               placeholder="0"
               value={minAmountPaid}
               onChange={(e) => setMinAmountPaid(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E7E5E4] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
             />
           </div>
         </div>
@@ -547,7 +547,7 @@ export default function CustomerMapPage() {
         {/* Row 3 — active filter summary + clear */}
         {(tierFilter !== 'all' || sourceFilter !== 'all' || cityFilter || regionFilter !== 'all' ||
           minVisits || minAmountPaid || search || selectedDept) && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-[#57534E]">
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-[#57504A]">
             <span className="font-semibold">Showing {filteredAll.length} customer{filteredAll.length === 1 ? '' : 's'}:</span>
             {tierFilter !== 'all' && <Chip>Tier: {tierFilter}</Chip>}
             {sourceFilter !== 'all' && <Chip>Source: {SOURCE_BADGES[sourceFilter]?.label || sourceFilter}</Chip>}
@@ -557,7 +557,7 @@ export default function CustomerMapPage() {
             {Number(minAmountPaid) > 0 && <Chip>Min paid: €{minAmountPaid}</Chip>}
             {search && <Chip>"{search}"</Chip>}
             {selectedDept && <Chip>Dept {selectedDept}</Chip>}
-            <button onClick={resetFilters} className="ml-2 px-2 py-1 rounded border border-[#E7E5E4] hover:bg-[#FEF2F0]">
+            <button onClick={resetFilters} className="ml-2 px-2 py-1 rounded border border-[#E9E5E0] hover:bg-[#FEF2F0]">
               <X size={12} className="inline -mt-0.5" /> Clear all
             </button>
           </div>
@@ -591,16 +591,16 @@ export default function CustomerMapPage() {
       {/* Body: two columns. Left = départements list + mini-map. Right = detail panel. */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Départements list (takes 2/5) */}
-        <div className="lg:col-span-2 bg-white border border-[#E7E5E4] rounded-xl p-5 min-h-[500px]">
-          <h2 className="text-xl font-semibold mb-3 text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Départements {activeDept && <span className="text-sm font-normal text-[#8B8680]">({deptList.length})</span>}
+        <div className="lg:col-span-2 bg-white border border-[#E9E5E0] rounded-xl p-5 min-h-[500px]">
+          <h2 className="text-xl font-semibold mb-3 text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Départements {activeDept && <span className="text-sm font-normal text-[#8D857D]">({deptList.length})</span>}
           </h2>
-          <p className="text-xs text-[#8B8680] mb-4">
+          <p className="text-xs text-[#8D857D] mb-4">
             Click a département to drill into customers by postal code.
           </p>
           <div className="space-y-1 max-h-[560px] overflow-y-auto pr-1">
             {deptList.length === 0 && (
-              <p className="text-sm text-[#8B8680] italic">No customers match the current filters.</p>
+              <p className="text-sm text-[#8D857D] italic">No customers match the current filters.</p>
             )}
             {deptList.map((d) => {
               const isActive = selectedDept === d.code;
@@ -617,7 +617,7 @@ export default function CustomerMapPage() {
                   className={`w-full text-left rounded-lg px-3 py-2.5 transition flex items-center justify-between ${
                     isActive
                       ? 'bg-[#B85C38] text-white'
-                      : 'bg-[#F3EFE7] text-[#1C1917] hover:bg-[#E7E5E4]'
+                      : 'bg-[#F5F4F1] text-[#171412] hover:bg-[#E9E5E0]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -628,16 +628,16 @@ export default function CustomerMapPage() {
                     </span>
                     <div>
                       <div className="font-semibold text-sm">{d.name}</div>
-                      <div className={`text-xs ${isActive ? 'text-white/80' : 'text-[#8B8680]'}`}>
+                      <div className={`text-xs ${isActive ? 'text-white/80' : 'text-[#8D857D]'}`}>
                         {d.customers.length} customers · €{Math.round(d.revenue).toLocaleString()}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57534E]'}`}>
+                    <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57504A]'}`}>
                       {pct}%
                     </span>
-                    <ChevronRight size={16} className={isActive ? 'text-white' : 'text-[#8B8680]'} />
+                    <ChevronRight size={16} className={isActive ? 'text-white' : 'text-[#8D857D]'} />
                   </div>
                 </button>
               );
@@ -662,11 +662,11 @@ export default function CustomerMapPage() {
           ) : (
             <>
               {/* Mini France map (decorative) */}
-              <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
-                <h3 className="text-xl font-semibold mb-2 text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
+                <h3 className="text-xl font-semibold mb-2 text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
                   At a glance
                 </h3>
-                <p className="text-xs text-[#8B8680] mb-4">
+                <p className="text-xs text-[#8D857D] mb-4">
                   Bubble size = customer count in that département. Click a département on the left list to drill in.
                 </p>
                 <LeafletFranceMap deptList={deptList} selectedDept={selectedDept} onSelect={setSelectedDept} />
@@ -695,12 +695,12 @@ export default function CustomerMapPage() {
 
 function StatPill({ icon: Icon, label, value }) {
   return (
-    <div className="bg-white border border-[#E7E5E4] rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-1 text-[#57534E]">
+    <div className="bg-white border border-[#E9E5E0] rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-1 text-[#57504A]">
         <Icon size={14} />
         <span className="text-xs uppercase tracking-wide font-semibold">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-[#1C1917]">{value}</p>
+      <p className="text-2xl font-bold text-[#171412]">{value}</p>
     </div>
   );
 }
@@ -747,13 +747,13 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
   return (
     <div className="space-y-6">
       {/* Summary header */}
-      <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+      <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="px-2 py-1 rounded bg-[#B85C38] text-white font-bold text-sm">
               {dept.code}
             </span>
-            <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <h2 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
               {dept.name}
             </h2>
           </div>
@@ -768,7 +768,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
             <Megaphone size={14} /> Send to these {dept.customers.length}
           </button>
         </div>
-        <p className="text-sm text-[#8B8680] mb-4">
+        <p className="text-sm text-[#8D857D] mb-4">
           {dept.customers.length} customer{dept.customers.length !== 1 ? 's' : ''}
           {' · '}
           {Object.keys(dept.postalGroups).length} postal code{Object.keys(dept.postalGroups).length !== 1 ? 's' : ''}
@@ -782,7 +782,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
 
         {/* Tier mix */}
         <div className="mt-4">
-          <p className="text-xs uppercase tracking-wide font-semibold text-[#57534E] mb-2">Tier mix</p>
+          <p className="text-xs uppercase tracking-wide font-semibold text-[#57504A] mb-2">Tier mix</p>
           <div className="flex gap-2">
             {['gold', 'silver', 'bronze'].map((t) => {
               const n = dept.tierDist[t] || 0;
@@ -793,8 +793,8 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                   className="flex-1 p-2 rounded text-center"
                   style={{ backgroundColor: TIER_COLORS[t] + '25' }}
                 >
-                  <div className="text-sm font-bold text-[#1C1917]">{n}</div>
-                  <div className="text-xs text-[#57534E] capitalize">{t} ({pct}%)</div>
+                  <div className="text-sm font-bold text-[#171412]">{n}</div>
+                  <div className="text-xs text-[#57504A] capitalize">{t} ({pct}%)</div>
                 </div>
               );
             })}
@@ -803,12 +803,12 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
       </div>
 
       {/* Compass breakdown — where the département's customers are, geographically */}
-      <div className="bg-white border border-[#E7E5E4] rounded-xl">
+      <div className="bg-white border border-[#E9E5E0] rounded-xl">
         <div className="p-5 pb-0">
-          <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          <h3 className="text-xl font-semibold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Customer regions within {dept.name}
           </h3>
-          <p className="text-xs text-[#8B8680]">
+          <p className="text-xs text-[#8D857D]">
             Quickly see whether most of your {dept.code} customers live to the north, south, east or west of the département's center.
           </p>
         </div>
@@ -817,10 +817,10 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
 
       {/* Top spenders in department */}
       {topSpenders.length > 0 && (
-        <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+        <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <Award size={18} className="text-[#B85C38]" />
-            <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <h3 className="text-xl font-semibold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
               Top spenders in {dept.name}
             </h3>
           </div>
@@ -830,24 +830,24 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                 key={c.id}
                 type="button"
                 onClick={() => selectCustomer(c)}
-                className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7] hover:bg-[#E7E5E4] transition text-left"
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F5F4F1] hover:bg-[#E9E5E0] transition text-left"
                 title="Click to view full customer details"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[#1C1917]">{c.name}</span>
+                      <span className="font-semibold text-[#171412]">{c.name}</span>
                       <TierBadge tier={c.tier} size="xs" />
                     </div>
-                    <p className="text-xs text-[#8B8680]">
+                    <p className="text-xs text-[#8D857D]">
                       {c.postal_code} · {c.total_visits} visits
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-                  <p className="text-xs text-[#8B8680]">spent</p>
+                  <p className="font-bold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                  <p className="text-xs text-[#8D857D]">spent</p>
                 </div>
               </button>
             ))}
@@ -856,11 +856,11 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
       )}
 
       {/* Postal-code segmentation */}
-      <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
-        <h3 className="text-xl font-semibold mb-1 text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+      <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
+        <h3 className="text-xl font-semibold mb-1 text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
           Customers by postal code
         </h3>
-        <p className="text-xs text-[#8B8680] mb-4">
+        <p className="text-xs text-[#8D857D] mb-4">
           Each postal code (code postal) is one block or neighbourhood. Click to see the full list.
         </p>
         <div className="space-y-2">
@@ -870,15 +870,15 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
               ? Math.round((p.customers.length / dept.customers.length) * 100)
               : 0;
             return (
-              <div key={p.code} className="border border-[#E7E5E4] rounded-lg overflow-hidden">
+              <div key={p.code} className="border border-[#E9E5E0] rounded-lg overflow-hidden">
                 <button
                   onClick={() => togglePostal(p.code)}
-                  className="w-full flex items-center justify-between p-3 bg-[#FDFBF7] hover:bg-[#F3EFE7] transition"
+                  className="w-full flex items-center justify-between p-3 bg-[#FAFAF8] hover:bg-[#F5F4F1] transition"
                 >
                   <div className="flex items-center gap-3">
                     {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    <span className="font-bold text-[#1C1917]">{p.code}</span>
-                    <span className="text-sm text-[#57534E]">
+                    <span className="font-bold text-[#171412]">{p.code}</span>
+                    <span className="text-sm text-[#57504A]">
                       {p.customers.length} customer{p.customers.length !== 1 ? 's' : ''}
                       {' · '}
                       €{Math.round(p.revenue).toLocaleString()}
@@ -890,8 +890,8 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                 </button>
                 {expanded && (
                   <>
-                    <div className="px-3 py-2 bg-[#FDFBF7] border-t border-[#E7E5E4] flex items-center justify-between">
-                      <p className="text-xs text-[#8B8680]">
+                    <div className="px-3 py-2 bg-[#FAFAF8] border-t border-[#E9E5E0] flex items-center justify-between">
+                      <p className="text-xs text-[#8D857D]">
                         Click any customer for full details, or message this postal-code cohort.
                       </p>
                       <button
@@ -905,7 +905,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                       </button>
                     </div>
                     <QuadrantBreakdown customers={p.customers} label={p.code} onSelectCustomer={selectCustomer} />
-                    <div className="divide-y divide-[#E7E5E4]">
+                    <div className="divide-y divide-[#E9E5E0]">
                       {p.customers
                         .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
                         .map((c) => {
@@ -915,25 +915,25 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                               key={c.id}
                               type="button"
                               onClick={() => selectCustomer(c)}
-                              className="w-full p-3 flex items-center justify-between text-sm hover:bg-[#F3EFE7] transition text-left"
+                              className="w-full p-3 flex items-center justify-between text-sm hover:bg-[#F5F4F1] transition text-left"
                               title="Click to view full customer details"
                             >
                               <div className="flex items-center gap-3">
                                 <TierBadge tier={c.tier} size="xs" />
                                 <div>
-                                  <p className="font-medium text-[#1C1917]">{c.name}</p>
-                                  <p className="text-xs text-[#8B8680]">{c.email}</p>
+                                  <p className="font-medium text-[#171412]">{c.name}</p>
+                                  <p className="text-xs text-[#8D857D]">{c.email}</p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-4">
                                 {src && (
-                                  <span className="text-xs text-[#57534E]" title={src.label}>
+                                  <span className="text-xs text-[#57504A]" title={src.label}>
                                     {src.emoji}
                                   </span>
                                 )}
                                 <div className="text-right">
-                                  <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-                                  <p className="text-xs text-[#8B8680]">{c.total_visits} visits</p>
+                                  <p className="font-semibold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                                  <p className="text-xs text-[#8D857D]">{c.total_visits} visits</p>
                                 </div>
                                 <ChevronRight size={14} className="text-[#B85C38]" />
                               </div>
@@ -965,7 +965,7 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
 
   if (!center) {
     return (
-      <div className="p-3 text-xs text-[#8B8680] italic">
+      <div className="p-3 text-xs text-[#8D857D] italic">
         We don't have enough geolocation data to map compass directions for {label}.
       </div>
     );
@@ -982,14 +982,14 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
   // Now we surface a clear explanation instead.
   if (total === 0 && centerCount > 0) {
     return (
-      <div className="p-3 border-t border-[#E7E5E4] bg-[#FDFBF7]">
+      <div className="p-3 border-t border-[#E9E5E0] bg-[#FAFAF8]">
         <div className="flex items-center gap-2 mb-2">
           <Compass size={14} className="text-[#B85C38]" />
-          <p className="text-xs uppercase tracking-wide font-semibold text-[#57534E]">
+          <p className="text-xs uppercase tracking-wide font-semibold text-[#57504A]">
             Where customers live (from {label}'s center)
           </p>
         </div>
-        <div className="rounded-lg border border-[#E3A869]/40 bg-[#FEF9E7] p-3 text-xs leading-relaxed text-[#7B3F00]">
+        <div className="rounded-lg border border-[#E3A869]/40 bg-[#F6E9E2] p-3 text-xs leading-relaxed text-[#96431F]">
           <p className="font-semibold mb-1">
             {centerCount === 1 ? 'Your single customer' : `All ${centerCount} customers`} in {label} share the same postal code.
           </p>
@@ -1007,16 +1007,16 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
     { key: 'N', label: 'North', icon: ArrowUp, color: '#4A5D23' },
     { key: 'E', label: 'East',  icon: ArrowRight, color: '#5B8DEF' },
     { key: 'S', label: 'South', icon: ArrowDown, color: '#B85C38' },
-    { key: 'W', label: 'West',  icon: ArrowLeft, color: '#7B3F00' },
+    { key: 'W', label: 'West',  icon: ArrowLeft, color: '#96431F' },
   ];
 
   const activeList = active ? quads[active] : [];
 
   return (
-    <div className="p-3 border-t border-[#E7E5E4] bg-[#FDFBF7]">
+    <div className="p-3 border-t border-[#E9E5E0] bg-[#FAFAF8]">
       <div className="flex items-center gap-2 mb-2">
         <Compass size={14} className="text-[#B85C38]" />
-        <p className="text-xs uppercase tracking-wide font-semibold text-[#57534E]">
+        <p className="text-xs uppercase tracking-wide font-semibold text-[#57504A]">
           Where customers live (from {label}'s center)
         </p>
       </div>
@@ -1033,26 +1033,26 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
               className={`p-3 rounded-lg border text-left transition ${
                 isActive
                   ? 'bg-[#B85C38] text-white border-[#B85C38]'
-                  : 'bg-white border-[#E7E5E4] hover:border-[#B85C38]'
+                  : 'bg-white border-[#E9E5E0] hover:border-[#B85C38]'
               }`}
               style={isActive ? {} : { borderLeft: `4px solid ${t.color}` }}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57534E]'}`}>{t.label}</span>
+                <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57504A]'}`}>{t.label}</span>
                 <Icon size={14} className={isActive ? 'text-white' : ''} style={isActive ? {} : { color: t.color }} />
               </div>
-              <div className={`text-2xl font-bold mt-1 ${isActive ? 'text-white' : 'text-[#1C1917]'}`}>{count}</div>
-              <div className={`text-[11px] ${isActive ? 'text-white/80' : 'text-[#8B8680]'}`}>{pct}%</div>
+              <div className={`text-2xl font-bold mt-1 ${isActive ? 'text-white' : 'text-[#171412]'}`}>{count}</div>
+              <div className={`text-[11px] ${isActive ? 'text-white/80' : 'text-[#8D857D]'}`}>{pct}%</div>
             </button>
           );
         })}
       </div>
       {active && activeList.length > 0 && (
         <div className="mt-3 space-y-1">
-          <p className="text-[11px] text-[#8B8680] mb-1">
+          <p className="text-[11px] text-[#8D857D] mb-1">
             {activeList.length} customer{activeList.length !== 1 ? 's' : ''} in the {active === 'N' ? 'north' : active === 'S' ? 'south' : active === 'E' ? 'east' : 'west'} of {label}
           </p>
-          <div className="max-h-56 overflow-y-auto divide-y divide-[#E7E5E4] border border-[#E7E5E4] rounded-lg bg-white">
+          <div className="max-h-56 overflow-y-auto divide-y divide-[#E9E5E0] border border-[#E9E5E0] rounded-lg bg-white">
             {activeList
               .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
               .slice(0, 50)
@@ -1061,19 +1061,19 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
                   key={c.id}
                   type="button"
                   onClick={() => onSelectCustomer && onSelectCustomer(c)}
-                  className="w-full p-2.5 flex items-center justify-between text-sm hover:bg-[#F3EFE7] transition text-left"
+                  className="w-full p-2.5 flex items-center justify-between text-sm hover:bg-[#F5F4F1] transition text-left"
                   title="Click to view full customer details"
                 >
                   <div className="flex items-center gap-2">
                     <TierBadge tier={c.tier} size="xs" />
                     <div>
-                      <p className="font-medium text-[#1C1917]">{c.name}</p>
-                      <p className="text-[11px] text-[#8B8680]">{c.email}</p>
+                      <p className="font-medium text-[#171412]">{c.name}</p>
+                      <p className="text-[11px] text-[#8D857D]">{c.email}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-                    <p className="text-[11px] text-[#8B8680]">{c.total_visits} visits</p>
+                    <p className="font-semibold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                    <p className="text-[11px] text-[#8D857D]">{c.total_visits} visits</p>
                   </div>
                 </button>
               ))}
@@ -1086,9 +1086,9 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
 
 function MiniStat({ label, value }) {
   return (
-    <div className="p-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
-      <p className="text-[10px] uppercase tracking-wide text-[#57534E] font-semibold">{label}</p>
-      <p className="text-lg font-bold text-[#1C1917]">{value}</p>
+    <div className="p-3 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
+      <p className="text-[10px] uppercase tracking-wide text-[#57504A] font-semibold">{label}</p>
+      <p className="text-lg font-bold text-[#171412]">{value}</p>
     </div>
   );
 }
@@ -1099,10 +1099,10 @@ function TopCustomersCard({ customers, onSelect }) {
     .slice(0, 5);
   if (top.length === 0) return null;
   return (
-    <div className="bg-white border border-[#E7E5E4] rounded-xl p-5">
+    <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
       <div className="flex items-center gap-2 mb-3">
         <Award size={18} className="text-[#B85C38]" />
-        <h3 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <h3 className="text-xl font-semibold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
           Your top 5 customers
         </h3>
       </div>
@@ -1112,24 +1112,24 @@ function TopCustomersCard({ customers, onSelect }) {
             key={c.id}
             type="button"
             onClick={() => onSelect && onSelect(c)}
-            className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F3EFE7] hover:bg-[#E7E5E4] transition text-left"
+            className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F5F4F1] hover:bg-[#E9E5E0] transition text-left"
             title="Click to view full customer details"
           >
             <div className="flex items-center gap-3">
               <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#1C1917]">{c.name}</span>
+                  <span className="font-semibold text-[#171412]">{c.name}</span>
                   <TierBadge tier={c.tier} size="xs" />
                 </div>
-                <p className="text-xs text-[#8B8680]">
+                <p className="text-xs text-[#8D857D]">
                   {c.postal_code} · {c.department_name} · {c.total_visits} visits
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="font-bold text-[#1C1917]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-              <p className="text-xs text-[#8B8680]">spent</p>
+              <p className="font-bold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+              <p className="text-xs text-[#8D857D]">spent</p>
             </div>
           </button>
         ))}
@@ -1190,15 +1190,15 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
       onClick={onBackdrop}
     >
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-5 border-b border-[#E7E5E4] flex items-start justify-between gap-3 sticky top-0 bg-white rounded-t-2xl">
+        <div className="p-5 border-b border-[#E9E5E0] flex items-start justify-between gap-3 sticky top-0 bg-white rounded-t-2xl">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              <h2 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
                 {c.name || 'Customer'}
               </h2>
               <TierBadge tier={c.tier} />
             </div>
-            <p className="text-xs text-[#8B8680] mt-1">{c.email}{c.phone ? ` · ${c.phone}` : ''}</p>
+            <p className="text-xs text-[#8D857D] mt-1">{c.email}{c.phone ? ` · ${c.phone}` : ''}</p>
           </div>
           <div className="flex items-center gap-2">
             {onSendCampaign && (
@@ -1215,17 +1215,17 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
             )}
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[#F3EFE7] transition"
+              className="p-2 rounded-lg hover:bg-[#F5F4F1] transition"
               aria-label="Close"
             >
-              <X size={20} className="text-[#57534E]" />
+              <X size={20} className="text-[#57504A]" />
             </button>
           </div>
         </div>
 
         <div className="p-5 space-y-5">
           {/* Tabs */}
-          <div className="flex gap-2 border-b border-[#E7E5E4] -mt-2">
+          <div className="flex gap-2 border-b border-[#E9E5E0] -mt-2">
             {[
               { key: 'details', label: 'Details' },
               { key: 'history', label: `Visit history${historyData?.visits ? ` (${historyData.visits.length})` : ''}` },
@@ -1237,7 +1237,7 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
                 className={`px-3 py-2 text-sm font-semibold -mb-px border-b-2 ${
                   activeTab === t.key
                     ? 'border-[#B85C38] text-[#B85C38]'
-                    : 'border-transparent text-[#57534E] hover:text-[#1C1917]'
+                    : 'border-transparent text-[#57504A] hover:text-[#171412]'
                 }`}
               >
                 {t.label}
@@ -1248,7 +1248,7 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
           {activeTab === 'history' && (
             <div>
               {historyLoading && (
-                <p className="text-sm text-[#8B8680]">Loading visits…</p>
+                <p className="text-sm text-[#8D857D]">Loading visits…</p>
               )}
               {historyError && (
                 <p className="text-sm text-red-600">Error: {historyError}</p>
@@ -1261,41 +1261,41 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
                     <MiniStat label="Redemptions" value={historyData.redemptions?.length ?? 0} />
                   </div>
                   {(historyData.redemptions || []).length > 0 && (
-                    <div className="p-3 rounded-lg bg-[#FEF9E7] border border-[#E3A869]/40">
-                      <p className="text-xs font-semibold text-[#7B3F00] mb-2">🎁 Rewards redeemed</p>
+                    <div className="p-3 rounded-lg bg-[#F6E9E2] border border-[#E3A869]/40">
+                      <p className="text-xs font-semibold text-[#96431F] mb-2">🎁 Rewards redeemed</p>
                       <ul className="space-y-1 text-sm">
                         {historyData.redemptions.map((r, i) => (
                           <li key={r.id || i} className="flex justify-between">
                             <span>{r.reward_name || 'Reward'}{r.branch_id ? ` · ${r.branch_id}` : ''}</span>
-                            <span className="text-[#8B8680]">{r.redeemed_at ? new Date(r.redeemed_at).toLocaleDateString() : '—'}</span>
+                            <span className="text-[#8D857D]">{r.redeemed_at ? new Date(r.redeemed_at).toLocaleDateString() : '—'}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  <div className="border border-[#E7E5E4] rounded-lg overflow-hidden">
-                    <div className="bg-[#FDFBF7] px-3 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#8B8680] grid grid-cols-4 gap-2">
+                  <div className="border border-[#E9E5E0] rounded-lg overflow-hidden">
+                    <div className="bg-[#FAFAF8] px-3 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#8D857D] grid grid-cols-4 gap-2">
                       <span>Date & time</span>
                       <span className="text-right">Amount</span>
                       <span className="text-right">Points</span>
                       <span className="text-right">Branch</span>
                     </div>
-                    <div className="divide-y divide-[#E7E5E4] max-h-80 overflow-y-auto">
+                    <div className="divide-y divide-[#E9E5E0] max-h-80 overflow-y-auto">
                       {(historyData.visits || []).length === 0 ? (
-                        <p className="p-3 text-sm text-[#8B8680] italic">No visits recorded yet.</p>
+                        <p className="p-3 text-sm text-[#8D857D] italic">No visits recorded yet.</p>
                       ) : (
                         historyData.visits.map((v, i) => (
                           <div key={v.id || i} className="px-3 py-2 text-sm grid grid-cols-4 gap-2 items-center">
-                            <span className="text-[#1C1917]">
+                            <span className="text-[#171412]">
                               {v.visit_time ? new Date(v.visit_time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
                             </span>
-                            <span className="text-right text-[#1C1917]">
+                            <span className="text-right text-[#171412]">
                               €{(v.amount_paid || 0).toFixed(2)}
                             </span>
                             <span className="text-right text-[#4A5D23] font-semibold">
                               +{v.points_awarded || 0}
                             </span>
-                            <span className="text-right text-[#8B8680] text-xs">
+                            <span className="text-right text-[#8D857D] text-xs">
                               {v.branch_id || '—'}
                             </span>
                           </div>
@@ -1321,31 +1321,31 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
-              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Contact</p>
+            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
+              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Contact</p>
               <Row label="Name" value={c.name || '—'} />
               <Row label="Email" value={c.email || '—'} />
               <Row label="Phone" value={c.phone || '—'} />
               <Row label="Birthday" value={fmtDate(c.birthday)} />
             </div>
-            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
-              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Location</p>
+            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
+              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Location</p>
               <Row label="Address" value={c.address || '—'} />
               <Row label="City" value={c.city || c.department_name || '—'} />
               <Row label="Postal code" value={c.postal_code || '—'} />
               <Row label="Département" value={c.department_code ? `${c.department_code} — ${c.department_name}` : (c.department_name || '—')} />
               <Row label="GPS" value={(c.lat != null && c.lng != null) ? `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}${c.has_real_gps ? '' : ' (approx.)'}` : '—'} />
             </div>
-            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
-              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Loyalty</p>
+            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
+              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Loyalty</p>
               <Row label="Tier" value={c.tier || '—'} />
               <Row label="Visits" value={c.total_visits ?? 0} />
               <Row label="Total paid" value={`€${(c.total_amount_paid || 0).toFixed(2)}`} />
               <Row label="Points" value={c.points ?? 0} />
               <Row label="Avg ticket" value={c.total_visits > 0 ? `€${((c.total_amount_paid || 0) / c.total_visits).toFixed(2)}` : '—'} />
             </div>
-            <div className="p-4 rounded-lg bg-[#FDFBF7] border border-[#E7E5E4]">
-              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Journey</p>
+            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
+              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Journey</p>
               <Row
                 label="Acquired via"
                 value={src ? `${src.emoji} ${src.label}` : (c.acquisition_source || '—')}
@@ -1361,9 +1361,9 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
           </div>
 
           {c.notes && (
-            <div className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
-              <p className="text-[10px] text-[#8B8680] uppercase tracking-wider font-semibold mb-1">Notes</p>
-              <p className="text-sm text-[#1C1917] whitespace-pre-wrap">{c.notes}</p>
+            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
+              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-1">Notes</p>
+              <p className="text-sm text-[#171412] whitespace-pre-wrap">{c.notes}</p>
             </div>
           )}
           </>
@@ -1377,8 +1377,8 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
 function Row({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-3 py-1">
-      <span className="text-xs text-[#8B8680] min-w-[90px]">{label}</span>
-      <span className="text-sm text-[#1C1917] text-right break-all">{value}</span>
+      <span className="text-xs text-[#8D857D] min-w-[90px]">{label}</span>
+      <span className="text-sm text-[#171412] text-right break-all">{value}</span>
     </div>
   );
 }
@@ -1386,7 +1386,7 @@ function Row({ label, value }) {
 // Small filter-chip used in the active-filters bar above the map.
 function Chip({ children }) {
   return (
-    <span className="px-2 py-0.5 rounded-full bg-[#F3EFE7] border border-[#E7E5E4] text-[11px]">
+    <span className="px-2 py-0.5 rounded-full bg-[#F5F4F1] border border-[#E9E5E0] text-[11px]">
       {children}
     </span>
   );
@@ -1398,7 +1398,7 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
     <svg
       viewBox={`0 0 ${SVG_W} ${SVG_H}`}
       className="w-full h-auto"
-      style={{ maxHeight: 580, border: '1px solid #E7E5E4', background: '#F0F7FF', borderRadius: 8 }}
+      style={{ maxHeight: 580, border: '1px solid #E9E5E0', background: '#F0F7FF', borderRadius: 8 }}
     >
       {/* Real France mainland — hand-crafted clockwise outline through 76 known
           coastal and border landmarks (Dunkerque → Brest → Bayonne → Marseille
@@ -1431,8 +1431,8 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
         const p = projectToSVG(48.86, 2.35);
         return (
           <g opacity="0.4">
-            <circle cx={p.x} cy={p.y} r="2" fill="#1C1917" />
-            <text x={p.x + 5} y={p.y + 3} fontSize="9" fill="#57534E">Paris</text>
+            <circle cx={p.x} cy={p.y} r="2" fill="#171412" />
+            <text x={p.x + 5} y={p.y + 3} fontSize="9" fill="#57504A">Paris</text>
           </g>
         );
       })()}
@@ -1463,7 +1463,7 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
               y={y + 3}
               fontSize="9"
               textAnchor="middle"
-              fill="#1C1917"
+              fill="#171412"
               fontWeight="700"
               style={{ pointerEvents: 'none' }}
             >

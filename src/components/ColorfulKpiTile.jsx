@@ -32,7 +32,7 @@ import PeriodPicker from './PeriodPicker';
 //     white glyph — the only category cue.
 //   • Sparklines pick up the tone's vivid line so the trend reads.
 // Same surface everywhere so the dashboard reads as one cohesive product.
-const SHARED_SURFACE = '#FDFBF7';
+const SHARED_SURFACE = '#FAFAF8';
 const SHARED_LINE    = '#ECE3D5';
 // The vibrant hero accent used for every big number, regardless of tone.
 // Joyful teal-blue, picks up well against the cream surface.
@@ -40,17 +40,17 @@ const HERO_INK       = '#1E88B8';
 
 const TONE_STYLE = {
   // Saturated vivid colors for the icon chip + sparkline + corner glow.
-  success: { vivid: '#3FA86A', glow: 'rgba(63, 168, 106, 0.25)',  line: '#3FA86A' },
+  success: { vivid: '#20714C', glow: 'rgba(63, 168, 106, 0.25)',  line: '#20714C' },
   danger:  { vivid: '#E15A47', glow: 'rgba(225, 90, 71, 0.25)',   line: '#E15A47' },
   warning: { vivid: '#E8A53B', glow: 'rgba(232, 165, 59, 0.25)',  line: '#E8A53B' },
   info:    { vivid: '#3FA9D9', glow: 'rgba(63, 169, 217, 0.25)',  line: '#3FA9D9' },
   purple:  { vivid: '#9A6DBF', glow: 'rgba(154, 109, 191, 0.25)', line: '#9A6DBF' },
-  neutral: { vivid: '#7A716C', glow: 'rgba(122, 113, 108, 0.22)', line: '#7A716C' },
+  neutral: { vivid: '#8D857D', glow: 'rgba(122, 113, 108, 0.22)', line: '#8D857D' },
 };
 
 /** Inline sparkline with bigger presence: thicker stroke + denser fill
  *  so the chart reads as part of the tile, not decoration. */
-const Sparkline = ({ points = [], stroke = '#7A716C', width = 100, height = 32 }) => {
+const Sparkline = ({ points = [], stroke = '#8D857D', width = 100, height = 32 }) => {
   if (!Array.isArray(points) || points.length < 2) return null;
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -79,7 +79,7 @@ const Sparkline = ({ points = [], stroke = '#7A716C', width = 100, height = 32 }
 const DELTA_STYLE = {
   up:   { bg: 'rgba(56, 130, 80, 0.14)',  fg: '#2F6A3C', dot: '#3F8A52' },
   down: { bg: 'rgba(184, 60, 50, 0.14)',  fg: '#8A2E24', dot: '#B53D32' },
-  flat: { bg: 'rgba(122, 113, 108, 0.12)', fg: '#5C544F', dot: '#7A716C' },
+  flat: { bg: 'rgba(122, 113, 108, 0.12)', fg: '#5C544F', dot: '#8D857D' },
 };
 
 const DeltaPill = ({ delta }) => {

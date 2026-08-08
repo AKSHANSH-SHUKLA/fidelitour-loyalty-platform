@@ -98,9 +98,9 @@ const LeafletFranceMap = ({ deptList = [], selectedDept, onSelect }) => {
         <div style="font-family: 'Manrope', sans-serif; min-width: 180px;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
             <span style="background:#B85C38;color:white;font-weight:700;padding:2px 6px;border-radius:4px;font-size:11px;">${d.code}</span>
-            <strong style="color:#1C1917;">${d.name || ''}</strong>
+            <strong style="color:#171412;">${d.name || ''}</strong>
           </div>
-          <div style="font-size:12px;color:#57534E;line-height:1.5;">
+          <div style="font-size:12px;color:#57504A;line-height:1.5;">
             <div><b>${n}</b> customer${n === 1 ? '' : 's'}</div>
             <div><b>€${Math.round(d.revenue || 0).toLocaleString()}</b> revenue</div>
             <div><b>${d.visits || 0}</b> visits</div>
@@ -155,9 +155,9 @@ const LeafletFranceMap = ({ deptList = [], selectedDept, onSelect }) => {
   }
 
   return (
-    <div className="rounded-lg overflow-hidden border" style={{ borderColor: '#E7E5E4' }}>
+    <div className="rounded-lg overflow-hidden border" style={{ borderColor: '#E9E5E0' }}>
       {!ready && (
-        <div className="p-6 text-sm text-center" style={{ color: '#57534E', background: '#F0F7FF' }}>
+        <div className="p-6 text-sm text-center" style={{ color: '#57504A', background: '#F0F7FF' }}>
           Loading interactive map…
         </div>
       )}

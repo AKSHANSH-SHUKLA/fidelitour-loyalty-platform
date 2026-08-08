@@ -120,11 +120,11 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
             </div>
             <div>
               <h2 id="support-modal-title" style={{
-                margin: 0, fontSize: 16, fontWeight: 600, color: '#1C1917',
+                margin: 0, fontSize: 16, fontWeight: 600, color: '#171412',
               }}>
                 Contact support
               </h2>
-              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8B8680' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8D857D' }}>
                 Send us a question — we reply within one business day.
               </p>
             </div>
@@ -135,7 +135,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
             aria-label="Close"
             style={{
               background: 'transparent', border: 'none', cursor: 'pointer',
-              color: '#57534E', padding: 6, borderRadius: 8,
+              color: '#57504A', padding: 6, borderRadius: 8,
             }}
           >
             <X size={18} />
@@ -152,10 +152,10 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
             }}>
               <CheckCircle2 size={28} />
             </div>
-            <h3 style={{ margin: 0, fontSize: 16, color: '#1C1917', fontWeight: 600 }}>
+            <h3 style={{ margin: 0, fontSize: 16, color: '#171412', fontWeight: 600 }}>
               Message sent
             </h3>
-            <p style={{ margin: '8px 0 20px', fontSize: 13, color: '#57534E', lineHeight: 1.5 }}>
+            <p style={{ margin: '8px 0 20px', fontSize: 13, color: '#57504A', lineHeight: 1.5 }}>
               Thanks — we'll get back to you at {defaultEmail || 'your registered email'} as soon as possible.
             </p>
             <button
@@ -176,7 +176,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
             {/* From (read-only) */}
             {defaultEmail && (
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#57534E', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#57504A', marginBottom: 6 }}>
                   From
                 </label>
                 <input
@@ -186,7 +186,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                   style={{
                     width: '100%', padding: '9px 12px', borderRadius: 8,
                     border: `1px solid ${C.hairline}`, background: '#FBF7EF',
-                    color: '#57534E', fontSize: 13, font: 'inherit',
+                    color: '#57504A', fontSize: 13, font: 'inherit',
                   }}
                 />
               </div>
@@ -196,7 +196,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
             <div style={{ marginBottom: 12 }}>
               <label htmlFor="support-subject" style={{
                 display: 'flex', justifyContent: 'space-between',
-                fontSize: 12, fontWeight: 500, color: '#57534E', marginBottom: 6,
+                fontSize: 12, fontWeight: 500, color: '#57504A', marginBottom: 6,
               }}>
                 <span>Subject</span>
                 <span style={{ color: subject.length > MAX_SUBJECT ? '#B85C38' : '#A8A29E', fontWeight: 400 }}>
@@ -213,7 +213,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 8,
                   border: `1px solid ${C.hairline}`, background: '#FFFFFF',
-                  color: '#1C1917', fontSize: 13.5, font: 'inherit',
+                  color: '#171412', fontSize: 13.5, font: 'inherit',
                   outline: 'none',
                 }}
                 onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(285 45% 42%)'; }}
@@ -225,7 +225,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
             <div style={{ marginBottom: 16 }}>
               <label htmlFor="support-message" style={{
                 display: 'flex', justifyContent: 'space-between',
-                fontSize: 12, fontWeight: 500, color: '#57534E', marginBottom: 6,
+                fontSize: 12, fontWeight: 500, color: '#57504A', marginBottom: 6,
               }}>
                 <span>Message</span>
                 <span style={{ color: message.length > MAX_MESSAGE ? '#B85C38' : '#A8A29E', fontWeight: 400 }}>
@@ -241,7 +241,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 8,
                   border: `1px solid ${C.hairline}`, background: '#FFFFFF',
-                  color: '#1C1917', fontSize: 13.5, lineHeight: 1.5,
+                  color: '#171412', fontSize: 13.5, lineHeight: 1.5,
                   font: 'inherit', resize: 'vertical', minHeight: 120,
                   outline: 'none',
                 }}
@@ -271,7 +271,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                 disabled={sending}
                 style={{
                   background: 'transparent', border: `1px solid ${C.hairline}`,
-                  color: '#57534E', borderRadius: 10,
+                  color: '#57504A', borderRadius: 10,
                   padding: '9px 16px', fontSize: 13, fontWeight: 500,
                   cursor: sending ? 'not-allowed' : 'pointer', font: 'inherit',
                   opacity: sending ? 0.6 : 1,

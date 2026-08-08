@@ -67,7 +67,7 @@ const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
       width: children ? undefined : 36, height: 36,
       justifyContent: 'center',
       background: '#FFFFFF',
-      border: '1px solid #ECE3D2',
+      border: '1px solid #E9E5E0',
       borderRadius: children ? 99 : 10,
       color: 'hsl(228 14% 35%)',
       fontSize: 12.5, fontWeight: 500,
@@ -123,14 +123,14 @@ const SectionDivider = ({ children }) => (
       margin: '24px 0 6px',
     }}
   >
-    <div style={{ height: 1, flex: 1, background: '#ECE3D2' }} />
+    <div style={{ height: 1, flex: 1, background: '#E9E5E0' }} />
     <span style={{
       fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
       color: 'hsl(228 11% 45%)', fontWeight: 500, whiteSpace: 'nowrap',
     }}>
       {children}
     </span>
-    <div style={{ height: 1, flex: 1, background: '#ECE3D2' }} />
+    <div style={{ height: 1, flex: 1, background: '#E9E5E0' }} />
   </div>
 );
 

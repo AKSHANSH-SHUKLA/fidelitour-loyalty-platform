@@ -102,7 +102,7 @@ const AIAssistantPage = () => {
   // Basic plan message
   if (userPlan === 'basic') {
     return (
-      <div className="p-8 bg-[#FDFBF7] min-h-screen flex flex-col items-center justify-center">
+      <div className="p-8 bg-[#FAFAF8] min-h-screen flex flex-col items-center justify-center">
         <style>{`
           * {
             font-family: 'Manrope', sans-serif;
@@ -113,22 +113,22 @@ const AIAssistantPage = () => {
         `}</style>
 
         <div className="max-w-md text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#F3EFE7] mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#F5F4F1] mb-6">
             <Sparkles className="w-8 h-8 text-[#B85C38]" />
           </div>
           <h1 className="text-3xl font-['Cormorant_Garamond'] font-bold mb-3 ft-gradient-text-slow">Assistant IA</h1>
-          <p className="text-[#57534E] mb-8">Obtenez des analyses propulsées par l'IA pour votre programme de fidélité et créez des campagnes ciblées en un clic.</p>
+          <p className="text-[#57504A] mb-8">Obtenez des analyses propulsées par l'IA pour votre programme de fidélité et créez des campagnes ciblées en un clic.</p>
 
-          <div className="bg-white p-6 rounded-2xl border border-[#E7E5E4] mb-8">
-            <p className="text-sm font-bold uppercase tracking-wide text-[#1C1917] mb-4">Upgrade to use AI</p>
+          <div className="bg-white p-6 rounded-2xl border border-[#E9E5E0] mb-8">
+            <p className="text-sm font-bold uppercase tracking-wide text-[#171412] mb-4">Upgrade to use AI</p>
             <div className="space-y-3 text-left mb-6">
               <div className="flex items-center gap-3">
                 <span className="text-[#E3A869] font-bold">20</span>
-                <span className="text-[#57534E]">Queries per day</span>
+                <span className="text-[#57504A]">Queries per day</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[#E3A869] font-bold">35</span>
-                <span className="text-[#57534E]">Queries per day</span>
+                <span className="text-[#57504A]">Queries per day</span>
               </div>
             </div>
           </div>
@@ -162,14 +162,14 @@ const AIAssistantPage = () => {
       <div className="w-full flex flex-col h-[calc(100vh-14rem)]">
 
         {/* Messages Container */}
-        <div className="flex-1 bg-white rounded-2xl border border-[#E7E5E4] p-6 mb-6 overflow-y-auto space-y-4">
+        <div className="flex-1 bg-white rounded-2xl border border-[#E9E5E0] p-6 mb-6 overflow-y-auto space-y-4">
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#F3EFE7] mb-4">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#F5F4F1] mb-4">
                 <MessageCircle className="w-7 h-7 text-[#B85C38]" />
               </div>
-              <h3 className="text-lg font-bold text-[#1C1917] mb-2">No conversations yet</h3>
-              <p className="text-[#57534E] text-sm max-w-xs">Ask about customer retention, campaign ideas, or loyalty analytics</p>
+              <h3 className="text-lg font-bold text-[#171412] mb-2">No conversations yet</h3>
+              <p className="text-[#57504A] text-sm max-w-xs">Ask about customer retention, campaign ideas, or loyalty analytics</p>
             </div>
           )}
 
@@ -182,7 +182,7 @@ const AIAssistantPage = () => {
                 className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl ${
                   msg.role === 'user'
                     ? 'bg-[#B85C38] text-white rounded-br-none'
-                    : 'bg-[#F3EFE7] text-[#1C1917] rounded-bl-none'
+                    : 'bg-[#F5F4F1] text-[#171412] rounded-bl-none'
                 }`}
               >
                 <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -192,7 +192,7 @@ const AIAssistantPage = () => {
 
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-[#F3EFE7] text-[#1C1917] px-5 py-3 rounded-2xl rounded-bl-none">
+              <div className="bg-[#F5F4F1] text-[#171412] px-5 py-3 rounded-2xl rounded-bl-none">
                 <div className="flex gap-2">
                   <div className="w-2 h-2 bg-[#B85C38] rounded-full animate-bounce"></div>
                   <div className="w-2 h-2 bg-[#B85C38] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -214,7 +214,7 @@ const AIAssistantPage = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask about campaigns, customers, analytics..."
-                className="flex-1 px-4 py-3 rounded-xl border border-[#E7E5E4] focus:border-[#B85C38] focus:ring-0 outline-none text-sm"
+                className="flex-1 px-4 py-3 rounded-xl border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-sm"
                 disabled={loading}
               />
               <button
@@ -225,16 +225,16 @@ const AIAssistantPage = () => {
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-[#57534E]">
+            <p className="text-xs text-[#57504A]">
               Queries remaining: <span className="font-bold text-[#B85C38]">{queryLimit - queriesUsed}</span>
             </p>
           </form>
         )}
 
         {queriesUsed >= queryLimit && (
-          <div className="p-4 bg-[#F3EFE7] rounded-xl border border-[#E7E5E4] text-center">
-            <p className="text-sm font-bold text-[#1C1917]">Daily query limit reached</p>
-            <p className="text-xs text-[#57534E] mt-1">Check back tomorrow or upgrade your plan</p>
+          <div className="p-4 bg-[#F5F4F1] rounded-xl border border-[#E9E5E0] text-center">
+            <p className="text-sm font-bold text-[#171412]">Daily query limit reached</p>
+            <p className="text-xs text-[#57504A] mt-1">Check back tomorrow or upgrade your plan</p>
           </div>
         )}
       </div>

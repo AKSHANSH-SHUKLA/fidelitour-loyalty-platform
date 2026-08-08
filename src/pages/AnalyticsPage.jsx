@@ -26,8 +26,8 @@ import WeeklyAcquisitionPanel from '../components/WeeklyAcquisitionPanel';
 import useTileMetric from '../hooks/useTileMetric';
 import { Trash2, UserPlus2, RefreshCcw, Repeat as RepeatIcon, BadgeCheck } from 'lucide-react';
 
-const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#7B3F00' };
-const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#7B3F00', '#5B8DEF', '#AA6EBE', '#8B6914'];
+const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#96431F' };
+const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#96431F', '#5B8DEF', '#AA6EBE', '#8B6914'];
 
 // ─────────────────────────────────────────────────────────────────────
 // DEMO REVIEW ANALYTICS — paints the "Customer reviews & sentiment"
@@ -182,8 +182,8 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
   ];
   const set = (partial) => onChange({ ...value, ...partial });
   return (
-    <div className="rounded-lg border bg-white px-2.5 py-1.5 mb-3 flex items-center gap-2 flex-wrap" style={{ borderColor: '#E7E5E4' }}>
-      <span className="text-[10px] uppercase tracking-widest font-bold text-[#7A716C] shrink-0">Filtre temps</span>
+    <div className="rounded-lg border bg-white px-2.5 py-1.5 mb-3 flex items-center gap-2 flex-wrap" style={{ borderColor: '#E9E5E0' }}>
+      <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D] shrink-0">Filtre temps</span>
       <div className="flex items-center gap-1 flex-wrap">
         {PRESETS.map((p) => {
           const active = value.mode === 'preset' && value.value === p.v && value.unit === p.u;
@@ -194,9 +194,9 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
               onClick={() => onChange({ mode: 'preset', value: p.v, unit: p.u, sinceDate: '' })}
               className="px-2 py-0.5 rounded-full text-[10.5px] font-medium transition"
               style={{
-                background: active ? '#1F1B1A' : '#FFFFFF',
-                color: active ? '#FFFFFF' : '#1C1917',
-                border: '1px solid ' + (active ? '#1F1B1A' : '#E7E5E4'),
+                background: active ? '#171412' : '#FFFFFF',
+                color: active ? '#FFFFFF' : '#171412',
+                border: '1px solid ' + (active ? '#171412' : '#E9E5E0'),
               }}
             >
               {p.label}
@@ -205,8 +205,8 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
         })}
       </div>
       <div className="flex-1" />
-      <div className="flex items-center gap-1.5 text-[11.5px] text-[#1C1917]">
-        <span className="text-[10px] uppercase text-[#7A716C]">Sur mesure :</span>
+      <div className="flex items-center gap-1.5 text-[11.5px] text-[#171412]">
+        <span className="text-[10px] uppercase text-[#8D857D]">Sur mesure :</span>
         <input
           type="number"
           min="1"
@@ -217,12 +217,12 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
             const n = Math.max(1, parseInt(e.target.value, 10) || 1);
             onChange({ ...value, mode: 'custom', value: n, sinceDate: '' });
           }}
-          className="w-14 px-2 py-1 rounded border border-[#E7E5E4] text-[11.5px]"
+          className="w-14 px-2 py-1 rounded border border-[#E9E5E0] text-[11.5px]"
         />
         <select
           value={value.unit}
           onChange={(e) => onChange({ ...value, mode: 'custom', unit: e.target.value, sinceDate: '' })}
-          className="px-2 py-1 rounded border border-[#E7E5E4] text-[11.5px] bg-white"
+          className="px-2 py-1 rounded border border-[#E9E5E0] text-[11.5px] bg-white"
         >
           <option value="day">jours</option>
           <option value="week">semaines</option>
@@ -230,17 +230,17 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
           <option value="year">années</option>
         </select>
       </div>
-      <div className="flex items-center gap-1.5 text-[11.5px] text-[#1C1917]">
-        <span className="text-[10px] uppercase text-[#7A716C]">Depuis :</span>
+      <div className="flex items-center gap-1.5 text-[11.5px] text-[#171412]">
+        <span className="text-[10px] uppercase text-[#8D857D]">Depuis :</span>
         <input
           type="date"
           value={value.sinceDate || ''}
           max={new Date().toISOString().slice(0, 10)}
           onChange={(e) => onChange({ ...value, mode: 'since', sinceDate: e.target.value })}
-          className="px-2 py-1 rounded border border-[#E7E5E4] text-[11.5px] bg-white"
+          className="px-2 py-1 rounded border border-[#E9E5E0] text-[11.5px] bg-white"
         />
       </div>
-      <span className="text-[10px] font-mono text-[#1C1917] bg-[#FAF6EE] px-2 py-0.5 rounded">{sharedDays} j</span>
+      <span className="text-[10px] font-mono text-[#171412] bg-[#FAF6EE] px-2 py-0.5 rounded">{sharedDays} j</span>
     </div>
   );
 };
@@ -254,7 +254,7 @@ const KPICard = ({
 }) => (
   <div
     onClick={onClick}
-    className={`relative bg-white p-3 rounded-xl border border-[#E7E5E4] ${
+    className={`relative bg-white p-3 rounded-xl border border-[#E9E5E0] ${
       onClick ? 'cursor-pointer hover:shadow-md transition' : ''
     }`}
   >
@@ -275,9 +275,9 @@ const KPICard = ({
         <Icon size={17} />
       </div>
       <div className="min-w-0 pr-5">
-        <p className="text-[10px] text-[#57534E] uppercase tracking-wide font-semibold truncate">{title}</p>
-        <p className="text-lg font-bold text-[#1C1917] leading-tight">{value}</p>
-        {sublabel && <p className="text-[10.5px] text-[#8B8680] mt-0.5 truncate">{sublabel}</p>}
+        <p className="text-[10px] text-[#57504A] uppercase tracking-wide font-semibold truncate">{title}</p>
+        <p className="text-lg font-bold text-[#171412] leading-tight">{value}</p>
+        {sublabel && <p className="text-[10.5px] text-[#8D857D] mt-0.5 truncate">{sublabel}</p>}
       </div>
     </div>
   </div>
@@ -287,10 +287,10 @@ const KPICard = ({
 // ChartCard with optional Send CTA
 // ------------------------------------------------------------------
 const ChartCard = ({ title, hint, children, segment, openComposer, presetName, presetContent }) => (
-  <div className="bg-white p-4 rounded-xl border border-[#E7E5E4]">
+  <div className="bg-white p-4 rounded-xl border border-[#E9E5E0]">
     <div className="flex items-start justify-between gap-2 mb-0.5">
       <h2
-        className="text-base font-semibold text-[#1C1917]"
+        className="text-base font-semibold text-[#171412]"
         style={{ fontFamily: 'Cormorant Garamond' }}
       >
         {title}
@@ -302,7 +302,7 @@ const ChartCard = ({ title, hint, children, segment, openComposer, presetName, p
         />
       )}
     </div>
-    {hint && <p className="text-[10.5px] text-[#8B8680] mt-0.5 mb-2">{hint}</p>}
+    {hint && <p className="text-[10.5px] text-[#8D857D] mt-0.5 mb-2">{hint}</p>}
     {children}
   </div>
 );
@@ -384,43 +384,43 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
       >
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h3 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <h3 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
               <Megaphone className="inline mr-2 text-[#B85C38]" size={22} /> Composer une campagne
             </h3>
-            <p className="text-xs text-[#8B8680] mt-1">
+            <p className="text-xs text-[#8D857D] mt-1">
               Cible : <span className="font-medium text-[#B85C38]">{segmentLabel(segment)}</span>
               {preview != null && <span className="ml-2">({preview} destinataires)</span>}
             </p>
           </div>
-          <button onClick={onClose} className="text-[#A8A29E] hover:text-[#1C1917]"><X size={22} /></button>
+          <button onClick={onClose} className="text-[#A8A29E] hover:text-[#171412]"><X size={22} /></button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Sujet</label>
+            <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Sujet</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex : Offre spéciale {first_name} 🎁"
-              className="w-full px-3 py-2 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
+              className="w-full px-3 py-2 border border-[#E9E5E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Message</label>
+            <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Message</label>
             <textarea
               rows={6}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Bonjour {first_name}, il te reste {points_to_next_reward} points pour débloquer ta récompense chez {business_name} !"
-              className="w-full px-3 py-2 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38] font-['Manrope']"
+              className="w-full px-3 py-2 border border-[#E9E5E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38] font-['Manrope']"
             />
-            <p className="text-[11px] text-[#8B8680] mt-1">
+            <p className="text-[11px] text-[#8D857D] mt-1">
               Variables : <code>{'{first_name}'}</code>, <code>{'{name}'}</code>, <code>{'{tier}'}</code>, <code>{'{points_to_next_reward}'}</code>, <code>{'{points}'}</code>, <code>{'{business_name}'}</code>
             </p>
           </div>
 
-          <div className="p-3 bg-[#F3EFE7] rounded-lg border border-[#E7E5E4]">
+          <div className="p-3 bg-[#F5F4F1] rounded-lg border border-[#E9E5E0]">
             <div className="flex items-center gap-4 mb-2">
               <label className="inline-flex items-center gap-1 text-sm">
                 <input type="radio" checked={scheduleMode === 'now'} onChange={() => setScheduleMode('now')} />
@@ -437,12 +437,12 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
                   type="datetime-local"
                   value={runAt}
                   onChange={(e) => setRunAt(e.target.value)}
-                  className="px-2 py-1 border border-[#E7E5E4] rounded"
+                  className="px-2 py-1 border border-[#E9E5E0] rounded"
                 />
                 <select
                   value={recurrence}
                   onChange={(e) => setRecurrence(e.target.value)}
-                  className="px-2 py-1 border border-[#E7E5E4] rounded text-sm"
+                  className="px-2 py-1 border border-[#E9E5E0] rounded text-sm"
                 >
                   <option value="">Une seule fois</option>
                   <option value="daily">Quotidien</option>
@@ -456,7 +456,7 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-[#E7E5E4] text-[#1C1917] rounded-lg hover:bg-[#F3EFE7]"
+              className="px-4 py-2 border border-[#E9E5E0] text-[#171412] rounded-lg hover:bg-[#F5F4F1]"
             >
               Annuler
             </button>
@@ -903,10 +903,10 @@ const AnalyticsPage = () => {
           ═════════════════════════════════════════════════════════════════ */}
       <div>
         <div className="flex items-baseline justify-between mb-2">
-          <h3 className="text-[13px] font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          <h3 className="text-[13px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Vue d'ensemble — depuis le début
           </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">Totaux lifetime · pas de filtre temps</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">Totaux lifetime · pas de filtre temps</span>
         </div>
         {/* Lifetime row 1 — base totals, every tile tone-tagged for vivid colour */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -987,10 +987,10 @@ const AnalyticsPage = () => {
           ═════════════════════════════════════════════════════════════════ */}
       {/* Filter A — charts only (Visites + Acquisition). */}
       <div className="flex items-baseline justify-between gap-3 flex-wrap mt-1 mb-0.5">
-        <h3 className="text-[12px] font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <h3 className="text-[12px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
           Fenêtre de temps — Visites · Acquisition
         </h3>
-        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
+        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">
           {chartsDays} jour{chartsDays === 1 ? '' : 's'}
         </span>
       </div>
@@ -1015,15 +1015,15 @@ const AnalyticsPage = () => {
                 key={t.key}
                 type="button"
                 onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E7E5E4] bg-[#FDFBF7] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E9E5E0] bg-[#FAFAF8] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
                 title={`Click to view ${t.name} customers`}
               >
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full" style={{ background: TIER_COLORS[t.key] }}></span>
-                  <span className="text-xs font-semibold text-[#1C1917]">{t.name}</span>
+                  <span className="text-xs font-semibold text-[#171412]">{t.name}</span>
                 </div>
                 <span className="text-lg font-bold">{t.value}</span>
-                <span className="text-[10px] text-[#8B8680]">
+                <span className="text-[10px] text-[#8D857D]">
                   {totalCustomers ? `${Math.round((t.value / totalCustomers) * 100)}%` : '—'} · click to view
                 </span>
                 <SendCampaignButton
@@ -1067,17 +1067,17 @@ const AnalyticsPage = () => {
 
         <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
           {/* Lifetime headline */}
-          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E7E5E4]">
-            <p className="text-3xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E9E5E0]">
+            <p className="text-3xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
               {acquisitionTotal}
             </p>
-            <p className="text-sm text-[#57534E]">customers acquired across all channels (all-time)</p>
+            <p className="text-sm text-[#57504A]">customers acquired across all channels (all-time)</p>
           </div>
 
           {/* Per-channel KPI tiles — count + percentage. Click to drill into customer list. */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
             {acquisitionChart.map((a) => {
-              const style = SOURCE_STYLE[a.raw] || { color: '#8B8680', bg: '#F3EFE7', icon: '•' };
+              const style = SOURCE_STYLE[a.raw] || { color: '#8D857D', bg: '#F5F4F1', icon: '•' };
               return (
                 <button
                   key={a.raw}
@@ -1086,7 +1086,7 @@ const AnalyticsPage = () => {
                     `Customers acquired via ${a.name}`,
                     { source: a.raw }
                   )}
-                  className="text-left p-3 rounded-lg border border-[#E7E5E4] hover:border-[#B85C38] hover:shadow-sm transition"
+                  className="text-left p-3 rounded-lg border border-[#E9E5E0] hover:border-[#B85C38] hover:shadow-sm transition"
                   style={{ backgroundColor: style.bg }}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
@@ -1095,9 +1095,9 @@ const AnalyticsPage = () => {
                       {a.name}
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-[#1C1917] leading-tight">
+                  <p className="text-2xl font-bold text-[#171412] leading-tight">
                     {a.value}
-                    <span className="text-sm text-[#8B8680] font-normal"> customers</span>
+                    <span className="text-sm text-[#8D857D] font-normal"> customers</span>
                   </p>
                   <p className="text-[11px] mt-0.5 font-semibold" style={{ color: style.color }}>
                     {a.pct}% of total
@@ -1109,9 +1109,9 @@ const AnalyticsPage = () => {
 
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={acquisitionChart} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-              <XAxis type="number" stroke="#57534E" />
-              <YAxis type="category" dataKey="name" stroke="#57534E" width={110} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
+              <XAxis type="number" stroke="#57504A" />
+              <YAxis type="category" dataKey="name" stroke="#57504A" width={110} />
               <Tooltip
                 formatter={(value, _name, p) => [`${value} customers (${p?.payload?.pct || 0}%)`, 'Acquired']}
               />
@@ -1135,10 +1135,10 @@ const AnalyticsPage = () => {
           ═════════════════════════════════════════════════════════════════ */}
       <div>
         <div className="flex items-baseline justify-between mb-2 gap-3 flex-wrap">
-          <h3 className="text-[13px] font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          <h3 className="text-[13px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Activité dans la période choisie
           </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8B8680]">
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">
             {tilesDays} jour{tilesDays === 1 ? '' : 's'}
           </span>
         </div>
@@ -1239,7 +1239,7 @@ const AnalyticsPage = () => {
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <MetricTile controlledDays={tilesDays}
-            icon={Trophy} title="Loyal" accent="#7B3F00"
+            icon={Trophy} title="Loyal" accent="#96431F"
             metric="loyal_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `≥ seuil "Loyal" sur ${d}j`}
@@ -1294,39 +1294,39 @@ const AnalyticsPage = () => {
             )}
           />
         </div>
-        <p className="text-sm text-[#57534E] mb-4">
+        <p className="text-sm text-[#57504A] mb-4">
           "Customers who were quiet for X days and came back in the last Y days"
         </p>
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-[#57534E]">Inactive for</label>
+            <label className="text-sm text-[#57504A]">Inactive for</label>
             <NumberInput
               min={1}
               max={730}
               emptyValue={30}
               value={recoveryInactiveDays}
               onChange={(n) => setRecoveryInactiveDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[#E7E5E4] rounded text-center"
+              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
             />
-            <span className="text-sm text-[#57534E]">days,</span>
+            <span className="text-sm text-[#57504A]">days,</span>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-[#57534E]">came back in last</label>
+            <label className="text-sm text-[#57504A]">came back in last</label>
             <NumberInput
               min={1}
               max={730}
               emptyValue={30}
               value={recoveryWindowDays}
               onChange={(n) => setRecoveryWindowDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[#E7E5E4] rounded text-center"
+              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
             />
-            <span className="text-sm text-[#57534E]">days</span>
+            <span className="text-sm text-[#57504A]">days</span>
           </div>
-          <div className="ml-auto flex items-center gap-3 text-sm text-[#1C1917] font-medium">
+          <div className="ml-auto flex items-center gap-3 text-sm text-[#171412] font-medium">
             <span>
               <span className="text-[#B85C38] font-bold">{recovered?.count ?? 0}</span> customers match
               {' '}
-              <span className="text-[#8B8680]">({recovered?.percentage ?? 0}% of base)</span>
+              <span className="text-[#8D857D]">({recovered?.percentage ?? 0}% of base)</span>
             </span>
             <button
               type="button"
@@ -1361,8 +1361,8 @@ const AnalyticsPage = () => {
         className="rounded-xl p-4 space-y-3 relative overflow-hidden"
         style={{
           background: `radial-gradient(circle at 100% 0%, #F0EBF8 0%, transparent 55%), radial-gradient(circle at 0% 100%, #FCE3DC 0%, transparent 60%), white`,
-          border: '1px solid #8B7DC944',
-          boxShadow: '0 6px 18px -10px #8B7DC966',
+          border: '1px solid #B85C3844',
+          boxShadow: '0 6px 18px -10px #B85C3866',
         }}
       >
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
@@ -1377,14 +1377,14 @@ const AnalyticsPage = () => {
             </p>
           </div>
           {reviewAnalytics?.total_reviews != null && (
-            <div className="flex items-center gap-2 text-xs text-[#57534E]">
+            <div className="flex items-center gap-2 text-xs text-[#57504A]">
               <MessageSquare size={14} /> {reviewAnalytics.total_reviews} review{reviewAnalytics.total_reviews === 1 ? '' : 's'} total
             </div>
           )}
         </div>
 
         {reviewAnalytics && reviewAnalytics.total_reviews === 0 ? (
-          <p className="text-sm text-[#8B8680] italic">
+          <p className="text-sm text-[#8D857D] italic">
             No reviews yet. Once customers start rating visits from their wallet card, the KPIs will appear here.
           </p>
         ) : reviewAnalytics ? (
@@ -1466,7 +1466,7 @@ const AnalyticsPage = () => {
                     ? `+${reviewAnalytics.review_velocity.delta_pct}% vs. the 30 days before (${reviewAnalytics.review_velocity.prev_30d})`
                     : `${reviewAnalytics.review_velocity.delta_pct}% vs. the 30 days before (${reviewAnalytics.review_velocity.prev_30d})`
                 }
-                accent="#7B3F00"
+                accent="#96431F"
                 onClick={async () => {
                   try {
                     const r = await ownerAPI.listReviews(params({ limit: 30 }));
@@ -1493,11 +1493,11 @@ const AnalyticsPage = () => {
             {/* Rating distribution + topic breakdown side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
               {/* Rating distribution (1-10 histogram) */}
-              <div className="border border-[#E7E5E4] rounded-lg p-4">
-                <p className="text-sm font-bold text-[#1C1917] mb-2 flex items-center gap-2">
+              <div className="border border-[#E9E5E0] rounded-lg p-4">
+                <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Star size={14} /> Rating distribution
                 </p>
-                <p className="text-xs text-[#8B8680] mb-3">
+                <p className="text-xs text-[#8D857D] mb-3">
                   How many reviews landed at each score. Bars show share of total.
                 </p>
                 <div className="space-y-1">
@@ -1510,11 +1510,11 @@ const AnalyticsPage = () => {
                       const color = n >= 8 ? '#4A5D23' : n >= 5 ? '#E3A869' : '#B85C38';
                       return (
                         <div key={n} className="flex items-center gap-2 text-xs">
-                          <span className="w-6 text-right font-semibold text-[#1C1917]">{n}</span>
-                          <div className="flex-1 bg-[#F3EFE7] rounded h-4 overflow-hidden">
+                          <span className="w-6 text-right font-semibold text-[#171412]">{n}</span>
+                          <div className="flex-1 bg-[#F5F4F1] rounded h-4 overflow-hidden">
                             <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: color }} />
                           </div>
-                          <span className="w-8 text-right text-[#57534E]">{v}</span>
+                          <span className="w-8 text-right text-[#57504A]">{v}</span>
                         </div>
                       );
                     });
@@ -1523,16 +1523,16 @@ const AnalyticsPage = () => {
               </div>
 
               {/* Topic breakdown */}
-              <div className="border border-[#E7E5E4] rounded-lg p-4">
-                <p className="text-sm font-bold text-[#1C1917] mb-2 flex items-center gap-2">
+              <div className="border border-[#E9E5E0] rounded-lg p-4">
+                <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Activity size={14} /> Topic / theme breakdown
                 </p>
-                <p className="text-xs text-[#8B8680] mb-3">
+                <p className="text-xs text-[#8D857D] mb-3">
                   Which themes customers mention and the average rating per theme. Lets you see
                   <em> why</em> ratings move — not just that they did.
                 </p>
                 {(reviewAnalytics.topic_breakdown || []).length === 0 ? (
-                  <p className="text-xs text-[#8B8680] italic">No text mentions to cluster yet.</p>
+                  <p className="text-xs text-[#8D857D] italic">No text mentions to cluster yet.</p>
                 ) : (
                   <div className="space-y-2">
                     {reviewAnalytics.topic_breakdown.map((t) => {
@@ -1545,9 +1545,9 @@ const AnalyticsPage = () => {
                       }[t.topic] || t.topic;
                       const avgColor = t.avg_rating >= 8 ? '#4A5D23' : t.avg_rating >= 6 ? '#E3A869' : '#B85C38';
                       return (
-                        <div key={t.topic} className="p-2 rounded bg-[#FDFBF7] border border-[#E7E5E4]">
+                        <div key={t.topic} className="p-2 rounded bg-[#FAFAF8] border border-[#E9E5E0]">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-[#1C1917]">{label}</span>
+                            <span className="font-semibold text-[#171412]">{label}</span>
                             <span style={{ color: avgColor }} className="font-bold">{t.avg_rating}/10 · {t.count} mention{t.count === 1 ? '' : 's'}</span>
                           </div>
                           <div className="mt-1 flex h-1.5 rounded overflow-hidden">
@@ -1555,7 +1555,7 @@ const AnalyticsPage = () => {
                             <div style={{ width: `${100 - t.positive_pct - t.negative_pct}%`, backgroundColor: '#E3A869' }} />
                             <div style={{ width: `${t.negative_pct}%`, backgroundColor: '#B85C38' }} />
                           </div>
-                          <p className="text-[10px] text-[#8B8680] mt-1">
+                          <p className="text-[10px] text-[#8D857D] mt-1">
                             {t.positive_pct}% positive · {t.negative_pct}% negative · {t.mention_pct}% of reviews mention this
                           </p>
                         </div>
@@ -1568,26 +1568,26 @@ const AnalyticsPage = () => {
 
             {/* Recent reviews feed */}
             {(reviewAnalytics.recent || []).length > 0 && (
-              <div className="border border-[#E7E5E4] rounded-lg p-4">
-                <p className="text-sm font-bold text-[#1C1917] mb-2">Most recent reviews</p>
+              <div className="border border-[#E9E5E0] rounded-lg p-4">
+                <p className="text-sm font-bold text-[#171412] mb-2">Most recent reviews</p>
                 <div className="space-y-2">
                   {reviewAnalytics.recent.map((r) => (
-                    <div key={r.id} className="p-3 rounded bg-[#FDFBF7] border border-[#E7E5E4] flex items-start gap-3">
+                    <div key={r.id} className="p-3 rounded bg-[#FAFAF8] border border-[#E9E5E0] flex items-start gap-3">
                       <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-white`}
                            style={{ backgroundColor: r.rating >= 8 ? '#4A5D23' : r.rating >= 5 ? '#E3A869' : '#B85C38' }}>
                         {r.rating}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap text-xs">
-                          <span className="font-semibold text-[#1C1917]">{r.sentiment}</span>
+                          <span className="font-semibold text-[#171412]">{r.sentiment}</span>
                           {r.topics?.length > 0 && (
-                            <span className="text-[#8B8680]">· {r.topics.join(', ')}</span>
+                            <span className="text-[#8D857D]">· {r.topics.join(', ')}</span>
                           )}
-                          <span className="text-[#8B8680] ml-auto">
+                          <span className="text-[#8D857D] ml-auto">
                             {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}
                           </span>
                         </div>
-                        {r.text && <p className="text-sm text-[#1C1917] mt-1">"{r.text}"</p>}
+                        {r.text && <p className="text-sm text-[#171412] mt-1">"{r.text}"</p>}
                       </div>
                     </div>
                   ))}
@@ -1596,7 +1596,7 @@ const AnalyticsPage = () => {
             )}
           </>
         ) : (
-          <p className="text-sm text-[#8B8680]">Loading review data…</p>
+          <p className="text-sm text-[#8D857D]">Loading review data…</p>
         )}
       </section>
 
@@ -1629,7 +1629,7 @@ const AnalyticsPage = () => {
                   className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors ${
                     active
                       ? 'bg-[#B85C38] text-white'
-                      : 'bg-[#F3EFE7] text-[#57534E] hover:bg-[#E7E5E4]'
+                      : 'bg-[#F5F4F1] text-[#57504A] hover:bg-[#E9E5E0]'
                   }`}
                 >
                   <Icon size={14} />
@@ -1646,7 +1646,7 @@ const AnalyticsPage = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+              <tr className="border-b border-[#E9E5E0] text-[#57504A]">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2 px-3">Customer</th>
                 <th className="py-2 px-3">Email</th>
@@ -1657,13 +1657,13 @@ const AnalyticsPage = () => {
             </thead>
             <tbody>
               {rankedCustomers.length === 0 ? (
-                <tr><td colSpan={6} className="py-6 text-center text-[#8B8680]">No customers to rank yet.</td></tr>
+                <tr><td colSpan={6} className="py-6 text-center text-[#8D857D]">No customers to rank yet.</td></tr>
               ) : (
                 rankedCustomers.map((c, i) => (
-                  <tr key={c.id || i} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7]">
-                    <td className="py-2 px-3 text-[#8B8680]">{i + 1}</td>
-                    <td className="py-2 px-3 font-medium text-[#1C1917]">{c.name || '—'}</td>
-                    <td className="py-2 px-3 text-[#57534E] text-xs">{c.email || '—'}</td>
+                  <tr key={c.id || i} className="border-b border-[#E9E5E0] hover:bg-[#F5F4F1]">
+                    <td className="py-2 px-3 text-[#8D857D]">{i + 1}</td>
+                    <td className="py-2 px-3 font-medium text-[#171412]">{c.name || '—'}</td>
+                    <td className="py-2 px-3 text-[#57504A] text-xs">{c.email || '—'}</td>
                     <td className="py-2 px-3"><TierBadge tier={c.tier} /></td>
                     <td className="py-2 px-3 text-right">{c.total_visits ?? 0}</td>
                     <td className="py-2 px-3 text-right">€{(c.total_amount_paid ?? 0).toFixed(2)}</td>
@@ -1686,23 +1686,23 @@ const AnalyticsPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              <h3 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
                 {drill.title}
               </h3>
-              <button onClick={() => setDrill(null)} className="text-[#A8A29E] hover:text-[#1C1917]">
+              <button onClick={() => setDrill(null)} className="text-[#A8A29E] hover:text-[#171412]">
                 <X size={22} />
               </button>
             </div>
             {drillLoading ? (
-              <p className="text-[#57534E] py-8 text-center">Loading customers…</p>
+              <p className="text-[#57504A] py-8 text-center">Loading customers…</p>
             ) : drill.error ? (
               <p className="text-[#B85C38] py-8 text-center">Error: {drill.error}</p>
             ) : (!drill.rows || drill.rows.length === 0) ? (
-              <p className="text-[#57534E] py-8 text-center">No matching records.</p>
+              <p className="text-[#57504A] py-8 text-center">No matching records.</p>
             ) : (
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+                  <tr className="border-b border-[#E9E5E0] text-[#57504A]">
                     {drill.columns.map((c) => (
                       <th key={c.key} className="py-2 px-3">{c.label}</th>
                     ))}
@@ -1710,9 +1710,9 @@ const AnalyticsPage = () => {
                 </thead>
                 <tbody>
                   {drill.rows.map((r, i) => (
-                    <tr key={i} className="border-b border-[#E7E5E4]">
+                    <tr key={i} className="border-b border-[#E9E5E0]">
                       {drill.columns.map((c) => (
-                        <td key={c.key} className="py-2 px-3 text-[#1C1917]">
+                        <td key={c.key} className="py-2 px-3 text-[#171412]">
                           {c.render ? c.render(r[c.key]) : (r[c.key] ?? '—')}
                         </td>
                       ))}

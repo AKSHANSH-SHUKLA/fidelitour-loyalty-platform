@@ -32,22 +32,22 @@ const CredentialsCard = ({ creds, onDismiss }) => {
       </p>
       <div className="space-y-1.5 font-mono text-sm">
         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
-          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8B8680' }}>URL</span>
-          <span className="flex-1 truncate" style={{ color: '#1C1917' }}>{loginUrl}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8D857D' }}>URL</span>
+          <span className="flex-1 truncate" style={{ color: '#171412' }}>{loginUrl}</span>
           <button onClick={() => copy(loginUrl)} className="text-xs px-2 py-1 rounded" style={{ background: '#FCE3DC', color: '#9C4427' }}>
             <Copy size={11} className="inline -mt-0.5" /> Copier
           </button>
         </div>
         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
-          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8B8680' }}>Email</span>
-          <span className="flex-1 truncate" style={{ color: '#1C1917' }}>{creds.email}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8D857D' }}>Email</span>
+          <span className="flex-1 truncate" style={{ color: '#171412' }}>{creds.email}</span>
           <button onClick={() => copy(creds.email)} className="text-xs px-2 py-1 rounded" style={{ background: '#FCE3DC', color: '#9C4427' }}>
             <Copy size={11} className="inline -mt-0.5" /> Copier
           </button>
         </div>
         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
-          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8B8680' }}>Mot de passe</span>
-          <span className="flex-1 truncate font-bold" style={{ color: '#1C1917' }}>{creds.password}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8D857D' }}>Mot de passe</span>
+          <span className="flex-1 truncate font-bold" style={{ color: '#171412' }}>{creds.password}</span>
           <button onClick={() => copy(creds.password)} className="text-xs px-2 py-1 rounded" style={{ background: '#FCE3DC', color: '#9C4427' }}>
             <Copy size={11} className="inline -mt-0.5" /> Copier
           </button>
@@ -237,7 +237,7 @@ const TeamCard = ({ id }) => {
       <CredentialsCard creds={issuedCreds} onDismiss={() => setIssuedCreds(null)} />
 
       {/* Existing team */}
-      <div className="rounded-xl p-4" style={{ background: '#FAF8F4', border: `1px solid ${C.hairline}` }}>
+      <div className="rounded-xl p-4" style={{ background: '#FAFAF8', border: `1px solid ${C.hairline}` }}>
         <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.inkMute }}>
           Membres de l'équipe ({team.length})
         </p>

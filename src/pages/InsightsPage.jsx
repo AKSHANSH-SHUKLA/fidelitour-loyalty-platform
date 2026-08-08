@@ -15,7 +15,7 @@ import {
 
 // Small reusable card shell
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white border border-[#E7E5E4] rounded-xl p-5 ${className}`}>{children}</div>
+  <div className={`bg-white border border-[#E9E5E0] rounded-xl p-5 ${className}`}>{children}</div>
 );
 
 const SectionHead = ({ icon: Icon, title, subtitle }) => (
@@ -24,15 +24,15 @@ const SectionHead = ({ icon: Icon, title, subtitle }) => (
       <Icon className="w-5 h-5 text-[#B85C38]" />
     </div>
     <div>
-      <h2 className="text-lg font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>{title}</h2>
-      {subtitle && <p className="text-xs text-[#57534E]">{subtitle}</p>}
+      <h2 className="text-lg font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>{title}</h2>
+      {subtitle && <p className="text-xs text-[#57504A]">{subtitle}</p>}
     </div>
   </div>
 );
 
 const StatPill = ({ label, value, hint, tone = 'default' }) => {
   const toneMap = {
-    default: 'bg-[#F3EFE7] text-[#1C1917]',
+    default: 'bg-[#F5F4F1] text-[#171412]',
     danger:  'bg-red-50 text-[#991B1B]',
     warning: 'bg-amber-50 text-[#92400E]',
     success: 'bg-emerald-50 text-[#065F46]',
@@ -474,7 +474,7 @@ export default function InsightsPage() {
       )}
 
       {/* AI Suggestions Panel */}
-      <Card className="bg-gradient-to-br from-white to-[#FDFBF7]">
+      <Card className="bg-gradient-to-br from-white to-[#FAFAF8]">
         <SectionHead
           icon={Sparkles}
           title="Ask the AI — your business advisor"
@@ -488,7 +488,7 @@ export default function InsightsPage() {
                 type="button"
                 onClick={() => { setAiQuestion(q); askAI(q); }}
                 disabled={aiLoading}
-                className="text-xs px-3 py-1.5 rounded-full border border-[#E7E5E4] bg-white hover:bg-[#B85C38] hover:text-white hover:border-[#B85C38] transition disabled:opacity-60"
+                className="text-xs px-3 py-1.5 rounded-full border border-[#E9E5E0] bg-white hover:bg-[#B85C38] hover:text-white hover:border-[#B85C38] transition disabled:opacity-60"
                 title="Ask this question"
               >
                 {q}
@@ -503,7 +503,7 @@ export default function InsightsPage() {
               onChange={(e) => setAiQuestion(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !aiLoading) askAI(); }}
               placeholder="e.g. How do I win back gold-tier customers who went quiet last month?"
-              className="flex-1 px-4 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+              className="flex-1 px-4 py-2 border border-[#E9E5E0] rounded-lg text-sm"
               disabled={aiLoading}
             />
             <button
@@ -524,13 +524,13 @@ export default function InsightsPage() {
           )}
 
           {aiAnswer && (
-            <div className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4]">
+            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
               <div className="flex items-start gap-2 mb-2">
                 <Sparkles size={16} className="text-[#B85C38] shrink-0 mt-0.5" />
                 <p className="text-xs font-semibold text-[#B85C38] uppercase tracking-wider">AI recommendation</p>
               </div>
-              <div className="text-sm text-[#1C1917] whitespace-pre-wrap leading-relaxed">{aiAnswer}</div>
-              <div className="mt-3 pt-3 border-t border-[#E7E5E4] text-[11px] text-[#8B8680]">
+              <div className="text-sm text-[#171412] whitespace-pre-wrap leading-relaxed">{aiAnswer}</div>
+              <div className="mt-3 pt-3 border-t border-[#E9E5E0] text-[11px] text-[#8D857D]">
                 Tip: every insight below (churn, LTV, alerts, city breakdown…) can also be fed back into this box. Copy a number, paste it here, and ask "what does this mean for me?"
               </div>
             </div>
@@ -542,15 +542,15 @@ export default function InsightsPage() {
       <Card>
         <SectionHead icon={AlertTriangle} title="Alertes intelligentes" subtitle="Ce qui mérite votre attention maintenant" />
         {alerts.length === 0 ? (
-          <p className="text-sm text-[#57534E]">Aucune alerte — votre activité est stable.</p>
+          <p className="text-sm text-[#57504A]">Aucune alerte — votre activité est stable.</p>
         ) : (
           <div className="space-y-3">
             {alerts.map((a, i) => (
-              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${alertToneBg[a.level] || 'bg-[#F3EFE7] border-[#E7E5E4]'}`}>
+              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${alertToneBg[a.level] || 'bg-[#F5F4F1] border-[#E9E5E0]'}`}>
                 <div className="text-2xl">{a.icon}</div>
                 <div className="flex-1">
-                  <p className="font-semibold text-[#1C1917]">{a.title}</p>
-                  <p className="text-sm text-[#57534E]">{a.detail}</p>
+                  <p className="font-semibold text-[#171412]">{a.title}</p>
+                  <p className="text-sm text-[#57504A]">{a.detail}</p>
                 </div>
               </div>
             ))}
@@ -583,7 +583,7 @@ export default function InsightsPage() {
               tone={churn.churned_90d_pct >= 30 ? 'danger' : 'default'}
             />
           </div>
-          <p className="text-xs text-[#57534E] mt-4 border-t border-[#E7E5E4] pt-3">
+          <p className="text-xs text-[#57504A] mt-4 border-t border-[#E9E5E0] pt-3">
             "1 visite seulement" = clients venus une seule fois qui ne sont pas revenus. "Inactifs 30j" = n'ont pas visité depuis 30 jours.
           </p>
         </Card>
@@ -602,16 +602,16 @@ export default function InsightsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#E7E5E4]">
-                    <th className="text-left py-2 px-2 text-[#57534E] font-semibold">Tier</th>
-                    <th className="text-right py-2 px-2 text-[#57534E] font-semibold">Clients</th>
-                    <th className="text-right py-2 px-2 text-[#57534E] font-semibold">LTV moyenne</th>
-                    <th className="text-right py-2 px-2 text-[#57534E] font-semibold">Revenu total</th>
+                  <tr className="border-b border-[#E9E5E0]">
+                    <th className="text-left py-2 px-2 text-[#57504A] font-semibold">Tier</th>
+                    <th className="text-right py-2 px-2 text-[#57504A] font-semibold">Clients</th>
+                    <th className="text-right py-2 px-2 text-[#57504A] font-semibold">LTV moyenne</th>
+                    <th className="text-right py-2 px-2 text-[#57504A] font-semibold">Revenu total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ltv.by_tier.map((row) => (
-                    <tr key={row.tier} className="border-b border-[#F3EFE7]">
+                    <tr key={row.tier} className="border-b border-[#F5F4F1]">
                       <td className="py-2 px-2 capitalize font-medium">{row.tier}</td>
                       <td className="py-2 px-2 text-right">{row.count}</td>
                       <td className="py-2 px-2 text-right">{row.average_ltv}€</td>
@@ -633,15 +633,15 @@ export default function InsightsPage() {
             <div className="flex-1">
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-semibold">{activeCards.active_cards} / {activeCards.plan_cap}</span>
-                <span className="text-[#57534E]">{activeCards.usage_pct}% utilisé</span>
+                <span className="text-[#57504A]">{activeCards.usage_pct}% utilisé</span>
               </div>
-              <div className="h-3 bg-[#F3EFE7] rounded-full overflow-hidden">
+              <div className="h-3 bg-[#F5F4F1] rounded-full overflow-hidden">
                 <div
                   className={`h-full ${activeCards.near_limit ? 'bg-[#B85C38]' : 'bg-[#4A5D23]'}`}
                   style={{ width: `${Math.min(activeCards.usage_pct, 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-[#57534E] mt-2">Plan actuel : <span className="uppercase font-semibold">{activeCards.plan}</span></p>
+              <p className="text-xs text-[#57504A] mt-2">Plan actuel : <span className="uppercase font-semibold">{activeCards.plan}</span></p>
             </div>
           </div>
           {activeCards.suggest_upgrade && (
@@ -677,13 +677,13 @@ export default function InsightsPage() {
           <SectionHead icon={Clock} title="Segmentation horaire" subtitle="Clients du midi vs soir vs week-end" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-xs uppercase font-semibold text-[#57534E] mb-2">Par moment</p>
+              <p className="text-xs uppercase font-semibold text-[#57504A] mb-2">Par moment</p>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={timeSeg.daypart_breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                    <XAxis dataKey="name" stroke="#57534E" fontSize={11} />
-                    <YAxis stroke="#57534E" fontSize={11} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
+                    <XAxis dataKey="name" stroke="#57504A" fontSize={11} />
+                    <YAxis stroke="#57504A" fontSize={11} />
                     <Tooltip />
                     <Bar dataKey="visits" fill="#B85C38" radius={[6, 6, 0, 0]} />
                   </BarChart>
@@ -691,13 +691,13 @@ export default function InsightsPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs uppercase font-semibold text-[#57534E] mb-2">Par jour de semaine</p>
+              <p className="text-xs uppercase font-semibold text-[#57504A] mb-2">Par jour de semaine</p>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={timeSeg.weekday_breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                    <XAxis dataKey="day" stroke="#57534E" fontSize={11} />
-                    <YAxis stroke="#57534E" fontSize={11} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
+                    <XAxis dataKey="day" stroke="#57504A" fontSize={11} />
+                    <YAxis stroke="#57504A" fontSize={11} />
                     <Tooltip />
                     <Bar dataKey="visits" fill="#4A5D23" radius={[6, 6, 0, 0]} />
                   </BarChart>
@@ -718,10 +718,10 @@ export default function InsightsPage() {
           <SectionHead icon={MapPin} title="Base de données par ville" subtitle={`${city.unique_postal_codes} codes postaux uniques`} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs uppercase font-semibold text-[#57534E] mb-2">Top départements</p>
+              <p className="text-xs uppercase font-semibold text-[#57504A] mb-2">Top départements</p>
               <div className="space-y-1 max-h-64 overflow-y-auto">
                 {city.by_departement.slice(0, 10).map((d) => (
-                  <div key={d.code} className="flex justify-between px-3 py-2 rounded bg-[#F3EFE7]">
+                  <div key={d.code} className="flex justify-between px-3 py-2 rounded bg-[#F5F4F1]">
                     <span><span className="font-mono text-xs text-[#B85C38]">{d.code}</span> {d.name}</span>
                     <span className="font-semibold">{d.customer_count}</span>
                   </div>
@@ -729,10 +729,10 @@ export default function InsightsPage() {
               </div>
             </div>
             <div>
-              <p className="text-xs uppercase font-semibold text-[#57534E] mb-2">Top codes postaux</p>
+              <p className="text-xs uppercase font-semibold text-[#57504A] mb-2">Top codes postaux</p>
               <div className="space-y-1 max-h-64 overflow-y-auto">
                 {city.by_postal_code.slice(0, 10).map((p) => (
-                  <div key={p.postal_code} className="flex justify-between px-3 py-2 rounded bg-[#F3EFE7]">
+                  <div key={p.postal_code} className="flex justify-between px-3 py-2 rounded bg-[#F5F4F1]">
                     <span className="font-mono">{p.postal_code}</span>
                     <span className="font-semibold">{p.customer_count}</span>
                   </div>
@@ -764,11 +764,11 @@ export default function InsightsPage() {
           </div>
           {monthly.campaigns.length > 0 && (
             <div>
-              <p className="text-xs uppercase font-semibold text-[#57534E] mb-2">Campagnes du mois</p>
+              <p className="text-xs uppercase font-semibold text-[#57504A] mb-2">Campagnes du mois</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[#E7E5E4]">
+                    <tr className="border-b border-[#E9E5E0]">
                       <th className="text-left py-1 px-2">Nom</th>
                       <th className="text-right py-1 px-2">Ciblés</th>
                       <th className="text-right py-1 px-2">Livrés</th>
@@ -779,7 +779,7 @@ export default function InsightsPage() {
                   </thead>
                   <tbody>
                     {monthly.campaigns.map((c, i) => (
-                      <tr key={i} className="border-b border-[#F3EFE7]">
+                      <tr key={i} className="border-b border-[#F5F4F1]">
                         <td className="py-1 px-2">{c.name}</td>
                         <td className="py-1 px-2 text-right">{c.targeted}</td>
                         <td className="py-1 px-2 text-right">{c.delivered}</td>
@@ -800,11 +800,11 @@ export default function InsightsPage() {
       {reactivation && (
         <Card>
           <SectionHead icon={Send} title="Relance clients inactifs" subtitle={`Template adapté à votre secteur : ${reactivation.sector}`} />
-          <div className="p-4 bg-[#F3EFE7] rounded-lg border border-[#E7E5E4]">
+          <div className="p-4 bg-[#F5F4F1] rounded-lg border border-[#E9E5E0]">
             <p className="font-semibold text-[#B85C38] mb-1">{reactivation.template.title}</p>
-            <p className="text-sm text-[#1C1917]">{reactivation.template.content}</p>
+            <p className="text-sm text-[#171412]">{reactivation.template.content}</p>
           </div>
-          <p className="text-xs text-[#57534E] mt-3">
+          <p className="text-xs text-[#57504A] mt-3">
             Utilisez ce template dans la page Campaigns pour cibler les clients inactifs de plus de 30 jours.
           </p>
         </Card>
@@ -819,7 +819,7 @@ export default function InsightsPage() {
             value={senderName}
             onChange={(e) => setSenderName(e.target.value)}
             placeholder="Ex: Café Lumière"
-            className="flex-1 border border-[#E7E5E4] rounded-lg px-3 py-2 focus:ring-[#B85C38]/20 focus:border-[#B85C38]"
+            className="flex-1 border border-[#E9E5E0] rounded-lg px-3 py-2 focus:ring-[#B85C38]/20 focus:border-[#B85C38]"
           />
           <button
             onClick={saveSenderName}
@@ -841,7 +841,7 @@ export default function InsightsPage() {
             placeholder="email@example.com"
             value={addTeamForm.email}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, email: e.target.value })}
-            className="flex-1 min-w-[180px] border border-[#E7E5E4] rounded-lg px-3 py-2"
+            className="flex-1 min-w-[180px] border border-[#E9E5E0] rounded-lg px-3 py-2"
           />
           <input
             type="password"
@@ -849,12 +849,12 @@ export default function InsightsPage() {
             placeholder="Mot de passe"
             value={addTeamForm.password}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, password: e.target.value })}
-            className="w-40 border border-[#E7E5E4] rounded-lg px-3 py-2"
+            className="w-40 border border-[#E9E5E0] rounded-lg px-3 py-2"
           />
           <select
             value={addTeamForm.role}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, role: e.target.value })}
-            className="border border-[#E7E5E4] rounded-lg px-3 py-2"
+            className="border border-[#E9E5E0] rounded-lg px-3 py-2"
           >
             <option value="staff">Staff</option>
             <option value="manager">Manager</option>
@@ -864,11 +864,11 @@ export default function InsightsPage() {
           </button>
         </form>
         {team.length === 0 ? (
-          <p className="text-sm text-[#57534E]">Aucun membre d'équipe pour le moment.</p>
+          <p className="text-sm text-[#57504A]">Aucun membre d'équipe pour le moment.</p>
         ) : (
           <div className="space-y-1">
             {team.map((m) => (
-              <div key={m.email} className="flex items-center justify-between px-3 py-2 bg-[#F3EFE7] rounded">
+              <div key={m.email} className="flex items-center justify-between px-3 py-2 bg-[#F5F4F1] rounded">
                 <span className="text-sm">{m.email}</span>
                 <div className="flex items-center gap-3">
                   <span className="text-xs uppercase font-bold px-2 py-0.5 rounded bg-[#B85C38] text-white">{m.role}</span>

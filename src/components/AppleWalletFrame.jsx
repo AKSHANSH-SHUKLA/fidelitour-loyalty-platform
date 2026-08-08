@@ -102,7 +102,7 @@ const AppleWalletFrame = ({ width = 460, children, time = '9:41' }) => {
         />
         <FakeStackedCard
           style={{ top: 100, left: 11, right: 11, height: 20 }}
-          gradient="linear-gradient(135deg, #1C1917 0%, #2A2A30 100%)"
+          gradient="linear-gradient(135deg, #171412 0%, #2A2A30 100%)"
           label="Apple Cash"
         />
 

@@ -56,7 +56,7 @@ export default function BranchPillsBanner({ compact = false } = {}) {
         <div className="flex items-center gap-2.5 min-w-0">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: '#1F1B1A', color: '#F4D8A8' }}
+            style={{ background: '#171412', color: '#F4D8A8' }}
           >
             <Sun size={14} />
           </div>
@@ -81,8 +81,8 @@ export default function BranchPillsBanner({ compact = false } = {}) {
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-all"
             style={
               isAll
-                ? { background: '#1F1B1A', color: '#FFFFFF', fontWeight: 500 }
-                : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+                ? { background: '#171412', color: '#FFFFFF', fontWeight: 500 }
+                : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
             }
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -103,7 +103,7 @@ export default function BranchPillsBanner({ compact = false } = {}) {
                 style={
                   isActive
                     ? { background: '#9C4427', color: '#FFFFFF', fontWeight: 500 }
-                    : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+                    : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
                 }
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -129,7 +129,7 @@ export default function BranchPillsBanner({ compact = false } = {}) {
       <div className="flex items-center gap-3 min-w-0">
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: '#1F1B1A', color: '#F4D8A8' }}
+          style={{ background: '#171412', color: '#F4D8A8' }}
         >
           <Sun size={18} />
         </div>
@@ -154,8 +154,8 @@ export default function BranchPillsBanner({ compact = false } = {}) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] transition-all"
           style={
             isAll
-              ? { background: '#1F1B1A', color: '#FFFFFF', fontWeight: 500 }
-              : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+              ? { background: '#171412', color: '#FFFFFF', fontWeight: 500 }
+              : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
           }
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -181,7 +181,7 @@ export default function BranchPillsBanner({ compact = false } = {}) {
               style={
                 isActive
                   ? { background: '#9C4427', color: '#FFFFFF', fontWeight: 500 }
-                  : { background: '#FFFFFF', color: '#1F1B1A', border: '1px solid #E2DAC4', fontWeight: 400 }
+                  : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
               }
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

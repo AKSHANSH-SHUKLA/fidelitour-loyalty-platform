@@ -39,9 +39,9 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
       const safeName = (businessName || 'Notre boutique').replace(/&/g, '&amp;').replace(/</g, '&lt;');
       const compositeSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <rect width="${W}" height="${H}" fill="#FDFBF7"/>
-  <rect x="80" y="80" width="${W - 160}" height="${H - 160}" rx="40" fill="#ffffff" stroke="#E7E5E4" stroke-width="2"/>
-  <text x="${W / 2}" y="220" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="56" font-weight="700" fill="#1C1917">${safeName}</text>
+  <rect width="${W}" height="${H}" fill="#FAFAF8"/>
+  <rect x="80" y="80" width="${W - 160}" height="${H - 160}" rx="40" fill="#ffffff" stroke="#E9E5E0" stroke-width="2"/>
+  <text x="${W / 2}" y="220" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="56" font-weight="700" fill="#171412">${safeName}</text>
   <text x="${W / 2}" y="290" text-anchor="middle" font-family="Manrope, sans-serif" font-size="28" fill="#B85C38" letter-spacing="4">REJOIGNEZ NOTRE PROGRAMME DE FIDÉLITÉ</text>
   <g transform="translate(${(W - 600) / 2}, 380)">
     <rect width="600" height="600" fill="#FFFFFF"/>
@@ -49,18 +49,18 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
       ${qrXml.replace(/<\?xml[^>]*\?>/, '').replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '')}
     </g>
   </g>
-  <text x="${W / 2}" y="1080" text-anchor="middle" font-family="Manrope, sans-serif" font-size="32" font-weight="600" fill="#1C1917">Scannez ce QR avec votre téléphone</text>
+  <text x="${W / 2}" y="1080" text-anchor="middle" font-family="Manrope, sans-serif" font-size="32" font-weight="600" fill="#171412">Scannez ce QR avec votre téléphone</text>
 
   <text x="200"  y="1200" font-family="Manrope, sans-serif" font-size="56" font-weight="700" fill="#B85C38">1.</text>
-  <text x="290"  y="1200" font-family="Manrope, sans-serif" font-size="32" fill="#1C1917">Ouvrez l'appareil photo de votre téléphone</text>
+  <text x="290"  y="1200" font-family="Manrope, sans-serif" font-size="32" fill="#171412">Ouvrez l'appareil photo de votre téléphone</text>
 
   <text x="200"  y="1300" font-family="Manrope, sans-serif" font-size="56" font-weight="700" fill="#B85C38">2.</text>
-  <text x="290"  y="1300" font-family="Manrope, sans-serif" font-size="32" fill="#1C1917">Visez le QR code, touchez le lien qui apparaît</text>
+  <text x="290"  y="1300" font-family="Manrope, sans-serif" font-size="32" fill="#171412">Visez le QR code, touchez le lien qui apparaît</text>
 
   <text x="200"  y="1400" font-family="Manrope, sans-serif" font-size="56" font-weight="700" fill="#B85C38">3.</text>
-  <text x="290"  y="1400" font-family="Manrope, sans-serif" font-size="32" fill="#1C1917">Remplissez votre nom — votre carte de fidélité est prête !</text>
+  <text x="290"  y="1400" font-family="Manrope, sans-serif" font-size="32" fill="#171412">Remplissez votre nom — votre carte de fidélité est prête !</text>
 
-  <text x="${W / 2}" y="1620" text-anchor="middle" font-family="Manrope, sans-serif" font-size="22" fill="#8B8680">Aucune application à télécharger · Vos données restent privées</text>
+  <text x="${W / 2}" y="1620" text-anchor="middle" font-family="Manrope, sans-serif" font-size="22" fill="#8D857D">Aucune application à télécharger · Vos données restent privées</text>
 </svg>`;
 
       // 3. Convert SVG → PNG via Canvas.
@@ -77,7 +77,7 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
       canvas.width = W;
       canvas.height = H;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#FDFBF7';
+      ctx.fillStyle = '#FAFAF8';
       ctx.fillRect(0, 0, W, H);
       ctx.drawImage(img, 0, 0, W, H);
       URL.revokeObjectURL(url);
@@ -105,7 +105,7 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
         <title>Affiche FidéliTour — ${businessName || ''}</title>
         <style>
           @page { size: A4 portrait; margin: 1cm; }
-          body { font-family: -apple-system, system-ui, sans-serif; text-align: center; padding: 40px 20px; color: #1C1917; }
+          body { font-family: -apple-system, system-ui, sans-serif; text-align: center; padding: 40px 20px; color: #171412; }
           h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 56px; margin: 0 0 8px; }
           .subtitle { font-size: 18px; color: #B85C38; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 40px; }
           .qr-wrap { background: white; padding: 24px; border-radius: 16px; display: inline-block; }
@@ -114,7 +114,7 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
           ol { text-align: left; max-width: 460px; margin: 0 auto; padding: 0; list-style: none; }
           li { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; font-size: 18px; }
           li b { color: #B85C38; font-size: 28px; }
-          .foot { font-size: 13px; color: #8B8680; margin-top: 36px; }
+          .foot { font-size: 13px; color: #8D857D; margin-top: 36px; }
         </style>
       </head>
       <body>
@@ -136,28 +136,28 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
   };
 
   return (
-    <div ref={posterRef} className="bg-white rounded-2xl border border-[#E7E5E4] p-5 mt-4">
-      <div className="text-xs font-bold uppercase tracking-widest text-[#8B8680] mb-3">
+    <div ref={posterRef} className="bg-white rounded-2xl border border-[#E9E5E0] p-5 mt-4">
+      <div className="text-xs font-bold uppercase tracking-widest text-[#8D857D] mb-3">
         Affiche QR pour le comptoir
       </div>
       <div className="flex flex-col md:flex-row gap-5 items-start">
         {/* Mini preview */}
-        <div className="bg-[#FDFBF7] border border-[#E7E5E4] rounded-xl p-4 text-center mx-auto" id="poster-qr-preview">
-          <p className="text-xs font-bold mb-1" style={{ color: '#1C1917' }}>{businessName || 'Notre boutique'}</p>
+        <div className="bg-[#FAFAF8] border border-[#E9E5E0] rounded-xl p-4 text-center mx-auto" id="poster-qr-preview">
+          <p className="text-xs font-bold mb-1" style={{ color: '#171412' }}>{businessName || 'Notre boutique'}</p>
           <p className="text-[9px] uppercase tracking-widest mb-2" style={{ color: '#B85C38' }}>Rejoignez notre programme</p>
           <div ref={svgRef} id="poster-qr" className="bg-white p-2 rounded inline-block">
             <QRCodeSVG value={joinUrl} size={140} level="M" />
           </div>
-          <p className="text-[10px] mt-2" style={{ color: '#8B8680' }}>Scannez avec votre téléphone</p>
+          <p className="text-[10px] mt-2" style={{ color: '#8D857D' }}>Scannez avec votre téléphone</p>
         </div>
 
         {/* Actions */}
         <div className="flex-1 space-y-2 text-sm">
-          <p className="text-[#57534E]">
+          <p className="text-[#57504A]">
             Imprimez cette affiche et placez-la sur votre comptoir / table.
             Vos clients la scannent avec l'appareil photo de leur téléphone et reçoivent immédiatement leur carte de fidélité.
           </p>
-          <ol className="text-xs text-[#8B8680] list-decimal pl-5 space-y-0.5">
+          <ol className="text-xs text-[#8D857D] list-decimal pl-5 space-y-0.5">
             <li>Ils scannent le QR</li>
             <li>Remplissent nom + téléphone</li>
             <li>Reçoivent leur carte avec QR personnel</li>
@@ -177,7 +177,7 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
               onClick={downloadPNG}
               disabled={downloading}
               className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg border"
-              style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
+              style={{ borderColor: '#E9E5E0', color: '#171412' }}
             >
               <ImageIcon size={13} /> {downloading ? 'Génération…' : 'Télécharger en PNG'}
             </button>

@@ -130,7 +130,7 @@ export default function InstallPwaPrompt({ onInstalled, context = 'card', force 
           type="button"
           aria-label="Fermer"
           onClick={dismiss}
-          className="absolute top-2 right-2 text-[#9C4427] hover:text-[#1C1917] p-1"
+          className="absolute top-2 right-2 text-[#9C4427] hover:text-[#171412] p-1"
         >
           <X size={16} />
         </button>
@@ -139,10 +139,10 @@ export default function InstallPwaPrompt({ onInstalled, context = 'card', force 
             <Bell size={20} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#1C1917] mb-1">
+            <p className="text-sm font-semibold text-[#171412] mb-1">
               Recevez vos offres au bon moment
             </p>
-            <p className="text-xs text-[#57534E] mb-3 leading-relaxed">
+            <p className="text-xs text-[#57504A] mb-3 leading-relaxed">
               {isIos
                 ? "Ajoutez cette carte à votre écran d'accueil pour activer les notifications. C'est gratuit et prend 5 secondes."
                 : "Installez la carte sur votre téléphone pour recevoir les anniversaires, offres, et nouveautés."}
@@ -172,44 +172,44 @@ function IosInstallModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-[#1C1917]">Installer la carte</h3>
+          <h3 className="text-lg font-bold text-[#171412]">Installer la carte</h3>
           <button onClick={onClose} aria-label="Fermer" className="p-1 -mr-1">
-            <X size={20} className="text-[#57534E]" />
+            <X size={20} className="text-[#57504A]" />
           </button>
         </div>
-        <ol className="space-y-4 text-sm text-[#1C1917]">
+        <ol className="space-y-4 text-sm text-[#171412]">
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#B85C38] text-white text-sm font-bold flex items-center justify-center">1</span>
             <div className="flex-1">
               <p className="font-medium">Touchez l'icône <Share size={16} className="inline mx-1 text-[#4A90E2]" /> partager</p>
-              <p className="text-xs text-[#57534E]">en bas de votre écran Safari.</p>
+              <p className="text-xs text-[#57504A]">en bas de votre écran Safari.</p>
             </div>
           </li>
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#B85C38] text-white text-sm font-bold flex items-center justify-center">2</span>
             <div className="flex-1">
               <p className="font-medium">Choisissez <span className="inline-flex items-center gap-1"><Plus size={14} className="text-[#4A90E2]" /> Sur l'écran d'accueil</span></p>
-              <p className="text-xs text-[#57534E]">défilez si besoin pour le voir.</p>
+              <p className="text-xs text-[#57504A]">défilez si besoin pour le voir.</p>
             </div>
           </li>
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#B85C38] text-white text-sm font-bold flex items-center justify-center">3</span>
             <div className="flex-1">
               <p className="font-medium">Touchez « Ajouter »</p>
-              <p className="text-xs text-[#57534E]">en haut à droite.</p>
+              <p className="text-xs text-[#57504A]">en haut à droite.</p>
             </div>
           </li>
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#7FA269] text-white text-sm font-bold flex items-center justify-center">✓</span>
             <div className="flex-1">
               <p className="font-medium">Ouvrez la carte depuis votre écran d'accueil.</p>
-              <p className="text-xs text-[#57534E]">Vous recevrez désormais les offres et anniversaires en push.</p>
+              <p className="text-xs text-[#57504A]">Vous recevrez désormais les offres et anniversaires en push.</p>
             </div>
           </li>
         </ol>
         <button
           onClick={onClose}
-          className="mt-5 w-full py-3 rounded-xl bg-[#1C1917] text-white font-medium hover:bg-[#3D3431] transition-colors"
+          className="mt-5 w-full py-3 rounded-xl bg-[#171412] text-white font-medium hover:bg-[#3D3431] transition-colors"
         >
           C'est compris
         </button>

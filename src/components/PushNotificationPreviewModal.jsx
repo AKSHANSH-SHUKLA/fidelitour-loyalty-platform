@@ -78,16 +78,16 @@ const PushNotificationPreviewModal = ({
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: primaryColor }}>
               {trigger} — confirmation requise
             </p>
-            <h3 className="text-xl font-bold mt-0.5" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+            <h3 className="text-xl font-bold mt-0.5" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
               Aperçu de la notification push
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full hover:bg-[#FAF8F4] flex items-center justify-center"
+            className="w-9 h-9 rounded-full hover:bg-[#FAFAF8] flex items-center justify-center"
           >
-            <X size={16} style={{ color: '#57534E' }} />
+            <X size={16} style={{ color: '#57504A' }} />
           </button>
         </div>
 
@@ -96,7 +96,7 @@ const PushNotificationPreviewModal = ({
           {/* Left — editor */}
           <div className="space-y-4">
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5" style={{ color: '#57534E' }}>
+              <label className="text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5" style={{ color: '#57504A' }}>
                 <Edit3 size={10} /> Titre de la notification
               </label>
               <input
@@ -105,17 +105,17 @@ const PushNotificationPreviewModal = ({
                 onChange={(e) => editable && setTitle(e.target.value.slice(0, 60))}
                 disabled={!editable}
                 className="w-full border rounded-lg px-3 py-2.5 text-sm font-semibold"
-                style={{ borderColor: '#E7E5E4' }}
+                style={{ borderColor: '#E9E5E0' }}
                 placeholder="Ex: Bonjour Marie 👋"
                 maxLength={60}
               />
-              <p className="text-[10px] mt-1" style={{ color: '#8B8680' }}>
+              <p className="text-[10px] mt-1" style={{ color: '#8D857D' }}>
                 {title.length}/60 caractères — visible sur l'écran verrouillé
               </p>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5" style={{ color: '#57534E' }}>
+              <label className="text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5" style={{ color: '#57504A' }}>
                 <Edit3 size={10} /> Corps du message
               </label>
               <textarea
@@ -124,11 +124,11 @@ const PushNotificationPreviewModal = ({
                 disabled={!editable}
                 rows={4}
                 className="w-full border rounded-lg px-3 py-2.5 text-sm leading-relaxed resize-none"
-                style={{ borderColor: '#E7E5E4' }}
+                style={{ borderColor: '#E9E5E0' }}
                 placeholder="Le message principal qui apparaîtra sous le titre"
                 maxLength={180}
               />
-              <p className="text-[10px] mt-1" style={{ color: '#8B8680' }}>
+              <p className="text-[10px] mt-1" style={{ color: '#8D857D' }}>
                 {body.length}/180 caractères
               </p>
             </div>
@@ -138,19 +138,19 @@ const PushNotificationPreviewModal = ({
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: primaryColor }}>
                 Destinataires
               </p>
-              <p className="text-sm font-bold" style={{ color: '#1C1917' }}>
+              <p className="text-sm font-bold" style={{ color: '#171412' }}>
                 {recipientCount.toLocaleString()} client{recipientCount > 1 ? 's' : ''} recevront cette notification
               </p>
-              <p className="text-[10px] mt-1" style={{ color: '#57534E' }}>
+              <p className="text-[10px] mt-1" style={{ color: '#57504A' }}>
                 Web Push gratuit · SMS de secours pour ceux sans abonnement push
               </p>
             </div>
 
             {/* Brand voice tip */}
             <div className="p-3 rounded-lg flex gap-2 items-start"
-                 style={{ background: '#FEF9E7', border: '1px solid #E3A86955' }}>
-              <Sparkles size={14} style={{ color: '#7B3F00', marginTop: 2 }} />
-              <p className="text-[11px] leading-snug" style={{ color: '#7B3F00' }}>
+                 style={{ background: '#F6E9E2', border: '1px solid #E3A86955' }}>
+              <Sparkles size={14} style={{ color: '#96431F', marginTop: 2 }} />
+              <p className="text-[11px] leading-snug" style={{ color: '#96431F' }}>
                 <b>Astuce :</b> les notifications les plus efficaces utilisent le prénom du client
                 et offrent un avantage concret. Vous pouvez modifier librement avant l'envoi.
               </p>
@@ -159,7 +159,7 @@ const PushNotificationPreviewModal = ({
 
           {/* Right — live phone preview */}
           <div className="flex flex-col items-center justify-start">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#8B8680' }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#8D857D' }}>
               Aperçu en temps réel
             </p>
             {/* Phone frame */}
@@ -168,7 +168,7 @@ const PushNotificationPreviewModal = ({
               style={{
                 width: 280,
                 height: 480,
-                background: 'linear-gradient(180deg, #1C1917 0%, #2A1C2E 100%)',
+                background: 'linear-gradient(180deg, #171412 0%, #2A1C2E 100%)',
                 boxShadow: '0 24px 60px rgba(28,25,23,0.4)',
               }}
             >
@@ -222,15 +222,15 @@ const PushNotificationPreviewModal = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <p className="text-[10px] font-bold leading-tight truncate" style={{ color: '#1C1917' }}>
+                      <p className="text-[10px] font-bold leading-tight truncate" style={{ color: '#171412' }}>
                         {businessName}
                       </p>
-                      <p className="text-[9px] shrink-0" style={{ color: '#57534E' }}>maintenant</p>
+                      <p className="text-[9px] shrink-0" style={{ color: '#57504A' }}>maintenant</p>
                     </div>
-                    <p className="text-[10.5px] font-bold leading-tight" style={{ color: '#1C1917' }}>
+                    <p className="text-[10.5px] font-bold leading-tight" style={{ color: '#171412' }}>
                       {title || 'Titre de la notification'}
                     </p>
-                    <p className="text-[9.5px] mt-0.5 leading-snug" style={{ color: '#57534E' }}>
+                    <p className="text-[9.5px] mt-0.5 leading-snug" style={{ color: '#57504A' }}>
                       {body || 'Le message apparaîtra ici…'}
                     </p>
                   </div>
@@ -250,12 +250,12 @@ const PushNotificationPreviewModal = ({
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t" style={{ borderColor: '#EFE9E0', background: '#FDFBF7' }}>
+        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t" style={{ borderColor: '#EFE9E0', background: '#FAFAF8' }}>
           <button
             type="button"
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl text-sm font-semibold border transition hover:bg-white"
-            style={{ borderColor: '#E7E5E4', color: '#57534E' }}
+            style={{ borderColor: '#E9E5E0', color: '#57504A' }}
           >
             Annuler
           </button>

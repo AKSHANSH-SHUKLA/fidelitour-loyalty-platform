@@ -56,7 +56,7 @@ export default function LanguageSwitcher({ variant = 'full' }) {
                 padding: '3px 8px',
                 fontSize: 13,
                 borderRadius: 6,
-                border: active ? '1px solid #B85C38' : '1px solid #E7E5E4',
+                border: active ? '1px solid #B85C38' : '1px solid #E9E5E0',
                 background: active ? '#FFF1EA' : 'white',
                 cursor: 'pointer',
                 font: 'inherit',
@@ -74,14 +74,14 @@ export default function LanguageSwitcher({ variant = 'full' }) {
   return (
     <div style={{
       background: 'white',
-      border: '1px solid #E7E5E4',
+      border: '1px solid #E9E5E0',
       borderRadius: 12,
       padding: 18,
     }}>
-      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1C1917' }}>
+      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#171412' }}>
         {t('settings.language_title')}
       </h3>
-      <p style={{ margin: '4px 0 12px', fontSize: 12.5, color: '#57534E' }}>
+      <p style={{ margin: '4px 0 12px', fontSize: 12.5, color: '#57504A' }}>
         {t('settings.language_subtitle')}
       </p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -96,10 +96,10 @@ export default function LanguageSwitcher({ variant = 'full' }) {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '8px 14px', borderRadius: 10,
-                border: active ? '1px solid #B85C38' : '1px solid #E7E5E4',
+                border: active ? '1px solid #B85C38' : '1px solid #E9E5E0',
                 background: active ? '#FFF1EA' : 'white',
                 cursor: 'pointer',
-                color: '#1C1917', font: 'inherit', fontSize: 13.5, fontWeight: 500,
+                color: '#171412', font: 'inherit', fontSize: 13.5, fontWeight: 500,
                 minWidth: 120,
                 justifyContent: 'flex-start',
               }}

@@ -409,11 +409,11 @@ export default function CustomersPage() {
       case 'Gold':
         return { bg: '#E3A86920', text: '#B85C38' };
       case 'Silver':
-        return { bg: '#F3F3F2', text: '#57534E' };
+        return { bg: '#F3F3F2', text: '#57504A' };
       case 'Bronze':
-        return { bg: '#F3EFE7', text: '#57534E' };
+        return { bg: '#F5F4F1', text: '#57504A' };
       default:
-        return { bg: '#E7E5E4', text: '#57534E' };
+        return { bg: '#E9E5E0', text: '#57504A' };
     }
   };
 
@@ -485,7 +485,7 @@ export default function CustomersPage() {
     return (
       <div
         className="p-8"
-        style={{ backgroundColor: '#FDFBF7' }}
+        style={{ backgroundColor: '#FAFAF8' }}
       >
         <p style={{ color: '#B85C38' }}>{t('common.error')}: {error}</p>
       </div>
@@ -540,7 +540,7 @@ export default function CustomersPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: urlFilterPill.color }}>
                   Filter applied
                 </p>
-                <p className="text-sm font-bold" style={{ color: '#1C1917' }}>
+                <p className="text-sm font-bold" style={{ color: '#171412' }}>
                   {urlFilterPill.label} · {filteredCustomers.length} customer{filteredCustomers.length === 1 ? '' : 's'}
                 </p>
               </div>
@@ -562,11 +562,11 @@ export default function CustomersPage() {
         <div
           className="flex items-center gap-3 px-4 py-3 rounded-lg border"
           style={{
-            backgroundColor: '#F3EFE7',
-            borderColor: '#E7E5E4',
+            backgroundColor: '#F5F4F1',
+            borderColor: '#E9E5E0',
           }}
         >
-          <Search size={20} style={{ color: '#57534E' }} />
+          <Search size={20} style={{ color: '#57504A' }} />
           <input
             type="text"
             placeholder={t('customers.search_placeholder')}
@@ -574,7 +574,7 @@ export default function CustomersPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-transparent outline-none"
             style={{
-              color: '#1C1917',
+              color: '#171412',
               fontFamily: 'Manrope',
               fontSize: '14px',
             }}
@@ -583,12 +583,12 @@ export default function CustomersPage() {
       </div>
 
       {/* Quick-pick segments — one click to isolate a marketing target */}
-      <div className="mb-6 p-4 rounded-lg border bg-white" style={{ borderColor: '#E7E5E4' }}>
+      <div className="mb-6 p-4 rounded-lg border bg-white" style={{ borderColor: '#E9E5E0' }}>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Zap size={18} style={{ color: '#B85C38' }} />
-            <span className="font-bold text-[#1C1917]">Quick segments</span>
-            <span className="text-xs text-[#8B8680]">One click → isolate a marketing target, then send a campaign</span>
+            <span className="font-bold text-[#171412]">Quick segments</span>
+            <span className="text-xs text-[#8D857D]">One click → isolate a marketing target, then send a campaign</span>
           </div>
           <button
             onClick={sendCampaignToFiltered}
@@ -616,7 +616,7 @@ export default function CustomersPage() {
                 className={`px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 border transition ${
                   active
                     ? 'bg-[#B85C38] text-white border-[#B85C38]'
-                    : 'bg-white text-[#57534E] border-[#E7E5E4] hover:border-[#B85C38]'
+                    : 'bg-white text-[#57504A] border-[#E9E5E0] hover:border-[#B85C38]'
                 }`}
               >
                 <Icon size={13} />
@@ -628,7 +628,7 @@ export default function CustomersPage() {
             <button
               type="button"
               onClick={() => { setActiveQuickSegment(null); fetchCustomers(); }}
-              className="px-3 py-1.5 rounded-full text-sm font-semibold border border-[#E7E5E4] text-[#57534E] hover:bg-[#FEF2F0]"
+              className="px-3 py-1.5 rounded-full text-sm font-semibold border border-[#E9E5E0] text-[#57504A] hover:bg-[#FEF2F0]"
             >
               <X size={12} className="inline -mt-0.5 mr-1" /> Clear
             </button>
@@ -636,16 +636,16 @@ export default function CustomersPage() {
         </div>
 
         {/* Saved segments — owner's custom combos */}
-        <div className="mt-4 pt-3 border-t border-[#E7E5E4]">
+        <div className="mt-4 pt-3 border-t border-[#E9E5E0]">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <span className="text-xs font-bold text-[#57534E] uppercase tracking-wider">Saved segments</span>
+            <span className="text-xs font-bold text-[#57504A] uppercase tracking-wider">Saved segments</span>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={segmentName}
                 onChange={(e) => setSegmentName(e.target.value)}
                 placeholder="Name this filter combo…"
-                className="px-2 py-1 text-xs border border-[#E7E5E4] rounded"
+                className="px-2 py-1 text-xs border border-[#E9E5E0] rounded"
               />
               <button
                 onClick={saveCurrentAsSegment}
@@ -657,17 +657,17 @@ export default function CustomersPage() {
             </div>
           </div>
           {savedSegments.length === 0 ? (
-            <p className="text-xs text-[#8B8680] italic">
+            <p className="text-xs text-[#8D857D] italic">
               Tune any filter combination and click "Save current" to reuse it later.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {savedSegments.map((s) => (
-                <div key={s.id} className="flex items-center gap-1 border border-[#E7E5E4] rounded-full pl-3 pr-1 py-0.5 bg-[#FDFBF7]">
-                  <button onClick={() => loadSavedSegment(s)} className="text-xs font-semibold text-[#1C1917]">
+                <div key={s.id} className="flex items-center gap-1 border border-[#E9E5E0] rounded-full pl-3 pr-1 py-0.5 bg-[#FAFAF8]">
+                  <button onClick={() => loadSavedSegment(s)} className="text-xs font-semibold text-[#171412]">
                     {s.name}
                   </button>
-                  <button onClick={() => deleteSavedSegment(s.id)} className="text-[#8B8680] hover:text-red-600 p-1" title="Delete">
+                  <button onClick={() => deleteSavedSegment(s.id)} className="text-[#8D857D] hover:text-red-600 p-1" title="Delete">
                     <X size={10} />
                   </button>
                 </div>
@@ -681,15 +681,15 @@ export default function CustomersPage() {
       <div
         className="mb-6 p-4 rounded-lg border"
         style={{
-          backgroundColor: '#F3EFE7',
-          borderColor: '#E7E5E4',
+          backgroundColor: '#F5F4F1',
+          borderColor: '#E9E5E0',
         }}
       >
         <div className="flex items-center gap-2 mb-4">
           <Filter size={18} style={{ color: '#B85C38' }} />
           <span
             style={{
-              color: '#1C1917',
+              color: '#171412',
               fontWeight: '600',
               fontFamily: 'Manrope',
               fontSize: '14px',
@@ -705,7 +705,7 @@ export default function CustomersPage() {
             <label
               className="block text-sm mb-2"
               style={{
-                color: '#57534E',
+                color: '#57504A',
                 fontFamily: 'Manrope',
                 fontSize: '12px',
               }}
@@ -717,9 +717,9 @@ export default function CustomersPage() {
               onChange={(e) => setTierFilter(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
+                backgroundColor: '#FAFAF8',
+                borderColor: '#E9E5E0',
+                color: '#171412',
                 fontFamily: 'Manrope',
               }}
             >
@@ -736,7 +736,7 @@ export default function CustomersPage() {
             <label
               className="block text-sm mb-2"
               style={{
-                color: '#57534E',
+                color: '#57504A',
                 fontFamily: 'Manrope',
                 fontSize: '12px',
               }}
@@ -748,9 +748,9 @@ export default function CustomersPage() {
               onChange={(e) => setSubscriptionFilter(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
+                backgroundColor: '#FAFAF8',
+                borderColor: '#E9E5E0',
+                color: '#171412',
                 fontFamily: 'Manrope',
               }}
               title="Filter customers by whether they receive push notifications"
@@ -766,7 +766,7 @@ export default function CustomersPage() {
             <label
               className="block text-sm mb-2"
               style={{
-                color: '#57534E',
+                color: '#57504A',
                 fontFamily: 'Manrope',
                 fontSize: '12px',
               }}
@@ -778,9 +778,9 @@ export default function CustomersPage() {
               onChange={(e) => setSourceFilter(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
+                backgroundColor: '#FAFAF8',
+                borderColor: '#E9E5E0',
+                color: '#171412',
                 fontFamily: 'Manrope',
               }}
             >
@@ -797,7 +797,7 @@ export default function CustomersPage() {
             <label
               className="block text-sm mb-2"
               style={{
-                color: '#57534E',
+                color: '#57504A',
                 fontFamily: 'Manrope',
                 fontSize: '12px',
               }}
@@ -811,9 +811,9 @@ export default function CustomersPage() {
               onChange={(e) => setMinVisits(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
+                backgroundColor: '#FAFAF8',
+                borderColor: '#E9E5E0',
+                color: '#171412',
                 fontFamily: 'Manrope',
               }}
             />
@@ -824,7 +824,7 @@ export default function CustomersPage() {
             <label
               className="block text-sm mb-2"
               style={{
-                color: '#57534E',
+                color: '#57504A',
                 fontFamily: 'Manrope',
                 fontSize: '12px',
               }}
@@ -838,9 +838,9 @@ export default function CustomersPage() {
               onChange={(e) => setMinAmountPaid(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
+                backgroundColor: '#FAFAF8',
+                borderColor: '#E9E5E0',
+                color: '#171412',
                 fontFamily: 'Manrope',
               }}
             />
@@ -851,7 +851,7 @@ export default function CustomersPage() {
             <label
               className="block text-sm mb-2"
               style={{
-                color: '#57534E',
+                color: '#57504A',
                 fontFamily: 'Manrope',
                 fontSize: '12px',
               }}
@@ -865,9 +865,9 @@ export default function CustomersPage() {
               onChange={(e) => setPostalCode(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FDFBF7',
-                borderColor: '#E7E5E4',
-                color: '#1C1917',
+                backgroundColor: '#FAFAF8',
+                borderColor: '#E9E5E0',
+                color: '#171412',
                 fontFamily: 'Manrope',
               }}
             />
@@ -880,7 +880,7 @@ export default function CustomersPage() {
           className="px-4 py-2 rounded text-sm font-medium transition-colors hover:opacity-80"
           style={{
             backgroundColor: '#B85C38',
-            color: '#FDFBF7',
+            color: '#FAFAF8',
             fontFamily: 'Manrope',
           }}
         >
@@ -892,7 +892,7 @@ export default function CustomersPage() {
       <div className="mb-4">
         <p
           style={{
-            color: '#57534E',
+            color: '#57504A',
             fontFamily: 'Manrope',
             fontSize: '14px',
           }}

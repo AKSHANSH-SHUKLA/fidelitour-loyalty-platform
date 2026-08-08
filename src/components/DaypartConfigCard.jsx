@@ -93,7 +93,7 @@ const DaypartConfigCard = () => {
 
       <div className="space-y-2">
         {dayparts.map((p, i) => (
-          <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg" style={{ background: '#FAF8F4', border: `1px solid ${C_PS.hairline}` }}>
+          <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg" style={{ background: '#FAFAF8', border: `1px solid ${C_PS.hairline}` }}>
             <input
               className="col-span-4 border rounded-lg px-3 py-2 text-sm"
               style={{ borderColor: C_PS.hairline }}

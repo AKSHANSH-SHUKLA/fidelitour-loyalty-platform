@@ -36,7 +36,7 @@ const PhonePushPreview = ({
   return (
     <div className="flex flex-col items-center">
       {caption && (
-        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#8B8680' }}>
+        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#8D857D' }}>
           {caption}
         </p>
       )}
@@ -46,7 +46,7 @@ const PhonePushPreview = ({
         style={{
           width,
           height,
-          background: 'linear-gradient(180deg, #1C1917 0%, #2A1C2E 100%)',
+          background: 'linear-gradient(180deg, #171412 0%, #2A1C2E 100%)',
           boxShadow: '0 18px 44px rgba(28,25,23,0.32)',
         }}
       >
@@ -104,15 +104,15 @@ const PhonePushPreview = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[9px] font-bold leading-tight truncate" style={{ color: '#1C1917' }}>
+                <p className="text-[9px] font-bold leading-tight truncate" style={{ color: '#171412' }}>
                   {businessName}
                 </p>
-                <p className="text-[8px] shrink-0" style={{ color: '#57534E' }}>now</p>
+                <p className="text-[8px] shrink-0" style={{ color: '#57504A' }}>now</p>
               </div>
-              <p className="text-[10px] font-bold leading-tight mt-0.5" style={{ color: '#1C1917' }}>
+              <p className="text-[10px] font-bold leading-tight mt-0.5" style={{ color: '#171412' }}>
                 {title || (variant === 'geo' ? '📍 You\'re just nearby!' : 'Notification title')}
               </p>
-              <p className="text-[9px] mt-0.5 leading-snug" style={{ color: '#57534E' }}>
+              <p className="text-[9px] mt-0.5 leading-snug" style={{ color: '#57504A' }}>
                 {body || (variant === 'geo'
                   ? 'Drop by — we\'ve got something for you.'
                   : 'Your message will appear here…')}

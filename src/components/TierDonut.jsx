@@ -20,7 +20,7 @@ const TIER_META = {
   bronze: { label: 'Bronze', color: '#8B6914' },
   silver: { label: 'Silver', color: '#A8A8A8' },
   gold:   { label: 'Gold',   color: '#E3A869' },
-  vip:    { label: 'VIP',    color: '#7B3F00' },
+  vip:    { label: 'VIP',    color: '#96431F' },
 };
 
 export default function TierDonut() {
@@ -94,7 +94,7 @@ export default function TierDonut() {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    background: '#FFFFFF', border: '1px solid #ECE8E1',
+                    background: '#FFFFFF', border: '1px solid #EFEDE9',
                     borderRadius: 8, padding: '4px 8px', fontSize: 11,
                     boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
                   }}

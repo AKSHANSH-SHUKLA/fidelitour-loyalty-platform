@@ -17,8 +17,8 @@ const SOURCE_LABELS = {
   qr_store:   { label: 'QR in-store',  color: '#B85C38' },
   instagram:  { label: 'Instagram',    color: '#5B7AB7' },
   facebook:   { label: 'Facebook',     color: '#3B82F6' },
-  tiktok:     { label: 'TikTok',       color: '#1F1B1A' },
-  website:    { label: 'Website',      color: '#7A716C' },
+  tiktok:     { label: 'TikTok',       color: '#171412' },
+  website:    { label: 'Website',      color: '#8D857D' },
   manual:     { label: 'Saisie staff', color: '#D4A574' },
 };
 
@@ -94,7 +94,7 @@ export default function AcquisitionDonut() {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    background: '#FFFFFF', border: '1px solid #ECE8E1',
+                    background: '#FFFFFF', border: '1px solid #EFEDE9',
                     borderRadius: 8, padding: '4px 8px', fontSize: 11,
                     boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
                   }}

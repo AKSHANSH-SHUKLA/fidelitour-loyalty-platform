@@ -33,7 +33,7 @@ const severityColor = (severity) => {
   if (severity === 'critical') return '#B85C38';
   if (severity === 'warning')  return '#E3A869';
   if (severity === 'positive') return '#4A5D23';
-  return '#8B7DC9';
+  return '#B85C38';
 };
 
 // Resolve an alert into "Voir clients" + "Envoyer campagne" navigation
@@ -221,7 +221,7 @@ const NotificationBell = () => {
             className="px-4 py-3 border-b relative overflow-hidden"
             style={{
               borderColor: '#EFE9E0',
-              background: 'linear-gradient(135deg, #1C1917 0%, #2A1C2E 100%)',
+              background: 'linear-gradient(135deg, #171412 0%, #2A1C2E 100%)',
               color: 'white',
             }}
           >
@@ -261,8 +261,8 @@ const NotificationBell = () => {
               </button>
             </div>
           </div>
-          <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: '#EFE9E0', background: '#FDFBF7' }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8B8680' }}>
+          <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: '#EFE9E0', background: '#FAFAF8' }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8D857D' }}>
               Alertes par boutique
             </p>
             <p className="text-[9px]" style={{ color: '#A8A29E' }}>
@@ -271,11 +271,11 @@ const NotificationBell = () => {
           </div>
           <div className="max-h-[420px] overflow-y-auto">
             {loading && alerts.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm" style={{ color: '#8B8680' }}>
+              <div className="px-4 py-8 text-center text-sm" style={{ color: '#8D857D' }}>
                 Chargement…
               </div>
             ) : alerts.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm" style={{ color: '#8B8680' }}>
+              <div className="px-4 py-8 text-center text-sm" style={{ color: '#8D857D' }}>
                 Tout va bien — aucune alerte aujourd'hui ✨
               </div>
             ) : (
@@ -312,11 +312,11 @@ const NotificationBell = () => {
                             <Building2 size={9} /> {a.branch_name}
                           </span>
                         )}
-                        <p className="text-sm font-bold leading-tight" style={{ color: '#1C1917' }}>
+                        <p className="text-sm font-bold leading-tight" style={{ color: '#171412' }}>
                           {a.title}
                         </p>
                         {a.body && (
-                          <p className="text-xs mt-1 leading-snug" style={{ color: '#57534E' }}>
+                          <p className="text-xs mt-1 leading-snug" style={{ color: '#57504A' }}>
                             {a.body}
                           </p>
                         )}
@@ -331,7 +331,7 @@ const NotificationBell = () => {
                         type="button"
                         onClick={() => { setOpen(false); navigate(actions.customersUrl); }}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1 transition"
-                        style={{ background: '#F4F2EE', color: '#1C1917', border: '1px solid #E7E5E4' }}
+                        style={{ background: '#F5F4F1', color: '#171412', border: '1px solid #E9E5E0' }}
                       >
                         <Users size={11} /> Voir les clients
                       </button>
@@ -351,8 +351,8 @@ const NotificationBell = () => {
             )}
           </div>
           {alerts.length > 0 && (
-            <div className="px-4 py-2 border-t bg-[#FDFBF7] text-center" style={{ borderColor: '#EFE9E0' }}>
-              <p className="text-[10px]" style={{ color: '#8B8680' }}>
+            <div className="px-4 py-2 border-t bg-[#FAFAF8] text-center" style={{ borderColor: '#EFE9E0' }}>
+              <p className="text-[10px]" style={{ color: '#8D857D' }}>
                 {alerts.length} résumé{alerts.length > 1 ? 's' : ''} · Cliquez sur une carte pour voir le détail
               </p>
             </div>

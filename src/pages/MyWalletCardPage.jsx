@@ -131,14 +131,14 @@ class WalletCardErrorBoundary extends React.Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="bg-white rounded-2xl p-6 border border-[#E7E5E4] max-w-md mx-auto text-center my-10">
+        <div className="bg-white rounded-2xl p-6 border border-[#E9E5E0] max-w-md mx-auto text-center my-10">
           <XCircle className="mx-auto text-[#B85C38] mb-3" size={32} />
-          <p className="text-[#1C1917] font-semibold mb-1">La carte n'a pas pu s'afficher</p>
-          <p className="text-[#57534E] text-sm">
+          <p className="text-[#171412] font-semibold mb-1">La carte n'a pas pu s'afficher</p>
+          <p className="text-[#57504A] text-sm">
             Erreur de rendu :{' '}
             <code style={{ fontSize: 11 }}>{String(this.state.error?.message || this.state.error)}</code>
           </p>
-          <p className="text-[#8B8680] text-xs mt-2">
+          <p className="text-[#8D857D] text-xs mt-2">
             Ouvrez la console du navigateur pour la trace complète.
           </p>
         </div>
@@ -476,15 +476,15 @@ const MyWalletCardPage = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center text-[#57534E]">Chargement de votre carte…</div>;
+    return <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center text-[#57504A]">Chargement de votre carte…</div>;
   }
   if (err) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E9E5E0] max-w-md text-center">
           <XCircle className="mx-auto text-[#B85C38] mb-3" size={40} />
-          <p className="text-[#1C1917] font-semibold mb-2">Carte introuvable</p>
-          <p className="text-[#57534E] text-sm">{err}</p>
+          <p className="text-[#171412] font-semibold mb-2">Carte introuvable</p>
+          <p className="text-[#57504A] text-sm">{err}</p>
           <Link to="/" className="inline-block mt-5 text-[#B85C38] underline">Retour à l'accueil</Link>
         </div>
       </div>
@@ -492,11 +492,11 @@ const MyWalletCardPage = () => {
   }
   if (erased) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E9E5E0] max-w-md text-center">
           <ShieldCheck className="mx-auto text-[#4A5D23] mb-3" size={40} />
-          <p className="text-[#1C1917] font-semibold mb-2">Données supprimées</p>
-          <p className="text-[#57534E] text-sm">
+          <p className="text-[#171412] font-semibold mb-2">Données supprimées</p>
+          <p className="text-[#57504A] text-sm">
             Vos données personnelles ont été effacées conformément au RGPD.
             Cette carte n'est plus utilisable. Vous pouvez vous réinscrire à
             tout moment auprès du commerçant.
@@ -508,11 +508,11 @@ const MyWalletCardPage = () => {
   }
   if (deleted) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E9E5E0] max-w-md text-center">
           <CheckCircle2 className="mx-auto text-[#4A5D23] mb-3" size={40} />
-          <p className="text-[#1C1917] font-semibold mb-2">Carte supprimée</p>
-          <p className="text-[#57534E] text-sm">Votre carte a bien été retirée de votre wallet.</p>
+          <p className="text-[#171412] font-semibold mb-2">Carte supprimée</p>
+          <p className="text-[#57504A] text-sm">Votre carte a bien été retirée de votre wallet.</p>
           <Link to="/" className="inline-block mt-5 text-[#B85C38] underline">Retour à l'accueil</Link>
         </div>
       </div>
@@ -525,11 +525,11 @@ const MyWalletCardPage = () => {
   // into a destructure-of-null crash that white-screens the page.
   if (!data) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E9E5E0] max-w-md text-center">
           <XCircle className="mx-auto text-[#B85C38] mb-3" size={40} />
-          <p className="text-[#1C1917] font-semibold mb-2">Carte indisponible</p>
-          <p className="text-[#57534E] text-sm">
+          <p className="text-[#171412] font-semibold mb-2">Carte indisponible</p>
+          <p className="text-[#57504A] text-sm">
             La carte n'a pas pu être chargée. Vérifiez votre connexion ou rechargez la page.
           </p>
           <button
@@ -548,11 +548,11 @@ const MyWalletCardPage = () => {
   // page rendering even if the backend payload shape changes.
   if (!customer || !card) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 border border-[#E7E5E4] max-w-md text-center">
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-[#E9E5E0] max-w-md text-center">
           <XCircle className="mx-auto text-[#B85C38] mb-3" size={40} />
-          <p className="text-[#1C1917] font-semibold mb-2">Carte incomplète</p>
-          <p className="text-[#57534E] text-sm">
+          <p className="text-[#171412] font-semibold mb-2">Carte incomplète</p>
+          <p className="text-[#57504A] text-sm">
             Les données reçues du serveur sont incomplètes. Veuillez contacter le commerçant.
           </p>
         </div>
@@ -607,7 +607,7 @@ const MyWalletCardPage = () => {
   }, [offers, notifications]);
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] font-['Manrope'] py-10 px-4">
+    <div className="min-h-screen bg-[#FAFAF8] font-['Manrope'] py-10 px-4">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Link to="/" className="text-[#B85C38] text-sm">← Retour</Link>
@@ -640,12 +640,12 @@ const MyWalletCardPage = () => {
               🔔
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1C1917' }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#171412' }}>
                 {notifStatus.missed_count === 1
                   ? "Vous avez raté 1 offre exclusive"
                   : `Vous avez raté ${notifStatus.missed_count} offres exclusives`}
               </p>
-              <p style={{ margin: '2px 0 10px', fontSize: 12.5, color: '#57534E', lineHeight: 1.45 }}>
+              <p style={{ margin: '2px 0 10px', fontSize: 12.5, color: '#57504A', lineHeight: 1.45 }}>
                 Activez les notifications pour ne plus rien manquer de {tenant?.name || 'cette boutique'}.
               </p>
               <button
@@ -684,7 +684,7 @@ const MyWalletCardPage = () => {
               aria-label="Fermer"
               style={{
                 flexShrink: 0, background: 'transparent', border: 'none',
-                color: '#8B8680', cursor: 'pointer', padding: 4,
+                color: '#8D857D', cursor: 'pointer', padding: 4,
                 fontSize: 16,
               }}
             >
@@ -727,7 +727,7 @@ const MyWalletCardPage = () => {
                     }
                   } catch (_e) { /* user cancelled, ignore */ }
                 }}
-                className="bg-[#1C1917] text-white py-3 rounded-xl font-medium text-sm hover:opacity-90 transition"
+                className="bg-[#171412] text-white py-3 rounded-xl font-medium text-sm hover:opacity-90 transition"
               >
                 📤 Partager / copier
               </button>
@@ -744,12 +744,12 @@ const MyWalletCardPage = () => {
               </button>
               <button
                 onClick={() => window.print()}
-                className="bg-white text-[#1C1917] py-3 rounded-xl font-medium text-sm border border-[#E7E5E4] hover:bg-[#FAF8F4] transition"
+                className="bg-white text-[#171412] py-3 rounded-xl font-medium text-sm border border-[#E9E5E0] hover:bg-[#FAFAF8] transition"
               >
                 🖨️ Imprimer
               </button>
             </div>
-            <p className="text-[10px] text-[#8B8680] text-center mt-2">
+            <p className="text-[10px] text-[#8D857D] text-center mt-2">
               💡 La carte fonctionne dans n'importe quel navigateur. Apple Wallet / Google Wallet natifs nécessitent un compte développeur payant — disponibles sur demande.
             </p>
 
@@ -781,12 +781,12 @@ const MyWalletCardPage = () => {
             />
 
             {/* Push notification preview */}
-            <div className="mt-6 bg-white/70 backdrop-blur rounded-xl p-4 border border-[#E7E5E4]">
+            <div className="mt-6 bg-white/70 backdrop-blur rounded-xl p-4 border border-[#E9E5E0]">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={16} className="text-[#B85C38]" />
-                <h3 className="text-sm font-semibold text-[#1C1917]">Aperçu de la notification push</h3>
+                <h3 className="text-sm font-semibold text-[#171412]">Aperçu de la notification push</h3>
               </div>
-              <div className="bg-[#1C1917]/5 rounded-lg p-3 flex gap-3">
+              <div className="bg-[#171412]/5 rounded-lg p-3 flex gap-3">
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm"
                   style={{
@@ -797,27 +797,27 @@ const MyWalletCardPage = () => {
                   {tenant.name?.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <p className="text-[11px] font-semibold text-[#1C1917]">{tenant.name}</p>
-                  <p className="text-xs text-[#57534E] leading-snug">
+                  <p className="text-[11px] font-semibold text-[#171412]">{tenant.name}</p>
+                  <p className="text-xs text-[#57504A] leading-snug">
                     {activeOffer?.active
                       ? `${activeOffer.title} — ${activeOffer.description}`
                       : 'Nouvelle offre disponible dans votre carte de fidélité'}
                   </p>
-                  <p className="text-[10px] text-[#8B8680] mt-0.5">maintenant</p>
+                  <p className="text-[10px] text-[#8D857D] mt-0.5">maintenant</p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* RIGHT: Settings + offers panel */}
-          <aside className="bg-white rounded-2xl border border-[#E7E5E4] shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-[#E7E5E4]">
+          <aside className="bg-white rounded-2xl border border-[#E9E5E0] shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-[#E9E5E0]">
               <h2 className="font-['Cormorant_Garamond'] text-2xl font-bold ft-gradient-text-slow">Mon Programme de Fidélité</h2>
-              <p className="text-xs text-[#57534E] mt-1">{customer.name} · {customer.email}</p>
+              <p className="text-xs text-[#57504A] mt-1">{customer.name} · {customer.email}</p>
             </div>
 
             {/* Toggle list */}
-            <div className="divide-y divide-[#E7E5E4]">
+            <div className="divide-y divide-[#E9E5E0]">
               <ToggleRow
                 icon={<RefreshCw size={18} />}
                 label="Mise à jour automatique"
@@ -840,7 +840,7 @@ const MyWalletCardPage = () => {
                   failure reason in a toast (no_subscription, vapid_not_configured,
                   endpoint expired, etc) so the customer can debug without
                   needing the owner to send a campaign. */}
-              <div className="p-4 bg-[#F3EFE7] border-t border-[#E7E5E4]">
+              <div className="p-4 bg-[#F5F4F1] border-t border-[#E9E5E0]">
                 <button
                   type="button"
                   onClick={async () => {
@@ -865,7 +865,7 @@ const MyWalletCardPage = () => {
                   <Bell size={14} />
                   Envoyer une notification test
                 </button>
-                <p className="text-[10px] text-[#8B8680] mt-1.5 text-center">
+                <p className="text-[10px] text-[#8D857D] mt-1.5 text-center">
                   Vérifie que les notifications atteignent bien votre téléphone.
                 </p>
               </div>
@@ -885,17 +885,17 @@ const MyWalletCardPage = () => {
                   erasure (Art. 17). Both barcode-keyed, no login needed —
                   same auth model as the rest of the card page. */}
               <div className="p-4 bg-[#F8F6F1]">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-3 flex items-center gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8D857D] mb-3 flex items-center gap-1.5">
                   <ShieldCheck size={12} /> Confidentialité (RGPD)
                 </p>
                 <button
                   onClick={downloadMyData}
-                  className="w-full text-left py-2.5 flex items-center gap-3 text-[#1C1917] hover:text-[#B85C38] transition-colors"
+                  className="w-full text-left py-2.5 flex items-center gap-3 text-[#171412] hover:text-[#B85C38] transition-colors"
                 >
                   <Download size={16} className="shrink-0" />
                   <div>
                     <p className="font-medium text-sm">Télécharger mes données</p>
-                    <p className="text-xs text-[#8B8680]">Profil, visites, notifications — fichier JSON</p>
+                    <p className="text-xs text-[#8D857D]">Profil, visites, notifications — fichier JSON</p>
                   </div>
                 </button>
                 <button
@@ -925,14 +925,14 @@ const MyWalletCardPage = () => {
                 );
               }
               return (
-                <div className="m-3 rounded-xl border border-[#E3A869]/40 bg-[#FEF9E7] p-4">
+                <div className="m-3 rounded-xl border border-[#E3A869]/40 bg-[#F6E9E2] p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-bold text-[#1C1917]">Comment s'est passée votre visite ?</p>
-                    <span className="text-xs text-[#7B3F00]">Votre note reste anonyme</span>
+                    <p className="text-sm font-bold text-[#171412]">Comment s'est passée votre visite ?</p>
+                    <span className="text-xs text-[#96431F]">Votre note reste anonyme</span>
                   </div>
                   <div className="mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#57534E] w-4">1</span>
+                      <span className="text-xs text-[#57504A] w-4">1</span>
                       <input
                         type="range"
                         min="1"
@@ -942,11 +942,11 @@ const MyWalletCardPage = () => {
                         onChange={(e) => setReviewRating(parseInt(e.target.value, 10))}
                         className="flex-1 accent-[#B85C38]"
                       />
-                      <span className="text-xs text-[#57534E] w-6">10</span>
+                      <span className="text-xs text-[#57504A] w-6">10</span>
                     </div>
                     <p className="text-center mt-1">
                       <span className="text-3xl font-bold text-[#B85C38]">{reviewRating}</span>
-                      <span className="text-sm text-[#57534E]">/10</span>
+                      <span className="text-sm text-[#57504A]">/10</span>
                     </p>
                   </div>
                   <textarea
@@ -954,7 +954,7 @@ const MyWalletCardPage = () => {
                     onChange={(e) => setReviewText(e.target.value.slice(0, 500))}
                     placeholder="Un mot pour l'équipe ? (optionnel — service, propreté, accueil…)"
                     rows={2}
-                    className="w-full text-sm border border-[#E7E5E4] rounded p-2 bg-white resize-none"
+                    className="w-full text-sm border border-[#E9E5E0] rounded p-2 bg-white resize-none"
                   />
                   {reviewError && (
                     <p className="text-xs text-red-600 mt-2">{reviewError}</p>
@@ -994,7 +994,7 @@ const MyWalletCardPage = () => {
                 one chronological feed. The old "News" tab was a duplicate
                 of the same campaigns shown under offers, which confused
                 both customers and merchants. */}
-            <div className="flex border-t border-[#E7E5E4] bg-[#FDFBF7]">
+            <div className="flex border-t border-[#E9E5E0] bg-[#FAFAF8]">
               <TabBtn active={tab === 'offers'}  onClick={() => setTab('offers')} label="Offres" count={mergedFeed.length} />
               <TabBtn active={tab === 'program'} onClick={() => setTab('program')} label="Programme" />
             </div>
@@ -1007,7 +1007,7 @@ const MyWalletCardPage = () => {
                   offer is rendered non-clickable because it has no
                   campaign id to attach analytics to. */}
               {tab === 'offers' && (mergedFeed.length === 0 ? (
-                <p className="text-sm text-[#8B8680] text-center py-8">Aucune offre ni message pour le moment.</p>
+                <p className="text-sm text-[#8D857D] text-center py-8">Aucune offre ni message pour le moment.</p>
               ) : mergedFeed.map(item => {
                 const isClickable = item.kind === 'campaign' && item.id;
                 const Wrapper = isClickable ? 'button' : 'div';
@@ -1030,25 +1030,25 @@ const MyWalletCardPage = () => {
                         } catch (_e) { /* tracking failure must not block the open */ }
                       },
                     } : {})}
-                    className={`w-full text-left rounded-lg border border-[#E7E5E4] p-3 bg-white ${isClickable ? 'hover:bg-[#FFF4F1] transition-colors cursor-pointer' : ''}`}
+                    className={`w-full text-left rounded-lg border border-[#E9E5E0] p-3 bg-white ${isClickable ? 'hover:bg-[#FFF4F1] transition-colors cursor-pointer' : ''}`}
                   >
                     <div className="flex items-start gap-3">
                       <Gift size={18} className="text-[#B85C38] mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#1C1917] text-sm">{item.title}</p>
-                        <p className="text-xs text-[#57534E] mt-0.5 line-clamp-2">{item.description || item.body}</p>
+                        <p className="font-semibold text-[#171412] text-sm">{item.title}</p>
+                        <p className="text-xs text-[#57504A] mt-0.5 line-clamp-2">{item.description || item.body}</p>
                         {item.sent_at && item.kind === 'campaign' && (
-                          <p className="text-[10px] text-[#8B8680] mt-1">
+                          <p className="text-[10px] text-[#8D857D] mt-1">
                             {new Date(item.sent_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                           </p>
                         )}
                         {item.valid_until && item.kind === 'primary' && (
-                          <p className="text-[10px] text-[#8B8680] mt-1">
+                          <p className="text-[10px] text-[#8D857D] mt-1">
                             Valable jusqu'au {new Date(item.valid_until).toLocaleDateString('fr-FR')}
                           </p>
                         )}
                       </div>
-                      {isClickable && <ChevronRight size={16} className="text-[#8B8680] shrink-0 mt-1" />}
+                      {isClickable && <ChevronRight size={16} className="text-[#8D857D] shrink-0 mt-1" />}
                     </div>
                   </Wrapper>
                 );
@@ -1056,21 +1056,21 @@ const MyWalletCardPage = () => {
 
               {tab === 'program' && (
                 <div className="space-y-3 text-sm">
-                  <div className="rounded-lg border border-[#E7E5E4] p-3 bg-white">
-                    <p className="text-xs text-[#8B8680] uppercase tracking-wider font-semibold mb-1">Récompense</p>
-                    <p className="text-[#1C1917] font-medium">🎁 {card.reward_description}</p>
-                    <p className="text-xs text-[#57534E] mt-1">Débloquée après {stampsTarget} visites.</p>
+                  <div className="rounded-lg border border-[#E9E5E0] p-3 bg-white">
+                    <p className="text-xs text-[#8D857D] uppercase tracking-wider font-semibold mb-1">Récompense</p>
+                    <p className="text-[#171412] font-medium">🎁 {card.reward_description}</p>
+                    <p className="text-xs text-[#57504A] mt-1">Débloquée après {stampsTarget} visites.</p>
                   </div>
-                  <div className="rounded-lg border border-[#E7E5E4] p-3 bg-white">
-                    <p className="text-xs text-[#8B8680] uppercase tracking-wider font-semibold mb-1">Points par visite</p>
-                    <p className="text-[#1C1917] font-medium">+{card.points_per_visit} pts à chaque passage</p>
+                  <div className="rounded-lg border border-[#E9E5E0] p-3 bg-white">
+                    <p className="text-xs text-[#8D857D] uppercase tracking-wider font-semibold mb-1">Points par visite</p>
+                    <p className="text-[#171412] font-medium">+{card.points_per_visit} pts à chaque passage</p>
                   </div>
-                  <div className="rounded-lg border border-[#E7E5E4] p-3 bg-white">
-                    <p className="text-xs text-[#8B8680] uppercase tracking-wider font-semibold mb-2">Commerçant</p>
-                    <p className="flex items-center gap-2 text-[#1C1917]"><Store size={14} /> {tenant.name}</p>
-                    {tenant.address && <p className="flex items-center gap-2 text-[#57534E] text-xs mt-1"><MapPin size={12} /> {tenant.address}</p>}
-                    {tenant.phone && <p className="flex items-center gap-2 text-[#57534E] text-xs mt-1"><Phone size={12} /> {tenant.phone}</p>}
-                    {tenant.website && <p className="flex items-center gap-2 text-[#57534E] text-xs mt-1"><Globe size={12} /> {tenant.website}</p>}
+                  <div className="rounded-lg border border-[#E9E5E0] p-3 bg-white">
+                    <p className="text-xs text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Commerçant</p>
+                    <p className="flex items-center gap-2 text-[#171412]"><Store size={14} /> {tenant.name}</p>
+                    {tenant.address && <p className="flex items-center gap-2 text-[#57504A] text-xs mt-1"><MapPin size={12} /> {tenant.address}</p>}
+                    {tenant.phone && <p className="flex items-center gap-2 text-[#57504A] text-xs mt-1"><Phone size={12} /> {tenant.phone}</p>}
+                    {tenant.website && <p className="flex items-center gap-2 text-[#57504A] text-xs mt-1"><Globe size={12} /> {tenant.website}</p>}
                   </div>
                 </div>
               )}
@@ -1081,7 +1081,7 @@ const MyWalletCardPage = () => {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#1C1917] text-white text-sm py-2.5 px-5 rounded-full shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#171412] text-white text-sm py-2.5 px-5 rounded-full shadow-lg">
           {toast}
         </div>
       )}
@@ -1175,14 +1175,14 @@ function NotificationDetailModal({ notification, tenant, card, customerId, onClo
             {(tenant?.name || '?').charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8B8680' }}>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8D857D' }}>
               {tenant?.name || 'Notification'}
             </p>
-            <h3 style={{ margin: '4px 0 0', fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 700, color: '#1C1917', lineHeight: 1.2 }}>
+            <h3 style={{ margin: '4px 0 0', fontFamily: 'Cormorant Garamond, serif', fontSize: 22, fontWeight: 700, color: '#171412', lineHeight: 1.2 }}>
               {notification.title}
             </h3>
             {notification.sent_at && (
-              <p style={{ margin: '4px 0 0', fontSize: 11, color: '#8B8680' }}>
+              <p style={{ margin: '4px 0 0', fontSize: 11, color: '#8D857D' }}>
                 {new Date(notification.sent_at).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}
               </p>
             )}
@@ -1203,7 +1203,7 @@ function NotificationDetailModal({ notification, tenant, card, customerId, onClo
         )}
 
         {/* Full body — preserves line breaks the merchant typed */}
-        <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: '#1C1917', whiteSpace: 'pre-wrap' }}>
+        <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: '#171412', whiteSpace: 'pre-wrap' }}>
           {notification.body}
         </p>
 
@@ -1238,7 +1238,7 @@ function NotificationDetailModal({ notification, tenant, card, customerId, onClo
 // ---------------------------------------------------------------------------
 const WalletPass = ({ customer, tenant, card, activeOffer, onOpenDetails }) => {
   const design = card.design || {};
-  const primary = card.primary_color || design.primary_color || '#1C1917';
+  const primary = card.primary_color || design.primary_color || '#171412';
   const secondary = card.secondary_color || design.secondary_color || '#B85C38';
   const accent = card.accent_color || design.accent_color || '#D4A574';
   const textColor = design.text_color || '#FFFFFF';
@@ -1405,7 +1405,7 @@ const WalletPass = ({ customer, tenant, card, activeOffer, onOpenDetails }) => {
               }
             } catch (_e) { /* user cancelled */ }
           }}
-          className="bg-[#1C1917] text-white py-3 rounded-xl font-medium text-sm"
+          className="bg-[#171412] text-white py-3 rounded-xl font-medium text-sm"
         >
           📤 Partager
         </button>
@@ -1423,33 +1423,33 @@ const WalletPass = ({ customer, tenant, card, activeOffer, onOpenDetails }) => {
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); window.print(); }}
-          className="bg-white border border-[#E7E5E4] py-3 rounded-xl font-medium text-sm"
-          style={{ color: '#1C1917' }}
+          className="bg-white border border-[#E9E5E0] py-3 rounded-xl font-medium text-sm"
+          style={{ color: '#171412' }}
         >
           🖨️ Imprimer
         </button>
       </div>
 
       {/* Push notification preview */}
-      <div className="mt-6 bg-white/70 backdrop-blur rounded-xl p-4 border border-[#E7E5E4]">
+      <div className="mt-6 bg-white/70 backdrop-blur rounded-xl p-4 border border-[#E9E5E0]">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles size={16} className="text-[#B85C38]" />
-          <h3 className="text-sm font-semibold text-[#1C1917]">Aperçu de la notification push</h3>
+          <h3 className="text-sm font-semibold text-[#171412]">Aperçu de la notification push</h3>
         </div>
-        <div className="bg-[#1C1917]/5 rounded-lg p-3 flex gap-3">
+        <div className="bg-[#171412]/5 rounded-lg p-3 flex gap-3">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm" style={{ background: primary, color: textColor }}>
             {tenant.name?.charAt(0)}
           </div>
           <div className="flex-1">
-            <p className="text-[11px] font-semibold text-[#1C1917]">{tenant.name}</p>
-            <p className="text-xs text-[#57534E] leading-snug">
+            <p className="text-[11px] font-semibold text-[#171412]">{tenant.name}</p>
+            <p className="text-xs text-[#57504A] leading-snug">
               {promotion.enabled
                 ? `${promotion.title} — ${promotion.subtitle || 'Nouvelle offre disponible'}`
                 : activeOffer?.active
                 ? `${activeOffer.title} — ${activeOffer.description}`
                 : 'Nouvelle offre disponible dans votre carte de fidélité'}
             </p>
-            <p className="text-[10px] text-[#8B8680] mt-0.5">maintenant</p>
+            <p className="text-[10px] text-[#8D857D] mt-0.5">maintenant</p>
           </div>
         </div>
       </div>
@@ -1466,38 +1466,38 @@ const DetailsDrawer = ({ tenant, card, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white border-b border-[#E7E5E4] flex items-center justify-between px-5 py-3">
-          <h2 className="font-['Playfair_Display'] text-xl font-bold text-[#1C1917]">À propos de {tenant.name}</h2>
+        <div className="sticky top-0 bg-white border-b border-[#E9E5E0] flex items-center justify-between px-5 py-3">
+          <h2 className="font-['Playfair_Display'] text-xl font-bold text-[#171412]">À propos de {tenant.name}</h2>
           <button onClick={onClose} className="p-2 hover:bg-[#F5F5F4] rounded-lg"><X size={18} /></button>
         </div>
         <div className="p-5 space-y-4 text-sm">
           {has(details.about) && (
             <div>
-              <p className="text-xs font-bold text-[#8B8680] uppercase tracking-wider mb-1">À propos</p>
-              <p className="text-[#1C1917] whitespace-pre-wrap leading-relaxed">{details.about}</p>
+              <p className="text-xs font-bold text-[#8D857D] uppercase tracking-wider mb-1">À propos</p>
+              <p className="text-[#171412] whitespace-pre-wrap leading-relaxed">{details.about}</p>
             </div>
           )}
           {has(details.hours) && (
             <div>
-              <p className="text-xs font-bold text-[#8B8680] uppercase tracking-wider mb-1 flex items-center gap-1"><Clock size={12} /> Horaires</p>
-              <p className="text-[#1C1917] whitespace-pre-wrap">{details.hours}</p>
+              <p className="text-xs font-bold text-[#8D857D] uppercase tracking-wider mb-1 flex items-center gap-1"><Clock size={12} /> Horaires</p>
+              <p className="text-[#171412] whitespace-pre-wrap">{details.hours}</p>
             </div>
           )}
           {has(details.address || tenant.address) && (
             <div>
-              <p className="text-xs font-bold text-[#8B8680] uppercase tracking-wider mb-1 flex items-center gap-1"><MapPin size={12} /> Adresse</p>
-              <p className="text-[#1C1917]">{details.address || tenant.address}</p>
+              <p className="text-xs font-bold text-[#8D857D] uppercase tracking-wider mb-1 flex items-center gap-1"><MapPin size={12} /> Adresse</p>
+              <p className="text-[#171412]">{details.address || tenant.address}</p>
             </div>
           )}
           {has(details.phone || tenant.phone) && (
             <div>
-              <p className="text-xs font-bold text-[#8B8680] uppercase tracking-wider mb-1 flex items-center gap-1"><Phone size={12} /> Téléphone</p>
+              <p className="text-xs font-bold text-[#8D857D] uppercase tracking-wider mb-1 flex items-center gap-1"><Phone size={12} /> Téléphone</p>
               <a href={`tel:${details.phone || tenant.phone}`} className="text-[#B85C38] underline">{details.phone || tenant.phone}</a>
             </div>
           )}
           {has(details.website || tenant.website) && (
             <div>
-              <p className="text-xs font-bold text-[#8B8680] uppercase tracking-wider mb-1 flex items-center gap-1"><Globe size={12} /> Site web</p>
+              <p className="text-xs font-bold text-[#8D857D] uppercase tracking-wider mb-1 flex items-center gap-1"><Globe size={12} /> Site web</p>
               <a href={details.website || tenant.website} target="_blank" rel="noreferrer" className="text-[#B85C38] underline break-all">{details.website || tenant.website}</a>
             </div>
           )}
@@ -1509,12 +1509,12 @@ const DetailsDrawer = ({ tenant, card, onClose }) => {
           )}
           {(details.custom_sections || []).map((s, i) => has(s.title) || has(s.body) ? (
             <div key={i}>
-              {has(s.title) && <p className="text-xs font-bold text-[#8B8680] uppercase tracking-wider mb-1">{s.title}</p>}
-              <p className="text-[#1C1917] whitespace-pre-wrap leading-relaxed">{s.body}</p>
+              {has(s.title) && <p className="text-xs font-bold text-[#8D857D] uppercase tracking-wider mb-1">{s.title}</p>}
+              <p className="text-[#171412] whitespace-pre-wrap leading-relaxed">{s.body}</p>
             </div>
           ) : null)}
           {!has(details.about) && !has(details.hours) && !has(details.address) && !has(details.phone) && !has(details.website) && (details.custom_sections || []).length === 0 && (
-            <p className="text-sm text-[#8B8680] italic text-center py-6">Le commerçant n'a pas encore ajouté de détails.</p>
+            <p className="text-sm text-[#8D857D] italic text-center py-6">Le commerçant n'a pas encore ajouté de détails.</p>
           )}
         </div>
       </div>
@@ -1526,8 +1526,8 @@ const ToggleRow = ({ icon, label, hint, value, onToggle, disabled }) => (
   <div className="flex items-center gap-3 p-4">
     <div className="text-[#B85C38]">{icon}</div>
     <div className="flex-1">
-      <p className="font-medium text-sm text-[#1C1917]">{label}</p>
-      <p className="text-xs text-[#57534E]">{hint}</p>
+      <p className="font-medium text-sm text-[#171412]">{label}</p>
+      <p className="text-xs text-[#57504A]">{hint}</p>
     </div>
     <button
       onClick={onToggle}
@@ -1543,7 +1543,7 @@ const ToggleRow = ({ icon, label, hint, value, onToggle, disabled }) => (
 const TabBtn = ({ active, onClick, label, count }) => (
   <button
     onClick={onClick}
-    className={`flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-colors ${active ? 'bg-white text-[#B85C38] border-b-2 border-[#B85C38]' : 'text-[#8B8680] hover:text-[#1C1917]'}`}
+    className={`flex-1 py-3 text-xs font-semibold uppercase tracking-wider transition-colors ${active ? 'bg-white text-[#B85C38] border-b-2 border-[#B85C38]' : 'text-[#8D857D] hover:text-[#171412]'}`}
   >
     {label}{count !== undefined ? ` (${count})` : ''}
   </button>

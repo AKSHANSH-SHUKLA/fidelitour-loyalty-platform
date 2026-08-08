@@ -128,7 +128,7 @@ export default function BillingBanner() {
         {/* Primary CTA — same intent everywhere, label adapts to urgency. */}
         <button
           onClick={() => setShowPicker(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white text-[#1C1917] font-semibold text-xs hover:bg-[#FAF8F4] transition-colors border border-[#E7E5E4] shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white text-[#171412] font-semibold text-xs hover:bg-[#FAFAF8] transition-colors border border-[#E9E5E0] shrink-0"
           type="button"
         >
           {isExpired ? 'Unlock now' : isReminder ? 'Choose a plan' : 'View plans'}
@@ -194,7 +194,7 @@ function PlanPicker({ trial, upgrading, onPick, onClose }) {
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#B85C38', margin: 0 }}>
               FidéliTour Plans
             </p>
-            <h2 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 28, fontWeight: 700, margin: '6px 0 4px', color: '#1C1917' }}>
+            <h2 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: 28, fontWeight: 700, margin: '6px 0 4px', color: '#171412' }}>
               {trial.is_expired ? 'Your trial has ended — pick a plan to continue' : 'Pick the plan that fits your business'}
             </h2>
             <p style={{ fontSize: 13.5, color: '#6B6359', margin: 0 }}>
@@ -214,7 +214,7 @@ function PlanPicker({ trial, upgrading, onPick, onClose }) {
             return (
               <div key={p.plan}
                 style={{
-                  border: `2px solid ${isCurrent ? accent : '#ECE8E1'}`,
+                  border: `2px solid ${isCurrent ? accent : '#EFEDE9'}`,
                   borderRadius: 14, padding: '18px 16px',
                   background: isCurrent ? `${accent}10` : 'white',
                   position: 'relative',
@@ -230,15 +230,15 @@ function PlanPicker({ trial, upgrading, onPick, onClose }) {
                 <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: accent, margin: 0 }}>
                   {p.plan}
                 </p>
-                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 700, margin: '4px 0 2px', color: '#1C1917' }}>
+                <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 32, fontWeight: 700, margin: '4px 0 2px', color: '#171412' }}>
                   €{p.price}<span style={{ fontSize: 14, fontWeight: 400, color: '#6B6359' }}>/mo</span>
                 </p>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0', fontSize: 13, color: '#1C1917' }}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0', fontSize: 13, color: '#171412' }}>
                   <li style={{ padding: '4px 0' }}>✓ Up to {p.max_customers?.toLocaleString()} customers</li>
-                  <li style={{ padding: '4px 0', color: p.ai_queries_per_day > 0 ? '#1C1917' : '#A8A29E' }}>
+                  <li style={{ padding: '4px 0', color: p.ai_queries_per_day > 0 ? '#171412' : '#A8A29E' }}>
                     {p.ai_queries_per_day > 0 ? '✓' : '✗'} AI Assistant ({p.ai_queries_per_day || 0}/day)
                   </li>
-                  <li style={{ padding: '4px 0', color: p.geo_proximity ? '#1C1917' : '#A8A29E' }}>
+                  <li style={{ padding: '4px 0', color: p.geo_proximity ? '#171412' : '#A8A29E' }}>
                     {p.geo_proximity ? '✓' : '✗'} Geolocation campaigns
                   </li>
                 </ul>
@@ -248,7 +248,7 @@ function PlanPicker({ trial, upgrading, onPick, onClose }) {
                   onClick={() => onPick(p.plan)}
                   style={{
                     width: '100%', padding: '10px 12px', borderRadius: 99,
-                    background: isCurrent ? '#ECE8E1' : accent,
+                    background: isCurrent ? '#EFEDE9' : accent,
                     color: isCurrent ? '#6B6359' : 'white',
                     border: 'none', cursor: isCurrent ? 'default' : 'pointer',
                     fontSize: 13, fontWeight: 700,

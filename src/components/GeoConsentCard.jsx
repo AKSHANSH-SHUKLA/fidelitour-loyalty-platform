@@ -156,43 +156,43 @@ export default function GeoConsentCard({
         <button
           aria-label="Fermer"
           onClick={dismiss}
-          className="absolute top-2 right-2 text-[#6F60B0] hover:text-[#1C1917] p-1"
+          className="absolute top-2 right-2 text-[#6F60B0] hover:text-[#171412] p-1"
         >
           <X size={16} />
         </button>
       )}
       <div className={inlineCard ? "flex-shrink-0 mt-0.5" : "flex items-start gap-3"}>
-        <div className={inlineCard ? "" : "rounded-xl bg-[#8B7DC9] text-white p-2 flex-shrink-0"}>
-          <MapPin size={inlineCard ? 18 : 20} className={inlineCard ? "text-[#8B7DC9]" : "text-white"} />
+        <div className={inlineCard ? "" : "rounded-xl bg-[#B85C38] text-white p-2 flex-shrink-0"}>
+          <MapPin size={inlineCard ? 18 : 20} className={inlineCard ? "text-[#B85C38]" : "text-white"} />
         </div>
         {!inlineCard && (
           <div className="flex-1 min-w-0">
             {state === 'denied' ? (
               <>
-                <p className="text-sm font-semibold text-[#1C1917] mb-1 flex items-center gap-1.5">
+                <p className="text-sm font-semibold text-[#171412] mb-1 flex items-center gap-1.5">
                   <AlertCircle size={14} className="text-[#B85C38]" />
                   Localisation bloquée
                 </p>
-                <p className="text-xs text-[#57534E] mb-2 leading-relaxed">
+                <p className="text-xs text-[#57504A] mb-2 leading-relaxed">
                   Vous nous avez bloqué la localisation. Pour recevoir les offres
                   quand vous passez devant la boutique, réautorisez-la :
                 </p>
-                <p className="text-xs text-[#1C1917] bg-white rounded-lg p-2 border border-[#E7E5E4] mb-2">
+                <p className="text-xs text-[#171412] bg-white rounded-lg p-2 border border-[#E9E5E0] mb-2">
                   {browserResetHint}
                 </p>
                 <button
                   onClick={requestLocation}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#8B7DC9] text-white hover:bg-[#6F60B0] transition-colors"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#B85C38] text-white hover:bg-[#6F60B0] transition-colors"
                 >
                   Réessayer
                 </button>
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-[#1C1917] mb-1">
+                <p className="text-sm font-semibold text-[#171412] mb-1">
                   Recevez les offres quand vous êtes près
                 </p>
-                <p className="text-xs text-[#57534E] mb-3 leading-relaxed">
+                <p className="text-xs text-[#57504A] mb-3 leading-relaxed">
                   Quand vous passez près de la boutique, on peut vous envoyer une
                   petite attention. Aucune position n'est partagée avec d'autres :
                   seulement avec votre commerçant.
@@ -206,7 +206,7 @@ export default function GeoConsentCard({
                   <button
                     onClick={requestLocation}
                     disabled={state === 'working'}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-[#8B7DC9] text-white hover:bg-[#6F60B0] transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-[#B85C38] text-white hover:bg-[#6F60B0] transition-colors disabled:opacity-50"
                   >
                     {state === 'working' ? 'Recherche…' : (
                       <>
@@ -216,7 +216,7 @@ export default function GeoConsentCard({
                   </button>
                   <button
                     onClick={dismiss}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-[#57534E] hover:bg-white/60 transition-colors"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-[#57504A] hover:bg-white/60 transition-colors"
                   >
                     Plus tard
                   </button>
@@ -227,7 +227,7 @@ export default function GeoConsentCard({
         )}
         {inlineCard && (
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-[#1C1917] leading-relaxed">
+            <p className="text-xs text-[#171412] leading-relaxed">
               {state === 'denied'
                 ? <>Localisation bloquée. <button onClick={requestLocation} className="underline text-[#6F60B0] font-medium">Réessayer</button></>
                 : <>Activez la localisation pour recevoir les offres au bon moment. <button onClick={requestLocation} disabled={state === 'working'} className="underline text-[#6F60B0] font-medium disabled:opacity-50">Activer</button></>}

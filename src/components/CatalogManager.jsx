@@ -128,16 +128,16 @@ export default function CatalogManager() {
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: '#8B8680' }}>
+      <div style={{ padding: 24, textAlign: 'center', color: '#8D857D' }}>
         Chargement du catalogue…
       </div>
     );
   }
 
   return (
-    <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E7E5E4', padding: 18 }}>
+    <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E9E5E0', padding: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1C1917' }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#171412' }}>
           🧾 Catalogue produits &amp; services
         </h3>
         {savedAt && (
@@ -146,7 +146,7 @@ export default function CatalogManager() {
           </span>
         )}
       </div>
-      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#57534E', lineHeight: 1.5 }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#57504A', lineHeight: 1.5 }}>
         Listez ici tout ce que vous vendez avec son prix. Lors du scan,
         votre équipe sélectionnera les articles du panier dans cette
         liste — pas de saisie manuelle de montant, et les rapports
@@ -160,7 +160,7 @@ export default function CatalogManager() {
         gridTemplateColumns: '2fr 1fr 1.2fr 36px',
         gap: 8, alignItems: 'center', marginBottom: 6,
         fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase',
-        color: '#8B8680', fontWeight: 600,
+        color: '#8D857D', fontWeight: 600,
       }}>
         <span>Nom du produit / service</span>
         <span>Prix (€)</span>
@@ -181,7 +181,7 @@ export default function CatalogManager() {
               value={row.name}
               onChange={(e) => updateRow(i, 'name', e.target.value)}
               placeholder="Ex: Café crème"
-              style={{ padding: '7px 10px', border: '1px solid #E7E5E4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+              style={{ padding: '7px 10px', border: '1px solid #E9E5E0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
             />
             <input
               type="text"
@@ -189,14 +189,14 @@ export default function CatalogManager() {
               value={row.price}
               onChange={(e) => updateRow(i, 'price', e.target.value)}
               placeholder="2,50"
-              style={{ padding: '7px 10px', border: '1px solid #E7E5E4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums' }}
+              style={{ padding: '7px 10px', border: '1px solid #E9E5E0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums' }}
             />
             <input
               type="text"
               value={row.category || ''}
               onChange={(e) => updateRow(i, 'category', e.target.value)}
               placeholder="Boisson"
-              style={{ padding: '7px 10px', border: '1px solid #E7E5E4', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+              style={{ padding: '7px 10px', border: '1px solid #E9E5E0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
             />
             <button
               type="button"
@@ -205,7 +205,7 @@ export default function CatalogManager() {
               title="Supprimer"
               style={{
                 width: 36, height: 36, borderRadius: 8,
-                border: '1px solid #E7E5E4', background: 'white', cursor: 'pointer',
+                border: '1px solid #E9E5E0', background: 'white', cursor: 'pointer',
                 display: 'grid', placeItems: 'center', color: '#B85C38',
               }}
             >
@@ -222,8 +222,8 @@ export default function CatalogManager() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 14px', borderRadius: 8,
-            border: '1px solid #E7E5E4', background: 'white',
-            cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: '#1C1917',
+            border: '1px solid #E9E5E0', background: 'white',
+            cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: '#171412',
             fontFamily: 'inherit',
           }}
         >

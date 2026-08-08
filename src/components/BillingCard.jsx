@@ -61,20 +61,20 @@ export default function BillingCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-[#E7E5E4] p-5">
-        <div className="text-sm text-[#57534E]">Chargement de l'abonnement…</div>
+      <div className="bg-white rounded-2xl border border-[#E9E5E0] p-5">
+        <div className="text-sm text-[#57504A]">Chargement de l'abonnement…</div>
       </div>
     );
   }
 
   if (!status?.configured) {
     return (
-      <div className="bg-white rounded-2xl border border-[#E7E5E4] p-5">
+      <div className="bg-white rounded-2xl border border-[#E9E5E0] p-5">
         <div className="flex items-start gap-3">
-          <CreditCard className="text-[#8B8680] flex-shrink-0 mt-0.5" size={20} />
+          <CreditCard className="text-[#8D857D] flex-shrink-0 mt-0.5" size={20} />
           <div>
-            <h3 className="text-base font-semibold text-[#1C1917] mb-1">Abonnement</h3>
-            <p className="text-sm text-[#57534E]">
+            <h3 className="text-base font-semibold text-[#171412] mb-1">Abonnement</h3>
+            <p className="text-sm text-[#57504A]">
               La facturation n'est pas configurée. L'administrateur de la plateforme
               doit définir <code className="text-xs bg-[#F2F2F2] px-1 py-0.5 rounded">STRIPE_SECRET_KEY</code> dans les
               variables d'environnement Vercel.
@@ -96,17 +96,17 @@ export default function BillingCard() {
   const isActive = subStatus === 'active' || isTrialing;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E7E5E4] overflow-hidden">
-      <div className="p-5 border-b border-[#E7E5E4] flex items-center justify-between">
+    <div className="bg-white rounded-2xl border border-[#E9E5E0] overflow-hidden">
+      <div className="p-5 border-b border-[#E9E5E0] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CreditCard size={18} className="text-[#B85C38]" />
-          <h3 className="text-base font-semibold text-[#1C1917]">Abonnement</h3>
+          <h3 className="text-base font-semibold text-[#171412]">Abonnement</h3>
         </div>
         <span className={
           'text-xs font-medium px-2 py-1 rounded-full ' + (
             isPastDue ? 'bg-[#FCEBEB] text-[#791F1F]' :
-            isCanceled ? 'bg-[#F2F2F2] text-[#57534E]' :
-            isActive ? 'bg-[#E6EFE0] text-[#3F5E2A]' : 'bg-[#F2F2F2] text-[#57534E]'
+            isCanceled ? 'bg-[#F2F2F2] text-[#57504A]' :
+            isActive ? 'bg-[#E6EFE0] text-[#3F5E2A]' : 'bg-[#F2F2F2] text-[#57504A]'
           )
         }>
           {isPastDue ? 'Paiement en retard' :
@@ -139,21 +139,21 @@ export default function BillingCard() {
 
       <div className="p-5 space-y-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-[#57534E]">Formule actuelle</span>
-          <span className="text-base font-semibold text-[#1C1917]">{planName}</span>
+          <span className="text-sm text-[#57504A]">Formule actuelle</span>
+          <span className="text-base font-semibold text-[#171412]">{planName}</span>
         </div>
         {status.current_period_end && isActive && (
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-[#57534E]">Prochaine facture</span>
-            <span className="text-sm text-[#1C1917]">
+            <span className="text-sm text-[#57504A]">Prochaine facture</span>
+            <span className="text-sm text-[#171412]">
               {new Date(status.current_period_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
           </div>
         )}
         {isTrialing && status.trial_end && (
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-[#57534E]">Fin de l'essai</span>
-            <span className="text-sm text-[#1C1917]">
+            <span className="text-sm text-[#57504A]">Fin de l'essai</span>
+            <span className="text-sm text-[#171412]">
               {new Date(status.trial_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
             </span>
           </div>
@@ -165,19 +165,19 @@ export default function BillingCard() {
         )}
       </div>
 
-      <div className="p-5 border-t border-[#E7E5E4]">
+      <div className="p-5 border-t border-[#E9E5E0]">
         {(status.has_stripe_customer && (isActive || isPastDue)) ? (
           <button
             onClick={openPortal}
             disabled={busy === 'portal'}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#1C1917] text-white text-sm font-semibold hover:bg-[#3D3431] transition-colors disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#171412] text-white text-sm font-semibold hover:bg-[#3D3431] transition-colors disabled:opacity-50"
           >
             <ExternalLink size={14} />
             {busy === 'portal' ? 'Ouverture…' : 'Gérer mon abonnement'}
           </button>
         ) : (
           <>
-            <p className="text-xs uppercase tracking-wide text-[#8B8680] mb-3 font-semibold">
+            <p className="text-xs uppercase tracking-wide text-[#8D857D] mb-3 font-semibold">
               Choisir une formule
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -193,7 +193,7 @@ export default function BillingCard() {
                       'relative px-3 py-3 rounded-lg border-2 text-sm font-semibold transition-all ' + (
                         isCurrent
                           ? 'border-[#7FA269] bg-[#E6EFE0] text-[#3F5E2A]'
-                          : 'border-[#E7E5E4] hover:border-[#B85C38] hover:bg-[#F8E8E2] text-[#1C1917] disabled:opacity-50'
+                          : 'border-[#E9E5E0] hover:border-[#B85C38] hover:bg-[#F8E8E2] text-[#171412] disabled:opacity-50'
                       )
                     }
                   >
@@ -206,7 +206,7 @@ export default function BillingCard() {
                 );
               })}
             </div>
-            <p className="text-xs text-[#8B8680] mt-3 flex items-center gap-1">
+            <p className="text-xs text-[#8D857D] mt-3 flex items-center gap-1">
               <Sparkles size={12} className="text-[#B85C38]" />
               14 jours d'essai gratuit, sans engagement.
             </p>

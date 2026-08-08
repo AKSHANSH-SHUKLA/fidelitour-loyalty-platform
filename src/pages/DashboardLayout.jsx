@@ -89,17 +89,13 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
         title={t('nav.settings')}
         className="relative group flex items-center justify-center px-2 py-2 rounded-lg text-[13.5px] transition-all"
         style={{
-          color: active ? 'var(--ink)' : 'var(--ink-mute)',
-          background: active ? 'rgba(255,255,255,0.78)' : 'transparent',
+          color: active ? '#FFFFFF' : 'var(--ink-mute)',
+          background: active ? '#171412' : 'transparent',
         }}
       >
         <span
           className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
-          style={{
-            background: active ? `linear-gradient(135deg, ${theme.from}1A, ${theme.to}1A)` : 'transparent',
-            color: active ? theme.from : C.inkMute,
-            border: active ? `1px solid ${theme.from}33` : '1px solid transparent',
-          }}
+          style={{ color: active ? '#FFFFFF' : C.inkMute }}
         >
           <Icon className="w-[18px] h-[18px]" />
         </span>
@@ -121,26 +117,17 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
         onClick={toggle}
         className="w-full relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all"
         style={{
-          color: active ? C.inkDeep : C.inkMute,
-          background: active ? 'rgba(255,255,255,0.6)' : 'transparent',
-          boxShadow: active ? '0 1px 2px rgba(28,25,23,0.04)' : 'none',
+          color: active ? '#FFFFFF' : C.inkMute,
+          background: active ? '#171412' : 'transparent',
+          boxShadow: active ? '0 6px 16px -8px rgba(23,20,18,0.45)' : 'none',
+          fontWeight: active ? 600 : 450,
         }}
       >
-        {active && (
-          <span
-            aria-hidden="true"
-            className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
-            style={{ background: `linear-gradient(180deg, ${theme.from}, ${theme.to})` }}
-          />
-        )}
         <span
           className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
           style={{
-            background: active
-              ? `linear-gradient(135deg, ${theme.from}1A, ${theme.to}1A)`
-              : 'transparent',
-            color: active ? theme.from : C.inkMute,
-            border: active ? `1px solid ${theme.from}33` : '1px solid transparent',
+            background: 'transparent',
+            color: active ? '#FFFFFF' : C.inkMute,
           }}
         >
           <Icon className="w-[18px] h-[18px]" />
@@ -189,31 +176,20 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge })
     <Link
       to={to}
       title={collapsed ? label : undefined}
-      className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all`}
+      className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-xl text-[13.5px] transition-all`}
       style={{
-        color: active ? 'var(--ink)' : 'var(--ink-mute)',
-        background: active ? 'rgba(255,255,255,0.78)' : 'transparent',
-        boxShadow: active ? '0 1px 2px rgba(28,25,23,0.03)' : 'none',
-        fontWeight: active ? 500 : 400,
+        // V2 "Encre & Terracotta": the active row is a solid ink pill.
+        // The old treatment (white wash + gradient bar + tinted icon chip)
+        // stacked three indicators for one state; one strong one reads faster.
+        color: active ? '#FFFFFF' : 'var(--ink-mute)',
+        background: active ? '#171412' : 'transparent',
+        boxShadow: active ? '0 6px 16px -8px rgba(23,20,18,0.45)' : 'none',
+        fontWeight: active ? 600 : 450,
       }}
     >
-      {/* Active indicator: gradient bar to the left of the active row */}
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
-          style={{ background: `linear-gradient(180deg, ${theme.from}, ${theme.to})` }}
-        />
-      )}
       <span
         className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
-        style={{
-          background: active
-            ? `linear-gradient(135deg, ${theme.from}1A, ${theme.to}1A)`
-            : 'transparent',
-          color: active ? theme.from : C.inkMute,
-          border: active ? `1px solid ${theme.from}33` : '1px solid transparent',
-        }}
+        style={{ color: active ? '#FFFFFF' : C.inkMute }}
       >
         <Icon className="w-[18px] h-[18px]" />
       </span>
@@ -359,11 +335,11 @@ function UserMenu({ user, theme, role, onLogout }) {
           className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden z-50"
           style={{
             background: 'white',
-            border: '1px solid var(--hairline, #ECE8E1)',
+            border: '1px solid var(--hairline, #EFEDE9)',
             boxShadow: '0 12px 28px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04)',
           }}
         >
-          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--hairline, #ECE8E1)' }}>
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--hairline, #EFEDE9)' }}>
             <div className="flex items-center gap-2.5">
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0"
@@ -387,7 +363,7 @@ function UserMenu({ user, theme, role, onLogout }) {
           <Link
             to="/dashboard/settings"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#FAF8F4] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#FAFAF8] transition-colors"
             style={{ color: 'var(--ink)' }}
           >
             <Settings2 size={14} style={{ color: 'var(--ink-mute)' }} />
@@ -397,7 +373,7 @@ function UserMenu({ user, theme, role, onLogout }) {
             type="button"
             onClick={() => { setOpen(false); onLogout(); }}
             className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#FAEDEB] transition-colors"
-            style={{ color: '#8A322B', borderTop: '1px solid var(--hairline, #ECE8E1)' }}
+            style={{ color: '#8A322B', borderTop: '1px solid var(--hairline, #EFEDE9)' }}
           >
             <LogOut size={14} />
             {t('nav.sign_out')}
@@ -545,8 +521,8 @@ const DashboardLayout = () => {
           title={collapsed ? t('nav.expand_sidebar') : t('nav.collapse_sidebar')}
           className="absolute -right-3 top-6 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
           style={{
-            background: collapsed ? 'white' : '#1F1B1A',
-            border: `1px solid ${collapsed ? C.hairline : '#1F1B1A'}`,
+            background: collapsed ? 'white' : '#171412',
+            border: `1px solid ${collapsed ? C.hairline : '#171412'}`,
             boxShadow: '0 2px 6px rgba(28,25,23,0.10)',
             color: collapsed ? C.inkSoft : '#FFFFFF',
           }}
@@ -712,7 +688,7 @@ const DashboardLayout = () => {
             className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
             style={{
               background: 'rgba(255,255,255,0.82)',
-              borderBottom: '1px solid var(--hairline, #ECE8E1)',
+              borderBottom: '1px solid var(--hairline, #EFEDE9)',
             }}
           >
             {/* Global search — Enter routes to /dashboard/customers with
@@ -722,10 +698,10 @@ const DashboardLayout = () => {
             <form
               onSubmit={submitSearch}
               className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[280px]"
-              style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #ECE8E1)' }}
+              style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #EFEDE9)' }}
             >
               <button type="submit" aria-label={t('common.search')} className="shrink-0" style={{ lineHeight: 0 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #7A716C)' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #8D857D)' }}>
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.3-4.3" />
                 </svg>
@@ -737,23 +713,23 @@ const DashboardLayout = () => {
                 placeholder={t('nav.search_placeholder')}
                 aria-label={t('common.search')}
                 className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
-                style={{ color: 'var(--ink, #1F1B1A)', fontWeight: 400 }}
+                style={{ color: 'var(--ink, #171412)', fontWeight: 400 }}
               />
               {searchQ && (
                 <button
                   type="button"
                   onClick={() => setSearchQ('')}
                   aria-label={t('nav.search_clear')}
-                  className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F4F2EE]"
-                  style={{ color: 'var(--ink-mute, #7A716C)' }}
+                  className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F5F4F1]"
+                  style={{ color: 'var(--ink-mute, #8D857D)' }}
                 >✕</button>
               )}
               <kbd
                 className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
                 style={{
-                  background: '#F4F2EE',
-                  color: 'var(--ink-mute, #7A716C)',
-                  border: '1px solid var(--hairline, #ECE8E1)',
+                  background: '#F5F4F1',
+                  color: 'var(--ink-mute, #8D857D)',
+                  border: '1px solid var(--hairline, #EFEDE9)',
                   fontWeight: 500,
                 }}
                 title={t('nav.search_enter_hint')}
@@ -778,8 +754,8 @@ const DashboardLayout = () => {
               aria-label={t('nav.help')}
               title={t('nav.help')}
               className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'transparent', border: '1px solid var(--hairline, #ECE8E1)', color: 'var(--ink-mute, #7A716C)' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = '#F4F2EE'; }}
+              style={{ background: 'transparent', border: '1px solid var(--hairline, #EFEDE9)', color: 'var(--ink-mute, #8D857D)' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#F5F4F1'; }}
               onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

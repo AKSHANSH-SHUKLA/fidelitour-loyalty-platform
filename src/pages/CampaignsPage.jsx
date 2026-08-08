@@ -69,11 +69,11 @@ function ReEnableNotificationsButton() {
           <div style={{
             background: '#FFFFFF', borderRadius: 16,
             width: 'min(520px, 100%)', maxHeight: 'calc(100vh - 32px)', overflow: 'auto',
-            border: '1px solid #ECE3D2',
+            border: '1px solid #E9E5E0',
             boxShadow: '0 24px 60px -20px rgba(28,25,23,.25)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          padding: '18px 22px', borderBottom: '1px solid #ECE3D2' }}>
+                          padding: '18px 22px', borderBottom: '1px solid #E9E5E0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10,
                               background: 'hsl(285 45% 42% / .12)', color: 'hsl(285 45% 42%)',
@@ -81,17 +81,17 @@ function ReEnableNotificationsButton() {
                   <BellRing size={18} />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1C1917', fontFamily: 'Manrope' }}>
+                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#171412', fontFamily: 'Manrope' }}>
                     Re-enable notifications
                   </h2>
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8B8680' }}>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8D857D' }}>
                     SMS to customers without push enabled
                   </p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} aria-label="Close"
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer',
-                         color: '#57534E', padding: 6 }}>
+                         color: '#57504A', padding: 6 }}>
                 <X size={18} />
               </button>
             </div>
@@ -119,7 +119,7 @@ function ReEnableNotificationsButton() {
                       {result.failed_count > 0 && <>Échecs : {result.failed_count}</>}
                     </p>
                   </div>
-                  <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#57534E', lineHeight: 1.5 }}>
+                  <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#57504A', lineHeight: 1.5 }}>
                     Conversion attendue : 25-40% des SMS livrés activeront les notifications dans les 7 prochains jours.
                     Vous pouvez relancer dans 30-60 jours.
                   </p>
@@ -132,20 +132,20 @@ function ReEnableNotificationsButton() {
                   </button>
                 </div>
               ) : stats === null ? (
-                <p style={{ margin: 0, fontSize: 13, color: '#8B8680' }}>Chargement des statistiques…</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#8D857D' }}>Chargement des statistiques…</p>
               ) : stats.error ? (
                 <p style={{ margin: 0, fontSize: 13, color: '#B85C38' }}>Impossible de charger les statistiques.</p>
               ) : (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
-                    <div style={{ padding: 12, borderRadius: 8, background: '#FBF7EF', border: '1px solid #ECE3D2' }}>
-                      <p style={{ margin: 0, fontSize: 10, color: '#8B8680', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Total clients</p>
-                      <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 700, color: '#1C1917', fontFamily: 'Georgia, serif' }}>{stats.total}</p>
+                    <div style={{ padding: 12, borderRadius: 8, background: '#FBF7EF', border: '1px solid #E9E5E0' }}>
+                      <p style={{ margin: 0, fontSize: 10, color: '#8D857D', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Total clients</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 700, color: '#171412', fontFamily: 'Georgia, serif' }}>{stats.total}</p>
                     </div>
                     <div style={{ padding: 12, borderRadius: 8, background: 'hsl(150 55% 40% / .08)', border: '1px solid hsl(150 55% 40% / .25)' }}>
                       <p style={{ margin: 0, fontSize: 10, color: 'hsl(150 70% 26%)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Abonnés push</p>
                       <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 700, color: 'hsl(150 70% 26%)', fontFamily: 'Georgia, serif' }}>{stats.subscribed}</p>
-                      <p style={{ margin: '2px 0 0', fontSize: 10, color: '#57534E' }}>{stats.subscribed_pct}%</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 10, color: '#57504A' }}>{stats.subscribed_pct}%</p>
                     </div>
                     <div style={{ padding: 12, borderRadius: 8, background: 'hsl(355 60% 48% / .08)', border: '1px solid hsl(355 60% 48% / .25)' }}>
                       <p style={{ margin: 0, fontSize: 10, color: 'hsl(355 70% 38%)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Sans push</p>
@@ -167,8 +167,8 @@ function ReEnableNotificationsButton() {
 
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button onClick={() => setOpen(false)} disabled={sending} style={{
-                      background: 'transparent', border: '1px solid #ECE3D2',
-                      color: '#57534E', borderRadius: 10,
+                      background: 'transparent', border: '1px solid #E9E5E0',
+                      color: '#57504A', borderRadius: 10,
                       padding: '9px 16px', fontSize: 13, fontWeight: 500,
                       cursor: sending ? 'not-allowed' : 'pointer', fontFamily: 'Manrope',
                     }}>
@@ -772,58 +772,58 @@ export default function CampaignsPage() {
       <div>
 
         {/* ============= Quick Send panel ============= */}
-        <div className="mb-6 rounded-lg border" style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}>
+        <div className="mb-6 rounded-lg border" style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}>
           <button
             onClick={() => setQuickOpen((v) => !v)}
-            className="w-full flex items-center justify-between p-4 hover:bg-[#F3EFE7] transition rounded-lg"
+            className="w-full flex items-center justify-between p-4 hover:bg-[#F5F4F1] transition rounded-lg"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#B85C38]/10 flex items-center justify-center">
                 <Zap size={20} style={{ color: '#B85C38' }} />
               </div>
               <div className="text-left">
-                <p className="font-semibold text-[#1C1917]" style={{ fontFamily: 'Manrope' }}>
+                <p className="font-semibold text-[#171412]" style={{ fontFamily: 'Manrope' }}>
                   Quick Send — Filter customers and send in one shot
                 </p>
-                <p className="text-xs text-[#57534E]">
+                <p className="text-xs text-[#57504A]">
                   Pick filters, preview how many customers match, write your message, hit send. No drafts.
                 </p>
               </div>
             </div>
-            {quickOpen ? <ChevronUp size={20} style={{ color: '#57534E' }} /> : <ChevronDown size={20} style={{ color: '#57534E' }} />}
+            {quickOpen ? <ChevronUp size={20} style={{ color: '#57504A' }} /> : <ChevronDown size={20} style={{ color: '#57504A' }} />}
           </button>
 
           {quickOpen && (
-            <div className="p-4 border-t" style={{ borderColor: '#E7E5E4' }}>
+            <div className="p-4 border-t" style={{ borderColor: '#E9E5E0' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Campaign Name</label>
+                  <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Campaign Name</label>
                   <input
                     type="text"
                     value={quickName}
                     onChange={(e) => setQuickName(e.target.value)}
                     placeholder="e.g. Weekend Offer"
                     className="w-full px-3 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4' }}
+                    style={{ borderColor: '#E9E5E0' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Message</label>
+                  <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Message</label>
                   <input
                     type="text"
                     value={quickMessage}
                     onChange={(e) => setQuickMessage(e.target.value)}
                     placeholder="Hi {first_name}, 20% off this Saturday..."
                     className="w-full px-3 py-2 border rounded-lg"
-                    style={{ borderColor: '#E7E5E4' }}
+                    style={{ borderColor: '#E9E5E0' }}
                   />
                 </div>
               </div>
 
               <div className="mb-4">
-                <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">
+                <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">
                   Channel / Source
-                  <span className="ml-2 normal-case text-[10px] text-[#8B8680] font-normal">
+                  <span className="ml-2 normal-case text-[10px] text-[#8D857D] font-normal">
                     (tags this campaign so you can see its performance per channel)
                   </span>
                 </label>
@@ -842,7 +842,7 @@ export default function CampaignsPage() {
                       className={`px-3 py-1 text-xs rounded-full border transition ${
                         quickSource === s.key
                           ? 'bg-[#B85C38] text-white border-[#B85C38]'
-                          : 'bg-white text-[#57534E] border-[#E7E5E4] hover:border-[#B85C38]'
+                          : 'bg-white text-[#57504A] border-[#E9E5E0] hover:border-[#B85C38]'
                       }`}
                     >
                       {s.label}
@@ -854,7 +854,7 @@ export default function CampaignsPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                 {/* Tiers */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Tiers</label>
+                  <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Tiers</label>
                   <div className="flex gap-2">
                     {['bronze', 'silver', 'gold'].map((tier) => (
                       <button
@@ -864,7 +864,7 @@ export default function CampaignsPage() {
                         className={`px-2 py-1 text-xs rounded border ${
                           quickFilters.tiers.includes(tier)
                             ? 'bg-[#B85C38] text-white border-[#B85C38]'
-                            : 'bg-white text-[#57534E] border-[#E7E5E4]'
+                            : 'bg-white text-[#57504A] border-[#E9E5E0]'
                         }`}
                       >
                         {tier[0].toUpperCase() + tier.slice(1)}
@@ -875,51 +875,51 @@ export default function CampaignsPage() {
 
                 {/* Min Points */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Points</label>
+                  <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Min Points</label>
                   <NumberInput
                     min={0}
                     value={quickFilters.minPoints}
                     onChange={(n) => setQuickFilters({ ...quickFilters, minPoints: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E7E5E4' }}
+                    style={{ borderColor: '#E9E5E0' }}
                   />
                 </div>
 
                 {/* Min Visits */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Visits</label>
+                  <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Min Visits</label>
                   <NumberInput
                     min={0}
                     value={quickFilters.minVisits}
                     onChange={(n) => setQuickFilters({ ...quickFilters, minVisits: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E7E5E4' }}
+                    style={{ borderColor: '#E9E5E0' }}
                   />
                 </div>
 
                 {/* Postal Codes */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Postal Codes</label>
+                  <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Postal Codes</label>
                   <input
                     type="text"
                     value={quickFilters.postalCodes}
                     onChange={(e) => setQuickFilters({ ...quickFilters, postalCodes: e.target.value })}
                     placeholder="75001,75002"
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E7E5E4' }}
+                    style={{ borderColor: '#E9E5E0' }}
                   />
                 </div>
 
                 {/* Min Amount Paid */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Min Paid (€)</label>
+                  <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Min Paid (€)</label>
                   <NumberInput
                     min={0}
                     step={0.01}
                     value={quickFilters.minAmountPaid}
                     onChange={(n) => setQuickFilters({ ...quickFilters, minAmountPaid: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E7E5E4' }}
+                    style={{ borderColor: '#E9E5E0' }}
                   />
                 </div>
               </div>
@@ -935,7 +935,7 @@ export default function CampaignsPage() {
                   {quickPreviewLoading ? 'Previewing…' : 'Preview matches'}
                 </button>
                 {quickPreviewCount !== null && (
-                  <span className="text-sm text-[#57534E]">
+                  <span className="text-sm text-[#57504A]">
                     Will reach <span className="font-bold text-[#B85C38]">{quickPreviewCount}</span> customer{quickPreviewCount === 1 ? '' : 's'}
                   </span>
                 )}
@@ -950,7 +950,7 @@ export default function CampaignsPage() {
                   {quickSending ? 'Sending…' : `Send to ${quickPreviewCount ?? '…'} now`}
                 </button>
               </div>
-              <p className="text-xs text-[#57534E] mt-3">
+              <p className="text-xs text-[#57504A] mt-3">
                 Quick Send creates the campaign and fires it immediately. For scheduled sends or drafts, use "New Campaign" in the header.
               </p>
             </div>
@@ -978,12 +978,12 @@ export default function CampaignsPage() {
           });
           const rows = Object.entries(perSource).sort((a, b) => b[1].delivered - a[1].delivered);
           return (
-            <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E7E5E4' }}>
+            <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E9E5E0' }}>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                   Campaign performance by channel
                 </h2>
-                <span className="text-xs text-[#8B8680]">
+                <span className="text-xs text-[#8D857D]">
                   How each publishing channel is performing — openings and visits in absolute numbers and %.
                 </span>
               </div>
@@ -993,13 +993,13 @@ export default function CampaignsPage() {
                   const visitPct = row.delivered > 0 ? Math.round((row.visits / row.delivered) * 100) : 0;
                   const label = src === 'push' ? 'Wallet Push' : src[0].toUpperCase() + src.slice(1);
                   return (
-                    <div key={src} className="p-3 rounded-lg border" style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}>
+                    <div key={src} className="p-3 rounded-lg border" style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}>
                       <p className="text-xs font-semibold text-[#B85C38] uppercase tracking-wider">{label}</p>
-                      <p className="text-2xl font-bold text-[#1C1917]">{row.count}</p>
-                      <p className="text-[11px] text-[#8B8680]">campaigns · {row.delivered} delivered</p>
-                      <div className="mt-2 text-xs text-[#57534E] space-y-0.5">
-                        <div>Opens: <b>{row.opens}</b> <span className="text-[#8B8680]">({openPct}%)</span></div>
-                        <div>Visits: <b>{row.visits}</b> <span className="text-[#8B8680]">({visitPct}%)</span></div>
+                      <p className="text-2xl font-bold text-[#171412]">{row.count}</p>
+                      <p className="text-[11px] text-[#8D857D]">campaigns · {row.delivered} delivered</p>
+                      <div className="mt-2 text-xs text-[#57504A] space-y-0.5">
+                        <div>Opens: <b>{row.opens}</b> <span className="text-[#8D857D]">({openPct}%)</span></div>
+                        <div>Visits: <b>{row.visits}</b> <span className="text-[#8D857D]">({visitPct}%)</span></div>
                       </div>
                     </div>
                   );
@@ -1011,11 +1011,11 @@ export default function CampaignsPage() {
 
         {/* Scheduled campaigns — upcoming sends with cancel controls */}
         {scheduledCampaigns.length > 0 && (
-          <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E7E5E4' }}>
+          <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E9E5E0' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <CalendarClock size={18} style={{ color: '#B85C38' }} />
-                <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                   Scheduled campaigns ({scheduledCampaigns.length})
                 </h2>
               </div>
@@ -1037,10 +1037,10 @@ export default function CampaignsPage() {
                     ? when.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
                     : '—';
                   return (
-                    <div key={s.id} className="p-3 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4] flex items-center justify-between gap-3">
+                    <div key={s.id} className="p-3 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0] flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-[#1C1917] truncate">{s.name}</span>
+                          <span className="font-semibold text-[#171412] truncate">{s.name}</span>
                           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B85C38] text-white">
                             {s.source || 'push'}
                           </span>
@@ -1050,12 +1050,12 @@ export default function CampaignsPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-[#57534E] mt-0.5">
+                        <p className="text-xs text-[#57504A] mt-0.5">
                           <CalendarClock size={11} className="inline -mt-0.5 mr-1" />
                           Fires {whenLabel}
                         </p>
                         {s.content && (
-                          <p className="text-xs text-[#8B8680] mt-1 line-clamp-1">{s.content}</p>
+                          <p className="text-xs text-[#8D857D] mt-1 line-clamp-1">{s.content}</p>
                         )}
                       </div>
                       <button
@@ -1084,8 +1084,8 @@ export default function CampaignsPage() {
               <div className="flex items-start gap-3">
                 <AlertTriangle size={20} style={{ color: '#E3A869' }} className="flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-[#1C1917]">Tip: Campaigns with catchy subject lines get 2-3x more opens.</p>
-                  <p className="text-sm text-[#57534E]">Try making your next subject more personal.</p>
+                  <p className="font-semibold text-[#171412]">Tip: Campaigns with catchy subject lines get 2-3x more opens.</p>
+                  <p className="text-sm text-[#57504A]">Try making your next subject more personal.</p>
                 </div>
               </div>
             </div>
@@ -1094,12 +1094,12 @@ export default function CampaignsPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <p style={{ color: '#57534E', fontFamily: 'Manrope' }}>Loading campaigns...</p>
+            <p style={{ color: '#57504A', fontFamily: 'Manrope' }}>Loading campaigns...</p>
           </div>
         ) : campaigns.length === 0 ? (
           <div className="text-center py-12">
             <Megaphone size={48} style={{ color: '#B85C38', margin: '0 auto 16px' }} />
-            <p style={{ color: '#57534E', fontFamily: 'Manrope' }} className="text-lg">
+            <p style={{ color: '#57504A', fontFamily: 'Manrope' }} className="text-lg">
               No campaigns yet. Create your first campaign to get started.
             </p>
           </div>
@@ -1111,11 +1111,11 @@ export default function CampaignsPage() {
                 <div
                   key={campaign.id}
                   className="border rounded-lg overflow-hidden transition hover:shadow-md"
-                  style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}
+                  style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}
                 >
                   {/* Hero image strip — appears at top of the card if the campaign has one */}
                   {campaign.image_url && (
-                    <div className="relative h-40 overflow-hidden border-b" style={{ borderColor: '#E7E5E4' }}>
+                    <div className="relative h-40 overflow-hidden border-b" style={{ borderColor: '#E9E5E0' }}>
                       <img
                         src={campaign.image_url}
                         alt=""
@@ -1123,7 +1123,7 @@ export default function CampaignsPage() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
                       <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider"
-                           style={{ color: '#7B3F00' }}>
+                           style={{ color: '#96431F' }}>
                         📸 With image
                       </div>
                     </div>
@@ -1131,7 +1131,7 @@ export default function CampaignsPage() {
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
-                      <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                      <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                         {campaign.name}
                       </h3>
                       <div className="flex items-center gap-3 flex-wrap">
@@ -1141,16 +1141,16 @@ export default function CampaignsPage() {
                             className="px-2 py-0.5 text-xs rounded-full font-semibold capitalize"
                             style={{
                               backgroundColor:
-                                campaign.source === 'push' ? '#F3EFE7'
+                                campaign.source === 'push' ? '#F5F4F1'
                                 : campaign.source === 'email' ? '#E8F5E9'
                                 : '#F5F4F0',
-                              color: '#1C1917',
+                              color: '#171412',
                             }}
                           >
                             {campaign.source === 'push' ? 'Wallet Push' : campaign.source}
                           </span>
                         )}
-                        <div style={{ color: '#57534E', fontFamily: 'Manrope', fontSize: '14px' }} className="flex items-center gap-4">
+                        <div style={{ color: '#57504A', fontFamily: 'Manrope', fontSize: '14px' }} className="flex items-center gap-4">
                           <span className="flex items-center gap-1">
                             <Users size={16} />
                             {campaign.targeted_count || campaign.targetedCount || 0} targeted
@@ -1173,7 +1173,7 @@ export default function CampaignsPage() {
                         <button
                           onClick={() => openEditDraft(campaign)}
                           className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition border"
-                          style={{ borderColor: '#B85C38', color: '#B85C38', backgroundColor: '#FDFBF7' }}
+                          style={{ borderColor: '#B85C38', color: '#B85C38', backgroundColor: '#FAFAF8' }}
                           title="Edit this draft before sending"
                         >
                           <Pencil size={16} />
@@ -1194,25 +1194,25 @@ export default function CampaignsPage() {
                   {/* Tracking Stats */}
                   {campaign.status === 'sent' && (
                     <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="p-3 rounded bg-[#F3EFE7]">
-                        <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Sent to</p>
-                        <p className="text-lg font-bold text-[#1C1917]">{campaign.targeted_count || 0}</p>
+                      <div className="p-3 rounded bg-[#F5F4F1]">
+                        <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Sent to</p>
+                        <p className="text-lg font-bold text-[#171412]">{campaign.targeted_count || 0}</p>
                       </div>
-                      <div className="p-3 rounded bg-[#F3EFE7]">
-                        <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Delivered</p>
-                        <p className="text-lg font-bold text-[#1C1917]">{campaign.delivered_count || 0}</p>
+                      <div className="p-3 rounded bg-[#F5F4F1]">
+                        <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Delivered</p>
+                        <p className="text-lg font-bold text-[#171412]">{campaign.delivered_count || 0}</p>
                       </div>
-                      <div className="p-3 rounded bg-[#F3EFE7]">
-                        <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Opened</p>
-                        <p className="text-lg font-bold text-[#1C1917]">
+                      <div className="p-3 rounded bg-[#F5F4F1]">
+                        <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Opened</p>
+                        <p className="text-lg font-bold text-[#171412]">
                           {campaign.delivered_count > 0
                             ? Math.round(((campaign.opens_unique || 0) / campaign.delivered_count) * 100)
                             : 0}%
                         </p>
                       </div>
-                      <div className="p-3 rounded bg-[#F3EFE7]">
-                        <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Visits after</p>
-                        <p className="text-lg font-bold text-[#1C1917]">
+                      <div className="p-3 rounded bg-[#F5F4F1]">
+                        <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Visits after</p>
+                        <p className="text-lg font-bold text-[#171412]">
                           {campaign.delivered_count > 0
                             ? Math.round(((campaign.visits_from_campaign || 0) / campaign.delivered_count) * 100)
                             : 0}%
@@ -1226,30 +1226,30 @@ export default function CampaignsPage() {
                     <div className="mb-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                       <div className="p-3 rounded-lg" style={{ background: 'linear-gradient(135deg, #4A5D2315 0%, #4A5D2305 100%)', border: '1px solid #4A5D2333' }}>
                         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#4A5D23' }}>€ generated</p>
-                        <p className="text-xl font-bold mt-0.5" style={{ color: '#1C1917', fontFamily: 'Cormorant Garamond' }}>
+                        <p className="text-xl font-bold mt-0.5" style={{ color: '#171412', fontFamily: 'Cormorant Garamond' }}>
                           €{(campaign.performance.revenue_attributed || 0).toLocaleString()}
                         </p>
-                        <p className="text-[10px] mt-0.5" style={{ color: '#8B8680' }}>
+                        <p className="text-[10px] mt-0.5" style={{ color: '#8D857D' }}>
                           {campaign.performance.attributed_visits} visites × €{campaign.performance.avg_ticket} avg
                         </p>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: 'linear-gradient(135deg, #B85C3815 0%, #B85C3805 100%)', border: '1px solid #B85C3833' }}>
                         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#B85C38' }}>Incremental visits</p>
-                        <p className="text-xl font-bold mt-0.5" style={{ color: '#1C1917', fontFamily: 'Cormorant Garamond' }}>
+                        <p className="text-xl font-bold mt-0.5" style={{ color: '#171412', fontFamily: 'Cormorant Garamond' }}>
                           {campaign.performance.lift_visits >= 0 ? '+' : ''}{campaign.performance.lift_visits}
                         </p>
-                        <p className="text-[10px] mt-0.5" style={{ color: '#8B8680' }}>
+                        <p className="text-[10px] mt-0.5" style={{ color: '#8D857D' }}>
                           vs {campaign.performance.baseline_visits} avant l'envoi
                         </p>
                       </div>
                       <div className="p-3 rounded-lg" style={{ background: 'linear-gradient(135deg, #E3A86915 0%, #E3A86905 100%)', border: '1px solid #E3A86933' }}>
-                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#7B3F00' }}>Lift</p>
-                        <p className="text-xl font-bold mt-0.5" style={{ color: '#1C1917', fontFamily: 'Cormorant Garamond' }}>
+                        <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#96431F' }}>Lift</p>
+                        <p className="text-xl font-bold mt-0.5" style={{ color: '#171412', fontFamily: 'Cormorant Garamond' }}>
                           {campaign.performance.lift_pct === null
                             ? 'Net new'
                             : `${campaign.performance.lift_pct >= 0 ? '+' : ''}${campaign.performance.lift_pct}%`}
                         </p>
-                        <p className="text-[10px] mt-0.5" style={{ color: '#8B8680' }}>
+                        <p className="text-[10px] mt-0.5" style={{ color: '#8D857D' }}>
                           incremental vs baseline
                         </p>
                       </div>
@@ -1265,7 +1265,7 @@ export default function CampaignsPage() {
                           disabled={!!aiAnalysisLoading[campaign.id]}
                           className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition font-semibold"
                           style={{
-                            background: aiAnalysisLoading[campaign.id] ? '#E7E5E4' : 'linear-gradient(135deg, #8B7DC9 0%, #B85C38 100%)',
+                            background: aiAnalysisLoading[campaign.id] ? '#E9E5E0' : 'linear-gradient(135deg, #B85C38 0%, #B85C38 100%)',
                             color: 'white',
                             opacity: aiAnalysisLoading[campaign.id] ? 0.7 : 1,
                           }}
@@ -1276,7 +1276,7 @@ export default function CampaignsPage() {
                       ) : (
                         <div
                           className="rounded-xl p-4"
-                          style={{ background: 'linear-gradient(135deg, #8B7DC910 0%, #B85C3805 100%)', border: '1px solid #8B7DC944' }}
+                          style={{ background: 'linear-gradient(135deg, #B85C3810 0%, #B85C3805 100%)', border: '1px solid #B85C3844' }}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: '#5E527C' }}>
@@ -1293,8 +1293,8 @@ export default function CampaignsPage() {
                           </div>
                           <ul className="space-y-1.5">
                             {(aiAnalysis[campaign.id].bullets || []).map((b, i) => (
-                              <li key={i} className="text-sm flex gap-2" style={{ color: '#1C1917' }}>
-                                <span style={{ color: '#8B7DC9', fontWeight: 700 }}>•</span>
+                              <li key={i} className="text-sm flex gap-2" style={{ color: '#171412' }}>
+                                <span style={{ color: '#B85C38', fontWeight: 700 }}>•</span>
                                 <span>{b}</span>
                               </li>
                             ))}
@@ -1306,9 +1306,9 @@ export default function CampaignsPage() {
 
                   {/* Message preview — content is the canonical field on the
                       backend; legacy clients used `message`, so fall through. */}
-                  <div className="mb-4 p-4 rounded whitespace-pre-wrap" style={{ backgroundColor: '#F3EFE7' }}>
-                    <p style={{ color: '#57534E', fontFamily: 'Manrope' }} className="text-sm">
-                      {campaign.content || campaign.message || <span className="italic text-[#8B8680]">(no message yet)</span>}
+                  <div className="mb-4 p-4 rounded whitespace-pre-wrap" style={{ backgroundColor: '#F5F4F1' }}>
+                    <p style={{ color: '#57504A', fontFamily: 'Manrope' }} className="text-sm">
+                      {campaign.content || campaign.message || <span className="italic text-[#8D857D]">(no message yet)</span>}
                     </p>
                   </div>
 
@@ -1319,7 +1319,7 @@ export default function CampaignsPage() {
                         <span
                           key={idx}
                           className="px-3 py-1 text-sm rounded-full"
-                          style={{ backgroundColor: '#E3A869', color: '#FDFBF7', fontFamily: 'Manrope' }}
+                          style={{ backgroundColor: '#E3A869', color: '#FAFAF8', fontFamily: 'Manrope' }}
                         >
                           {badge}
                         </span>
@@ -1334,7 +1334,7 @@ export default function CampaignsPage() {
                         setViewingTrackingId(campaign.id);
                         fetchCampaignTracking(campaign.id);
                       }}
-                      className="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-[#B85C38] hover:bg-[#F3EFE7] transition"
+                      className="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-[#B85C38] hover:bg-[#F5F4F1] transition"
                     >
                       <Eye size={16} />
                       View details
@@ -1351,22 +1351,22 @@ export default function CampaignsPage() {
       {/* Create Campaign Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FDFBF7' }}>
-            <div className="border-b p-6 relative" style={{ borderColor: '#E7E5E4' }}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FAFAF8' }}>
+            <div className="border-b p-6 relative" style={{ borderColor: '#E9E5E0' }}>
               <button
                 type="button"
                 aria-label="Close"
                 onClick={() => setShowCreateModal(false)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition hover:bg-[#F3EFE7]"
-                style={{ color: '#57534E' }}
+                className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition hover:bg-[#F5F4F1]"
+                style={{ color: '#57504A' }}
               >
                 <X size={20} />
               </button>
-              <h2 className="text-3xl font-bold pr-12" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+              <h2 className="text-3xl font-bold pr-12" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                 {editingCampaignId ? 'Edit Draft' : 'Create New Campaign'}
               </h2>
               {editingCampaignId && (
-                <p className="text-sm text-[#57534E] mt-1" style={{ fontFamily: 'Manrope' }}>
+                <p className="text-sm text-[#57504A] mt-1" style={{ fontFamily: 'Manrope' }}>
                   Updating an unsent draft. Changes don't fire until you hit Send on the campaign card.
                 </p>
               )}
@@ -1375,7 +1375,7 @@ export default function CampaignsPage() {
             <div className="p-6 space-y-6">
               {/* Campaign Name */}
               <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   Campaign Name
                 </label>
                 <input
@@ -1385,14 +1385,14 @@ export default function CampaignsPage() {
                   onChange={handleInputChange}
                   placeholder="e.g. Summer Promo"
                   className="w-full px-4 py-2 border rounded-lg"
-                  style={{ borderColor: '#E7E5E4', color: '#1C1917' }}
+                  style={{ borderColor: '#E9E5E0', color: '#171412' }}
                 />
               </div>
 
               {/* Message */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                  <label className="block text-sm font-semibold" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                     Message
                   </label>
                   <button
@@ -1427,7 +1427,7 @@ export default function CampaignsPage() {
                       placeholder="Your campaign message — paste any URL or @handle and it'll auto-link."
                       rows={5}
                       className="w-full px-4 py-2 border rounded-lg"
-                      style={{ borderColor: '#E7E5E4', color: '#1C1917', fontFamily: 'Manrope' }}
+                      style={{ borderColor: '#E9E5E0', color: '#171412', fontFamily: 'Manrope' }}
                     />
                     <p className="text-[10px] mt-1.5" style={{ color: C_PS.inkMute }}>
                       Pro tip: paste a full <code>https://…</code> URL or an <code>@handle</code> — it becomes a clickable link automatically.
@@ -1446,9 +1446,9 @@ export default function CampaignsPage() {
 
               {/* Channel / Source */}
               <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   Channel / Source
-                  <span className="ml-2 text-xs text-[#8B8680] font-normal">
+                  <span className="ml-2 text-xs text-[#8D857D] font-normal">
                     Where this campaign is published — used to measure per-channel performance.
                   </span>
                 </label>
@@ -1467,7 +1467,7 @@ export default function CampaignsPage() {
                       className={`px-3 py-1 text-xs rounded-full border transition ${
                         (formData.source || 'push') === s.key
                           ? 'bg-[#B85C38] text-white border-[#B85C38]'
-                          : 'bg-white text-[#57534E] border-[#E7E5E4] hover:border-[#B85C38]'
+                          : 'bg-white text-[#57504A] border-[#E9E5E0] hover:border-[#B85C38]'
                       }`}
                     >
                       {s.label}
@@ -1477,11 +1477,11 @@ export default function CampaignsPage() {
               </div>
 
               {/* Hero image — optional photo that appears in email + on the wallet card news feed */}
-              <div className="border-t pt-6" style={{ borderColor: '#E7E5E4' }}>
-                <label className="block text-sm font-semibold mb-1" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
-                  📸 Hero image <span className="font-normal text-[#8B8680]">— optional, but doubles open rates</span>
+              <div className="border-t pt-6" style={{ borderColor: '#E9E5E0' }}>
+                <label className="block text-sm font-semibold mb-1" style={{ color: '#171412', fontFamily: 'Manrope' }}>
+                  📸 Hero image <span className="font-normal text-[#8D857D]">— optional, but doubles open rates</span>
                 </label>
-                <p className="text-xs text-[#57534E] mb-3" style={{ fontFamily: 'Manrope' }}>
+                <p className="text-xs text-[#57504A] mb-3" style={{ fontFamily: 'Manrope' }}>
                   Upload a photo (max 5 MB) — it appears at the top of the email and on the customer's wallet card news feed.
                 </p>
 
@@ -1495,7 +1495,7 @@ export default function CampaignsPage() {
                       className="w-full h-48 object-cover"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <label className="px-3 py-2 rounded-lg bg-white text-[#1C1917] font-semibold text-xs cursor-pointer hover:bg-[#F3EFE7]">
+                      <label className="px-3 py-2 rounded-lg bg-white text-[#171412] font-semibold text-xs cursor-pointer hover:bg-[#F5F4F1]">
                         Replace
                         <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                       </label>
@@ -1508,14 +1508,14 @@ export default function CampaignsPage() {
                       </button>
                     </div>
                     <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-bold uppercase tracking-wider"
-                         style={{ color: '#7B3F00' }}>
+                         style={{ color: '#96431F' }}>
                       ✓ Image attached
                     </div>
                   </div>
                 ) : (
                   // Upload prompt state
                   <label
-                    className="block rounded-xl border-2 border-dashed cursor-pointer transition-all hover:border-[#B85C38] hover:bg-[#FEF9E7]"
+                    className="block rounded-xl border-2 border-dashed cursor-pointer transition-all hover:border-[#B85C38] hover:bg-[#F6E9E2]"
                     style={{ borderColor: '#E3A869', background: '#FEFBF2' }}
                   >
                     <input
@@ -1530,7 +1530,7 @@ export default function CampaignsPage() {
                            style={{ background: 'linear-gradient(135deg, #FDF1DC, #E3A869)' }}>
                         <span className="text-2xl">📸</span>
                       </div>
-                      <p className="text-sm font-semibold mb-1" style={{ color: '#7B3F00' }}>
+                      <p className="text-sm font-semibold mb-1" style={{ color: '#96431F' }}>
                         {imageUploading ? 'Uploading…' : 'Click to upload a photo'}
                       </p>
                       <p className="text-xs" style={{ color: '#8B6914' }}>
@@ -1545,8 +1545,8 @@ export default function CampaignsPage() {
               </div>
 
               {/* Send timing — Send now vs. Schedule for later */}
-              <div className="border-t pt-6" style={{ borderColor: '#E7E5E4' }}>
-                <label className="block text-sm font-semibold mb-3" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+              <div className="border-t pt-6" style={{ borderColor: '#E9E5E0' }}>
+                <label className="block text-sm font-semibold mb-3" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   When should this go out?
                 </label>
                 <div className="flex gap-2 mb-3">
@@ -1554,7 +1554,7 @@ export default function CampaignsPage() {
                     type="button"
                     onClick={() => setSendMode('now')}
                     className={`px-4 py-2 rounded-lg text-sm font-semibold border flex items-center gap-2 transition ${
-                      sendMode === 'now' ? 'bg-[#B85C38] text-white border-[#B85C38]' : 'bg-white text-[#57534E] border-[#E7E5E4]'
+                      sendMode === 'now' ? 'bg-[#B85C38] text-white border-[#B85C38]' : 'bg-white text-[#57504A] border-[#E9E5E0]'
                     }`}
                   >
                     <Send size={14} /> Send now
@@ -1563,31 +1563,31 @@ export default function CampaignsPage() {
                     type="button"
                     onClick={() => setSendMode('schedule')}
                     className={`px-4 py-2 rounded-lg text-sm font-semibold border flex items-center gap-2 transition ${
-                      sendMode === 'schedule' ? 'bg-[#B85C38] text-white border-[#B85C38]' : 'bg-white text-[#57534E] border-[#E7E5E4]'
+                      sendMode === 'schedule' ? 'bg-[#B85C38] text-white border-[#B85C38]' : 'bg-white text-[#57504A] border-[#E9E5E0]'
                     }`}
                   >
                     <CalendarClock size={14} /> Schedule for later
                   </button>
                 </div>
                 {sendMode === 'schedule' && (
-                  <div className="p-4 rounded-lg bg-[#F3EFE7] border border-[#E7E5E4] space-y-3">
+                  <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0] space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Send date & time</label>
+                        <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Send date & time</label>
                         <input
                           type="datetime-local"
                           value={scheduleAt}
                           onChange={(e) => setScheduleAt(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-[#E7E5E4] text-sm bg-white"
+                          className="w-full px-3 py-2 rounded border border-[#E9E5E0] text-sm bg-white"
                         />
-                        <p className="text-[11px] text-[#8B8680] mt-1">Local time — stored as UTC on the server.</p>
+                        <p className="text-[11px] text-[#8D857D] mt-1">Local time — stored as UTC on the server.</p>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-[#57534E] uppercase mb-1">Repeat (optional)</label>
+                        <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Repeat (optional)</label>
                         <select
                           value={scheduleRecurrence}
                           onChange={(e) => setScheduleRecurrence(e.target.value)}
-                          className="w-full px-3 py-2 rounded border border-[#E7E5E4] text-sm bg-white"
+                          className="w-full px-3 py-2 rounded border border-[#E9E5E0] text-sm bg-white"
                         >
                           <option value="">No — one-off send</option>
                           <option value="daily">Every day</option>
@@ -1596,7 +1596,7 @@ export default function CampaignsPage() {
                         </select>
                       </div>
                     </div>
-                    <p className="text-xs text-[#57534E]">
+                    <p className="text-xs text-[#57504A]">
                       {scheduleRecurrence
                         ? `The campaign will fire at the chosen time and repeat ${scheduleRecurrence}. Cancel anytime from "Scheduled campaigns".`
                         : 'The campaign will fire at the chosen time and then finish.'}
@@ -1619,14 +1619,14 @@ export default function CampaignsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: '#E7E5E4' }}>
+            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: '#E9E5E0' }}>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
                 className="px-6 py-2 rounded-lg font-semibold border transition"
-                style={{ borderColor: '#E7E5E4', color: '#57534E' }}
+                style={{ borderColor: '#E9E5E0', color: '#57504A' }}
               >
                 Cancel
               </button>
@@ -1649,9 +1649,9 @@ export default function CampaignsPage() {
       {/* Send Confirmation Modal */}
       {sendConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full" style={{ backgroundColor: '#FDFBF7' }}>
-            <div className="border-b p-6" style={{ borderColor: '#E7E5E4' }}>
-              <h2 className="text-3xl font-bold flex items-center gap-3" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+          <div className="bg-white rounded-lg max-w-2xl w-full" style={{ backgroundColor: '#FAFAF8' }}>
+            <div className="border-b p-6" style={{ borderColor: '#E9E5E0' }}>
+              <h2 className="text-3xl font-bold flex items-center gap-3" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                 <AlertCircle size={32} style={{ color: '#B85C38' }} />
                 Send Campaign
               </h2>
@@ -1659,37 +1659,37 @@ export default function CampaignsPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-sm font-semibold mb-2" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
+                <p className="text-sm font-semibold mb-2" style={{ color: '#57504A', fontFamily: 'Manrope' }}>
                   Campaign Name
                 </p>
-                <p className="text-lg" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                <p className="text-lg" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   {sendConfirmation.name}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm font-semibold mb-2" style={{ color: '#57534E', fontFamily: 'Manrope' }}>
+                <p className="text-sm font-semibold mb-2" style={{ color: '#57504A', fontFamily: 'Manrope' }}>
                   Message
                 </p>
-                <div className="p-4 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                  <p style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+                <div className="p-4 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                  <p style={{ color: '#171412', fontFamily: 'Manrope' }}>
                     {sendConfirmation.message}
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 rounded border" style={{ borderColor: '#E3A869', backgroundColor: '#F3EFE7' }}>
-                <p className="font-semibold" style={{ color: '#1C1917', fontFamily: 'Manrope' }}>
+              <div className="p-4 rounded border" style={{ borderColor: '#E3A869', backgroundColor: '#F5F4F1' }}>
+                <p className="font-semibold" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   This will be sent to <span style={{ color: '#B85C38' }}>{sendConfirmation.targeted_count || sendConfirmation.targetedCount || 0}</span> customers
                 </p>
               </div>
             </div>
 
-            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: '#E7E5E4' }}>
+            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: '#E9E5E0' }}>
               <button
                 onClick={() => setSendConfirmation(null)}
                 className="px-6 py-2 rounded-lg font-semibold border transition"
-                style={{ borderColor: '#E7E5E4', color: '#57534E' }}
+                style={{ borderColor: '#E9E5E0', color: '#57504A' }}
               >
                 Cancel
               </button>
@@ -1709,10 +1709,10 @@ export default function CampaignsPage() {
       {/* Tracking Details Drawer */}
       {viewingTrackingId && trackingData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FDFBF7' }}>
-            <div className="border-b p-6" style={{ borderColor: '#E7E5E4' }}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FAFAF8' }}>
+            <div className="border-b p-6" style={{ borderColor: '#E9E5E0' }}>
               <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                <h2 className="text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                   Campaign Tracking
                 </h2>
                 <button
@@ -1720,7 +1720,7 @@ export default function CampaignsPage() {
                     setViewingTrackingId(null);
                     setTrackingData(null);
                   }}
-                  className="text-[#8B8680] hover:text-[#1C1917] text-2xl"
+                  className="text-[#8D857D] hover:text-[#171412] text-2xl"
                 >
                   ×
                 </button>
@@ -1743,29 +1743,29 @@ export default function CampaignsPage() {
                 const visitPct = denom > 0 ? Math.round((visits / denom) * 100) : 0;
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Sent to</p>
-                      <p className="text-2xl font-bold text-[#1C1917]">{targeted}</p>
-                      <p className="text-[10px] text-[#8B8680] mt-0.5">recipients targeted</p>
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                      <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Sent to</p>
+                      <p className="text-2xl font-bold text-[#171412]">{targeted}</p>
+                      <p className="text-[10px] text-[#8D857D] mt-0.5">recipients targeted</p>
                     </div>
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Delivered</p>
-                      <p className="text-2xl font-bold text-[#1C1917]">{delivered}</p>
-                      <p className="text-[10px] text-[#8B8680] mt-0.5">
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                      <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Delivered</p>
+                      <p className="text-2xl font-bold text-[#171412]">{delivered}</p>
+                      <p className="text-[10px] text-[#8D857D] mt-0.5">
                         {targeted > 0 ? `${Math.round((delivered / targeted) * 100)}% of targeted` : '—'}
                       </p>
                     </div>
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Opened</p>
-                      <p className="text-2xl font-bold text-[#1C1917]">
-                        {opens}<span className="text-base text-[#8B8680] font-normal"> / {denom}</span>
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                      <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Opened</p>
+                      <p className="text-2xl font-bold text-[#171412]">
+                        {opens}<span className="text-base text-[#8D857D] font-normal"> / {denom}</span>
                       </p>
                       <p className="text-[10px] text-[#4A5D23] mt-0.5 font-semibold">{openPct}% open rate</p>
                     </div>
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F3EFE7' }}>
-                      <p className="text-xs text-[#8B8680]" style={{ fontFamily: 'Manrope' }}>Visits after (15d)</p>
-                      <p className="text-2xl font-bold text-[#1C1917]">
-                        {visits}<span className="text-base text-[#8B8680] font-normal"> / {denom}</span>
+                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                      <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Visits after (15d)</p>
+                      <p className="text-2xl font-bold text-[#171412]">
+                        {visits}<span className="text-base text-[#8D857D] font-normal"> / {denom}</span>
                       </p>
                       <p className="text-[10px] text-[#B85C38] mt-0.5 font-semibold">{visitPct}% conversion</p>
                     </div>
@@ -1775,24 +1775,24 @@ export default function CampaignsPage() {
 
               {/* Recipients List */}
               <div>
-                <h3 className="text-xl font-bold mb-3" style={{ fontFamily: 'Cormorant Garamond', color: '#1C1917' }}>
+                <h3 className="text-xl font-bold mb-3" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                   Recipients
                 </h3>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {(trackingData.recipients || []).map((recipient, idx) => (
-                    <div key={idx} className="p-3 rounded flex items-center justify-between" style={{ backgroundColor: '#F3EFE7' }}>
+                    <div key={idx} className="p-3 rounded flex items-center justify-between" style={{ backgroundColor: '#F5F4F1' }}>
                       <div>
-                        <p className="font-semibold text-[#1C1917]">{recipient.customer_name || 'Unknown'}</p>
-                        <p className="text-xs text-[#8B8680]">{recipient.email}</p>
+                        <p className="font-semibold text-[#171412]">{recipient.customer_name || 'Unknown'}</p>
+                        <p className="text-xs text-[#8D857D]">{recipient.email}</p>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="flex items-center gap-1 text-sm">
-                          {recipient.opened ? <CheckCircle2 size={16} style={{ color: '#4A5D23' }} /> : <AlertCircle size={16} style={{ color: '#8B8680' }} />}
-                          <span style={{ color: recipient.opened ? '#4A5D23' : '#8B8680' }}>{recipient.opened ? 'Opened' : 'Not opened'}</span>
+                          {recipient.opened ? <CheckCircle2 size={16} style={{ color: '#4A5D23' }} /> : <AlertCircle size={16} style={{ color: '#8D857D' }} />}
+                          <span style={{ color: recipient.opened ? '#4A5D23' : '#8D857D' }}>{recipient.opened ? 'Opened' : 'Not opened'}</span>
                         </span>
                         <span className="flex items-center gap-1 text-sm">
-                          {recipient.visited ? <CheckCircle2 size={16} style={{ color: '#4A5D23' }} /> : <AlertCircle size={16} style={{ color: '#8B8680' }} />}
-                          <span style={{ color: recipient.visited ? '#4A5D23' : '#8B8680' }}>{recipient.visited ? 'Visited' : 'No visit'}</span>
+                          {recipient.visited ? <CheckCircle2 size={16} style={{ color: '#4A5D23' }} /> : <AlertCircle size={16} style={{ color: '#8D857D' }} />}
+                          <span style={{ color: recipient.visited ? '#4A5D23' : '#8D857D' }}>{recipient.visited ? 'Visited' : 'No visit'}</span>
                         </span>
                       </div>
                     </div>
@@ -1801,7 +1801,7 @@ export default function CampaignsPage() {
               </div>
 
               {/* Toolbar */}
-              <div className="pt-4 border-t flex gap-3" style={{ borderColor: '#E7E5E4' }}>
+              <div className="pt-4 border-t flex gap-3" style={{ borderColor: '#E9E5E0' }}>
                 <button
                   className="flex-1 px-4 py-2 rounded-lg border font-semibold transition"
                   style={{ borderColor: '#B85C38', color: '#B85C38' }}
@@ -1819,7 +1819,7 @@ export default function CampaignsPage() {
               </div>
             </div>
 
-            <div className="border-t p-6" style={{ borderColor: '#E7E5E4' }}>
+            <div className="border-t p-6" style={{ borderColor: '#E9E5E0' }}>
               <button
                 onClick={() => {
                   setViewingTrackingId(null);
@@ -1859,7 +1859,7 @@ function CardOverlayPanel() {
   // Overlay fields
   const [stripTitle, setStripTitle] = useState('Offre exclusive');
   const [stripSubtitle, setStripSubtitle] = useState('Réservée à votre profil');
-  const [stripColor, setStripColor] = useState('#1F1B1A');
+  const [stripColor, setStripColor] = useState('#171412');
   const [stripTextColor, setStripTextColor] = useState('#F4D8A8');
   const [offerText, setOfferText] = useState('-30%');
   const [offerSubtext, setOfferSubtext] = useState('Sur tout le magasin');
@@ -1922,33 +1922,33 @@ function CardOverlayPanel() {
   };
 
   return (
-    <div className="mb-6 rounded-lg border" style={{ borderColor: '#E7E5E4', backgroundColor: '#FDFBF7' }}>
-      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between p-4 hover:bg-[#F3EFE7] transition rounded-lg">
+    <div className="mb-6 rounded-lg border" style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}>
+      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between p-4 hover:bg-[#F5F4F1] transition rounded-lg">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#7E5E84]/10 flex items-center justify-center">
-            <Sparkles size={20} style={{ color: '#7E5E84' }} />
+          <div className="w-10 h-10 rounded-lg bg-[#96431F]/10 flex items-center justify-center">
+            <Sparkles size={20} style={{ color: '#96431F' }} />
           </div>
           <div className="text-left">
-            <p className="text-sm font-bold" style={{ color: '#1C1917' }}>
+            <p className="text-sm font-bold" style={{ color: '#171412' }}>
               Push offer over the card — filtered overlay
             </p>
-            <p className="text-xs" style={{ color: '#8B8680' }}>
+            <p className="text-xs" style={{ color: '#8D857D' }}>
               Replace the middle band of the wallet card for a specific customer segment, then auto-expire.
-              {activeCount > 0 && <span className="ml-2 text-[#7E5E84] font-semibold">· {activeCount} actifs</span>}
+              {activeCount > 0 && <span className="ml-2 text-[#96431F] font-semibold">· {activeCount} actifs</span>}
             </p>
           </div>
         </div>
-        <ChevronDown size={18} className={`transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: '#8B8680' }} />
+        <ChevronDown size={18} className={`transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: '#8D857D' }} />
       </button>
 
       {open && (
-        <div className="p-4 border-t space-y-4" style={{ borderColor: '#E7E5E4' }}>
+        <div className="p-4 border-t space-y-4" style={{ borderColor: '#E9E5E0' }}>
           {/* Targeting */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#7B3F00] mb-2">1. Cible (filtres)</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#96431F] mb-2">1. Cible (filtres)</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <select value={tier} onChange={(e) => setTier(e.target.value)}
-                      className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm">
+                      className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm">
                 <option value="">Tous palliers</option>
                 <option value="bronze">Bronze</option>
                 <option value="silver">Silver</option>
@@ -1957,37 +1957,37 @@ function CardOverlayPanel() {
               </select>
               <input type="number" min="0" placeholder="Min visites" value={minVisits}
                      onChange={(e) => setMinVisits(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
               <input type="number" min="0" placeholder="Min € payés" value={minAmount}
                      onChange={(e) => setMinAmount(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
               <input type="number" min="0" placeholder="Inactifs depuis (j)" value={inactiveMin}
                      onChange={(e) => setInactiveMin(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
               <input type="number" min="0" placeholder="Inactifs jusqu'à (j)" value={inactiveMax}
                      onChange={(e) => setInactiveMax(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
             </div>
           </div>
 
           {/* Overlay content */}
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#7B3F00] mb-2">2. Bande promo qui apparaîtra sur leur carte</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#96431F] mb-2">2. Bande promo qui apparaîtra sur leur carte</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
               <input type="text" placeholder="Titre de la bande" value={stripTitle}
                      onChange={(e) => setStripTitle(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
               <input type="text" placeholder="Sous-titre" value={stripSubtitle}
                      onChange={(e) => setStripSubtitle(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
               <input type="text" placeholder="Encart offre (ex: -30%)" value={offerText}
                      onChange={(e) => setOfferText(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
               <input type="text" placeholder="Sous-texte offre" value={offerSubtext}
                      onChange={(e) => setOfferSubtext(e.target.value)}
-                     className="px-3 py-2 rounded-lg border border-[#E7E5E4] text-sm" />
+                     className="px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <label className="text-xs flex items-center gap-2">
@@ -2002,7 +2002,7 @@ function CardOverlayPanel() {
                 Expire après (j)
                 <input type="number" min="1" max="365" value={expiresDays}
                        onChange={(e) => setExpiresDays(e.target.value)}
-                       className="flex-1 px-2 py-1 rounded border border-[#E7E5E4] text-sm" />
+                       className="flex-1 px-2 py-1 rounded border border-[#E9E5E0] text-sm" />
               </label>
             </div>
           </div>
@@ -2027,12 +2027,12 @@ function CardOverlayPanel() {
 
           <div className="flex items-center justify-between">
             <button onClick={clearAll} disabled={busy || (activeCount ?? 0) === 0}
-                    className="text-xs text-[#8B8680] hover:underline disabled:opacity-40">
+                    className="text-xs text-[#8D857D] hover:underline disabled:opacity-40">
               Effacer tous les overlays actifs
             </button>
             <button onClick={send} disabled={busy}
                     className="px-4 py-2 rounded-full text-sm font-semibold text-white shadow disabled:opacity-50"
-                    style={{ background: 'linear-gradient(135deg, #7E5E84 0%, #5C3E66 100%)' }}>
+                    style={{ background: 'linear-gradient(135deg, #96431F 0%, #5C3E66 100%)' }}>
               {busy ? 'Envoi…' : 'Pousser l\'offre sur les cartes'}
             </button>
           </div>

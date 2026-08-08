@@ -196,10 +196,10 @@ const HistoricalAcquisitionChart = () => {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
               <XAxis
                 dataKey="label"
-                stroke="#57534E"
+                stroke="#57504A"
                 fontSize={10}
                 interval={tickInterval}
                 tickFormatter={formatTick}
@@ -208,7 +208,7 @@ const HistoricalAcquisitionChart = () => {
                 height={50}
                 tick={{ dy: 4 }}
               />
-              <YAxis stroke="#57534E" fontSize={11} allowDecimals={false} width={36} />
+              <YAxis stroke="#57504A" fontSize={11} allowDecimals={false} width={36} />
               <Tooltip labelFormatter={formatTooltipLabel} />
               <Bar dataKey="count" fill={C_PS.sage} radius={[6, 6, 0, 0]} />
             </BarChart>
@@ -223,7 +223,7 @@ const KPI = ({ label, value, accent, icon: Icon }) => (
   <div
     className="rounded-xl p-3 flex items-center gap-3"
     style={{
-      background: `linear-gradient(135deg, white 0%, ${accent ? accent + '12' : '#F3EFE7'} 100%)`,
+      background: `linear-gradient(135deg, white 0%, ${accent ? accent + '12' : '#F5F4F1'} 100%)`,
       border: `1px solid ${accent ? accent + '33' : C_PS.hairline}`,
     }}
   >

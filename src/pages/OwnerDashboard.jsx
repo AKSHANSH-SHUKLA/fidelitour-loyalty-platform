@@ -167,7 +167,7 @@ export default function OwnerDashboard() {
       instagram: 'hsl(8 75% 62%)',   // coral
       google:    'hsl(105 30% 42%)', // sauge
       facebook:  'hsl(208 55% 40%)', // deep bleu
-      tiktok:    '#1F1B1A',          // ink
+      tiktok:    '#171412',          // ink
       manual:    'hsl(285 45% 42%)', // aubergine
       website:   'hsl(42 78% 52%)',  // or / brass
     };
@@ -284,14 +284,14 @@ export default function OwnerDashboard() {
   // Vibrant multi-colour palette shared with the sources donut so the
   // dashboard reads as one joyful product.
   const statusDonut = [
-    { key: 'active',  name: 'Actifs',     value: activeCustomers,  color: '#3FA86A' },
+    { key: 'active',  name: 'Actifs',     value: activeCustomers,  color: '#20714C' },
     { key: 'dormant', name: 'Dormants',   value: dormantCustomers, color: '#E8A53B' },
     { key: 'risk',    name: 'À risque',   value: atRiskCustomers,  color: '#E15A47' },
     { key: 'new',     name: 'Nouveaux',   value: newWithoutVisits, color: '#3FA9D9' },
   ].filter(d => d.value > 0);
 
   const churnDonut = [
-    { key: 'engaged', name: 'Engagés',         value: Math.max(0, totalCustomers - (summary?.one_visit_count || 0) - dormantCustomers - (summary?.churned_90d_count || 0)), color: '#3FA86A' },
+    { key: 'engaged', name: 'Engagés',         value: Math.max(0, totalCustomers - (summary?.one_visit_count || 0) - dormantCustomers - (summary?.churned_90d_count || 0)), color: '#20714C' },
     { key: 'one',     name: '1 visite',        value: summary?.one_visit_count || 0,    color: '#3FA9D9' },
     { key: 'dormant', name: 'Inactifs 30j',    value: dormantCustomers,                 color: '#E8A53B' },
     { key: 'churned', name: 'Churned 90j',     value: summary?.churned_90d_count || 0,  color: '#E15A47' },
@@ -369,7 +369,7 @@ export default function OwnerDashboard() {
             />
             <ActionTile
               icon={<Award size={14} />}
-              color="#7E5E84"
+              color="#96431F"
               title="Segmentez vos VIP"
               desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
               cta="Voir les VIP"
@@ -434,7 +434,7 @@ export default function OwnerDashboard() {
             <div className="fd-panel-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="fd-panel-title">{t('dashboard.section_customer_status')}</span>
-                <span title={t('dashboard.status_tooltip') || 'État détaillé de chaque segment client'} style={{ width: 16, height: 16, borderRadius: 8, background: '#F4EEE0', color: '#8A8A8A', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
+                <span title={t('dashboard.status_tooltip') || 'État détaillé de chaque segment client'} style={{ width: 16, height: 16, borderRadius: 8, background: '#F4EEE0', color: '#8D857D', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
               </div>
               <button onClick={() => navigate('/dashboard/customers')} style={{ color: 'var(--fd-primary)', fontSize: 13, fontWeight: 500, border: 0, background: 'transparent', cursor: 'pointer' }}>
                 {t('dashboard.view_all_customers')} →
@@ -466,7 +466,7 @@ export default function OwnerDashboard() {
               </div>
             </div>
             <div className="fd-status-bar">
-              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: '#3FA86A' }} />
+              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: '#20714C' }} />
               <div style={{ width: `${pct(dormantCustomers, totalCustomers)}%`, background: '#E8A53B' }} />
               <div style={{ width: `${pct(atRiskCustomers, totalCustomers)}%`, background: '#E15A47' }} />
               <div style={{ width: `${pct(newWithoutVisits, totalCustomers)}%`, background: '#3FA9D9' }} />
@@ -579,10 +579,10 @@ export default function OwnerDashboard() {
               <div style={{ height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={visitsChartData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-                    <CartesianGrid stroke="#F0E8D6" vertical={false} />
-                    <XAxis dataKey="idx" tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} width={28} />
-                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #ECE3D2' }} />
+                    <CartesianGrid stroke="#F6E9E2" vertical={false} />
+                    <XAxis dataKey="idx" tick={{ fontSize: 10, fill: '#8D857D' }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#8D857D' }} tickLine={false} axisLine={false} width={28} />
+                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #E9E5E0' }} />
                     <Bar dataKey="visits" fill="#3FA9D9" radius={[3, 3, 0, 0]} maxBarSize={14} />
                     <Line type="monotone" dataKey="uniques" stroke="#E8A53B" strokeWidth={2} dot={{ r: 3, fill: '#E8A53B' }} />
                   </ComposedChart>
@@ -627,11 +627,11 @@ export default function OwnerDashboard() {
               <div style={{ height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={acqChartData} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-                    <CartesianGrid stroke="#F0E8D6" vertical={false} />
-                    <XAxis dataKey="idx" tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} interval={3} />
-                    <YAxis tick={{ fontSize: 10, fill: '#8A8A8A' }} tickLine={false} axisLine={false} width={28} />
-                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #ECE3D2' }} />
-                    <Bar dataKey="value" fill="#3FA86A" radius={[3, 3, 0, 0]} maxBarSize={12} />
+                    <CartesianGrid stroke="#F6E9E2" vertical={false} />
+                    <XAxis dataKey="idx" tick={{ fontSize: 10, fill: '#8D857D' }} tickLine={false} axisLine={false} interval={3} />
+                    <YAxis tick={{ fontSize: 10, fill: '#8D857D' }} tickLine={false} axisLine={false} width={28} />
+                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #E9E5E0' }} />
+                    <Bar dataKey="value" fill="#20714C" radius={[3, 3, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -700,9 +700,9 @@ export default function OwnerDashboard() {
                               const count = heatmap[day]?.[hour] || 0;
                               const intensity = count / maxCount;
                               const [r, g, bb] = lerpRamp(intensity);
-                              const bgColor = count === 0 ? '#FDFBF7' : `rgb(${r}, ${g}, ${bb})`;
+                              const bgColor = count === 0 ? '#FAFAF8' : `rgb(${r}, ${g}, ${bb})`;
                               // Flip text to cream once cell is dark enough.
-                              const textColor = intensity > 0.55 ? '#FDFBF7' : '#1C1917';
+                              const textColor = intensity > 0.55 ? '#FAFAF8' : '#171412';
                               return (
                                 <td
                                   key={day}
@@ -1010,7 +1010,7 @@ export default function OwnerDashboard() {
                           {count} <span style={{ color: 'var(--fd-text-3)', fontWeight: 400 }}>({p}%)</span>
                         </span>
                       </div>
-                      <div style={{ height: 4, background: '#F0E8D6', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: 4, background: '#F6E9E2', borderRadius: 4, overflow: 'hidden' }}>
                         <div style={{ width: `${p}%`, height: '100%', background: TIER_COLORS[k], borderRadius: 4 }} />
                       </div>
                     </div>
@@ -1048,7 +1048,7 @@ export default function OwnerDashboard() {
                   <div style={{ position: 'relative', width: 92, height: 92, flexShrink: 0 }}>
                     {/* Background ring */}
                     <svg width="92" height="92" viewBox="0 0 92 92" style={{ position: 'absolute', inset: 0 }}>
-                      <circle cx="46" cy="46" r="38" fill="none" stroke="#F0E8D6" strokeWidth="10"/>
+                      <circle cx="46" cy="46" r="38" fill="none" stroke="#F6E9E2" strokeWidth="10"/>
                       <circle cx="46" cy="46" r="38" fill="none" stroke={toneColor} strokeWidth="10"
                               strokeDasharray={`${(pct / 100) * 238.76} 999`}
                               strokeLinecap="round"
@@ -1172,7 +1172,7 @@ function Alert({ color, icon, title, sub, time }) {
         <div className="fd-alert-sub">{sub}</div>
         <div className="fd-alert-time">{time}</div>
       </div>
-      <ChevronRight size={14} color="#8A8A8A" style={{ alignSelf: 'center' }} />
+      <ChevronRight size={14} color="#8D857D" style={{ alignSelf: 'center' }} />
     </div>
   );
 }

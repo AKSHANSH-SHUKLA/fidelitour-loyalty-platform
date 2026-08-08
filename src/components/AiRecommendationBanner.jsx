@@ -68,7 +68,7 @@ export default function AiRecommendationBanner({ onOpenComposer }) {
         type="button"
         onClick={() => setHidden(true)}
         aria-label="Masquer"
-        className="absolute top-3 right-3 text-[#6F60B0] hover:text-[#1C1917] p-1"
+        className="absolute top-3 right-3 text-[#6F60B0] hover:text-[#171412] p-1"
       >
         <X size={14} />
       </button>
@@ -90,7 +90,7 @@ export default function AiRecommendationBanner({ onOpenComposer }) {
         <p
           className="text-base sm:text-lg leading-snug"
           style={{
-            color: '#1C1917',
+            color: '#171412',
             fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontWeight: 600,
             letterSpacing: '-0.01em',

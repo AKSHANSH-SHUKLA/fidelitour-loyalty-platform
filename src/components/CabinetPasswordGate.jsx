@@ -62,15 +62,15 @@ export default function CabinetPasswordGate({ children }) {
       background: 'radial-gradient(1200px 500px at 85% -10%, rgba(107,46,90,.08), transparent 60%), #FBF7EF',
     }}>
       <form onSubmit={submit} className="w-full max-w-md rounded-3xl bg-white border p-6"
-            style={{ borderColor: '#ECE3D2' }}>
+            style={{ borderColor: '#E9E5E0' }}>
         <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
              style={{ background: 'linear-gradient(135deg,#7A3E70,#4E1F44)' }}>
           <KeyRound size={18} color="#fff" />
         </div>
-        <LiveText as="h1" className="text-xl font-extrabold text-[#1C1917]">
+        <LiveText as="h1" className="text-xl font-extrabold text-[#171412]">
           Choisissez votre mot de passe
         </LiveText>
-        <LiveText as="p" className="text-sm text-[#57534E] mt-1 mb-5">
+        <LiveText as="p" className="text-sm text-[#57504A] mt-1 mb-5">
           Votre compte a été créé par votre cabinet. Pour que vos actions vous soient
           attribuées de façon fiable, choisissez un mot de passe que vous seul connaissez.
         </LiveText>
@@ -80,7 +80,7 @@ export default function CabinetPasswordGate({ children }) {
         <ul className="mb-4 space-y-1">
           {rules.map((r) => (
             <li key={r.id + (r.ok ? '-ok' : '-no')} className="text-[12px] flex items-center gap-2"
-                style={{ color: r.ok ? '#2F7A52' : '#8B8680' }}>
+                style={{ color: r.ok ? '#2F7A52' : '#8D857D' }}>
               <span>{r.ok ? '✓' : '○'}</span>
               <LiveText>{r.label}</LiveText>
             </li>
@@ -106,7 +106,7 @@ export default function CabinetPasswordGate({ children }) {
           {busy ? 'Enregistrement…' : 'Enregistrer et continuer'}
         </button>
 
-        <style>{`.fld{border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#1C1917;background:#FCFAF5;outline:none}.fld:focus{border-color:#7A3E70}`}</style>
+        <style>{`.fld{border:1px solid #E7E1D5;border-radius:12px;padding:10px 12px;font-size:14px;color:#171412;background:#FCFAF5;outline:none}.fld:focus{border-color:#7A3E70}`}</style>
       </form>
     </div>
   );

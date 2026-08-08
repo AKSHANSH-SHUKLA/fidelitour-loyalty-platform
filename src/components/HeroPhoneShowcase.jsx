@@ -316,7 +316,7 @@ const PhoneFrame = ({ children }) => (
       className="absolute rounded-[34px] overflow-hidden"
       style={{
         top: 8, left: 8, right: 8, bottom: 8,
-        background: '#FDFBF7',
+        background: '#FAFAF8',
       }}
     >
       {/* Notch */}
@@ -327,7 +327,7 @@ const PhoneFrame = ({ children }) => (
 
       {/* Status bar */}
       <div className="absolute top-1 left-0 right-0 z-20 flex items-center justify-between px-6 text-[10px] font-bold"
-        style={{ color: '#1C1917' }}>
+        style={{ color: '#171412' }}>
         <span>9:41</span>
         <span className="invisible">·</span>
         <span className="flex items-center gap-1">
@@ -347,17 +347,17 @@ const PhoneFrame = ({ children }) => (
 const SignalDots = () => (
   <span className="inline-flex items-end gap-[2px]">
     {[3, 5, 7, 9].map((h, i) => (
-      <span key={i} className="rounded-sm" style={{ width: 2.5, height: h, background: '#1C1917' }} />
+      <span key={i} className="rounded-sm" style={{ width: 2.5, height: h, background: '#171412' }} />
     ))}
   </span>
 );
 
 const BatteryIcon = () => (
   <span className="inline-flex items-center">
-    <span className="rounded-[3px]" style={{ width: 18, height: 9, border: '1.2px solid #1C1917' }}>
-      <span className="block rounded-sm" style={{ width: '70%', height: '100%', background: '#1C1917' }} />
+    <span className="rounded-[3px]" style={{ width: 18, height: 9, border: '1.2px solid #171412' }}>
+      <span className="block rounded-sm" style={{ width: '70%', height: '100%', background: '#171412' }} />
     </span>
-    <span className="ml-[1px] rounded-r-[1px]" style={{ width: 1.5, height: 4, background: '#1C1917' }} />
+    <span className="ml-[1px] rounded-r-[1px]" style={{ width: 1.5, height: 4, background: '#171412' }} />
   </span>
 );
 
@@ -371,7 +371,7 @@ const SceneAnalytics = () => (
     exit={{ opacity: 0, y: -8 }}
     transition={{ duration: 0.5 }}
     className="absolute inset-0 px-3.5 py-3 overflow-hidden flex flex-col gap-2.5"
-    style={{ background: 'linear-gradient(180deg, #FDFBF7 0%, #F3EFE7 100%)' }}
+    style={{ background: 'linear-gradient(180deg, #FAFAF8 0%, #F5F4F1 100%)' }}
   >
     {/* Header */}
     <div className="flex items-center gap-2 mt-1">
@@ -485,7 +485,7 @@ const SceneNotifications = () => {
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
       className="absolute inset-0 px-3.5 py-3 flex flex-col"
-      style={{ background: 'linear-gradient(180deg, #1C1917 0%, #2A1C2E 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #171412 0%, #2A1C2E 100%)' }}
     >
       {/* Lock screen time */}
       <div className="text-center mt-3 mb-4">
@@ -515,11 +515,11 @@ const SceneNotifications = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-bold leading-tight" style={{ color: '#1C1917' }}>FidéliTour</p>
-                  <p className="text-[8px]" style={{ color: '#57534E' }}>maintenant</p>
+                  <p className="text-[10px] font-bold leading-tight" style={{ color: '#171412' }}>FidéliTour</p>
+                  <p className="text-[8px]" style={{ color: '#57504A' }}>maintenant</p>
                 </div>
-                <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#1C1917' }}>{n.title}</p>
-                <p className="text-[9px] leading-tight" style={{ color: '#57534E' }}>{n.body}</p>
+                <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#171412' }}>{n.title}</p>
+                <p className="text-[9px] leading-tight" style={{ color: '#57504A' }}>{n.body}</p>
               </div>
             </motion.div>
           );
@@ -540,7 +540,7 @@ const ELEGANT_HERO = {
   midnight: '#15233D',
   gold: '#C9A961',
   gold_deep: '#A88947',
-  charcoal: '#1C1917',
+  charcoal: '#171412',
 };
 
 const SceneWalletCard = () => {
@@ -751,13 +751,13 @@ const SceneGeolocation = () => {
     {/* Stylised map (compact — leaves room for the feature pills below) */}
     <div className="relative overflow-hidden" style={{ height: 200, background: 'linear-gradient(180deg, #DCE9D5 0%, #C9DCC2 100%)' }}>
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 290 200" preserveAspectRatio="none">
-        <g stroke="#FDFBF7" strokeWidth="12" strokeLinecap="round">
+        <g stroke="#FAFAF8" strokeWidth="12" strokeLinecap="round">
           <line x1="-20" y1="60"  x2="320" y2="50" />
           <line x1="-20" y1="140" x2="320" y2="130" />
           <line x1="80" y1="-20" x2="100" y2="220" />
           <line x1="220" y1="-20" x2="200" y2="220" />
         </g>
-        <g fill="#F3EFE7">
+        <g fill="#F5F4F1">
           <rect x="20" y="20" width="40" height="32" rx="3" />
           <rect x="120" y="70" width="60" height="38" rx="3" />
           <rect x="240" y="20" width="30" height="32" rx="3" />
@@ -821,11 +821,11 @@ const SceneGeolocation = () => {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold leading-tight" style={{ color: '#1C1917' }}>Café Lumière</p>
-          <p className="text-[8px]" style={{ color: '#57534E' }}>maintenant</p>
+          <p className="text-[10px] font-bold leading-tight" style={{ color: '#171412' }}>Café Lumière</p>
+          <p className="text-[8px]" style={{ color: '#57504A' }}>maintenant</p>
         </div>
-        <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#1C1917' }}>Vous passez devant&nbsp;?</p>
-        <p className="text-[9px] leading-tight" style={{ color: '#57534E' }}>
+        <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#171412' }}>Vous passez devant&nbsp;?</p>
+        <p className="text-[9px] leading-tight" style={{ color: '#57504A' }}>
           5&nbsp;€ offerts sur votre prochain café — passez nous voir.
         </p>
       </div>
@@ -910,7 +910,7 @@ const SceneAIIntelligence = () => {
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
       className="absolute inset-0 px-3.5 py-3 overflow-hidden flex flex-col gap-2"
-      style={{ background: 'linear-gradient(180deg, #FDFBF7 0%, #F0EDFA 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #FAFAF8 0%, #F0EDFA 100%)' }}
     >
       {/* Header — AI assistant identity */}
       <div className="flex items-center gap-2 mt-1">

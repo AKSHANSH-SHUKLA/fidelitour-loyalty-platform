@@ -16,21 +16,21 @@ const TIER_STYLES = {
   silver: {
     bg: 'linear-gradient(135deg, #D9D9D9 0%, #A8A8A8 100%)',
     border: '#888888',
-    text: '#1C1917',
+    text: '#171412',
     crown: '#6B6B6B',
     label: 'Silver',
   },
   gold: {
     bg: 'linear-gradient(135deg, #F5D97A 0%, #D4A574 100%)',
     border: '#B8852C',
-    text: '#1C1917',
+    text: '#171412',
     crown: '#8C5C15',
     label: 'Gold',
   },
   vip: {
     // Deep burgundy → black gradient — clearly "above" gold.
-    bg: 'linear-gradient(135deg, #7B3F00 0%, #1C1917 100%)',
-    border: '#1C1917',
+    bg: 'linear-gradient(135deg, #96431F 0%, #171412 100%)',
+    border: '#171412',
     text: '#F5D97A',
     crown: '#F5D97A',
     label: 'VIP',

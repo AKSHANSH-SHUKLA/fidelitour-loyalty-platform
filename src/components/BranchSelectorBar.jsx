@@ -48,7 +48,7 @@ const BranchSelectorBar = () => {
         background: branchId
           ? 'linear-gradient(135deg, #FCE3DC 0%, #FBE0E8 100%)'
           : 'linear-gradient(135deg, white 0%, #F5EFE5 100%)',
-        border: `1.5px solid ${branchId ? '#B85C3866' : '#E7E5E4'}`,
+        border: `1.5px solid ${branchId ? '#B85C3866' : '#E9E5E0'}`,
         boxShadow: branchId ? '0 6px 18px -10px #B85C3866' : '0 2px 6px -2px rgba(28,25,23,0.06)',
       }}
     >
@@ -56,17 +56,17 @@ const BranchSelectorBar = () => {
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center"
           style={{
-            background: branchId ? '#B85C38' : '#1C1917',
+            background: branchId ? '#B85C38' : '#171412',
             color: branchId ? 'white' : '#E3A869',
           }}
         >
           {branchId ? <Building2 size={16} /> : <Globe size={16} />}
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: branchId ? '#B85C38' : '#8B8680' }}>
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: branchId ? '#B85C38' : '#8D857D' }}>
             {branchId ? `Showing data for : ${activeBranchName}` : 'Showing data for : All branches'}
           </p>
-          <p className="text-[10px]" style={{ color: '#57534E' }}>
+          <p className="text-[10px]" style={{ color: '#57504A' }}>
             {branchId
               ? 'Every page is filtered to this branch. Click "All" to see the whole network.'
               : 'Pick a branch below to see only its customers, visits, campaigns and analytics.'}
@@ -82,10 +82,10 @@ const BranchSelectorBar = () => {
           className="px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5"
           style={{
             background: branchId === null
-              ? 'linear-gradient(135deg, #1C1917, #2A1C2E)'
+              ? 'linear-gradient(135deg, #171412, #2A1C2E)'
               : 'white',
             color: branchId === null ? 'white' : '#3D2820',
-            border: `1px solid ${branchId === null ? 'transparent' : '#E7E5E4'}`,
+            border: `1px solid ${branchId === null ? 'transparent' : '#E9E5E0'}`,
             boxShadow: branchId === null ? '0 4px 12px -4px rgba(28,25,23,0.4)' : 'none',
           }}
         >
@@ -107,7 +107,7 @@ const BranchSelectorBar = () => {
                   ? 'linear-gradient(135deg, #B85C38, #D77FA0)'
                   : 'white',
                 color: isActive ? 'white' : '#3D2820',
-                border: `1px solid ${isActive ? 'transparent' : '#E7E5E4'}`,
+                border: `1px solid ${isActive ? 'transparent' : '#E9E5E0'}`,
                 boxShadow: isActive ? '0 4px 12px -4px #B85C3866' : 'none',
               }}
             >

@@ -94,10 +94,10 @@ const PeriodPicker = ({
         style={{ color: fgColor }}
         title={`Max ${UNIT_MAX[unit]} ${UNIT_LABEL[unit]}`}
       >
-        <option value="day"   style={{ color: '#1C1917', background: optionBg }}>{UNIT_LABEL.day}</option>
-        <option value="week"  style={{ color: '#1C1917', background: optionBg }}>{UNIT_LABEL.week}</option>
-        <option value="month" style={{ color: '#1C1917', background: optionBg }}>{UNIT_LABEL.month}</option>
-        <option value="year"  style={{ color: '#1C1917', background: optionBg }}>{UNIT_LABEL.year}</option>
+        <option value="day"   style={{ color: '#171412', background: optionBg }}>{UNIT_LABEL.day}</option>
+        <option value="week"  style={{ color: '#171412', background: optionBg }}>{UNIT_LABEL.week}</option>
+        <option value="month" style={{ color: '#171412', background: optionBg }}>{UNIT_LABEL.month}</option>
+        <option value="year"  style={{ color: '#171412', background: optionBg }}>{UNIT_LABEL.year}</option>
       </select>
     </div>
   );

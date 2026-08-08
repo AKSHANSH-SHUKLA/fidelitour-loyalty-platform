@@ -19,8 +19,8 @@ export const C = {
   sky:'#4A90E2',       azure:'#A8C7E8',
   teal:'#3C9D9B',      mint:'#A7DCD3',
   sage:'#7FA269',      meadow:'#D4E5C4',
-  inkDeep:'#1C1917',   inkSoft:'#2D2A26',  inkMute:'#57534E',
-  bone:'#FDFBF7',      cream:'#F5F1EA',    sand:'#EDE7DA',
+  inkDeep:'#171412',   inkSoft:'#2D2A26',  inkMute:'#57504A',
+  bone:'#FAFAF8',      cream:'#F5F1EA',    sand:'#EDE7DA',
   hairline:'#E8E2D5',
 };
 

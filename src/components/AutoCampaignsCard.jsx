@@ -264,7 +264,7 @@ const AutoCampaignsCard = () => {
           </p>
           <div className="space-y-2 max-h-72 overflow-y-auto">
             {(previews.preview || []).map((p) => (
-              <div key={p.customer_id} className="rounded-lg p-3 text-sm" style={{ background: '#F3EFE7' }}>
+              <div key={p.customer_id} className="rounded-lg p-3 text-sm" style={{ background: '#F5F4F1' }}>
                 <p className="font-semibold" style={{ color: C_PS.inkDeep }}>{p.name}</p>
                 <p style={{ color: C_PS.inkSoft }}>{p.body}</p>
               </div>
