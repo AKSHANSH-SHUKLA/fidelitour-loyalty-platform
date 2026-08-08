@@ -666,10 +666,10 @@ textarea::placeholder {
   display: grid; place-items: center; flex-shrink: 0;
 }
 .fdt-dash .fd-ai-content { flex: 1; min-width: 200px; padding-right: 30px; }
-.fdt-dash .fd-ai-eyebrow { font-size: 10.5px; color: #6B4D8A; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700; }
+.fdt-dash .fd-ai-eyebrow { font-size: 10.5px; color: #96431F; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700; }
 .fdt-dash .fd-ai-title { font-weight: 700; font-size: 16px; margin: 3px 0; }
 .fdt-dash .fd-ai-text { color: var(--fd-text-2); font-size: 12.5px; line-height: 1.5; }
-.fdt-dash .fd-ai-close { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 6px; border: 0; background: transparent; color: #6B4D8A; cursor: pointer; display: grid; place-items: center; transition: background 120ms; }
+.fdt-dash .fd-ai-close { position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 6px; border: 0; background: transparent; color: #96431F; cursor: pointer; display: grid; place-items: center; transition: background 120ms; }
 .fdt-dash .fd-ai-close:hover { background: rgba(107, 77, 138, 0.12); }
 
 /* Page header */
@@ -1180,8 +1180,8 @@ textarea::placeholder {
   --fd-text-3:   hsl(228 11% 45%);
   /* Brand & semantics — bias toward the v2 purple while keeping
      the green / red / amber semantic accents readable. */
-  --fd-primary:   hsl(285 45% 42%);
-  --fd-primary-2: hsl(295 50% 32%);
+  --fd-primary:   #B85C38;
+  --fd-primary-2: #B85C38;
   --fd-pos:       hsl(160 84% 50%);
   --fd-neg:       hsl(355 65% 60%);
   --fd-warn:      hsl(42 78% 58%);
@@ -1207,15 +1207,15 @@ textarea::placeholder {
 
 /* AI recommendation strip — keep purple identity but on dark surface. */
 .av2-light-skin .fd-ai {
-  background: hsl(285 45% 42% / .08) !important;
-  border-color: hsl(285 45% 42% / .35) !important;
+  background: rgb(184 92 56 / .08) !important;
+  border-color: rgb(184 92 56 / .35) !important;
   color: hsl(228 28% 14%);
 }
-.av2-light-skin .fd-ai-eyebrow { color: hsl(285 45% 35%) !important; }
+.av2-light-skin .fd-ai-eyebrow { color: #B85C38 !important; }
 .av2-light-skin .fd-ai-title   { color: hsl(228 28% 14%) !important; }
 .av2-light-skin .fd-ai-text    { color: hsl(228 14% 35%) !important; }
-.av2-light-skin .fd-ai-close   { color: hsl(285 45% 35%) !important; }
-.av2-light-skin .fd-ai-close:hover { background: hsl(285 45% 42% / .15) !important; }
+.av2-light-skin .fd-ai-close   { color: #B85C38 !important; }
+.av2-light-skin .fd-ai-close:hover { background: rgb(184 92 56 / .15) !important; }
 
 /* Page title + LIVE pill */
 .av2-light-skin .fd-title { color: hsl(228 28% 14%) !important; }
@@ -1225,20 +1225,20 @@ textarea::placeholder {
 }
 .av2-light-skin .fd-sub { color: hsl(228 11% 45%) !important; }
 
-/* Primary buttons — purple gradient stays; text MUST be white on saturated bg. */
+/* Primary buttons — V2: terracotta, the page's one accent. */
 .av2-light-skin .fd-btn-primary {
-  background: linear-gradient(135deg, hsl(285 45% 42%), hsl(295 50% 32%)) !important;
+  background: linear-gradient(135deg, #B85C38, #96431F) !important;
   color: #FFFFFF !important;
   border-color: transparent !important;
 }
 .av2-light-skin .fd-btn-primary:hover {
-  background: linear-gradient(135deg, hsl(295 50% 32%), hsl(285 45% 42%)) !important;
+  background: linear-gradient(135deg, #96431F, #B85C38) !important;
 }
 .av2-light-skin .fd-btn-purple {
-  background: hsl(285 45% 42%) !important;
+  background: #B85C38 !important;
   color: #FFFFFF !important;
 }
-.av2-light-skin .fd-btn-purple:hover { background: hsl(295 50% 32%) !important; }
+.av2-light-skin .fd-btn-purple:hover { background: #B85C38 !important; }
 
 /* KPI grid — flip pastel surfaces to dark, keep colored icon chips. */
 .av2-light-skin .fd-kpi[class*="k-"] {
@@ -1289,7 +1289,7 @@ textarea::placeholder {
 }
 .av2-light-skin .fd-ch-legend { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-ch-foot   {
-  background: hsl(285 45% 42% / .08) !important;
+  background: rgb(184 92 56 / .08) !important;
   color: hsl(228 14% 35%) !important;
 }
 .av2-light-skin .fd-cs-lbl { color: hsl(228 11% 45%); }
@@ -1342,8 +1342,8 @@ textarea::placeholder {
 .av2-light-skin .fd-lc-lbl { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-lc-val { color: hsl(228 28% 14%); }
 .av2-light-skin .fd-ltv-card.high {
-  background: hsl(285 45% 42% / .12) !important;
-  border-color: hsl(285 45% 42% / .35) !important;
+  background: rgb(184 92 56 / .12) !important;
+  border-color: rgb(184 92 56 / .35) !important;
 }
 .av2-light-skin .fd-ltv-table { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-ltv-table th { color: hsl(228 11% 45%); border-bottom-color: #ECE3D2 !important; }
@@ -1353,9 +1353,9 @@ textarea::placeholder {
 .av2-light-skin .fd-plan-num       { color: hsl(228 28% 14%); }
 .av2-light-skin .fd-plan-num-total { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-plan-chip {
-  background: hsl(285 45% 42% / .15) !important;
-  color: hsl(285 45% 35%) !important;
-  border-color: hsl(285 45% 42% / .35) !important;
+  background: rgb(184 92 56 / .15) !important;
+  color: #B85C38 !important;
+  border-color: rgb(184 92 56 / .35) !important;
 }
 .av2-light-skin .fd-plan-pct { color: hsl(228 11% 45%); }
 .av2-light-skin .fd-pa-h     { color: hsl(228 14% 35%); }
@@ -1371,14 +1371,14 @@ textarea::placeholder {
 .av2-light-skin .fd-sp-head    { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-sp-title   { color: hsl(228 14% 35%); }
 .av2-light-skin .fd-sp-count   {
-  background: hsl(285 45% 42% / .15) !important;
-  color: hsl(285 45% 35%) !important;
+  background: rgb(184 92 56 / .15) !important;
+  color: #B85C38 !important;
 }
 .av2-light-skin .fd-sp-cta {
-  color: hsl(285 45% 35%) !important;
+  color: #B85C38 !important;
   background: transparent !important;
 }
-.av2-light-skin .fd-sp-cta:hover { background: hsl(285 45% 42% / .08) !important; }
+.av2-light-skin .fd-sp-cta:hover { background: rgb(184 92 56 / .08) !important; }
 
 /* Alert items inside the right rail */
 .av2-light-skin .fd-alert {
@@ -1396,7 +1396,7 @@ textarea::placeholder {
 .av2-light-skin .fd-sr-value { color: hsl(228 28% 14%); }
 
 /* Generic links / hint text that may sit on white in places we missed. */
-.av2-light-skin a { color: hsl(285 45% 35%); }
+.av2-light-skin a { color: #B85C38; }
 
 /* Stat-bar separators that used to be on cream surfaces. */
 .av2-light-skin .fd-status-grid > * { border-color: #ECE3D2; }
@@ -1709,7 +1709,7 @@ textarea::placeholder {
    accent so the panel is still distinguishable but readable. */
 .av2-light-skin .vwcc .rounded-xl.p-4[style] {
   background: hsl(228 28% 16%) !important;
-  border-color: hsl(285 45% 42% / 0.45) !important;
+  border-color: rgb(184 92 56 / 0.45) !important;
 }
 /* Recipient table rows — divider lines on dark. */
 .av2-light-skin .vwcc [class*="divide-y"] > * {
