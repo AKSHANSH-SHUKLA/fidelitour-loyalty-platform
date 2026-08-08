@@ -615,24 +615,24 @@ textarea::placeholder {
  * ═════════════════════════════════════════════════════════════════════ */
 .fdt-dash {
   /* Pastel KPI palette */
-  --fd-blue: #DCE7F0;
+  --fd-blue: #EFEDE9;
   --fd-blue-ico: #5984AC;
-  --fd-blue-bg: #4A7BA8;
-  --fd-green: #D6E5C7;
-  --fd-green-ico: #4F7A36;
-  --fd-yellow: #F0E0AC;
-  --fd-yellow-ico: #A8862D;
-  --fd-yellow-bg: #D9A229;
-  --fd-purple: #DAD0DC;
-  --fd-purple-ico: #7E5E84;
-  --fd-mint: #CFE0D5;
-  --fd-mint-ico: #4A7861;
-  --fd-coral: #F3D3C5;
-  --fd-coral-ico: #B26344;
-  --fd-rose: #F2C7C3;
-  --fd-rose-ico: #B53D32;
-  --fd-lilac: #E5DDEC;
-  --fd-lilac-ico: #6B4D8A;
+  --fd-blue-bg: #171412;
+  --fd-green: #E4F1E9;
+  --fd-green-ico: #20714C;
+  --fd-yellow: #F6E9E2;
+  --fd-yellow-ico: #96431F;
+  --fd-yellow-bg: #B85C38;
+  --fd-purple: #EFEDE9;
+  --fd-purple-ico: #96431F;
+  --fd-mint: #E4F1E9;
+  --fd-mint-ico: #20714C;
+  --fd-coral: #F6E9E2;
+  --fd-coral-ico: #96431F;
+  --fd-rose: #F9E8E5;
+  --fd-rose-ico: #B3362B;
+  --fd-lilac: #EFEDE9;
+  --fd-lilac-ico: #57504A;
   --fd-bg-2: #F4EEE0;
   --fd-border: #ECE3D2;
   --fd-divider: #F0E8D6;
@@ -698,12 +698,15 @@ textarea::placeholder {
 }
 .fdt-dash .fd-btn-primary:hover { background: var(--fd-primary-2); }
 .fdt-dash .fd-btn-purple {
-  background: #6B4D8A; color: white; border: 0;
+  /* V2: one accent per page. The "AI purple" fought the terracotta brand
+     for attention on every screen; the class name stays (many callsites),
+     the color falls in line. */
+  background: #B85C38; color: white; border: 0;
   padding: 10px 18px; border-radius: 10px; font-family: inherit;
   font-weight: 600; font-size: 13px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
 }
-.fdt-dash .fd-btn-purple:hover { background: #56396F; }
+.fdt-dash .fd-btn-purple:hover { background: #96431F; }
 
 /* KPI grid */
 .fdt-dash .fd-kpi-grid {
@@ -746,13 +749,17 @@ textarea::placeholder {
 .fdt-dash .fd-kpi[class*="k-"] .fd-kpi-value { color: #0F172A; font-weight: 700; font-variant-numeric: tabular-nums; }
 .fdt-dash .fd-kpi[class*="k-"] .fd-kpi-ico   { color: #FFFFFF; border-radius: 10px; }
 
-.fdt-dash .k-blue    .fd-kpi-ico { background: #3B82F6; box-shadow: 0 4px 12px -4px rgba(59, 130, 246, 0.45); }
-.fdt-dash .k-emerald .fd-kpi-ico { background: #10B981; box-shadow: 0 4px 12px -4px rgba(16, 185, 129, 0.45); }
-.fdt-dash .k-orange  .fd-kpi-ico { background: #F97316; box-shadow: 0 4px 12px -4px rgba(249, 115, 22, 0.45); }
-.fdt-dash .k-indigo  .fd-kpi-ico { background: #6366F1; box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.45); }
-.fdt-dash .k-amber   .fd-kpi-ico { background: #F59E0B; box-shadow: 0 4px 12px -4px rgba(245, 158, 11, 0.45); }
-.fdt-dash .k-red     .fd-kpi-ico { background: #EF4444; box-shadow: 0 4px 12px -4px rgba(239, 68, 68, 0.45); }
-.fdt-dash .k-purple  .fd-kpi-ico { background: #8B5CF6; box-shadow: 0 4px 12px -4px rgba(139, 92, 246, 0.45); }
+/* V2 "Encre & Terracotta": the seven-color chip rainbow was the default
+   Tailwind palette, i.e. the one look every generated dashboard has. Four
+   semantic colors instead: ink = neutral count, terracotta = engagement,
+   green = healthy, red = loss. A color now means something. */
+.fdt-dash .k-blue    .fd-kpi-ico { background: #171412; box-shadow: 0 4px 12px -4px rgba(23, 20, 18, 0.45); }
+.fdt-dash .k-emerald .fd-kpi-ico { background: #20714C; box-shadow: 0 4px 12px -4px rgba(32, 113, 76, 0.45); }
+.fdt-dash .k-orange  .fd-kpi-ico { background: #B85C38; box-shadow: 0 4px 12px -4px rgba(184, 92, 56, 0.45); }
+.fdt-dash .k-indigo  .fd-kpi-ico { background: #171412; box-shadow: 0 4px 12px -4px rgba(23, 20, 18, 0.45); }
+.fdt-dash .k-amber   .fd-kpi-ico { background: #B85C38; box-shadow: 0 4px 12px -4px rgba(184, 92, 56, 0.45); }
+.fdt-dash .k-red     .fd-kpi-ico { background: #B3362B; box-shadow: 0 4px 12px -4px rgba(179, 54, 43, 0.45); }
+.fdt-dash .k-purple  .fd-kpi-ico { background: #96431F; box-shadow: 0 4px 12px -4px rgba(150, 67, 31, 0.45); }
 
 /* KPI foot row — sub + optional delta chip side by side */
 .fdt-dash .fd-kpi-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
