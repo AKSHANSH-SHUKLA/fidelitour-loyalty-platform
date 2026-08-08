@@ -78,7 +78,10 @@ button{font:inherit;border:none;background:none;cursor:pointer;color:inherit}
 /* ---------- hero: split, asymmetric ---------- */
 .hero{display:grid;grid-template-columns:1.55fr 1fr;gap:22px;margin-bottom:22px}
 .hero-left{background:var(--ink);border-radius:var(--r-lg);padding:26px 28px;color:#fff;
-      position:relative;overflow:hidden;animation:rise .5s var(--ease) both}
+      position:relative;overflow:hidden;animation:rise .5s var(--ease) both;
+      display:flex;flex-direction:column}
+.hero-left .grow{flex:1}
+.hero-left h2{font-size:29px}
 .hero-left::after{content:"";position:absolute;right:-70px;top:-70px;width:260px;height:260px;
       border-radius:50%;background:radial-gradient(circle,rgba(184,92,56,.38),transparent 65%)}
 .hero-kicker{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
@@ -283,6 +286,7 @@ button{font:inherit;border:none;background:none;cursor:pointer;color:inherit}
         <div class="hero-kicker">Programme fidélité · en direct</div>
         <h2>18 clients reviendront grâce à vous cette semaine</h2>
         <p>Votre carte a été tamponnée 47 fois depuis lundi. 6 récompenses réclamées, 11 clients à un tampon de la leur.</p>
+        <div class="grow"></div>
         <div class="hero-stats">
           <div class="hstat"><b>312</b><span>cartes actives</span> <span class="up">+9 cette sem.</span></div>
           <div class="hstat"><b>68<span style="font-size:15px">%</span></b><span>taux de retour</span> <span class="up">+4 pts</span></div>
