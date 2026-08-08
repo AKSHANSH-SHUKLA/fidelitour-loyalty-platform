@@ -168,7 +168,7 @@ export default function OwnerDashboard() {
       google:    'hsl(105 30% 42%)', // sauge
       facebook:  'hsl(208 55% 40%)', // deep bleu
       tiktok:    '#171412',          // ink
-      manual:    'hsl(285 45% 42%)', // aubergine
+      manual:    '#B85C38', // aubergine
       website:   'hsl(42 78% 52%)',  // or / brass
     };
     const labels = {
@@ -194,7 +194,7 @@ export default function OwnerDashboard() {
       { key: 'google',    name: 'Google Maps', value: 22, color: 'hsl(105 30% 42%)' },
       { key: 'instagram', name: 'Instagram',   value: 16, color: 'hsl(8 75% 62%)' },
       { key: 'website',   name: 'Site Web',    value:  9, color: 'hsl(42 78% 52%)' },
-      { key: 'manual',    name: 'Autres',      value:  5, color: 'hsl(285 45% 42%)' },
+      { key: 'manual',    name: 'Autres',      value:  5, color: '#B85C38' },
     ];
   }, [acqSources]);
   const sourcesTotal = sources.reduce((s, p) => s + p.value, 0);
@@ -481,7 +481,7 @@ export default function OwnerDashboard() {
             display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10,
             margin: '0 0 12px',
           }}>
-            <Calendar size={14} color="hsl(285 45% 42%)" />
+            <Calendar size={14} color="#B85C38" />
             <span style={{
               fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
               fontWeight: 700, color: 'var(--fd-text-3)',
@@ -543,9 +543,9 @@ export default function OwnerDashboard() {
                     onClick={() => setDashWindow({ count: q.count, unit: q.unit })}
                     style={{
                       padding: '5px 10px', fontSize: 11.5, fontWeight: 500,
-                      border: `1px solid ${active ? 'hsl(285 45% 42%)' : 'var(--fd-border)'}`,
-                      background: active ? 'hsl(285 45% 42% / .08)' : '#FFFFFF',
-                      color: active ? 'hsl(285 45% 42%)' : 'var(--fd-text-2)',
+                      border: `1px solid ${active ? '#B85C38' : 'var(--fd-border)'}`,
+                      background: active ? 'rgb(184 92 56 / .08)' : '#FFFFFF',
+                      color: active ? '#B85C38' : 'var(--fd-text-2)',
                       borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit',
                       transition: 'all 120ms ease',
                     }}
@@ -963,11 +963,11 @@ export default function OwnerDashboard() {
             </div>
             {/* Insight strip — top channel + its % share, color-coded */}
             <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8,
-                          background: 'linear-gradient(135deg, hsl(285 45% 42% / .06), hsl(42 78% 52% / .06))',
+                          background: 'linear-gradient(135deg, rgb(184 92 56 / .06), hsl(42 78% 52% / .06))',
                           fontSize: 11, color: 'var(--fd-text-2)', lineHeight: 1.4 }}>
               <span style={{ fontWeight: 600, color: 'var(--fd-text)' }}>{sources[0]?.name}</span>
               {' génère '}
-              <span style={{ fontWeight: 700, color: 'hsl(285 45% 42%)' }}>{pct(sources[0]?.value || 0, sourcesTotal)}%</span>
+              <span style={{ fontWeight: 700, color: '#B85C38' }}>{pct(sources[0]?.value || 0, sourcesTotal)}%</span>
               {' de vos clients.'}
             </div>
           </div>
@@ -1020,7 +1020,7 @@ export default function OwnerDashboard() {
             </div>
             {/* Insight strip — VIP share spotlight */}
             <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8,
-                          background: 'linear-gradient(135deg, hsl(42 78% 52% / .08), hsl(285 45% 42% / .06))',
+                          background: 'linear-gradient(135deg, hsl(42 78% 52% / .08), rgb(184 92 56 / .06))',
                           fontSize: 11, color: 'var(--fd-text-2)', lineHeight: 1.4 }}>
               <span style={{ fontWeight: 700, color: 'hsl(32 80% 48%)' }}>{displayTierDist.vip || 0} VIP</span>
               {' génèrent typiquement '}

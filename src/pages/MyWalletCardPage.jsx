@@ -624,7 +624,7 @@ const MyWalletCardPage = () => {
               marginBottom: 18,
               padding: '14px 16px',
               borderRadius: 12,
-              background: 'linear-gradient(135deg, hsl(42 78% 52% / .12), hsl(285 45% 42% / .08))',
+              background: 'linear-gradient(135deg, hsl(42 78% 52% / .12), rgb(184 92 56 / .08))',
               border: '1px solid hsl(42 78% 52% / .35)',
               display: 'flex',
               alignItems: 'flex-start',

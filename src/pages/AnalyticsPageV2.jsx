@@ -107,7 +107,7 @@ const PrimaryButton = ({ icon: Icon, children, onClick }) => (
       color: '#FFFFFF',
       fontSize: 12.5, fontWeight: 500,
       cursor: 'pointer',
-      boxShadow: '0 6px 18px -8px hsl(285 45% 42% / .55), 0 0 0 1px hsl(42 78% 52% / .15) inset',
+      boxShadow: '0 6px 18px -8px rgb(184 92 56 / .55), 0 0 0 1px hsl(42 78% 52% / .15) inset',
       font: 'inherit',
     }}
   >
@@ -399,7 +399,7 @@ export default function AnalyticsPageV2() {
   // New vs Returning segments for the donut.
   const nvrSegments = (nvr.newPct > 0 || nvr.returningPct > 0) ? [
     { name: 'Récurrents', value: Number(nvr.returningPct) || 0,
-      gradientFrom: 'hsl(285 45% 42%)', gradientTo: 'hsl(295 50% 32%)' },
+      gradientFrom: '#B85C38', gradientTo: '#96431F' },
     { name: 'Nouveaux',   value: Number(nvr.newPct) || 0,
       gradientFrom: 'hsl(208 55% 40%)', gradientTo: 'hsl(215 65% 48%)' },
   ] : [];
@@ -522,7 +522,7 @@ export default function AnalyticsPageV2() {
   const displayNvrSegments = (nvrSegments.length > 0) ? nvrSegments
     : (isEmpty ? [
         { name: 'Récurrents', value: DEMO.newVsReturning.returningPct,
-          gradientFrom: 'hsl(285 45% 42%)', gradientTo: 'hsl(295 50% 32%)' },
+          gradientFrom: '#B85C38', gradientTo: '#96431F' },
         { name: 'Nouveaux',   value: DEMO.newVsReturning.newPct,
           gradientFrom: 'hsl(208 55% 40%)', gradientTo: 'hsl(215 65% 48%)' },
       ] : []);

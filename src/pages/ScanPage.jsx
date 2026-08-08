@@ -32,7 +32,7 @@ function NotificationEnablePrompt({ customerName, barcodeId }) {
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, hsl(42 78% 52% / .10), hsl(285 45% 42% / .06))',
+        background: 'linear-gradient(135deg, hsl(42 78% 52% / .10), rgb(184 92 56 / .06))',
         border: '1px solid hsl(42 78% 52% / .35)',
         borderRadius: 12,
         padding: '14px 16px',

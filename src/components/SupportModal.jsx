@@ -112,7 +112,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 36, height: 36, borderRadius: 10,
-              background: 'linear-gradient(135deg, hsl(285 45% 42% / .15), hsl(295 50% 32% / .15))',
+              background: 'linear-gradient(135deg, rgb(184 92 56 / .15), hsl(295 50% 32% / .15))',
               color: 'hsl(285 45% 35%)',
               display: 'grid', placeItems: 'center',
             }}>
@@ -216,7 +216,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                   color: '#171412', fontSize: 13.5, font: 'inherit',
                   outline: 'none',
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(285 45% 42%)'; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = '#B85C38'; }}
                 onBlur={(e)  => { e.currentTarget.style.borderColor = C.hairline; }}
               />
             </div>
@@ -245,7 +245,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                   font: 'inherit', resize: 'vertical', minHeight: 120,
                   outline: 'none',
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = 'hsl(285 45% 42%)'; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = '#B85C38'; }}
                 onBlur={(e)  => { e.currentTarget.style.borderColor = C.hairline; }}
               />
             </div>
@@ -292,7 +292,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                   cursor: canSend ? 'pointer' : 'not-allowed',
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   font: 'inherit',
-                  boxShadow: canSend ? '0 6px 18px -8px hsl(285 45% 42% / .55)' : 'none',
+                  boxShadow: canSend ? '0 6px 18px -8px rgb(184 92 56 / .55)' : 'none',
                 }}
               >
                 <Send size={14} />

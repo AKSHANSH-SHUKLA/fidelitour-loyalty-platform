@@ -50,7 +50,7 @@ function ReEnableNotificationsButton() {
       <button
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm hover:-translate-y-0.5"
-        style={{ background: '#FFFFFF', color: 'hsl(285 45% 42%)', border: '1px solid hsl(285 45% 42% / .35)' }}
+        style={{ background: '#FFFFFF', color: '#B85C38', border: '1px solid rgb(184 92 56 / .35)' }}
         title="Send SMS to customers who don't receive push notifications, asking them to enable"
       >
         <BellRing size={14} /> Re-enable notifications
@@ -76,7 +76,7 @@ function ReEnableNotificationsButton() {
                           padding: '18px 22px', borderBottom: '1px solid #E9E5E0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10,
-                              background: 'hsl(285 45% 42% / .12)', color: 'hsl(285 45% 42%)',
+                              background: 'rgb(184 92 56 / .12)', color: '#B85C38',
                               display: 'grid', placeItems: 'center' }}>
                   <BellRing size={18} />
                 </div>
@@ -182,7 +182,7 @@ function ReEnableNotificationsButton() {
                       padding: '9px 18px', fontSize: 13, fontWeight: 600,
                       cursor: stats.not_subscribed > 0 && !sending ? 'pointer' : 'not-allowed',
                       display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: 'Manrope',
-                      boxShadow: stats.not_subscribed > 0 ? '0 6px 18px -8px hsl(285 45% 42% / .55)' : 'none',
+                      boxShadow: stats.not_subscribed > 0 ? '0 6px 18px -8px rgb(184 92 56 / .55)' : 'none',
                     }}>
                       <Send size={14} />
                       {sending ? 'Envoi en cours…' : `Envoyer ${stats.not_subscribed} SMS`}
