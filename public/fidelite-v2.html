@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FidClic Fidélité · Design V2 (prototype interactif)</title>
+<style>
+/* ============================================================
+   FidClic Fidélité — design system "Encre & Terracotta"
+   Read: premium-consumer SaaS dashboard for French SMB owners,
+   shown live by a commercial. Family: Black & Tan (off-black +
+   warm tan) — no beige+brass, no AI-purple, one accent locked.
+   Dials: variance 7 · motion 5 · density 4.
+   ============================================================ */
+:root{
+  --ink:#171412;          /* off-black, warm — never #000 */
+  --ink-2:#57504A;
+  --ink-3:#8D857D;
+  --paper:#FAFAF8;        /* stone white — not cream */
+  --card:#FFFFFF;
+  --line:#E9E5E0;
+  --line-2:#D8D2CB;
+  --terra:#B85C38;        /* the one accent, locked page-wide */
+  --terra-deep:#96431F;
+  --terra-soft:#F6E9E2;
+  --ok:#20714C; --ok-soft:#E4F1E9;
+  --bad:#B3362B; --bad-soft:#F9E8E5;
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);
+     font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+     -webkit-font-smoothing:antialiased}
+button{font:inherit;border:none;background:none;cursor:pointer;color:inherit}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- shell ---------- */
+.app{display:flex;min-height:100vh}
+.rail{width:232px;flex-shrink:0;border-right:1px solid var(--line);
+      padding:22px 14px;display:flex;flex-direction:column;gap:2px;
+      position:sticky;top:0;height:100vh;background:var(--card)}
+.logo{display:flex;align-items:center;gap:10px;padding:0 8px 20px}
+.logo-mark{width:34px;height:34px;border-radius:11px;background:var(--ink);color:#fff;
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+.logo b{font-size:15.5px;letter-spacing:-.02em}
+.logo span{display:block;font-size:10.5px;color:var(--ink-3);font-weight:500}
+.nav-cap{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+      color:var(--ink-3);padding:16px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--r-sm);
+      font-size:13.5px;font-weight:550;color:var(--ink-2);width:100%;text-align:left;
+      transition:background .18s var(--ease),color .18s var(--ease)}
+.nav-item:hover{background:var(--paper)}
+.nav-item.on{background:var(--ink);color:#fff}
+.nav-item .ic{width:17px;height:17px;flex-shrink:0}
+.nav-item .n{margin-left:auto;font-size:10.5px;font-weight:700;background:var(--terra);
+      color:#fff;border-radius:999px;padding:1px 7px}
+.nav-item.on .n{background:#fff;color:var(--ink)}
+
+/* ---------- main ---------- */
+.main{flex:1;min-width:0;padding:26px 34px 60px;max-width:1180px}
+.topbar{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+.topbar h1{font-size:21px;letter-spacing:-.025em;font-weight:700}
+.topbar .sub{font-size:12.5px;color:var(--ink-3)}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650;
+      color:var(--ok);background:var(--ok-soft);border-radius:999px;padding:4px 11px;margin-left:auto}
+.live i{width:7px;height:7px;border-radius:99px;background:var(--ok);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:650;
+     padding:9px 16px;border-radius:11px;transition:transform .16s var(--ease),box-shadow .16s var(--ease)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--terra);color:#fff;box-shadow:0 8px 20px -10px rgba(184,92,56,.55)}
+.btn-primary:hover{background:var(--terra-deep)}
+.btn-ghost{border:1px solid var(--line-2);color:var(--ink-2);background:var(--card)}
+.btn-ghost:hover{border-color:var(--ink-3)}
+
+/* ---------- hero: split, asymmetric ---------- */
+.hero{display:grid;grid-template-columns:1.55fr 1fr;gap:22px;margin-bottom:22px}
+.hero-left{background:var(--ink);border-radius:var(--r-lg);padding:26px 28px;color:#fff;
+      position:relative;overflow:hidden;animation:rise .5s var(--ease) both}
+.hero-left::after{content:"";position:absolute;right:-70px;top:-70px;width:260px;height:260px;
+      border-radius:50%;background:radial-gradient(circle,rgba(184,92,56,.38),transparent 65%)}
+.hero-kicker{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+      color:rgba(255,255,255,.55);margin-bottom:10px}
+.hero-left h2{font-size:26px;line-height:1.2;letter-spacing:-.025em;font-weight:700;max-width:17ch}
+.hero-left p{color:rgba(255,255,255,.72);font-size:13.5px;margin-top:10px;max-width:42ch}
+.hero-stats{display:flex;gap:30px;margin-top:24px;position:relative;z-index:1}
+.hstat b{display:block;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hstat span{font-size:11.5px;color:rgba(255,255,255,.6)}
+.hstat .up{color:#7CD9A8;font-size:11.5px;font-weight:650}
+
+/* phone + wallet card */
+.hero-right{display:flex;align-items:center;justify-content:center;position:relative;
+      animation:rise .5s .08s var(--ease) both}
+.phone{width:250px;border-radius:36px;background:var(--ink);padding:10px;
+      box-shadow:0 30px 60px -30px rgba(23,20,18,.5)}
+.screen{border-radius:28px;background:#0E0C0B;overflow:hidden;padding:16px 12px 20px}
+.ptime{color:#fff;text-align:center;font-size:12px;font-weight:600;margin-bottom:14px}
+.wcard{border-radius:14px;background:linear-gradient(150deg,#C96A44,#96431F);padding:14px 15px;
+      color:#fff;box-shadow:0 14px 30px -14px rgba(0,0,0,.7);
+      transition:transform .3s var(--ease)}
+.wcard:hover{transform:translateY(-3px)}
+.wtop{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:700;
+      letter-spacing:.04em;opacity:.92}
+.wname{font-size:15.5px;font-weight:750;margin-top:12px;letter-spacing:-.01em}
+.wsub{font-size:10px;opacity:.75;margin-top:1px}
+.stamps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:13px}
+.stamp{aspect-ratio:1;border-radius:50%;border:1.6px solid rgba(255,255,255,.45);
+       display:flex;align-items:center;justify-content:center;font-size:11px}
+.stamp.f{background:#fff;color:var(--terra-deep);border-color:#fff;font-weight:800}
+.wfoot{display:flex;justify-content:space-between;margin-top:13px;font-size:9.5px;opacity:.85}
+.wbar{height:26px;margin-top:10px;border-radius:6px;background:repeating-linear-gradient(90deg,#fff 0 2px,transparent 2px 5px);opacity:.9}
+.pnotif{margin-top:12px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);
+       border-radius:12px;padding:9px 11px;color:#fff;animation:rise .5s .9s var(--ease) both}
+.pnotif b{font-size:10.5px;display:flex;gap:6px;align-items:center}
+.pnotif p{font-size:10px;opacity:.8;margin-top:2px}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- KPI row ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+     padding:16px 18px;cursor:pointer;position:relative;
+     transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .2s var(--ease)}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 14px 30px -18px rgba(23,20,18,.25);border-color:var(--line-2)}
+.kpi.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.kpi .lbl{font-size:11px;font-weight:650;letter-spacing:.02em;color:var(--ink-3)}
+.kpi .val{font-size:27px;font-weight:750;letter-spacing:-.03em;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11.5px;font-weight:650;margin-top:3px}
+.kpi .d.up{color:var(--ok)} .kpi .d.dn{color:var(--bad)}
+.spark{position:absolute;right:14px;bottom:14px;opacity:.9}
+
+/* ---------- grid ---------- */
+.cols{display:grid;grid-template-columns:1.55fr 1fr;gap:22px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+       padding:20px 22px;margin-bottom:22px}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.phead h3{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.phead .all{margin-left:auto;font-size:12px;font-weight:650;color:var(--terra)}
+.phead .all:hover{text-decoration:underline}
+
+/* action list */
+.act{display:flex;gap:13px;padding:12px 4px;border-top:1px solid var(--line);align-items:center}
+.act:first-of-type{border-top:none}
+.act .dot{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;
+      justify-content:center;flex-shrink:0;font-size:15px}
+.d-terra{background:var(--terra-soft);color:var(--terra-deep)}
+.d-ok{background:var(--ok-soft);color:var(--ok)}
+.d-bad{background:var(--bad-soft);color:var(--bad)}
+.act b{font-size:13.5px;display:block;letter-spacing:-.005em}
+.act p{font-size:12px;color:var(--ink-3);margin-top:1px}
+.act .go{margin-left:auto;flex-shrink:0;font-size:12px;font-weight:650;color:var(--ink-2);
+      border:1px solid var(--line-2);border-radius:9px;padding:6px 12px;
+      transition:all .18s var(--ease)}
+.act .go:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.act .go.hot{background:var(--terra);border-color:var(--terra);color:#fff}
+.act .go.hot:hover{background:var(--terra-deep)}
+
+/* client rows */
+.crow{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line)}
+.crow:first-of-type{border-top:none}
+.ava{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
+     justify-content:center;font-weight:750;font-size:12.5px;color:#fff}
+.crow b{font-size:13px;display:block}
+.crow p{font-size:11.5px;color:var(--ink-3)}
+.chip{font-size:10.5px;font-weight:700;border-radius:999px;padding:3px 9px;margin-left:auto}
+.c-gold{background:#F5EBD8;color:#8A6508}
+.c-ok{background:var(--ok-soft);color:var(--ok)}
+.c-risk{background:var(--bad-soft);color:var(--bad)}
+.crow .eur{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;width:64px;text-align:right}
+
+/* chart */
+.chart{display:flex;align-items:flex-end;gap:7px;height:120px;padding-top:6px}
+.bar{flex:1;border-radius:6px 6px 3px 3px;background:var(--line);position:relative;
+     transition:background .2s var(--ease);min-height:8px}
+.bar:hover{background:var(--line-2)}
+.bar.t{background:var(--terra)}
+.bar.t:hover{background:var(--terra-deep)}
+.bar span{position:absolute;top:-19px;left:50%;transform:translateX(-50%);
+     font-size:9.5px;font-weight:700;color:var(--ink-3);white-space:nowrap;opacity:0;transition:opacity .15s}
+.bar:hover span{opacity:1}
+.chart-x{display:flex;gap:7px;margin-top:6px}
+.chart-x i{flex:1;text-align:center;font-style:normal;font-size:9.5px;color:var(--ink-3)}
+
+/* AI panel */
+.ai{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:22px}
+.ai-head{background:linear-gradient(120deg,var(--ink) 55%,#3A2C24);color:#fff;padding:16px 20px;
+     display:flex;align-items:center;gap:11px}
+.ai-head .ic{width:30px;height:30px;border-radius:9px;background:var(--terra);
+     display:flex;align-items:center;justify-content:center;font-size:14px}
+.ai-head b{font-size:13.5px}
+.ai-head p{font-size:11px;opacity:.65}
+.ai-body{background:var(--card);padding:6px 20px 14px}
+.sug{padding:12px 0;border-top:1px solid var(--line)}
+.sug:first-child{border-top:none}
+.sug b{font-size:13px;display:block;letter-spacing:-.005em}
+.sug p{font-size:12px;color:var(--ink-2);margin-top:3px;line-height:1.5}
+.sug .row{display:flex;gap:8px;margin-top:9px}
+.sug .mini{font-size:11.5px;font-weight:650;border-radius:8px;padding:5px 12px;
+     transition:all .16s var(--ease)}
+.sug .mini.y{background:var(--terra);color:#fff}
+.sug .mini.y:hover{background:var(--terra-deep)}
+.sug .mini.n{border:1px solid var(--line-2);color:var(--ink-3)}
+.sug .why{font-size:10.5px;color:var(--ink-3);margin-left:auto;align-self:center}
+
+/* toast */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);
+     background:var(--ink);color:#fff;font-size:13px;font-weight:600;border-radius:12px;
+     padding:11px 20px;opacity:0;transition:all .35s var(--ease);z-index:50;
+     box-shadow:0 20px 40px -16px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:960px){
+  .rail{display:none}
+  .hero,.cols{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .main{padding:18px 16px 60px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══════════ RAIL ═══════════ -->
+  <nav class="rail">
+    <div class="logo">
+      <div class="logo-mark">F</div>
+      <div><b>FidClic</b><span>Boulangerie Petit</span></div>
+    </div>
+
+    <div class="nav-cap">Fidélité</div>
+    <button class="nav-item on">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Vue d'ensemble</button>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clients <span class="n">312</span></button>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+      Carte &amp; design</button>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+      Campagnes <span class="n">2</span></button>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      Analytique</button>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 15 8.5l7 .9-5 4.9 1.2 6.9L12 17.8 5.8 21.2 7 14.3 2 9.4l7-.9Z"/></svg>
+      Avis clients</button>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7Z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7Z"/></svg>
+      Parrainage</button>
+
+    <div class="nav-cap">Plateforme</div>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+      Facturation</button>
+    <button class="nav-item">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      Réglages</button>
+  </nav>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Bonjour Karim</h1>
+        <div class="sub">mercredi 7 août · Boulangerie Petit, Tours</div>
+      </div>
+      <span class="live"><i></i> 3 clients en boutique</span>
+      <button class="btn btn-ghost" onclick="toast('QR d\'inscription téléchargé')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM21 14v3M14 21h3M21 21h.01"/></svg>
+        QR d'inscription</button>
+      <button class="btn btn-primary" onclick="toast('Nouvelle campagne : bientôt dans ce prototype')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        Campagne</button>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-kicker">Programme fidélité · en direct</div>
+        <h2>18 clients reviendront grâce à vous cette semaine</h2>
+        <p>Votre carte a été tamponnée 47 fois depuis lundi. 6 récompenses réclamées, 11 clients à un tampon de la leur.</p>
+        <div class="hero-stats">
+          <div class="hstat"><b>312</b><span>cartes actives</span> <span class="up">+9 cette sem.</span></div>
+          <div class="hstat"><b>68<span style="font-size:15px">%</span></b><span>taux de retour</span> <span class="up">+4 pts</span></div>
+          <div class="hstat"><b>23,40&nbsp;€</b><span>panier fidèle moyen</span> <span class="up">vs 14,10 €</span></div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="phone">
+          <div class="screen">
+            <div class="ptime">9:41</div>
+            <div class="wcard">
+              <div class="wtop"><span>BOULANGERIE PETIT</span><span>FIDÉLITÉ</span></div>
+              <div class="wname">Camille Fournier</div>
+              <div class="wsub">Membre depuis mars 2026</div>
+              <div class="stamps">
+                <div class="stamp f">✓</div><div class="stamp f">✓</div><div class="stamp f">✓</div>
+                <div class="stamp f">✓</div><div class="stamp f">✓</div><div class="stamp f">✓</div>
+                <div class="stamp f">✓</div><div class="stamp f">✓</div><div class="stamp f">✓</div>
+                <div class="stamp">10</div>
+              </div>
+              <div class="wfoot"><span>9 / 10 tampons</span><span>Récompense : 1 pâtisserie</span></div>
+              <div class="wbar"></div>
+            </div>
+            <div class="pnotif">
+              <b>🥐 Boulangerie Petit</b>
+              <p>Plus qu'un tampon avant votre pâtisserie offerte !</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI ROW — each tile filters (clickable) -->
+    <section class="kpis">
+      <div class="kpi on" onclick="pick(this,'Tous les clients')">
+        <div class="lbl">Visites · 7 jours</div>
+        <div class="val">147</div>
+        <div class="d up">↑ 12% vs sem. dernière</div>
+        <svg class="spark" width="52" height="22" viewBox="0 0 52 22" fill="none"><path d="M1 18 9 14 17 16 25 9 33 11 41 5 51 3" stroke="#B85C38" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="kpi" onclick="pick(this,'Récompenses réclamées')">
+        <div class="lbl">Récompenses réclamées</div>
+        <div class="val">6</div>
+        <div class="d up">↑ 2 vs sem. dernière</div>
+      </div>
+      <div class="kpi" onclick="pick(this,'Clients à risque')">
+        <div class="lbl">Clients à risque (IA)</div>
+        <div class="val">14</div>
+        <div class="d dn">3 fidèles inclus</div>
+      </div>
+      <div class="kpi" onclick="pick(this,'Nouveaux inscrits')">
+        <div class="lbl">Nouveaux inscrits</div>
+        <div class="val">9</div>
+        <div class="d up">↑ QR comptoir : 7 / 9</div>
+      </div>
+    </section>
+
+    <div class="cols">
+      <div>
+        <!-- ACTIONS -->
+        <section class="panel">
+          <div class="phead"><h3>À faire aujourd'hui</h3><button class="all" onclick="toast('Liste complète : bientôt')">Tout voir</button></div>
+
+          <div class="act">
+            <div class="dot d-terra">🎂</div>
+            <div><b>3 anniversaires cette semaine</b>
+              <p>Camille F., Ahmed B., Lucie M. Offre suggérée : pâtisserie offerte.</p></div>
+            <button class="go hot" onclick="toast('Campagne anniversaire préparée, à valider')">Préparer</button>
+          </div>
+
+          <div class="act">
+            <div class="dot d-bad">↓</div>
+            <div><b>14 clients ne sont pas revenus depuis 30 jours</b>
+              <p>Dont 3 réguliers. L'IA prédit un retour si relance avant vendredi.</p></div>
+            <button class="go" onclick="toast('Relance douce préparée pour 14 clients')">Relancer</button>
+          </div>
+
+          <div class="act">
+            <div class="dot d-ok">★</div>
+            <div><b>2 nouveaux avis, dont un 5 étoiles</b>
+              <p>« Meilleure baguette de Tours », Sophie R. Une réponse est prête.</p></div>
+            <button class="go" onclick="toast('Réponse publiée')">Répondre</button>
+          </div>
+
+          <div class="act">
+            <div class="dot d-terra">🕐</div>
+            <div><b>Happy hour 16h-18h : creux détecté mardi</b>
+              <p>Le mardi après-midi est 40% plus calme. Une offre ciblée peut le remplir.</p></div>
+            <button class="go" onclick="toast('Offre mardi 16h-18h activée')">Activer</button>
+          </div>
+        </section>
+
+        <!-- CHART -->
+        <section class="panel">
+          <div class="phead"><h3>Visites des 14 derniers jours</h3>
+            <span style="font-size:11px;color:var(--ink-3);margin-left:auto">■ jours avec campagne</span></div>
+          <div class="chart" id="chart"></div>
+          <div class="chart-x" id="chartx"></div>
+        </section>
+      </div>
+
+      <div>
+        <!-- AI -->
+        <section class="ai">
+          <div class="ai-head">
+            <div class="ic">◆</div>
+            <div><b>Votre conseiller fidélité</b>
+              <p>Prépare, ne décide jamais. Chaque action attend votre accord.</p></div>
+          </div>
+          <div class="ai-body">
+            <div class="sug">
+              <b>Envoyez vos campagnes le jeudi à 11h</b>
+              <p>Vos clients ouvrent 2,3× plus à ce créneau qu'au hasard. Calculé sur vos 6 derniers envois.</p>
+              <div class="row">
+                <button class="mini y" onclick="toast('Créneau appliqué aux prochains envois')">Appliquer</button>
+                <button class="mini n" onclick="toast('Suggestion ignorée')">Ignorer</button>
+                <span class="why">pourquoi ?</span>
+              </div>
+            </div>
+            <div class="sug">
+              <b>Le palier Or est trop dur à atteindre</b>
+              <p>Seuls 4 clients sur 312 l'ont atteint en 6 mois. Passer de 20 à 15 visites doublerait les prétendants.</p>
+              <div class="row">
+                <button class="mini y" onclick="toast('Palier Or ajusté : 15 visites')">Ajuster</button>
+                <button class="mini n" onclick="toast('Suggestion ignorée')">Garder 20</button>
+                <span class="why">pourquoi ?</span>
+              </div>
+            </div>
+            <div class="sug">
+              <b>Anomalie : mardi 5 août, 0 visite enregistrée</b>
+              <p>Inhabituel pour un mardi. Scanner en panne, ou boutique fermée ?</p>
+              <div class="row">
+                <button class="mini n" onclick="toast('Marqué : fermeture exceptionnelle')">C'était fermé</button>
+                <span class="why">vérifier</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TOP CLIENTS -->
+        <section class="panel">
+          <div class="phead"><h3>Vos fidèles</h3><button class="all" onclick="toast('312 clients : vue complète bientôt')">312 clients</button></div>
+
+          <div class="crow">
+            <div class="ava" style="background:#8A6508">CF</div>
+            <div><b>Camille Fournier</b><p>34 visites · à 1 tampon de sa récompense</p></div>
+            <span class="chip c-gold">Or</span><span class="eur">412 €</span>
+          </div>
+          <div class="crow">
+            <div class="ava" style="background:#57504A">AB</div>
+            <div><b>Ahmed Benali</b><p>28 visites · anniversaire vendredi</p></div>
+            <span class="chip c-gold">Or</span><span class="eur">387 €</span>
+          </div>
+          <div class="crow">
+            <div class="ava" style="background:#96431F">LM</div>
+            <div><b>Lucie Marchand</b><p>21 visites · a parrainé 2 amis</p></div>
+            <span class="chip c-ok">Argent</span><span class="eur">296 €</span>
+          </div>
+          <div class="crow">
+            <div class="ava" style="background:#B3362B">TG</div>
+            <div><b>Thomas Girard</b><p>19 visites · absent depuis 24 jours</p></div>
+            <span class="chip c-risk">À risque</span><span class="eur">254 €</span>
+          </div>
+          <div class="crow">
+            <div class="ava" style="background:#20714C">SR</div>
+            <div><b>Sophie Renaud</b><p>Nouvelle · a laissé un avis 5★</p></div>
+            <span class="chip c-ok">Bronze</span><span class="eur">31 €</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* chart: 14 days, campaign days in terracotta */
+const days=[38,44,41,52,47,29,0,42,49,46,58,53,31,47];
+const cam=[false,false,true,false,false,false,false,false,true,false,true,false,false,false];
+const lbl=['j','v','s','d','l','m','m','j','v','s','d','l','m','m'];
+const max=Math.max(...days);
+const c=document.getElementById('chart'),cx=document.getElementById('chartx');
+days.forEach((v,i)=>{
+  const b=document.createElement('div');
+  b.className='bar'+(cam[i]?' t':'');
+  b.style.height=Math.max(6,(v/max)*100)+'%';
+  b.innerHTML='<span>'+v+' visites</span>';
+  c.appendChild(b);
+  const x=document.createElement('i');x.textContent=lbl[i];cx.appendChild(x);
+});
+
+/* kpi filter feel */
+function pick(el,label){
+  document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('on'));
+  el.classList.add('on');
+  toast('Filtre : '+label);
+}
+let tt;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600);
+}
+</script>
+</body>
+</html>
