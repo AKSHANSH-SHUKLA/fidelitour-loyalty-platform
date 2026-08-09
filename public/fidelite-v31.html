@@ -20,12 +20,64 @@
   --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
 }
 [data-theme="jour"]{
-  --noir:#F6F2E9; --noir-2:#FFFFFF; --noir-3:#EFE8D9;
-  --ivory:#221C13; --ivory-2:#5C5347; --ivory-3:#8D8371;
-  --gold:#A8823D; --gold-hi:#8A6A2E; --gold-deep:#6E541F;
-  --line:rgba(138,106,46,.20); --line-hi:rgba(138,106,46,.45);
-  --ok:#20714C; --risk:#B3362B;
+  --noir:#FFFCF6; --noir-2:#FFFFFF; --noir-3:#FFF2E6;
+  --ivory:#23180F; --ivory-2:#5F5142; --ivory-3:#9A8A78;
+  --gold:#E85D3D; --gold-hi:#C7402B; --gold-deep:#A32E1E;
+  --line:rgba(232,93,61,.16); --line-hi:rgba(232,93,61,.4);
+  --ok:#0F8B58; --risk:#C7402B;
 }
+/* SOLAIRE — the same boulangerie at sunrise. Vivid, warm, luminous. */
+[data-theme="jour"] .veil{background:
+  radial-gradient(55% 40% at 80% -5%,rgba(255,154,90,.28),transparent 70%),
+  radial-gradient(40% 35% at 5% 20%,rgba(255,206,120,.22),transparent 70%),
+  radial-gradient(45% 40% at 60% 105%,rgba(120,180,255,.14),transparent 70%)}
+[data-theme="jour"] .rail{background:rgba(255,255,255,.72);backdrop-filter:blur(14px)}
+[data-theme="jour"] .hleft{
+  background:linear-gradient(140deg,#FF9A5A 0%,#E8433F 58%,#B12A52 100%);
+  border:none;color:#fff}
+[data-theme="jour"] .hleft::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent)}
+[data-theme="jour"] .hleft .eyebrow{color:#FFE0B8}
+[data-theme="jour"] .hleft h2{color:#fff}
+[data-theme="jour"] .hleft h2 em{color:#FFDFA6}
+[data-theme="jour"] .hleft p{color:rgba(255,255,255,.85)}
+[data-theme="jour"] .hs b{color:#fff}
+[data-theme="jour"] .hs span{color:rgba(255,255,255,.75)}
+[data-theme="jour"] .hs .up{color:#CFF5DE}
+[data-theme="jour"] .hs{border-color:rgba(255,255,255,.3)}
+[data-theme="jour"] .cta,[data-theme="jour"] .ago.hot,[data-theme="jour"] .mini.y,
+[data-theme="jour"] .ai-mark{background:linear-gradient(135deg,#FF9A5A,#E8433F);color:#fff}
+[data-theme="jour"] .seg i.f{background:linear-gradient(180deg,#FFB067,#E8433F)}
+[data-theme="jour"] .mb i.hot{background:linear-gradient(180deg,#FFB067,#E8433F)}
+[data-theme="jour"] .sp .bar[style*="gold"]{background:linear-gradient(90deg,#FFB067,#E8433F)!important}
+[data-theme="jour"] .ava{background:linear-gradient(140deg,#FF9A5A,#E8433F);color:#fff}
+[data-theme="jour"] .ava.s{background:linear-gradient(140deg,#8ABDF0,#4A7BC8)}
+[data-theme="jour"] .ava.b{background:linear-gradient(140deg,#F0C468,#C7913C)}
+[data-theme="jour"] .nit.on{color:#C7402B;background:linear-gradient(90deg,rgba(232,93,61,.14),rgba(232,93,61,.03))}
+[data-theme="jour"] .nit.on::before{background:linear-gradient(180deg,#FF9A5A,#E8433F)}
+[data-theme="jour"] .nit .n{background:#E8433F;color:#fff}
+[data-theme="jour"] .logo-mark{background:linear-gradient(140deg,#FF9A5A,#E8433F);color:#fff;
+  box-shadow:0 6px 18px -6px rgba(232,67,63,.5)}
+[data-theme="jour"] .ncap{color:#C7402B}
+[data-theme="jour"] .pt2.on{background:rgba(232,93,61,.14);color:#C7402B}
+/* sunny tinted KPI cards, each its own daylight color */
+[data-theme="jour"] .kpi:nth-child(1){background:#FFF6E0;border-color:#F5DCA0}
+[data-theme="jour"] .kpi:nth-child(2){background:#FFEDE3;border-color:#F7C6A9}
+[data-theme="jour"] .kpi:nth-child(3){background:#E7F7EC;border-color:#B9E3C8}
+[data-theme="jour"] .kpi:nth-child(4){background:#EAF3FF;border-color:#C2D9F6}
+[data-theme="jour"] .kpi:nth-child(1) .l{color:#A87A1C}
+[data-theme="jour"] .kpi:nth-child(2) .l{color:#C7402B}
+[data-theme="jour"] .kpi:nth-child(3) .l{color:#0F8B58}
+[data-theme="jour"] .kpi:nth-child(4) .l{color:#3568B8}
+[data-theme="jour"] .kpi .v,[data-theme="jour"] .kpi .v.g{color:#23180F}
+[data-theme="jour"] .kpi:nth-child(1) svg path{stroke:#D99A1F}
+[data-theme="jour"] .kpi:nth-child(1) svg circle{fill:#A87A1C}
+[data-theme="jour"] .kpi:nth-child(1) svg text{fill:#A87A1C}
+[data-theme="jour"] .kpi:nth-child(4) .mb i{background:rgba(53,104,184,.16)}
+[data-theme="jour"] .kpi:nth-child(4) .mb i.hot{background:linear-gradient(180deg,#7FAEE8,#3568B8)}
+[data-theme="jour"] .kpi.on{border-color:#E8433F;box-shadow:0 0 0 1px rgba(232,67,63,.4)}
+[data-theme="jour"] .badge{color:#0F8B58;border-color:rgba(15,139,88,.3);background:rgba(15,139,88,.06)}
+[data-theme="jour"] .tgl{border-color:rgba(232,93,61,.4);color:#C7402B}
+[data-theme="jour"] .kc-panels{}
 *{box-sizing:border-box;margin:0}
 body{background:var(--noir);color:var(--ivory);
   font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif;
