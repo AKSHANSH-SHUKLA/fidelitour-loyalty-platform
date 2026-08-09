@@ -576,7 +576,7 @@ export default function OwnerDashboard() {
               Single source of truth for both charts below. Owner picks
               a count + unit; both Visits chart and Acquisition chart
               refetch via useTileMetric's controlledDays prop. */}
-          <div style={{
+          <div className="fdz-period" style={{
             display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10,
             margin: '0 0 12px',
           }}>

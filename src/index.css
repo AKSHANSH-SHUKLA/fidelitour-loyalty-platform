@@ -204,7 +204,7 @@ html, body, #root {
 h1, h2, h3, h4 {
   font-weight: 500;
   letter-spacing: -0.022em;
-  color: #1F1B1A;
+  color: var(--flc-ink, #1F1B1A);
 }
 
 /* Opt-in for editorial serif. Used by PremiumLoyaltyCard.ft-card-title-font
@@ -662,7 +662,7 @@ textarea::placeholder {
 }
 .fdt-dash .fd-ai-ico {
   width: 48px; height: 48px; border-radius: 12px;
-  background: linear-gradient(135deg, #7E5E84, #5C3E66); color: white;
+  background: var(--flc-cta, linear-gradient(135deg, #E8703A, #C73E2C 55%, #A82843)); color: var(--flc-on-cta, #FFFFFF);
   display: grid; place-items: center; flex-shrink: 0;
 }
 .fdt-dash .fd-ai-content { flex: 1; min-width: 200px; padding-right: 30px; }
@@ -1164,7 +1164,7 @@ textarea::placeholder {
     #FBF7EF;
   min-height: calc(100vh - 64px);
   padding: 0;
-  color: hsl(228 28% 14%);
+  color: var(--flc-ink, #191410);
 }
 
 /* Re-map the dashboard's tokens for everything nested inside us. */
@@ -1185,7 +1185,7 @@ textarea::placeholder {
   --fd-pos:       hsl(160 84% 50%);
   --fd-neg:       hsl(355 65% 60%);
   --fd-warn:      hsl(42 78% 58%);
-  color: hsl(228 28% 14%);
+  color: var(--flc-ink, #191410);
 }
 
 /* ─── Cards / panels — every white surface becomes the v2 surface. */
@@ -1199,9 +1199,9 @@ textarea::placeholder {
 .av2-light-skin .fd-plan-gauge,
 .av2-light-skin .fd-plan-aside,
 .av2-light-skin .fd-pt-cell {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #ECE3D2 !important;
-  color: hsl(228 28% 14%);
+  color: var(--flc-ink, #191410);
   box-shadow: 0 1px 2px 0 rgba(45, 35, 24, .04), 0 8px 24px -16px rgba(45, 35, 24, .12) !important;
 }
 
@@ -1209,21 +1209,21 @@ textarea::placeholder {
 .av2-light-skin .fd-ai {
   background: rgb(184 92 56 / .08) !important;
   border-color: rgb(184 92 56 / .35) !important;
-  color: hsl(228 28% 14%);
+  color: var(--flc-ink, #191410);
 }
 .av2-light-skin .fd-ai-eyebrow { color: #B85C38 !important; }
-.av2-light-skin .fd-ai-title   { color: hsl(228 28% 14%) !important; }
-.av2-light-skin .fd-ai-text    { color: hsl(228 14% 35%) !important; }
+.av2-light-skin .fd-ai-title   { color: var(--flc-ink, #191410) !important; }
+.av2-light-skin .fd-ai-text    { color: var(--flc-ink2, #3A332B) !important; }
 .av2-light-skin .fd-ai-close   { color: #B85C38 !important; }
 .av2-light-skin .fd-ai-close:hover { background: rgb(184 92 56 / .15) !important; }
 
 /* Page title + LIVE pill */
-.av2-light-skin .fd-title { color: hsl(228 28% 14%) !important; }
+.av2-light-skin .fd-title { color: var(--flc-ink, #191410) !important; }
 .av2-light-skin .fd-live {
   background: hsl(105 30% 38% / .15) !important;
   color: hsl(160 84% 30%) !important;
 }
-.av2-light-skin .fd-sub { color: hsl(228 11% 45%) !important; }
+.av2-light-skin .fd-sub { color: var(--flc-ink3, #524A40) !important; }
 
 /* Primary buttons — V2: terracotta, the page's one accent. */
 .av2-light-skin .fd-btn-primary {
@@ -1242,13 +1242,13 @@ textarea::placeholder {
 
 /* KPI grid — flip pastel surfaces to dark, keep colored icon chips. */
 .av2-light-skin .fd-kpi[class*="k-"] {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border: 1px solid #ECE3D2 !important;
 }
-.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-value { color: hsl(228 28% 14%) !important; }
-.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-label { color: hsl(228 11% 45%) !important; }
-.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-sub   { color: hsl(228 11% 45%) !important; }
-.av2-light-skin .fd-kpi-foot { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-value { color: var(--flc-ink, #191410) !important; }
+.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-label { color: var(--flc-ink3, #524A40) !important; }
+.av2-light-skin .fd-kpi[class*="k-"] .fd-kpi-sub   { color: var(--flc-ink3, #524A40) !important; }
+.av2-light-skin .fd-kpi-foot { color: var(--flc-ink3, #524A40); }
 /* KPI delta pills — darker, saturated colors so they're clearly legible
    on white card backgrounds. Background tint + bold text together. */
 .av2-light-skin .fd-kpi-delta.pos {
@@ -1263,113 +1263,113 @@ textarea::placeholder {
 }
 
 /* Panel headers */
-.av2-light-skin .fd-panel-h     { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-panel-sub   { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-panel-title { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-panel-h     { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-panel-sub   { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-panel-title { color: var(--flc-ink3, #524A40); }
 
 /* Customer Status & breakdown — the stacked colour bar keeps its hues. */
 .av2-light-skin .fd-status-bar {
   background: #E7E5E4 !important;
   border-color: #E7E5E4 !important;
 }
-.av2-light-skin .fd-sc-label   { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-sc-value   { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-sc-sub     { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-mini-val   { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-mini-lbl   { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-mini-name  { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-mini-val   { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-sc-label   { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-sc-value   { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-sc-sub     { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-mini-val   { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-mini-lbl   { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-mini-name  { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-mini-val   { color: var(--flc-ink, #191410); }
 
 /* Charts row — titles, dropdowns, footers. */
-.av2-light-skin .fd-ch-title  { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-ch-title  { color: var(--flc-ink3, #524A40); }
 .av2-light-skin .fd-ch-select {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #ECE3D2 !important;
-  color: hsl(228 14% 35%) !important;
+  color: var(--flc-ink2, #3A332B) !important;
 }
-.av2-light-skin .fd-ch-legend { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-ch-legend { color: var(--flc-ink2, #3A332B); }
 .av2-light-skin .fd-ch-foot   {
   background: rgb(184 92 56 / .08) !important;
-  color: hsl(228 14% 35%) !important;
+  color: var(--flc-ink2, #3A332B) !important;
 }
-.av2-light-skin .fd-cs-lbl { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-cs-val { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-cs-sub { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-pt-lbl { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-pt-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-cs-lbl { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-cs-val { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-cs-sub { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-pt-lbl { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-pt-val { color: var(--flc-ink, #191410); }
 .av2-light-skin .fd-pt-delta      { color: hsl(160 84% 60%); }
 .av2-light-skin .fd-pt-delta.neg  { color: hsl(355 65% 60%); }
 
 /* Donuts — center text and legend rows. */
-.av2-light-skin .fd-donut-val { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-donut-lbl { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-dl-row    { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-dl-pct    { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-dl-val    { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-donut-val { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-donut-lbl { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-dl-row    { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-dl-pct    { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-dl-val    { color: var(--flc-ink, #191410); }
 
 /* Heatmap — the visit-time gradient grid lives in fd-heatmap*. */
 .av2-light-skin .fd-heatmap-wrap { border-color: #ECE3D2 !important; background: #FFFFFF; }
 .av2-light-skin .fd-heatmap thead th {
-  background: #FFFFFF !important;
-  color: hsl(228 11% 45%) !important;
+  background: var(--flc-card, #FFFFFF) !important;
+  color: var(--flc-ink3, #524A40) !important;
 }
 .av2-light-skin .fd-heatmap .fd-hm-hour {
-  background: #FFFFFF !important;
-  color: hsl(228 14% 35%) !important;
+  background: var(--flc-card, #FFFFFF) !important;
+  color: var(--flc-ink2, #3A332B) !important;
 }
 .av2-light-skin .fd-heatmap td { border-top-color: #ECE3D2 !important; }
-.av2-light-skin .fd-hm-legend-lbl  { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-hm-legend-lbl  { color: var(--flc-ink3, #524A40); }
 .av2-light-skin .fd-hm-legend-ramp { border-color: #ECE3D2; }
 
 /* Action tiles (Idées & actions recommandées) */
-.av2-light-skin .fd-action { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-at-title { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-at-desc  { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-action { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-at-title { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-at-desc  { color: var(--flc-ink2, #3A332B); }
 .av2-light-skin .fd-at-btn   { color: white; }
-.av2-light-skin .fd-actions-head .fd-panel-h { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-actions-head .fd-panel-sub { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-actions-head .fd-panel-h { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-actions-head .fd-panel-sub { color: var(--flc-ink2, #3A332B); }
 
 /* Churn cards */
-.av2-light-skin .fd-cc-lbl { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-cc-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-cc-lbl { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-cc-val { color: var(--flc-ink, #191410); }
 .av2-light-skin .fd-cc-val.warn { color: hsl(42 78% 58%) !important; }
-.av2-light-skin .fd-cc-sub { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-ml-row  { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-ml-name { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-ml-val  { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-cc-sub { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-ml-row  { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-ml-name { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-ml-val  { color: var(--flc-ink, #191410); }
 
 /* LTV */
-.av2-light-skin .fd-lc-lbl { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-lc-val { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-lc-lbl { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-lc-val { color: var(--flc-ink, #191410); }
 .av2-light-skin .fd-ltv-card.high {
   background: rgb(184 92 56 / .12) !important;
   border-color: rgb(184 92 56 / .35) !important;
 }
-.av2-light-skin .fd-ltv-table { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-ltv-table th { color: hsl(228 11% 45%); border-bottom-color: #ECE3D2 !important; }
-.av2-light-skin .fd-ltv-table td { border-top-color: #ECE3D2 !important; color: hsl(228 14% 35%); }
+.av2-light-skin .fd-ltv-table { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-ltv-table th { color: var(--flc-ink3, #524A40); border-bottom-color: #ECE3D2 !important; }
+.av2-light-skin .fd-ltv-table td { border-top-color: #ECE3D2 !important; color: var(--flc-ink2, #3A332B); }
 
 /* Plan usage */
-.av2-light-skin .fd-plan-num       { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-plan-num-total { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-plan-num       { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-plan-num-total { color: var(--flc-ink3, #524A40); }
 .av2-light-skin .fd-plan-chip {
   background: rgb(184 92 56 / .15) !important;
   color: #B85C38 !important;
   border-color: rgb(184 92 56 / .35) !important;
 }
-.av2-light-skin .fd-plan-pct { color: hsl(228 11% 45%); }
-.av2-light-skin .fd-pa-h     { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-pa-list  { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-pa-list li b { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-plan-pct { color: var(--flc-ink3, #524A40); }
+.av2-light-skin .fd-pa-h     { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-pa-list  { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-pa-list li b { color: var(--flc-ink, #191410); }
 .av2-light-skin .fd-pa-btn   {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #ECE3D2 !important;
-  color: hsl(228 14% 35%) !important;
+  color: var(--flc-ink2, #3A332B) !important;
 }
 
 /* Right rail — Alertes + Résumé rapide */
-.av2-light-skin .fd-sp-head    { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-sp-title   { color: hsl(228 14% 35%); }
+.av2-light-skin .fd-sp-head    { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-sp-title   { color: var(--flc-ink2, #3A332B); }
 .av2-light-skin .fd-sp-count   {
   background: rgb(184 92 56 / .15) !important;
   color: #B85C38 !important;
@@ -1382,18 +1382,18 @@ textarea::placeholder {
 
 /* Alert items inside the right rail */
 .av2-light-skin .fd-alert {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #ECE3D2 !important;
-  color: hsl(228 14% 35%);
+  color: var(--flc-ink2, #3A332B);
 }
-.av2-light-skin .fd-alert-title { color: hsl(228 28% 14%); }
-.av2-light-skin .fd-alert-sub   { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-alert-time  { color: hsl(228 11% 45%); }
+.av2-light-skin .fd-alert-title { color: var(--flc-ink, #191410); }
+.av2-light-skin .fd-alert-sub   { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-alert-time  { color: var(--flc-ink3, #524A40); }
 
 /* Summary rows (Résumé rapide) */
-.av2-light-skin .fd-sr-row { color: hsl(228 14% 35%); border-bottom-color: #ECE3D2 !important; }
-.av2-light-skin .fd-sr-label { color: hsl(228 14% 35%); }
-.av2-light-skin .fd-sr-value { color: hsl(228 28% 14%); }
+.av2-light-skin .fd-sr-row { color: var(--flc-ink2, #3A332B); border-bottom-color: #ECE3D2 !important; }
+.av2-light-skin .fd-sr-label { color: var(--flc-ink2, #3A332B); }
+.av2-light-skin .fd-sr-value { color: var(--flc-ink, #191410); }
 
 /* Generic links / hint text that may sit on white in places we missed. */
 .av2-light-skin a { color: #B85C38; }
@@ -1410,12 +1410,12 @@ textarea::placeholder {
 .av2-light-skin .recharts-cartesian-grid line { stroke: #ECE3D2 !important; }
 .av2-light-skin .recharts-cartesian-axis-tick text { fill: hsl(228 11% 45%) !important; }
 .av2-light-skin .recharts-default-tooltip {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #E7E5E4 !important;
-  color: hsl(228 28% 14%) !important;
+  color: var(--flc-ink, #191410) !important;
 }
-.av2-light-skin .recharts-tooltip-label { color: hsl(228 11% 45%) !important; }
-.av2-light-skin .recharts-tooltip-item  { color: hsl(228 28% 14%) !important; }
+.av2-light-skin .recharts-tooltip-label { color: var(--flc-ink3, #524A40) !important; }
+.av2-light-skin .recharts-tooltip-item  { color: var(--flc-ink, #191410) !important; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    ANALYTICS V2 — SECTION REORDER FOR FIRST-VIEWPORT IMPACT
@@ -1550,9 +1550,9 @@ textarea::placeholder {
 /* ColorfulKpiTile — the .ft-lift class is on every tile. Override the
    inline cream background + the tile's hardcoded teal-blue number ink. */
 .av2-light-skin .av2-legacy-wrapper .ft-lift {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #ECE3D2 !important;
-  color: hsl(228 28% 14%);
+  color: var(--flc-ink, #191410);
   box-shadow: 0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7) !important;
 }
 
@@ -1564,12 +1564,12 @@ textarea::placeholder {
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"],
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"],
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#F0E8D6]"] {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
 }
 /* Lighter washes (chips, hovers) → slightly elevated dark. */
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"][class*="border"],
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#F4EEE0]"][class*="border"] {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
 }
 
 /* All dark cream ink text → light text. */
@@ -1577,17 +1577,17 @@ textarea::placeholder {
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#1F1B1A]"],
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#2C2A28]"],
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#0F172A]"] {
-  color: hsl(228 28% 14%) !important;
+  color: var(--flc-ink, #191410) !important;
 }
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#57534E]"],
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#3D3431]"],
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#5C544F]"] {
-  color: hsl(228 14% 35%) !important;
+  color: var(--flc-ink2, #3A332B) !important;
 }
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#8B8680]"],
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#7A716C]"],
 .av2-light-skin .av2-legacy-wrapper [class*="text-[#A8A8A8]"] {
-  color: hsl(228 11% 45%) !important;
+  color: var(--flc-ink3, #524A40) !important;
 }
 
 /* All cream borders inside the legacy block → dark hairlines. */
@@ -1604,9 +1604,9 @@ textarea::placeholder {
 .av2-light-skin .av2-legacy-wrapper input[type="date"],
 .av2-light-skin .av2-legacy-wrapper select,
 .av2-light-skin .av2-legacy-wrapper textarea {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #ECE3D2 !important;
-  color: hsl(228 28% 14%) !important;
+  color: var(--flc-ink, #191410) !important;
 }
 
 /* Recharts inside the legacy block — flip grid + tick + tooltip colours
@@ -1614,9 +1614,9 @@ textarea::placeholder {
 .av2-light-skin .av2-legacy-wrapper .recharts-cartesian-grid line { stroke: #ECE3D2 !important; }
 .av2-light-skin .av2-legacy-wrapper .recharts-cartesian-axis-tick text { fill: hsl(228 11% 45%) !important; }
 .av2-light-skin .av2-legacy-wrapper .recharts-default-tooltip {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #E7E5E4 !important;
-  color: hsl(228 28% 14%) !important;
+  color: var(--flc-ink, #191410) !important;
 }
 
 /* Send-campaign pill buttons (orange terracotta on cream → orange on dark). */
@@ -1677,9 +1677,9 @@ textarea::placeholder {
    !important so they win over inline styles. Same approach used by the
    .fd-* card overrides further up. ═══════════════════════════════════════════════════════════════════════ */
 .av2-light-skin .vwcc {
-  background: #FFFFFF !important;
+  background: var(--flc-card, #FFFFFF) !important;
   border-color: #ECE3D2 !important;
-  color: hsl(228 28% 14%);
+  color: var(--flc-ink, #191410);
 }
 /* Headers / titles + body copy inside the chart card. */
 .av2-light-skin .vwcc h2,
@@ -1688,14 +1688,14 @@ textarea::placeholder {
 .av2-light-skin .vwcc span,
 .av2-light-skin .vwcc td,
 .av2-light-skin .vwcc th {
-  color: hsl(228 28% 14%) !important;
+  color: var(--flc-ink, #191410) !important;
 }
 /* Muted secondary text — the small "Sent May 23 · status sent" line,
    chart-axis ticks, table column headers. Slightly dimmer than primary. */
 .av2-light-skin .vwcc .text-xs,
 .av2-light-skin .vwcc p.italic,
 .av2-light-skin .vwcc .text-\[10px\] {
-  color: hsl(228 14% 35%) !important;
+  color: var(--flc-ink2, #3A332B) !important;
 }
 /* The inner KPI cards (rounded-lg p-2.5 bg-white) — flip the background
    and keep numbers / labels readable. */
@@ -1773,8 +1773,10 @@ textarea::placeholder {
   --surface-card:#141110; --surface:#0D0B09; --surface-2:#1C1815;
   --ink:#F5F1E8; --ink-deep:#F5F1E8; --ink-soft:#C9C2B4; --ink-mute:#8D8578;
   --hairline:#2A241E; --brand:#D4AF6E;
-  --fd-bg:#0D0B09; --fd-card:#141110; --fd-text:#F5F1E8; --fd-text-2:#8D8578;
-  --fd-border:#2A241E; --fd-primary:#D4AF6E; --fd-primary-2:#A8823D;
+  --fd-bg:#0D0B09; --fd-card:#141110; --fd-text:#F5F1E8; --fd-text-2:#C9C2B4;
+  --fd-text-3:#8D8578; --fd-border:#2A241E; --fd-divider:#2A241E;
+  --fd-surface-2:#1C1815; --fd-bg-2:#1C1815;
+  --fd-primary:#D4AF6E; --fd-primary-2:#A8823D;
 }
 .flc-nuit .bg-\[\#FFFFFF\],.flc-nuit .bg-\[\#fff\]{background-color:var(--flc-card)!important}
 .flc-nuit .fdt-dash .fd-kpi[class*="k-"]{background:#141110!important;border-color:#2A241E!important}
@@ -1882,3 +1884,28 @@ textarea::placeholder {
 .flc-nuit .fdz-mb i{background:rgba(141,133,120,.2)}
 .fdz-mb i.hot{background:linear-gradient(180deg,#E8703A,#A82843)}
 .flc-nuit .fdz-mb i.hot{background:linear-gradient(180deg,#EBD5A0,#A8823D)}
+
+/* P1 sections slot into the approved .fd-main ordering. */
+.av2-light-skin.fdt-dash .fd-main > .fdz-hero   { order: 0; margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fdz-kpis   { order: 1; margin: 0; }
+.av2-light-skin.fdt-dash .fd-main > .fdz-period { order: 3; margin: 0; }
+
+/* Nuit fixes: hero heading color + heatmap legend ramp + ltv 'high' tint. */
+.fdz-hero h2{color:#FFFFFF}
+.flc-nuit .fdz-hero h2{color:var(--flc-ink)}
+.flc-nuit .fdt-dash .fd-hm-legend-ramp{
+  background:linear-gradient(90deg,#1C1815,#EBD5A0)!important}
+.flc-nuit .fdt-dash .fd-ltv-card.high{
+  background:rgba(212,175,110,.12)!important;border-color:rgba(212,175,110,.35)!important}
+.flc-nuit .fdt-dash .fd-ltv-card.high .fd-lc-val{color:var(--flc-accent-2)}
+
+/* The .av2-light-skin / .fdt-dash blocks re-declare --fd-* on the page
+   root, which beats the .flc-nuit remap (closer element wins). Re-assert
+   the dark values with higher specificity so nuit reaches inline styles. */
+.flc-nuit .av2-light-skin, .flc-nuit .fdt-dash, .flc-nuit.fdt-dash{
+  --fd-bg:#0D0B09; --fd-card:#141110; --fd-surface-2:#1C1815; --fd-bg-2:#1C1815;
+  --fd-text:#F5F1E8; --fd-text-2:#C9C2B4; --fd-text-3:#8D8578;
+  --fd-border:#2A241E; --fd-divider:#2A241E;
+  --fd-primary:#D4AF6E; --fd-primary-2:#A8823D;
+  --fd-pos:#8FCDA8; --fd-neg:#E2938A; --fd-warn:#E8C36A;
+}
