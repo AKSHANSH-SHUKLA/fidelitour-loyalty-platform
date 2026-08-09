@@ -388,7 +388,12 @@ const DashboardLayout = () => {
   // Fidelity dual theme: Eclat (light) / Minuit Dore (dark). The class on the
   // layout root drives every CSS var; PageShell tokens read those vars, so
   // inline styles flip too.
+  // Dark mode is parked until every section renders correctly in it: a
+  // half-dark product is worse than a light one. Re-enable by removing
+  // FLC_DARK_READY gate once the per-component pass is done.
+  const FLC_DARK_READY = false;
   const [nuit, setNuit] = React.useState(() => {
+    if (!FLC_DARK_READY) return false;
     try { return localStorage.getItem('flc-theme') === 'nuit'; } catch { return false; }
   });
   const flipTheme = () => setNuit((v) => {
@@ -755,11 +760,13 @@ const DashboardLayout = () => {
             </div>
 
             {/* Theme: Eclat / Minuit Dore */}
+            {FLC_DARK_READY && (
             <button type="button" onClick={flipTheme} aria-label="Mode jour / nuit"
               className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
               style={{ border: '1px solid var(--flc-line,#ECE8E2)', color: 'var(--flc-ink3,#524A40)' }}>
               {nuit ? '\u2600' : '\u263E'}
             </button>
+            )}
 
             {/* Bell */}
             <div className="shrink-0">
