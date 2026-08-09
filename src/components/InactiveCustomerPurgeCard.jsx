@@ -91,7 +91,7 @@ const InactiveCustomerPurgeCard = ({ id }) => {
       id={id}
       className="rounded-2xl p-6 space-y-4"
       style={{
-        background: 'white',
+        background: 'var(--flc-card, #FFFFFF)',
         border: `1px solid ${C.hairline}`,
         boxShadow: '0 1px 2px rgba(28,25,23,0.04)',
       }}

@@ -411,7 +411,7 @@ export default function CustomersPage() {
       case 'Silver':
         return { bg: '#F3F3F2', text: '#57504A' };
       case 'Bronze':
-        return { bg: '#F5F4F1', text: '#57504A' };
+        return { bg: 'var(--flc-paper2, #F5F4F1)', text: 'var(--flc-ink3, #57504A)' };
       default:
         return { bg: '#E9E5E0', text: '#57504A' };
     }
@@ -419,12 +419,12 @@ export default function CustomersPage() {
 
   const getSourceBadge = (source) => {
     const badges = {
-      'qr_store': { emoji: '📱', label: 'QR in store', bg: '#EBE5F5' },
-      'instagram': { emoji: '📸', label: 'Instagram', bg: '#FCE7F3' },
-      'facebook': { emoji: '👥', label: 'Facebook', bg: '#F3EFFF' },
-      'tiktok': { emoji: '🎵', label: 'TikTok', bg: '#E0F7F4' },
+      'qr_store': { emoji: '📱', label: 'QR in store', bg: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 10%, var(--flc-card, #FFFFFF))' },
+      'instagram': { emoji: '📸', label: 'Instagram', bg: 'color-mix(in srgb, var(--flc-risk, #C22F45) 10%, var(--flc-card, #FFFFFF))' },
+      'facebook': { emoji: '👥', label: 'Facebook', bg: 'color-mix(in srgb, var(--flc-info, #3568B8) 10%, var(--flc-card, #FFFFFF))' },
+      'tiktok': { emoji: '🎵', label: 'TikTok', bg: 'color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, var(--flc-card, #FFFFFF))' },
     };
-    return badges[source] || { emoji: '—', label: '—', bg: '#F3F3F2' };
+    return badges[source] || { emoji: '—', label: '—', bg: 'var(--flc-paper2, #F3F3F2)' };
   };
 
   const exportToCSV = () => {
@@ -485,7 +485,7 @@ export default function CustomersPage() {
     return (
       <div
         className="p-8"
-        style={{ backgroundColor: '#FAFAF8' }}
+        style={{ backgroundColor: 'var(--flc-card, #FAFAF8)' }}
       >
         <p style={{ color: '#B85C38' }}>{t('common.error')}: {error}</p>
       </div>
@@ -511,7 +511,7 @@ export default function CustomersPage() {
             <button
               onClick={exportToCSV}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5"
-              style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}
+              style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}
             >
               <Download size={16} /> {t('customers.export_csv')}
             </button>
@@ -549,7 +549,7 @@ export default function CustomersPage() {
               type="button"
               onClick={() => urlFilterPill.clear && urlFilterPill.clear()}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition hover:bg-white"
-              style={{ background: 'white', border: `1px solid ${urlFilterPill.color}55`, color: urlFilterPill.color }}
+              style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${urlFilterPill.color}55`, color: urlFilterPill.color }}
             >
               <X size={12} /> Clear filter
             </button>
@@ -562,8 +562,8 @@ export default function CustomersPage() {
         <div
           className="flex items-center gap-3 px-4 py-3 rounded-lg border"
           style={{
-            backgroundColor: '#F5F4F1',
-            borderColor: '#E9E5E0',
+            backgroundColor: 'var(--flc-paper2, #F5F4F1)',
+            borderColor: 'var(--flc-line, #E9E5E0)',
           }}
         >
           <Search size={20} style={{ color: '#57504A' }} />
@@ -583,7 +583,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Quick-pick segments — one click to isolate a marketing target */}
-      <div className="mb-6 p-4 rounded-lg border bg-white" style={{ borderColor: '#E9E5E0' }}>
+      <div className="mb-6 p-4 rounded-lg border bg-white" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Zap size={18} style={{ color: '#B85C38' }} />
@@ -681,8 +681,8 @@ export default function CustomersPage() {
       <div
         className="mb-6 p-4 rounded-lg border"
         style={{
-          backgroundColor: '#F5F4F1',
-          borderColor: '#E9E5E0',
+          backgroundColor: 'var(--flc-paper2, #F5F4F1)',
+          borderColor: 'var(--flc-line, #E9E5E0)',
         }}
       >
         <div className="flex items-center gap-2 mb-4">
@@ -717,8 +717,8 @@ export default function CustomersPage() {
               onChange={(e) => setTierFilter(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FAFAF8',
-                borderColor: '#E9E5E0',
+                backgroundColor: 'var(--flc-card, #FAFAF8)',
+                borderColor: 'var(--flc-line, #E9E5E0)',
                 color: '#171412',
                 fontFamily: 'Manrope',
               }}
@@ -748,8 +748,8 @@ export default function CustomersPage() {
               onChange={(e) => setSubscriptionFilter(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FAFAF8',
-                borderColor: '#E9E5E0',
+                backgroundColor: 'var(--flc-card, #FAFAF8)',
+                borderColor: 'var(--flc-line, #E9E5E0)',
                 color: '#171412',
                 fontFamily: 'Manrope',
               }}
@@ -778,8 +778,8 @@ export default function CustomersPage() {
               onChange={(e) => setSourceFilter(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FAFAF8',
-                borderColor: '#E9E5E0',
+                backgroundColor: 'var(--flc-card, #FAFAF8)',
+                borderColor: 'var(--flc-line, #E9E5E0)',
                 color: '#171412',
                 fontFamily: 'Manrope',
               }}
@@ -811,8 +811,8 @@ export default function CustomersPage() {
               onChange={(e) => setMinVisits(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FAFAF8',
-                borderColor: '#E9E5E0',
+                backgroundColor: 'var(--flc-card, #FAFAF8)',
+                borderColor: 'var(--flc-line, #E9E5E0)',
                 color: '#171412',
                 fontFamily: 'Manrope',
               }}
@@ -838,8 +838,8 @@ export default function CustomersPage() {
               onChange={(e) => setMinAmountPaid(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FAFAF8',
-                borderColor: '#E9E5E0',
+                backgroundColor: 'var(--flc-card, #FAFAF8)',
+                borderColor: 'var(--flc-line, #E9E5E0)',
                 color: '#171412',
                 fontFamily: 'Manrope',
               }}
@@ -865,8 +865,8 @@ export default function CustomersPage() {
               onChange={(e) => setPostalCode(e.target.value)}
               className="w-full px-3 py-2 rounded border text-sm outline-none"
               style={{
-                backgroundColor: '#FAFAF8',
-                borderColor: '#E9E5E0',
+                backgroundColor: 'var(--flc-card, #FAFAF8)',
+                borderColor: 'var(--flc-line, #E9E5E0)',
                 color: '#171412',
                 fontFamily: 'Manrope',
               }}
@@ -954,7 +954,7 @@ export default function CustomersPage() {
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-[13px]"
                     style={{
-                      background: 'linear-gradient(135deg, #F8E8E2, #E8C9BC)',
+                      background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 16%, var(--flc-card, #FFFFFF))',
                       color: 'var(--brand-deep)',
                       fontWeight: 500,
                       letterSpacing: '0.01em',

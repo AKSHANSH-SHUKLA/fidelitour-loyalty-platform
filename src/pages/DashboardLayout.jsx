@@ -87,15 +87,11 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
       <Link
         to="/dashboard/settings"
         title={t('nav.settings')}
-        className="relative group flex items-center justify-center px-2 py-2 rounded-lg text-[13.5px] transition-all"
-        style={{
-          color: active ? 'var(--flc-paper, #FFFFFF)' : 'var(--ink-mute)',
-          background: active ? 'var(--flc-ink, #171412)' : 'transparent',
-        }}
+        className={`flc-nav ${active ? 'on' : ''} relative group flex items-center justify-center px-2 py-2 rounded-lg text-[13.5px] transition-all`}
       >
         <span
           className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
-          style={{ color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute }}
+          style={{ color: 'inherit' }}
         >
           <Icon className="w-[18px] h-[18px]" />
         </span>
@@ -115,20 +111,12 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
       <button
         type="button"
         onClick={toggle}
-        className="w-full relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all"
-        style={{
-          color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute,
-          background: active ? 'var(--flc-ink, #171412)' : 'transparent',
-          boxShadow: active ? '0 6px 16px -8px rgba(23,20,18,0.45)' : 'none',
-          fontWeight: active ? 600 : 450,
-        }}
+        className={`flc-nav ${active ? 'on' : ''} w-full relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all`}
+        style={{ fontWeight: active ? 600 : 450 }}
       >
         <span
           className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
-          style={{
-            background: 'transparent',
-            color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute,
-          }}
+          style={{ background: 'transparent', color: 'inherit' }}
         >
           <Icon className="w-[18px] h-[18px]" />
         </span>
@@ -176,20 +164,12 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge })
     <Link
       to={to}
       title={collapsed ? label : undefined}
-      className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-xl text-[13.5px] transition-all`}
-      style={{
-        // V2 "Encre & Terracotta": the active row is a solid ink pill.
-        // The old treatment (white wash + gradient bar + tinted icon chip)
-        // stacked three indicators for one state; one strong one reads faster.
-        color: active ? 'var(--flc-paper, #FFFFFF)' : 'var(--ink-mute)',
-        background: active ? 'var(--flc-ink, #171412)' : 'transparent',
-        boxShadow: active ? '0 6px 16px -8px rgba(23,20,18,0.45)' : 'none',
-        fontWeight: active ? 600 : 450,
-      }}
+      className={`flc-nav ${active ? 'on' : ''} relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-xl text-[13.5px] transition-all`}
+      style={{ fontWeight: active ? 600 : 450 }}
     >
       <span
         className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
-        style={{ color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute }}
+        style={{ color: 'inherit' }}
       >
         <Icon className="w-[18px] h-[18px]" />
       </span>
@@ -388,10 +368,9 @@ const DashboardLayout = () => {
   // Fidelity dual theme: Eclat (light) / Minuit Dore (dark). The class on the
   // layout root drives every CSS var; PageShell tokens read those vars, so
   // inline styles flip too.
-  // Dark mode is parked until every section renders correctly in it: a
-  // half-dark product is worse than a light one. Re-enable by removing
-  // FLC_DARK_READY gate once the per-component pass is done.
-  const FLC_DARK_READY = false;
+  // Dark mode shipped with P3/P4: every dashboard page passed the
+  // dual-theme probe (no bright surfaces left under .flc-nuit).
+  const FLC_DARK_READY = true;
   const [nuit, setNuit] = React.useState(() => {
     if (!FLC_DARK_READY) return false;
     try { return localStorage.getItem('flc-theme') === 'nuit'; } catch { return false; }
@@ -510,10 +489,7 @@ const DashboardLayout = () => {
   return (
     <div
       className={`relative flex min-h-screen fdt-dash flc ${nuit ? "flc-nuit" : ""}`}
-      style={{
-        background: 'var(--flc-paper, #FBFAF8)',
-        transition: 'background 200ms ease',
-      }}
+      style={{ transition: 'background 200ms ease' }}
     >
       <AmbientBackdrop role={role} />
 

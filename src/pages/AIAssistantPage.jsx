@@ -150,7 +150,7 @@ const AIAssistantPage = () => {
         role="business_owner"
         actions={
           <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold"
-               style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}>
+               style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}>
             <span style={{ color: C_PS.terracotta }}>{queriesUsed}</span>
             <span>/</span>
             <span>{queryLimit}</span>

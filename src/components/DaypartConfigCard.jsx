@@ -84,7 +84,7 @@ const DaypartConfigCard = () => {
             type="button"
             onClick={() => usePreset(k)}
             className="px-3 py-1 text-xs rounded-full border transition"
-            style={{ borderColor: C_PS.hairline, background: 'white', color: C_PS.inkSoft }}
+            style={{ borderColor: C_PS.hairline, background: 'var(--flc-card, #FFFFFF)', color: C_PS.inkSoft }}
           >
             {k.charAt(0).toUpperCase() + k.slice(1)}
           </button>
@@ -93,7 +93,7 @@ const DaypartConfigCard = () => {
 
       <div className="space-y-2">
         {dayparts.map((p, i) => (
-          <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg" style={{ background: '#FAFAF8', border: `1px solid ${C_PS.hairline}` }}>
+          <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg" style={{ background: 'var(--flc-paper2, #FAFAF8)', border: `1px solid ${C_PS.hairline}` }}>
             <input
               className="col-span-4 border rounded-lg px-3 py-2 text-sm"
               style={{ borderColor: C_PS.hairline }}
@@ -140,7 +140,7 @@ const DaypartConfigCard = () => {
           type="button"
           onClick={addPart}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border"
-          style={{ borderColor: C_PS.hairline, color: C_PS.inkSoft, background: 'white' }}
+          style={{ borderColor: C_PS.hairline, color: C_PS.inkSoft, background: 'var(--flc-card, #FFFFFF)' }}
         >
           <Plus size={12} /> Ajouter une période
         </button>

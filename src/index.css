@@ -1154,7 +1154,7 @@ textarea::placeholder {
 
 /* Outer page background — kill the cream gradient, switch to solid dark. */
 [data-route-dark="true"] {
-  background: #FBF7EF !important;
+  background: var(--flc-paper, #FBF7EF) !important;
 }
 
 .av2-light-skin {
@@ -1163,7 +1163,7 @@ textarea::placeholder {
   background:
     radial-gradient(900px 600px at 100% -20%, rgba(201, 162, 39, 0.07), transparent 60%),
     radial-gradient(800px 600px at -10% 110%, rgba(107, 46, 90, 0.05), transparent 65%),
-    #FBF7EF;
+    var(--flc-paper, #FBF7EF);
   min-height: calc(100vh - 64px);
   padding: 0;
   color: var(--flc-ink, #191410);
@@ -1775,6 +1775,10 @@ textarea::placeholder {
 /* Legacy tokens: many cards read the old light vars; remap them under nuit. */
 .flc-nuit{
   --surface-card:#141110; --surface:#0D0B09; --surface-2:#1C1815;
+  --surface-sunken:#1C1815; --surface-elevated:#141110; --surface-page:#0D0B09;
+  --brand-soft:rgba(212,175,110,.16); --brand-deep:#EBD5A0;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.5); --shadow-sm:0 1px 3px rgba(0,0,0,.55);
+  --shadow-md:0 4px 14px rgba(0,0,0,.55); --shadow-lg:0 12px 30px rgba(0,0,0,.6);
   --ink:#F5F1E8; --ink-deep:#F5F1E8; --ink-soft:#C9C2B4; --ink-mute:#8D8578;
   --hairline:#2A241E; --brand:#D4AF6E;
   --fd-bg:#0D0B09; --fd-card:#141110; --fd-text:#F5F1E8; --fd-text-2:#C9C2B4;
@@ -1926,3 +1930,91 @@ textarea::placeholder {
   --av2-purple-300: 43 68% 84%; --av2-purple-400: 43 65% 77%;
   --av2-purple: 38 54% 63%; --av2-purple-600: 39 47% 45%;
 }
+
+/* Nuit: tone-family tokens (pills, chips, banners) flip to dark-tinted fills. */
+.flc-nuit{
+  --tone-success-fill:rgba(143,205,168,.13); --tone-success-ink:#8FCDA8;
+  --tone-success-line:#8FCDA8; --tone-success-vivid:#8FCDA8;
+  --tone-success-gradient:linear-gradient(135deg,rgba(143,205,168,.16),rgba(143,205,168,.05));
+  --tone-success-glow:rgba(143,205,168,.20);
+  --tone-warning-fill:rgba(232,195,106,.13); --tone-warning-ink:#E8C36A;
+  --tone-warning-line:#E8C36A; --tone-warning-vivid:#E8C36A;
+  --tone-warning-gradient:linear-gradient(135deg,rgba(232,195,106,.16),rgba(232,195,106,.05));
+  --tone-warning-glow:rgba(232,195,106,.20);
+  --tone-danger-fill:rgba(226,147,138,.13); --tone-danger-ink:#E2938A;
+  --tone-danger-line:#E2938A; --tone-danger-vivid:#E2938A;
+  --tone-danger-gradient:linear-gradient(135deg,rgba(226,147,138,.16),rgba(226,147,138,.05));
+  --tone-danger-glow:rgba(226,147,138,.20);
+  --tone-info-fill:rgba(138,189,240,.13); --tone-info-ink:#8ABDF0;
+  --tone-info-line:#8ABDF0; --tone-info-vivid:#8ABDF0;
+  --tone-info-gradient:linear-gradient(135deg,rgba(138,189,240,.16),rgba(138,189,240,.05));
+  --tone-info-glow:rgba(138,189,240,.20);
+  --tone-purple-fill:rgba(212,175,110,.13); --tone-purple-ink:#D4AF6E;
+  --tone-purple-line:#D4AF6E; --tone-purple-vivid:#D4AF6E;
+  --tone-purple-gradient:linear-gradient(135deg,rgba(212,175,110,.16),rgba(212,175,110,.05));
+  --tone-purple-glow:rgba(212,175,110,.20);
+  --tone-neutral-fill:rgba(141,133,120,.15); --tone-neutral-ink:#C9C2B4;
+  --tone-neutral-line:#8D8578; --tone-neutral-vivid:#8D8578;
+  --tone-neutral-gradient:linear-gradient(135deg,rgba(141,133,120,.18),rgba(141,133,120,.06));
+  --tone-neutral-glow:rgba(141,133,120,.18);
+}
+/* Nuit: stray Tailwind utility fills used on a few chips/banners. */
+.flc-nuit .bg-amber-50{background-color:rgba(232,195,106,.12)!important}
+.flc-nuit .bg-amber-50 *{color:var(--flc-ink2)}
+.flc-nuit .bg-gray-200,.flc-nuit .bg-gray-100{background-color:var(--flc-paper2)!important}
+.flc-nuit .text-gray-800,.flc-nuit .text-gray-700{color:var(--flc-ink2)!important}
+.flc-nuit .bg-emerald-50,.flc-nuit .bg-green-50{background-color:rgba(143,205,168,.12)!important}
+.flc-nuit .bg-red-50,.flc-nuit .bg-rose-50{background-color:rgba(226,147,138,.12)!important}
+.flc-nuit .bg-blue-50,.flc-nuit .bg-sky-50{background-color:rgba(138,189,240,.12)!important}
+/* Nuit: selected-option tint + bare bg-white segments in Card Designer controls. */
+.flc-nuit .bg-\[\#FEF6F0\]{background-color:rgba(212,175,110,.14)!important}
+
+/* Nuit: remaining fd-* light fills on OwnerDashboard. */
+.flc-nuit .fdt-dash .fd-status-bar{background:var(--flc-paper2)!important}
+.flc-nuit .fdt-dash .fd-heatmap-wrap,.flc-nuit .fdt-dash .fd-heatmap{background:transparent!important}
+.flc-nuit .fdt-dash .fd-plan-pct,.flc-nuit .fdt-dash .fd-sm-delta.pos,.flc-nuit .fdt-dash .fd-kpi-delta.pos{
+  background:rgba(143,205,168,.14)!important;color:#8FCDA8!important}
+.flc-nuit .fdt-dash .fd-sm-delta.neg,.flc-nuit .fdt-dash .fd-kpi-delta.neg{
+  background:rgba(226,147,138,.14)!important;color:#E2938A!important}
+.flc-nuit .fdt-dash .fd-alert-ico{background:rgba(212,175,110,.12)!important;color:var(--flc-accent)!important}
+.flc-nuit .fdt-dash .fd-alert-ico.green{background:rgba(143,205,168,.12)!important;color:#8FCDA8!important}
+.flc-nuit .fdt-dash .fd-alert-ico.blue{background:rgba(138,189,240,.12)!important;color:#8ABDF0!important}
+.flc-nuit .fdt-dash .fd-alert-ico.yellow{background:rgba(232,195,106,.12)!important;color:#E8C36A!important}
+.flc-nuit .bg-white\/90{background-color:color-mix(in srgb,var(--flc-card) 90%,transparent)!important}
+.flc-nuit .bg-white\/80,.flc-nuit .bg-white\/70{background-color:color-mix(in srgb,var(--flc-card) 78%,transparent)!important}
+.flc-nuit .bg-amber-100{background-color:rgba(232,195,106,.14)!important;color:#E8C36A!important}
+.flc-nuit .bg-\[\#F2F2F2\]{background-color:var(--flc-paper2)!important}
+
+/* ================================================================
+   ÉCLAT polish — ambient veil, v31 nav pills, serif display numbers
+   ================================================================ */
+/* Ambient veil: one warm flame wash top-right, a faint plum low-left (v31 jour);
+   nuit swaps in the gold veil. Sits on the layout root behind everything. */
+.flc{background:
+  radial-gradient(50% 34% at 82% -4%, rgba(232,112,58,.10), transparent 70%),
+  radial-gradient(38% 30% at 4% 32%, rgba(214,51,92,.05), transparent 70%),
+  var(--flc-paper)}
+.flc-nuit{background:
+  radial-gradient(60% 45% at 72% 0%, rgba(212,175,110,.10), transparent 70%),
+  radial-gradient(45% 40% at 8% 90%, rgba(212,175,110,.05), transparent 70%),
+  var(--flc-paper)}
+
+/* v31 nav pills — flame-tinted active row + gradient edge bar (jour),
+   champagne wash (nuit). One treatment, palette flips. */
+.flc .flc-nav{color:var(--flc-ink3)}
+.flc .flc-nav:hover{color:var(--flc-ink);background:color-mix(in srgb,var(--flc-ink) 4%,transparent)}
+.flc .flc-nav.on{color:#A82843;background:rgba(199,62,44,.07)}
+.flc .flc-nav.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;
+  border-radius:2px;background:linear-gradient(180deg,#E8703A,#A82843)}
+.flc-nuit .flc-nav{color:var(--flc-ink2)}
+.flc-nuit .flc-nav:hover{color:var(--flc-ink);background:rgba(212,175,110,.06)}
+.flc-nuit .flc-nav.on{color:#EBD5A0;background:linear-gradient(90deg,rgba(212,175,110,.14),rgba(212,175,110,.03))}
+.flc-nuit .flc-nav.on::before{background:linear-gradient(180deg,#EBD5A0,#A8823D)}
+
+/* Serif display numbers — Cormorant on the money numbers, DONO modes. */
+.fdt-dash .fd-kpi-value,.fdt-dash .fd-mini-val,.fdt-dash .fd-cs-val,
+.fdt-dash .fd-pt-val,.fdt-dash .fd-cc-val,.fdt-dash .fd-lc-val,
+.fdt-dash .fd-plan-num,.av2-light-skin .av2-num{
+  font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  font-weight:500;letter-spacing:0}
+.fdt-dash .fd-kpi-value{font-size:38px}

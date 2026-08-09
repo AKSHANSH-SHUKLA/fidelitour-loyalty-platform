@@ -533,7 +533,7 @@ export default function OwnerDashboard() {
             <div className="fd-panel-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="fd-panel-title">{t('dashboard.section_customer_status')}</span>
-                <span title={t('dashboard.status_tooltip') || 'État détaillé de chaque segment client'} style={{ width: 16, height: 16, borderRadius: 8, background: '#F4EEE0', color: '#8D857D', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
+                <span title={t('dashboard.status_tooltip') || 'État détaillé de chaque segment client'} style={{ width: 16, height: 16, borderRadius: 8, background: 'var(--flc-paper2, #F4EEE0)', color: 'var(--flc-ink3, #8D857D)', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
               </div>
               <button onClick={() => navigate('/dashboard/customers')} style={{ color: 'var(--fd-primary)', fontSize: 13, fontWeight: 500, border: 0, background: 'transparent', cursor: 'pointer' }}>
                 {t('dashboard.view_all_customers')} →

@@ -157,7 +157,7 @@ const LeafletFranceMap = ({ deptList = [], selectedDept, onSelect }) => {
   return (
     <div className="rounded-lg overflow-hidden border" style={{ borderColor: '#E9E5E0' }}>
       {!ready && (
-        <div className="p-6 text-sm text-center" style={{ color: '#57504A', background: '#F0F7FF' }}>
+        <div className="p-6 text-sm text-center" style={{ color: '#57504A', background: 'color-mix(in srgb, var(--flc-info, #3568B8) 7%, var(--flc-card, #FFFFFF))' }}>
           Loading interactive map…
         </div>
       )}

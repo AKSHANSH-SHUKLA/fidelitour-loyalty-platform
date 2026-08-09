@@ -135,7 +135,7 @@ export default function CatalogManager() {
   }
 
   return (
-    <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E9E5E0', padding: 18 }}>
+    <div style={{ background: 'var(--flc-card, #FFFFFF)', borderRadius: 12, border: '1px solid var(--flc-line, #E9E5E0)', padding: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#171412' }}>
           🧾 Catalogue produits &amp; services
@@ -181,7 +181,7 @@ export default function CatalogManager() {
               value={row.name}
               onChange={(e) => updateRow(i, 'name', e.target.value)}
               placeholder="Ex: Café crème"
-              style={{ padding: '7px 10px', border: '1px solid #E9E5E0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+              style={{ padding: '7px 10px', border: '1px solid var(--flc-line, #E9E5E0)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
             />
             <input
               type="text"
@@ -189,14 +189,14 @@ export default function CatalogManager() {
               value={row.price}
               onChange={(e) => updateRow(i, 'price', e.target.value)}
               placeholder="2,50"
-              style={{ padding: '7px 10px', border: '1px solid #E9E5E0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums' }}
+              style={{ padding: '7px 10px', border: '1px solid var(--flc-line, #E9E5E0)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums' }}
             />
             <input
               type="text"
               value={row.category || ''}
               onChange={(e) => updateRow(i, 'category', e.target.value)}
               placeholder="Boisson"
-              style={{ padding: '7px 10px', border: '1px solid #E9E5E0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+              style={{ padding: '7px 10px', border: '1px solid var(--flc-line, #E9E5E0)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
             />
             <button
               type="button"
@@ -205,7 +205,7 @@ export default function CatalogManager() {
               title="Supprimer"
               style={{
                 width: 36, height: 36, borderRadius: 8,
-                border: '1px solid #E9E5E0', background: 'white', cursor: 'pointer',
+                border: '1px solid var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FFFFFF)', cursor: 'pointer',
                 display: 'grid', placeItems: 'center', color: '#B85C38',
               }}
             >
@@ -222,7 +222,7 @@ export default function CatalogManager() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 14px', borderRadius: 8,
-            border: '1px solid #E9E5E0', background: 'white',
+            border: '1px solid var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FFFFFF)',
             cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: '#171412',
             fontFamily: 'inherit',
           }}
@@ -279,7 +279,7 @@ export default function CatalogManager() {
       {error && (
         <div style={{
           marginTop: 12, padding: '8px 12px', borderRadius: 8,
-          background: '#FCE3DC', color: '#7A2E20', fontSize: 12,
+          background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))', color: 'var(--flc-accent-deep, #7A2E20)', fontSize: 12,
         }}>
           ⚠ {error}
         </div>

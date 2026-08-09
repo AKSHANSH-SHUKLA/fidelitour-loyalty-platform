@@ -1157,7 +1157,7 @@ function NotificationDetailModal({ notification, tenant, card, customerId, onClo
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'white', borderRadius: 18, padding: '24px 22px 18px',
+          background: 'var(--flc-card, #FFFFFF)', borderRadius: 18, padding: '24px 22px 18px',
           maxWidth: 520, width: '100%', maxHeight: '85vh', overflowY: 'auto',
           boxShadow: '0 32px 80px rgba(0,0,0,0.25)',
         }}

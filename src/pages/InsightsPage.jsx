@@ -226,7 +226,7 @@ export default function InsightsPage() {
           <button
             onClick={loadAll}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5"
-            style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}
+            style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}`, color: C_PS.inkSoft }}
           >
             <RefreshCw size={14} /> Refresh
           </button>
@@ -237,7 +237,7 @@ export default function InsightsPage() {
       {proactiveAlerts && Array.isArray(proactiveAlerts.alerts) && proactiveAlerts.alerts.length > 0 && (
         <div
           className="rounded-2xl p-6 relative overflow-hidden"
-          style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+          style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
         >
           <div aria-hidden="true" className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
                style={{ background: C_PS.terracotta }} />
@@ -324,7 +324,7 @@ export default function InsightsPage() {
       {aiSuggestions.length > 0 && (
         <div
           className="rounded-2xl p-6 relative overflow-hidden"
-          style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+          style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
         >
           <div aria-hidden="true" className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
                style={{ background: C_PS.lavender }} />
@@ -380,7 +380,7 @@ export default function InsightsPage() {
       {ltvBreakdown && ltvBreakdown.network && (ltvBreakdown.network.customers || 0) > 0 && (
         <div
           className="rounded-2xl p-6 relative overflow-hidden"
-          style={{ background: 'white', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+          style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
         >
           <div aria-hidden="true" className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl opacity-15 pointer-events-none"
                style={{ background: C_PS.sage }} />

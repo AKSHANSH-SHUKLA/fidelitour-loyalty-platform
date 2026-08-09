@@ -399,7 +399,7 @@ export default function CustomerMapPage() {
   if (error) {
     return (
       <div className="max-w-xl mx-auto mt-12 rounded-2xl p-8 text-center"
-           style={{ background: 'white', border: `1px solid ${C_PS.hairline}` }}>
+           style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}` }}>
         <p className="text-sm" style={{ color: C_PS.terracotta }}>Error: {error}</p>
       </div>
     );
@@ -1398,7 +1398,7 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
     <svg
       viewBox={`0 0 ${SVG_W} ${SVG_H}`}
       className="w-full h-auto"
-      style={{ maxHeight: 580, border: '1px solid #E9E5E0', background: '#F0F7FF', borderRadius: 8 }}
+      style={{ maxHeight: 580, border: '1px solid var(--flc-line, #E9E5E0)', background: 'color-mix(in srgb, var(--flc-info, #3568B8) 7%, var(--flc-card, #FFFFFF))', borderRadius: 8 }}
     >
       {/* Real France mainland — hand-crafted clockwise outline through 76 known
           coastal and border landmarks (Dunkerque → Brest → Bayonne → Marseille

@@ -264,7 +264,7 @@ const AutoCampaignsCard = () => {
           </p>
           <div className="space-y-2 max-h-72 overflow-y-auto">
             {(previews.preview || []).map((p) => (
-              <div key={p.customer_id} className="rounded-lg p-3 text-sm" style={{ background: '#F5F4F1' }}>
+              <div key={p.customer_id} className="rounded-lg p-3 text-sm" style={{ background: 'var(--flc-paper2, #F5F4F1)' }}>
                 <p className="font-semibold" style={{ color: C_PS.inkDeep }}>{p.name}</p>
                 <p style={{ color: C_PS.inkSoft }}>{p.body}</p>
               </div>
@@ -336,7 +336,7 @@ const RunButtons = ({ which, running, onDry, onSend, disabled }) => (
   <div className="flex gap-2 pt-1">
     <button type="button" onClick={() => onDry(which)} disabled={disabled || !!running}
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-40"
-      style={{ background: 'white', color: C_PS.terracotta, border: `1px solid ${C_PS.terracotta}55` }}>
+      style={{ background: 'var(--flc-card, #FFFFFF)', color: C_PS.terracotta, border: `1px solid ${C_PS.terracotta}55` }}>
       <Eye size={12} /> {running === which ? 'Running…' : 'Preview (dry-run)'}
     </button>
     <button type="button" onClick={() => onSend(which)} disabled={disabled || !!running}

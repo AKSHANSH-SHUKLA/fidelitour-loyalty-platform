@@ -387,7 +387,7 @@ function SettingsNavigator() {
         <select
           onChange={(e) => e.target.value && jumpTo(e.target.value)}
           className="flex-1 md:flex-none border rounded-lg px-3 py-1.5 text-sm font-medium"
-          style={{ borderColor: '#E9E5E0', background: 'white', minWidth: 220 }}
+          style={{ borderColor: 'var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FFFFFF)', minWidth: 220 }}
           defaultValue=""
         >
           <option value="" disabled>Choisir une section…</option>
@@ -403,7 +403,7 @@ function SettingsNavigator() {
               type="button"
               onClick={() => jumpTo(s.id)}
               className="px-2.5 py-1 text-[11px] font-semibold rounded-full border transition hover:bg-[#FAFAF8]"
-              style={{ borderColor: '#E9E5E0', color: '#3D2820' }}
+              style={{ borderColor: 'var(--flc-line, #E9E5E0)', color: '#3D2820' }}
             >
               {s.label}
             </button>
@@ -543,7 +543,7 @@ function OwnerGeoCard({ initial }) {
 
       {/* Live phone preview — what a customer entering the geofence sees on their lock screen. */}
       <div className="max-w-2xl mb-6 rounded-xl border p-4 flex flex-col md:flex-row gap-5 items-center"
-           style={{ background: '#FDF8F0', borderColor: '#E3A86955' }}>
+           style={{ background: 'color-mix(in srgb, var(--flc-warn, #A8862D) 8%, var(--flc-card, #FFFFFF))', borderColor: '#E3A86955' }}>
         <PhonePushPreview
           businessName="Your shop"
           title="📍 You're just nearby!"

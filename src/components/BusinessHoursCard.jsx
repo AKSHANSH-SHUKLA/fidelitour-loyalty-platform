@@ -134,7 +134,7 @@ const BusinessHoursCard = () => {
         </h3>
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: C_PS.hairline }}>
           <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest"
-               style={{ color: C_PS.inkMute, background: '#FAFAF8', borderBottom: `1px solid ${C_PS.hairline}` }}>
+               style={{ color: C_PS.inkMute, background: 'var(--flc-paper2, #FAFAF8)', borderBottom: `1px solid ${C_PS.hairline}` }}>
             <span className="col-span-3">Jour</span>
             <span className="col-span-3">Ouverture</span>
             <span className="col-span-3">Fermeture</span>
@@ -143,7 +143,7 @@ const BusinessHoursCard = () => {
           {weekly.map((d, i) => (
             <div key={d.day} className="grid grid-cols-12 gap-2 px-3 py-2 items-center"
                  style={{ borderBottom: i < weekly.length - 1 ? `1px solid ${C_PS.hairline}` : 'none',
-                          background: d.closed ? '#FCE3DC' : 'white' }}>
+                          background: d.closed ? 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))' : 'var(--flc-card, #FFFFFF)' }}>
               <span className="col-span-3 text-sm font-bold" style={{ color: C_PS.inkDeep }}>
                 {DAY_LABELS[d.day] || d.day}
               </span>
@@ -268,7 +268,7 @@ const BusinessHoursCard = () => {
           )}
           {annual.map((r, i) => (
             <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg border"
-                 style={{ background: '#FAFAF8', borderColor: C_PS.hairline }}>
+                 style={{ background: 'var(--flc-paper2, #FAFAF8)', borderColor: C_PS.hairline }}>
               <input
                 className="col-span-4 border rounded px-2 py-1.5 text-sm"
                 style={{ borderColor: C_PS.hairline }}
@@ -308,7 +308,7 @@ const BusinessHoursCard = () => {
             type="button"
             onClick={addRange}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border"
-            style={{ borderColor: C_PS.hairline, color: C_PS.inkSoft, background: 'white' }}
+            style={{ borderColor: C_PS.hairline, color: C_PS.inkSoft, background: 'var(--flc-card, #FFFFFF)' }}
           >
             <Plus size={12} /> Ajouter une plage
           </button>

@@ -59,7 +59,7 @@ const HistoryPage = () => {
   const StatPill = ({ label, value, icon: Icon }) => (
     <div
       className="rounded-xl p-4 flex items-center gap-3"
-      style={{ background: 'white', border: `1px solid ${C_PS.hairline}` }}
+      style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}` }}
     >
       <div
         className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"

@@ -57,7 +57,7 @@ export default function LanguageSwitcher({ variant = 'full' }) {
                 fontSize: 13,
                 borderRadius: 6,
                 border: active ? '1px solid #B85C38' : '1px solid #E9E5E0',
-                background: active ? '#FFF1EA' : 'white',
+                background: active ? 'color-mix(in srgb, var(--flc-accent-2, #E8703A) 12%, var(--flc-card, #FFFFFF))' : 'var(--flc-card, #FFFFFF)',
                 cursor: 'pointer',
                 font: 'inherit',
                 lineHeight: 1,
@@ -73,8 +73,8 @@ export default function LanguageSwitcher({ variant = 'full' }) {
 
   return (
     <div style={{
-      background: 'white',
-      border: '1px solid #E9E5E0',
+      background: 'var(--flc-card, #FFFFFF)',
+      border: '1px solid var(--flc-line, #E9E5E0)',
       borderRadius: 12,
       padding: 18,
     }}>
@@ -97,7 +97,7 @@ export default function LanguageSwitcher({ variant = 'full' }) {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '8px 14px', borderRadius: 10,
                 border: active ? '1px solid #B85C38' : '1px solid #E9E5E0',
-                background: active ? '#FFF1EA' : 'white',
+                background: active ? 'color-mix(in srgb, var(--flc-accent-2, #E8703A) 12%, var(--flc-card, #FFFFFF))' : 'var(--flc-card, #FFFFFF)',
                 cursor: 'pointer',
                 color: '#171412', font: 'inherit', fontSize: 13.5, fontWeight: 500,
                 minWidth: 120,
@@ -112,7 +112,7 @@ export default function LanguageSwitcher({ variant = 'full' }) {
         })}
       </div>
       {current === 'ar' && (
-        <p style={{ marginTop: 12, fontSize: 11.5, color: '#A04A1F', background: '#FFF1EA', padding: '6px 10px', borderRadius: 8 }}>
+        <p style={{ marginTop: 12, fontSize: 11.5, color: 'var(--flc-accent-deep, #A04A1F)', background: 'color-mix(in srgb, var(--flc-accent-2, #E8703A) 12%, var(--flc-card, #FFFFFF))', padding: '6px 10px', borderRadius: 8 }}>
           ⚠ {t('settings.language_ar_hint')}
         </p>
       )}

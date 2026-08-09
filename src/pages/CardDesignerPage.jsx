@@ -348,7 +348,7 @@ export default function CardDesignerPage() {
               onClick={sendPush}
               disabled={pushing}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
-              style={{ background: 'white', border: `1px solid ${C_PS.terracotta}`, color: C_PS.terracotta }}
+              style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.terracotta}`, color: C_PS.terracotta }}
             >
               <Send size={14} /> {pushing ? 'Sending…' : 'Send push'}
             </button>
@@ -805,7 +805,7 @@ export default function CardDesignerPage() {
                         <button key={t.key} type="button"
                                 onClick={() => setBrand((b) => ({ ...b, strip_type: t.key }))}
                                 className="px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
-                                style={{ background: active ? '#171412' : 'white', color: active ? 'white' : '#171412', border: '1px solid #E9E5E0' }}>
+                                style={{ background: active ? 'var(--flc-ink, #171412)' : 'var(--flc-card, #FFFFFF)', color: active ? 'var(--flc-paper, #FFFFFF)' : 'var(--flc-ink, #171412)', border: '1px solid var(--flc-line, #E9E5E0)' }}>
                           {t.label}
                         </button>
                       );
@@ -1269,13 +1269,13 @@ export default function CardDesignerPage() {
                   </div>
                 </div>
                 {/* Home indicator bar */}
-                <div aria-hidden="true" style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 110, height: 5, background: '#FFFFFF', borderRadius: 3, opacity: 0.9 }} />
+                <div aria-hidden="true" style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', width: 110, height: 5, background: 'var(--flc-card, #FFFFFF)', borderRadius: 3, opacity: 0.9 }} />
               </div>
             </div>
 
             {/* Map text — pictorial legend that shows what each band contains
                 and which editor section controls it. */}
-            <div className="mt-3 rounded-xl border bg-white p-3" style={{ borderColor: '#E9E5E0' }}>
+            <div className="mt-3 rounded-xl border bg-white p-3" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-[#8D857D] mb-2">Carte — légende</p>
               <ul className="space-y-2 text-[11.5px]">
                 <li className="flex items-start gap-2">

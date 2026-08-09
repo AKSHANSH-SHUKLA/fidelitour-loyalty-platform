@@ -73,11 +73,11 @@ function NotificationEnablePrompt({ customerName, barcodeId }) {
 
       {showQR && (
         <div style={{
-          marginTop: 12, padding: 14, background: '#FFFFFF',
+          marginTop: 12, padding: 14, background: 'var(--flc-card, #FFFFFF)',
           borderRadius: 10, border: '1px solid #E9E5E0',
           display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
         }}>
-          <div style={{ flexShrink: 0, padding: 8, background: '#FFFFFF', borderRadius: 6 }}>
+          <div style={{ flexShrink: 0, padding: 8, background: 'var(--flc-card, #FFFFFF)', borderRadius: 6 }}>
             <QRCodeSVG value={cardUrl} size={120} level="M" />
           </div>
           <div style={{ flex: 1, minWidth: 180 }}>
@@ -587,7 +587,7 @@ const ScanPage = () => {
         {tenantInfo && (
           <div
             className="relative mx-auto mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
-            style={{ background: '#FCE3DC', border: '1px solid #B85C3855', color: '#9C4427' }}
+            style={{ background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))', border: '1px solid color-mix(in srgb, var(--flc-accent, #C73E2C) 33%, transparent)', color: 'var(--flc-accent-deep, #9C4427)' }}
           >
             <Building2 size={12} />
             {t('scan.you_are_at')} <b>{tenantInfo.name || t('scan.no_business_name')}</b>
@@ -606,7 +606,7 @@ const ScanPage = () => {
       {branches.length > 0 && (
         <div
           className="w-full rounded-2xl p-4 flex items-center gap-3"
-          style={{ background: 'white', border: `1px solid ${C_SCAN.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
+          style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_SCAN.hairline}`, boxShadow: '0 1px 2px rgba(28,25,23,0.04)' }}
         >
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -622,7 +622,7 @@ const ScanPage = () => {
               value={branchId}
               onChange={(e) => setBranchId(e.target.value)}
               className="w-full mt-1 px-2 py-1 text-sm rounded-lg outline-none"
-              style={{ border: `1px solid ${C_SCAN.hairline}`, background: 'white' }}
+              style={{ border: `1px solid ${C_SCAN.hairline}`, background: 'var(--flc-card, #FFFFFF)' }}
             >
               <option value="">{t('scan.branch_not_tagged')}</option>
               {branches.map((b) => (
@@ -636,7 +636,7 @@ const ScanPage = () => {
       {/* Mode tabs — pill switcher */}
       <div
         className="w-full p-1.5 rounded-full flex"
-        style={{ background: 'white', border: `1px solid ${C_SCAN.hairline}` }}
+        style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_SCAN.hairline}` }}
       >
         {[
           { key: 'manual', label: t('scan.mode_manual'), icon: ScanLine },
@@ -720,7 +720,7 @@ const ScanPage = () => {
                   onChange={handleAmountPaidChange}
                   placeholder="0,00"
                   className="w-full pl-14 pr-4 py-3 rounded-lg border-2 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
-                  style={{ borderColor: '#E9E5E0', background: 'white' }}
+                  style={{ borderColor: 'var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FFFFFF)' }}
                   onFocus={(e) => (e.target.style.borderColor = '#B85C38')}
                   onBlur={(e) => (e.target.style.borderColor = '#E9E5E0')}
                 />
@@ -748,12 +748,12 @@ const ScanPage = () => {
                 staff can pick any photo of the customer's QR. This is the
                 safety net that means scanning always works. */}
             <div className="rounded-xl border-2 border-dashed p-3"
-                 style={{ borderColor: '#E9E5E0', background: '#FAFAF8' }}>
+                 style={{ borderColor: 'var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FAFAF8)' }}>
               <p className="text-[11px] font-semibold mb-2 text-[#57504A] uppercase tracking-wider">
                 {t('scan.camera_blocked')}
               </p>
               <label className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg cursor-pointer text-sm font-semibold border-2 transition-colors"
-                     style={{ borderColor: '#4A90E2', color: '#4A90E2', background: 'white' }}>
+                     style={{ borderColor: '#4A90E2', color: '#4A90E2', background: 'var(--flc-card, #FFFFFF)' }}>
                 <Camera size={16} />
                 {t('scan.import_photo')}
                 <input
@@ -822,7 +822,7 @@ const ScanPage = () => {
                 </label>
                 <div
                   className="rounded-xl border-2 border-[#E9E5E0]"
-                  style={{ background: 'white' }}
+                  style={{ background: 'var(--flc-card, #FFFFFF)' }}
                 >
                   <button
                     type="button"
@@ -861,7 +861,7 @@ const ScanPage = () => {
                                 onClick={() => bumpQty(it.id, -1)}
                                 aria-label={t('scan.qty_minus')}
                                 className="w-8 h-8 rounded-lg border border-[#E9E5E0] text-[#B85C38] font-bold"
-                                style={{ background: 'white', font: 'inherit', cursor: 'pointer' }}
+                                style={{ background: 'var(--flc-card, #FFFFFF)', font: 'inherit', cursor: 'pointer' }}
                               >
                                 −
                               </button>
@@ -873,7 +873,7 @@ const ScanPage = () => {
                                 onClick={() => bumpQty(it.id, +1)}
                                 aria-label={t('scan.qty_plus')}
                                 className="w-8 h-8 rounded-lg border border-[#E9E5E0] text-[#4F7A36] font-bold"
-                                style={{ background: 'white', font: 'inherit', cursor: 'pointer' }}
+                                style={{ background: 'var(--flc-card, #FFFFFF)', font: 'inherit', cursor: 'pointer' }}
                               >
                                 +
                               </button>

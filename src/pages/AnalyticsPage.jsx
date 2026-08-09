@@ -194,9 +194,9 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
               onClick={() => onChange({ mode: 'preset', value: p.v, unit: p.u, sinceDate: '' })}
               className="px-2 py-0.5 rounded-full text-[10.5px] font-medium transition"
               style={{
-                background: active ? '#171412' : '#FFFFFF',
-                color: active ? '#FFFFFF' : '#171412',
-                border: '1px solid ' + (active ? '#171412' : '#E9E5E0'),
+                background: active ? 'var(--flc-ink, #171412)' : 'var(--flc-card, #FFFFFF)',
+                color: active ? 'var(--flc-paper, #FFFFFF)' : 'var(--flc-ink, #171412)',
+                border: '1px solid ' + (active ? 'var(--flc-ink, #171412)' : 'var(--flc-line, #E9E5E0)'),
               }}
             >
               {p.label}

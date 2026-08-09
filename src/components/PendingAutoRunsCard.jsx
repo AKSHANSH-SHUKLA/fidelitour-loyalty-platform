@@ -137,7 +137,7 @@ const PendingAutoRunsCard = ({ id }) => {
 
       {rows.length === 0 ? (
         <div className="rounded-xl p-6 flex flex-col items-center justify-center text-center"
-             style={{ background: '#FAFAF8', border: `1px dashed ${C_PS.hairline}` }}>
+             style={{ background: 'var(--flc-paper2, #FAFAF8)', border: `1px dashed ${C_PS.hairline}` }}>
           <CheckCircle2 size={28} style={{ color: C_PS.sage }} />
           <p className="text-sm font-bold mt-2" style={{ color: C_PS.inkDeep }}>Tout est à jour</p>
           <p className="text-xs mt-1" style={{ color: C_PS.inkMute }}>
@@ -154,7 +154,7 @@ const PendingAutoRunsCard = ({ id }) => {
             const isBusy = !!busy[run.id];
             return (
               <div key={run.id} className="rounded-xl border p-4"
-                   style={{ borderColor: C_PS.hairline, background: '#FAFAF8' }}>
+                   style={{ borderColor: C_PS.hairline, background: 'var(--flc-paper2, #FAFAF8)' }}>
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-widest" style={{ color: C_PS.terracotta }}>

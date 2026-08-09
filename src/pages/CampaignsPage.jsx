@@ -50,7 +50,7 @@ function ReEnableNotificationsButton() {
       <button
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm hover:-translate-y-0.5"
-        style={{ background: '#FFFFFF', color: '#B85C38', border: '1px solid rgb(184 92 56 / .35)' }}
+        style={{ background: 'var(--flc-card, #FFFFFF)', color: '#B85C38', border: '1px solid rgb(184 92 56 / .35)' }}
         title="Send SMS to customers who don't receive push notifications, asking them to enable"
       >
         <BellRing size={14} /> Re-enable notifications
@@ -67,7 +67,7 @@ function ReEnableNotificationsButton() {
           }}
         >
           <div style={{
-            background: '#FFFFFF', borderRadius: 16,
+            background: 'var(--flc-card, #FFFFFF)', borderRadius: 16,
             width: 'min(520px, 100%)', maxHeight: 'calc(100vh - 32px)', overflow: 'auto',
             border: '1px solid #E9E5E0',
             boxShadow: '0 24px 60px -20px rgba(28,25,23,.25)',
@@ -772,7 +772,7 @@ export default function CampaignsPage() {
       <div>
 
         {/* ============= Quick Send panel ============= */}
-        <div className="mb-6 rounded-lg border" style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}>
+        <div className="mb-6 rounded-lg border" style={{ borderColor: 'var(--flc-line, #E9E5E0)', backgroundColor: 'var(--flc-card, #FAFAF8)' }}>
           <button
             onClick={() => setQuickOpen((v) => !v)}
             className="w-full flex items-center justify-between p-4 hover:bg-[#F5F4F1] transition rounded-lg"
@@ -794,7 +794,7 @@ export default function CampaignsPage() {
           </button>
 
           {quickOpen && (
-            <div className="p-4 border-t" style={{ borderColor: '#E9E5E0' }}>
+            <div className="p-4 border-t" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#57504A] uppercase mb-1">Campaign Name</label>
@@ -804,7 +804,7 @@ export default function CampaignsPage() {
                     onChange={(e) => setQuickName(e.target.value)}
                     placeholder="e.g. Weekend Offer"
                     className="w-full px-3 py-2 border rounded-lg"
-                    style={{ borderColor: '#E9E5E0' }}
+                    style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}
                   />
                 </div>
                 <div>
@@ -815,7 +815,7 @@ export default function CampaignsPage() {
                     onChange={(e) => setQuickMessage(e.target.value)}
                     placeholder="Hi {first_name}, 20% off this Saturday..."
                     className="w-full px-3 py-2 border rounded-lg"
-                    style={{ borderColor: '#E9E5E0' }}
+                    style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}
                   />
                 </div>
               </div>
@@ -881,7 +881,7 @@ export default function CampaignsPage() {
                     value={quickFilters.minPoints}
                     onChange={(n) => setQuickFilters({ ...quickFilters, minPoints: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E9E5E0' }}
+                    style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}
                   />
                 </div>
 
@@ -893,7 +893,7 @@ export default function CampaignsPage() {
                     value={quickFilters.minVisits}
                     onChange={(n) => setQuickFilters({ ...quickFilters, minVisits: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E9E5E0' }}
+                    style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}
                   />
                 </div>
 
@@ -906,7 +906,7 @@ export default function CampaignsPage() {
                     onChange={(e) => setQuickFilters({ ...quickFilters, postalCodes: e.target.value })}
                     placeholder="75001,75002"
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E9E5E0' }}
+                    style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}
                   />
                 </div>
 
@@ -919,7 +919,7 @@ export default function CampaignsPage() {
                     value={quickFilters.minAmountPaid}
                     onChange={(n) => setQuickFilters({ ...quickFilters, minAmountPaid: n || 0 })}
                     className="w-full px-2 py-1.5 border rounded-lg text-sm"
-                    style={{ borderColor: '#E9E5E0' }}
+                    style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}
                   />
                 </div>
               </div>
@@ -978,7 +978,7 @@ export default function CampaignsPage() {
           });
           const rows = Object.entries(perSource).sort((a, b) => b[1].delivered - a[1].delivered);
           return (
-            <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E9E5E0' }}>
+            <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                   Campaign performance by channel
@@ -993,7 +993,7 @@ export default function CampaignsPage() {
                   const visitPct = row.delivered > 0 ? Math.round((row.visits / row.delivered) * 100) : 0;
                   const label = src === 'push' ? 'Wallet Push' : src[0].toUpperCase() + src.slice(1);
                   return (
-                    <div key={src} className="p-3 rounded-lg border" style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}>
+                    <div key={src} className="p-3 rounded-lg border" style={{ borderColor: 'var(--flc-line, #E9E5E0)', backgroundColor: 'var(--flc-card, #FAFAF8)' }}>
                       <p className="text-xs font-semibold text-[#B85C38] uppercase tracking-wider">{label}</p>
                       <p className="text-2xl font-bold text-[#171412]">{row.count}</p>
                       <p className="text-[11px] text-[#8D857D]">campaigns · {row.delivered} delivered</p>
@@ -1011,7 +1011,7 @@ export default function CampaignsPage() {
 
         {/* Scheduled campaigns — upcoming sends with cancel controls */}
         {scheduledCampaigns.length > 0 && (
-          <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: '#E9E5E0' }}>
+          <div className="mb-6 border rounded-xl p-5 bg-white" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <CalendarClock size={18} style={{ color: '#B85C38' }} />
@@ -1111,11 +1111,11 @@ export default function CampaignsPage() {
                 <div
                   key={campaign.id}
                   className="border rounded-lg overflow-hidden transition hover:shadow-md"
-                  style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}
+                  style={{ borderColor: 'var(--flc-line, #E9E5E0)', backgroundColor: 'var(--flc-card, #FAFAF8)' }}
                 >
                   {/* Hero image strip — appears at top of the card if the campaign has one */}
                   {campaign.image_url && (
-                    <div className="relative h-40 overflow-hidden border-b" style={{ borderColor: '#E9E5E0' }}>
+                    <div className="relative h-40 overflow-hidden border-b" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
                       <img
                         src={campaign.image_url}
                         alt=""
@@ -1141,7 +1141,7 @@ export default function CampaignsPage() {
                             className="px-2 py-0.5 text-xs rounded-full font-semibold capitalize"
                             style={{
                               backgroundColor:
-                                campaign.source === 'push' ? '#F5F4F1'
+                                campaign.source === 'push' ? 'var(--flc-paper2, #F5F4F1)'
                                 : campaign.source === 'email' ? '#E8F5E9'
                                 : '#F5F4F0',
                               color: '#171412',
@@ -1173,7 +1173,7 @@ export default function CampaignsPage() {
                         <button
                           onClick={() => openEditDraft(campaign)}
                           className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition border"
-                          style={{ borderColor: '#B85C38', color: '#B85C38', backgroundColor: '#FAFAF8' }}
+                          style={{ borderColor: '#B85C38', color: '#B85C38', backgroundColor: 'var(--flc-card, #FAFAF8)' }}
                           title="Edit this draft before sending"
                         >
                           <Pencil size={16} />
@@ -1306,7 +1306,7 @@ export default function CampaignsPage() {
 
                   {/* Message preview — content is the canonical field on the
                       backend; legacy clients used `message`, so fall through. */}
-                  <div className="mb-4 p-4 rounded whitespace-pre-wrap" style={{ backgroundColor: '#F5F4F1' }}>
+                  <div className="mb-4 p-4 rounded whitespace-pre-wrap" style={{ backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                     <p style={{ color: '#57504A', fontFamily: 'Manrope' }} className="text-sm">
                       {campaign.content || campaign.message || <span className="italic text-[#8D857D]">(no message yet)</span>}
                     </p>
@@ -1351,8 +1351,8 @@ export default function CampaignsPage() {
       {/* Create Campaign Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FAFAF8' }}>
-            <div className="border-b p-6 relative" style={{ borderColor: '#E9E5E0' }}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: 'var(--flc-card, #FAFAF8)' }}>
+            <div className="border-b p-6 relative" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <button
                 type="button"
                 aria-label="Close"
@@ -1385,7 +1385,7 @@ export default function CampaignsPage() {
                   onChange={handleInputChange}
                   placeholder="e.g. Summer Promo"
                   className="w-full px-4 py-2 border rounded-lg"
-                  style={{ borderColor: '#E9E5E0', color: '#171412' }}
+                  style={{ borderColor: 'var(--flc-line, #E9E5E0)', color: '#171412' }}
                 />
               </div>
 
@@ -1427,7 +1427,7 @@ export default function CampaignsPage() {
                       placeholder="Your campaign message — paste any URL or @handle and it'll auto-link."
                       rows={5}
                       className="w-full px-4 py-2 border rounded-lg"
-                      style={{ borderColor: '#E9E5E0', color: '#171412', fontFamily: 'Manrope' }}
+                      style={{ borderColor: 'var(--flc-line, #E9E5E0)', color: '#171412', fontFamily: 'Manrope' }}
                     />
                     <p className="text-[10px] mt-1.5" style={{ color: C_PS.inkMute }}>
                       Pro tip: paste a full <code>https://…</code> URL or an <code>@handle</code> — it becomes a clickable link automatically.
@@ -1477,7 +1477,7 @@ export default function CampaignsPage() {
               </div>
 
               {/* Hero image — optional photo that appears in email + on the wallet card news feed */}
-              <div className="border-t pt-6" style={{ borderColor: '#E9E5E0' }}>
+              <div className="border-t pt-6" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
                 <label className="block text-sm font-semibold mb-1" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   📸 Hero image <span className="font-normal text-[#8D857D]">— optional, but doubles open rates</span>
                 </label>
@@ -1545,7 +1545,7 @@ export default function CampaignsPage() {
               </div>
 
               {/* Send timing — Send now vs. Schedule for later */}
-              <div className="border-t pt-6" style={{ borderColor: '#E9E5E0' }}>
+              <div className="border-t pt-6" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
                 <label className="block text-sm font-semibold mb-3" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   When should this go out?
                 </label>
@@ -1619,14 +1619,14 @@ export default function CampaignsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: '#E9E5E0' }}>
+            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
                 className="px-6 py-2 rounded-lg font-semibold border transition"
-                style={{ borderColor: '#E9E5E0', color: '#57504A' }}
+                style={{ borderColor: 'var(--flc-line, #E9E5E0)', color: '#57504A' }}
               >
                 Cancel
               </button>
@@ -1649,8 +1649,8 @@ export default function CampaignsPage() {
       {/* Send Confirmation Modal */}
       {sendConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full" style={{ backgroundColor: '#FAFAF8' }}>
-            <div className="border-b p-6" style={{ borderColor: '#E9E5E0' }}>
+          <div className="bg-white rounded-lg max-w-2xl w-full" style={{ backgroundColor: 'var(--flc-card, #FAFAF8)' }}>
+            <div className="border-b p-6" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <h2 className="text-3xl font-bold flex items-center gap-3" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                 <AlertCircle size={32} style={{ color: '#B85C38' }} />
                 Send Campaign
@@ -1671,25 +1671,25 @@ export default function CampaignsPage() {
                 <p className="text-sm font-semibold mb-2" style={{ color: '#57504A', fontFamily: 'Manrope' }}>
                   Message
                 </p>
-                <div className="p-4 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                <div className="p-4 rounded" style={{ backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                   <p style={{ color: '#171412', fontFamily: 'Manrope' }}>
                     {sendConfirmation.message}
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 rounded border" style={{ borderColor: '#E3A869', backgroundColor: '#F5F4F1' }}>
+              <div className="p-4 rounded border" style={{ borderColor: '#E3A869', backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                 <p className="font-semibold" style={{ color: '#171412', fontFamily: 'Manrope' }}>
                   This will be sent to <span style={{ color: '#B85C38' }}>{sendConfirmation.targeted_count || sendConfirmation.targetedCount || 0}</span> customers
                 </p>
               </div>
             </div>
 
-            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: '#E9E5E0' }}>
+            <div className="border-t p-6 flex justify-end gap-3" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <button
                 onClick={() => setSendConfirmation(null)}
                 className="px-6 py-2 rounded-lg font-semibold border transition"
-                style={{ borderColor: '#E9E5E0', color: '#57504A' }}
+                style={{ borderColor: 'var(--flc-line, #E9E5E0)', color: '#57504A' }}
               >
                 Cancel
               </button>
@@ -1709,8 +1709,8 @@ export default function CampaignsPage() {
       {/* Tracking Details Drawer */}
       {viewingTrackingId && trackingData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: '#FAFAF8' }}>
-            <div className="border-b p-6" style={{ borderColor: '#E9E5E0' }}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto" style={{ backgroundColor: 'var(--flc-card, #FAFAF8)' }}>
+            <div className="border-b p-6" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
                   Campaign Tracking
@@ -1743,26 +1743,26 @@ export default function CampaignsPage() {
                 const visitPct = denom > 0 ? Math.round((visits / denom) * 100) : 0;
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                    <div className="p-3 rounded" style={{ backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                       <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Sent to</p>
                       <p className="text-2xl font-bold text-[#171412]">{targeted}</p>
                       <p className="text-[10px] text-[#8D857D] mt-0.5">recipients targeted</p>
                     </div>
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                    <div className="p-3 rounded" style={{ backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                       <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Delivered</p>
                       <p className="text-2xl font-bold text-[#171412]">{delivered}</p>
                       <p className="text-[10px] text-[#8D857D] mt-0.5">
                         {targeted > 0 ? `${Math.round((delivered / targeted) * 100)}% of targeted` : '—'}
                       </p>
                     </div>
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                    <div className="p-3 rounded" style={{ backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                       <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Opened</p>
                       <p className="text-2xl font-bold text-[#171412]">
                         {opens}<span className="text-base text-[#8D857D] font-normal"> / {denom}</span>
                       </p>
                       <p className="text-[10px] text-[#4A5D23] mt-0.5 font-semibold">{openPct}% open rate</p>
                     </div>
-                    <div className="p-3 rounded" style={{ backgroundColor: '#F5F4F1' }}>
+                    <div className="p-3 rounded" style={{ backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                       <p className="text-xs text-[#8D857D]" style={{ fontFamily: 'Manrope' }}>Visits after (15d)</p>
                       <p className="text-2xl font-bold text-[#171412]">
                         {visits}<span className="text-base text-[#8D857D] font-normal"> / {denom}</span>
@@ -1780,7 +1780,7 @@ export default function CampaignsPage() {
                 </h3>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {(trackingData.recipients || []).map((recipient, idx) => (
-                    <div key={idx} className="p-3 rounded flex items-center justify-between" style={{ backgroundColor: '#F5F4F1' }}>
+                    <div key={idx} className="p-3 rounded flex items-center justify-between" style={{ backgroundColor: 'var(--flc-paper2, #F5F4F1)' }}>
                       <div>
                         <p className="font-semibold text-[#171412]">{recipient.customer_name || 'Unknown'}</p>
                         <p className="text-xs text-[#8D857D]">{recipient.email}</p>
@@ -1801,7 +1801,7 @@ export default function CampaignsPage() {
               </div>
 
               {/* Toolbar */}
-              <div className="pt-4 border-t flex gap-3" style={{ borderColor: '#E9E5E0' }}>
+              <div className="pt-4 border-t flex gap-3" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
                 <button
                   className="flex-1 px-4 py-2 rounded-lg border font-semibold transition"
                   style={{ borderColor: '#B85C38', color: '#B85C38' }}
@@ -1819,7 +1819,7 @@ export default function CampaignsPage() {
               </div>
             </div>
 
-            <div className="border-t p-6" style={{ borderColor: '#E9E5E0' }}>
+            <div className="border-t p-6" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
               <button
                 onClick={() => {
                   setViewingTrackingId(null);
@@ -1922,7 +1922,7 @@ function CardOverlayPanel() {
   };
 
   return (
-    <div className="mb-6 rounded-lg border" style={{ borderColor: '#E9E5E0', backgroundColor: '#FAFAF8' }}>
+    <div className="mb-6 rounded-lg border" style={{ borderColor: 'var(--flc-line, #E9E5E0)', backgroundColor: 'var(--flc-card, #FAFAF8)' }}>
       <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between p-4 hover:bg-[#F5F4F1] transition rounded-lg">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-[#96431F]/10 flex items-center justify-center">
@@ -1942,7 +1942,7 @@ function CardOverlayPanel() {
       </button>
 
       {open && (
-        <div className="p-4 border-t space-y-4" style={{ borderColor: '#E9E5E0' }}>
+        <div className="p-4 border-t space-y-4" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
           {/* Targeting */}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#96431F] mb-2">1. Cible (filtres)</p>

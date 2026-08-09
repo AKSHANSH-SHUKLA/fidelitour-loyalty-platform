@@ -129,7 +129,7 @@ const TierDefinitionCard = () => {
         </button>
         <button type="button" onClick={recompute} disabled={recomputing}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold disabled:opacity-50"
-          style={{ background: 'white', color: C_PS.terracotta, border: `1px solid ${C_PS.terracotta}55` }}>
+          style={{ background: 'var(--flc-card, #FFFFFF)', color: C_PS.terracotta, border: `1px solid ${C_PS.terracotta}55` }}>
           <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} /> {recomputing ? 'Recomputing…' : 'Recompute now'}
         </button>
         {savedAt && <span className="text-xs" style={{ color: C_PS.inkMute }}>Saved {savedAt.toLocaleTimeString()}</span>}

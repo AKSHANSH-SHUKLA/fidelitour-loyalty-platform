@@ -62,7 +62,7 @@ const PointsRuleCard = ({ id }) => {
     return (
       <section
         className="rounded-2xl p-6"
-        style={{ background: 'white', border: `1px solid ${C.hairline}` }}
+        style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C.hairline}` }}
       >
         <p className="text-sm" style={{ color: C.inkMute }}>Chargement de la règle de points…</p>
       </section>
@@ -74,7 +74,7 @@ const PointsRuleCard = ({ id }) => {
       id={id}
       className="rounded-2xl p-6 space-y-4"
       style={{
-        background: 'white',
+        background: 'var(--flc-card, #FFFFFF)',
         border: `1px solid ${C.hairline}`,
         boxShadow: '0 1px 2px rgba(28,25,23,0.04)',
       }}
@@ -103,7 +103,7 @@ const PointsRuleCard = ({ id }) => {
             onClick={() => setMode('per_visit')}
             className="text-left p-3 rounded-xl transition"
             style={{
-              background: mode === 'per_visit' ? '#FCE3DC' : 'white',
+              background: mode === 'per_visit' ? 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))' : 'var(--flc-card, #FFFFFF)',
               border: `2px solid ${mode === 'per_visit' ? C.terracotta : C.hairline}`,
             }}
           >
@@ -120,7 +120,7 @@ const PointsRuleCard = ({ id }) => {
             onClick={() => setMode('per_euro')}
             className="text-left p-3 rounded-xl transition"
             style={{
-              background: mode === 'per_euro' ? '#FCE3DC' : 'white',
+              background: mode === 'per_euro' ? 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))' : 'var(--flc-card, #FFFFFF)',
               border: `2px solid ${mode === 'per_euro' ? C.terracotta : C.hairline}`,
             }}
           >
