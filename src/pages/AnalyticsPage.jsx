@@ -181,66 +181,59 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
     { key: '1y',   label: '1 an',     v: 1,   u: 'year' },
   ];
   const set = (partial) => onChange({ ...value, ...partial });
+  const UNITS = [
+    { v: 'day', label: 'jours' }, { v: 'week', label: 'semaines' },
+    { v: 'month', label: 'mois' }, { v: 'year', label: 'années' },
+  ];
   return (
-    <div className="rounded-lg border bg-white px-2.5 py-1.5 mb-3 flex items-center gap-2 flex-wrap" style={{ borderColor: '#E9E5E0' }}>
-      <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D] shrink-0">Filtre temps</span>
-      <div className="flex items-center gap-1 flex-wrap">
-        {PRESETS.map((p) => {
-          const active = value.mode === 'preset' && value.value === p.v && value.unit === p.u;
-          return (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => onChange({ mode: 'preset', value: p.v, unit: p.u, sinceDate: '' })}
-              className="px-2 py-0.5 rounded-full text-[10.5px] font-medium transition"
-              style={{
-                background: active ? 'var(--flc-ink, #171412)' : 'var(--flc-card, #FFFFFF)',
-                color: active ? 'var(--flc-paper, #FFFFFF)' : 'var(--flc-ink, #171412)',
-                border: '1px solid ' + (active ? 'var(--flc-ink, #171412)' : 'var(--flc-line, #E9E5E0)'),
-              }}
-            >
-              {p.label}
-            </button>
-          );
-        })}
+    <div className="ftf mb-3">
+      <div className="ftf-left">
+        <span className="ftf-label">Période</span>
+        <div className="ftf-pills">
+          {PRESETS.map((p) => {
+            const active = value.mode === 'preset' && value.value === p.v && value.unit === p.u;
+            return (
+              <button key={p.key} type="button" className={`ftf-pill ${active ? 'on' : ''}`}
+                      onClick={() => onChange({ mode: 'preset', value: p.v, unit: p.u, sinceDate: '' })}>
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
-      <div className="flex-1" />
-      <div className="flex items-center gap-1.5 text-[11.5px] text-[#171412]">
-        <span className="text-[10px] uppercase text-[#8D857D]">Sur mesure :</span>
-        <input
-          type="number"
-          min="1"
-          max="365"
-          value={value.mode === 'custom' ? value.value : ''}
-          placeholder="N"
-          onChange={(e) => {
-            const n = Math.max(1, parseInt(e.target.value, 10) || 1);
-            onChange({ ...value, mode: 'custom', value: n, sinceDate: '' });
-          }}
-          className="w-14 px-2 py-1 rounded border border-[#E9E5E0] text-[11.5px]"
-        />
-        <select
-          value={value.unit}
-          onChange={(e) => onChange({ ...value, mode: 'custom', unit: e.target.value, sinceDate: '' })}
-          className="px-2 py-1 rounded border border-[#E9E5E0] text-[11.5px] bg-white"
-        >
-          <option value="day">jours</option>
-          <option value="week">semaines</option>
-          <option value="month">mois</option>
-          <option value="year">années</option>
-        </select>
+      <div className="ftf-right">
+        <div className={`ftf-group ${value.mode === 'custom' ? 'on' : ''}`} title="Fenêtre sur mesure">
+          <input
+            type="number" min="1" max="999"
+            value={value.mode === 'custom' ? value.value : ''}
+            placeholder="30"
+            onChange={(e) => {
+              const n = Math.max(1, parseInt(e.target.value, 10) || 1);
+              onChange({ ...value, mode: 'custom', value: n, sinceDate: '' });
+            }}
+            className="ftf-num" aria-label="Nombre"
+          />
+          <i className="ftf-sep" />
+          <select
+            value={value.unit}
+            onChange={(e) => onChange({ ...value, mode: 'custom', unit: e.target.value, sinceDate: '' })}
+            className="ftf-unit" aria-label="Unité"
+          >
+            {UNITS.map((u) => <option key={u.v} value={u.v}>{u.label}</option>)}
+          </select>
+        </div>
+        <div className={`ftf-group ${value.mode === 'since' ? 'on' : ''}`} title="Depuis une date">
+          <span className="ftf-mini">depuis</span>
+          <input
+            type="date"
+            value={value.sinceDate || ''}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => onChange({ ...value, mode: 'since', sinceDate: e.target.value })}
+            className="ftf-date" aria-label="Depuis la date"
+          />
+        </div>
+        <span className="ftf-readout">≈ {sharedDays} j</span>
       </div>
-      <div className="flex items-center gap-1.5 text-[11.5px] text-[#171412]">
-        <span className="text-[10px] uppercase text-[#8D857D]">Depuis :</span>
-        <input
-          type="date"
-          value={value.sinceDate || ''}
-          max={new Date().toISOString().slice(0, 10)}
-          onChange={(e) => onChange({ ...value, mode: 'since', sinceDate: e.target.value })}
-          className="px-2 py-1 rounded border border-[#E9E5E0] text-[11.5px] bg-white"
-        />
-      </div>
-      <span className="text-[10px] font-mono text-[#171412] bg-[#FAF6EE] px-2 py-0.5 rounded">{sharedDays} j</span>
     </div>
   );
 };
@@ -983,149 +976,6 @@ const AnalyticsPage = () => {
       </div>
 
       {/* ═════════════════════════════════════════════════════════════════
-          2) GRAPHS + PIE CHARTS — Visites · Acquisition · Donuts · Tier+Acq.
-          ═════════════════════════════════════════════════════════════════ */}
-      {/* Filter A — charts only (Visites + Acquisition). */}
-      <div className="flex items-baseline justify-between gap-3 flex-wrap mt-1 mb-0.5">
-        <h3 className="text-[12px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
-          Fenêtre de temps — Visites · Acquisition
-        </h3>
-        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">
-          {chartsDays} jour{chartsDays === 1 ? '' : 's'}
-        </span>
-      </div>
-      <SharedTimeFilter value={chartsFilter} onChange={setChartsFilter} sharedDays={chartsDays} />
-
-      {/* Visits chart + Acquisition chart — driven by chartsFilter. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <VisitsTwinChart controlledDays={chartsDays} />
-        <WeeklyAcquisitionPanel controlledDays={chartsDays} />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <AcquisitionDonut />
-        <TierDonut />
-      </div>
-
-      {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread. Click any tier to see its customers.">
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {tierData.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E9E5E0] bg-[#FAFAF8] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
-                title={`Click to view ${t.name} customers`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full" style={{ background: TIER_COLORS[t.key] }}></span>
-                  <span className="text-xs font-semibold text-[#171412]">{t.name}</span>
-                </div>
-                <span className="text-lg font-bold">{t.value}</span>
-                <span className="text-[10px] text-[#8D857D]">
-                  {totalCustomers ? `${Math.round((t.value / totalCustomers) * 100)}%` : '—'} · click to view
-                </span>
-                <SendCampaignButton
-                  compact
-                  label={`Send to ${t.name}`}
-                  onClick={() => openComposer(
-                    { type: 'tier', value: t.key },
-                    `Offre exclusive ${t.name} pour {first_name}`,
-                    `Parce que vous êtes ${t.name}, voici une attention spéciale de {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.`
-                  )}
-                />
-              </button>
-            ))}
-          </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={tierData}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="value"
-                labelLine={false}
-                label={({ name, value }) =>
-                  totalCustomers
-                    ? `${name}: ${value} (${Math.round((value / totalCustomers) * 100)}%)`
-                    : `${name}: ${value}`
-                }
-                onClick={(data) => data && drillCustomers(`${data.name} tier customers`, { tier: data.key })}
-                style={{ cursor: 'pointer' }}
-              >
-                {tierData.map((t, i) => (
-                  <Cell key={i} fill={TIER_COLORS[t.key] || '#B85C38'} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
-          {/* Lifetime headline */}
-          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E9E5E0]">
-            <p className="text-3xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
-              {acquisitionTotal}
-            </p>
-            <p className="text-sm text-[#57504A]">customers acquired across all channels (all-time)</p>
-          </div>
-
-          {/* Per-channel KPI tiles — count + percentage. Click to drill into customer list. */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-            {acquisitionChart.map((a) => {
-              const style = SOURCE_STYLE[a.raw] || { color: '#8D857D', bg: '#F5F4F1', icon: '•' };
-              return (
-                <button
-                  key={a.raw}
-                  type="button"
-                  onClick={() => drillCustomers(
-                    `Customers acquired via ${a.name}`,
-                    { source: a.raw }
-                  )}
-                  className="text-left p-3 rounded-lg border border-[#E9E5E0] hover:border-[#B85C38] hover:shadow-sm transition"
-                  style={{ backgroundColor: style.bg }}
-                >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-base">{style.icon}</span>
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: style.color }}>
-                      {a.name}
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-[#171412] leading-tight">
-                    {a.value}
-                    <span className="text-sm text-[#8D857D] font-normal"> customers</span>
-                  </p>
-                  <p className="text-[11px] mt-0.5 font-semibold" style={{ color: style.color }}>
-                    {a.pct}% of total
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={acquisitionChart} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--flc-line, #E9E5E0)" />
-              <XAxis type="number" stroke="var(--flc-ink3, #57504A)" />
-              <YAxis type="category" dataKey="name" stroke="var(--flc-ink3, #57504A)" width={110} />
-              <Tooltip
-                formatter={(value, _name, p) => [`${value} customers (${p?.payload?.pct || 0}%)`, 'Acquired']}
-              />
-              <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                {acquisitionChart.map((row, i) => (
-                  <Cell key={i} fill={(SOURCE_STYLE[row.raw] || {}).color || ACQ_COLORS[i % ACQ_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </section>
-
-      {/* ═════════════════════════════════════════════════════════════════
           3) CUSTOMER STATUS — configurable customer-status KPIs (live).
           ═════════════════════════════════════════════════════════════════ */}
       <CustomerStatusKPI />
@@ -1272,89 +1122,155 @@ const AnalyticsPage = () => {
         </section>
       </div>
 
-      {/* Row 4 — Recovered Filter */}
-      <section
-        className="rounded-xl p-4 relative overflow-hidden"
-        style={{
-          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-ok, #0F8B58) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
-          border: '1px solid color-mix(in srgb, var(--flc-ok, #0F8B58) 27%, transparent)',
-          boxShadow: '0 6px 18px -10px #6FA89C55',
-        }}
-      >
-        <div className="relative flex flex-wrap items-start justify-between gap-3 mb-2">
-          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--flc-ok, #2d5016)' }}>
-            Customize Recovered Customers Filter
-          </h3>
-          <SendCampaignButton
-            label="Send to this filtered group"
-            onClick={() => openComposer(
-              { type: 'recovered', inactive_days: recoveryInactiveDays, window_days: recoveryWindowDays },
-              'Bon retour parmi nous, {first_name} !',
-              'Merci de revenir chez {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.'
-            )}
-          />
-        </div>
-        <p className="text-sm text-[#57504A] mb-4">
-          "Customers who were quiet for X days and came back in the last Y days"
-        </p>
-        <div className="flex flex-wrap items-center gap-6">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-[#57504A]">Inactive for</label>
-            <NumberInput
-              min={1}
-              max={730}
-              emptyValue={30}
-              value={recoveryInactiveDays}
-              onChange={(n) => setRecoveryInactiveDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
-            />
-            <span className="text-sm text-[#57504A]">days,</span>
+      {/* ═════════════════════════════════════════════════════════════════
+          2) GRAPHS + PIE CHARTS — Visites · Acquisition · Donuts · Tier+Acq.
+          ═════════════════════════════════════════════════════════════════ */}
+      {/* Filter A — charts only (Visites + Acquisition). */}
+      <div className="flex items-baseline justify-between gap-3 flex-wrap mt-1 mb-0.5">
+        <h3 className="text-[12px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          Fenêtre de temps — Visites · Acquisition
+        </h3>
+        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">
+          {chartsDays} jour{chartsDays === 1 ? '' : 's'}
+        </span>
+      </div>
+      <SharedTimeFilter value={chartsFilter} onChange={setChartsFilter} sharedDays={chartsDays} />
+
+      {/* Visits chart + Acquisition chart — driven by chartsFilter. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <VisitsTwinChart controlledDays={chartsDays} />
+        <WeeklyAcquisitionPanel controlledDays={chartsDays} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <AcquisitionDonut />
+        <TierDonut />
+      </div>
+
+      {/* Row 3 — tier + acquisition, each tier / source wired to a send CTA */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <ChartCard title="Customer Tier Distribution" hint="How your loyalty tiers are spread. Click any tier to see its customers.">
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {tierData.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E9E5E0] bg-[#FAFAF8] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
+                title={`Click to view ${t.name} customers`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full" style={{ background: TIER_COLORS[t.key] }}></span>
+                  <span className="text-xs font-semibold text-[#171412]">{t.name}</span>
+                </div>
+                <span className="text-lg font-bold">{t.value}</span>
+                <span className="text-[10px] text-[#8D857D]">
+                  {totalCustomers ? `${Math.round((t.value / totalCustomers) * 100)}%` : '—'} · click to view
+                </span>
+                <SendCampaignButton
+                  compact
+                  label={`Send to ${t.name}`}
+                  onClick={() => openComposer(
+                    { type: 'tier', value: t.key },
+                    `Offre exclusive ${t.name} pour {first_name}`,
+                    `Parce que vous êtes ${t.name}, voici une attention spéciale de {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.`
+                  )}
+                />
+              </button>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-[#57504A]">came back in last</label>
-            <NumberInput
-              min={1}
-              max={730}
-              emptyValue={30}
-              value={recoveryWindowDays}
-              onChange={(n) => setRecoveryWindowDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
-            />
-            <span className="text-sm text-[#57504A]">days</span>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie
+                data={tierData}
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                dataKey="value"
+                labelLine={false}
+                label={({ name, value }) =>
+                  totalCustomers
+                    ? `${name}: ${value} (${Math.round((value / totalCustomers) * 100)}%)`
+                    : `${name}: ${value}`
+                }
+                onClick={(data) => data && drillCustomers(`${data.name} tier customers`, { tier: data.key })}
+                style={{ cursor: 'pointer' }}
+              >
+                {tierData.map((t, i) => (
+                  <Cell key={i} fill={TIER_COLORS[t.key] || '#B85C38'} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
+          {/* Lifetime headline */}
+          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E9E5E0]">
+            <p className="text-3xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              {acquisitionTotal}
+            </p>
+            <p className="text-sm text-[#57504A]">customers acquired across all channels (all-time)</p>
           </div>
-          <div className="ml-auto flex items-center gap-3 text-sm text-[#171412] font-medium">
-            <span>
-              <span className="text-[#B85C38] font-bold">{recovered?.count ?? 0}</span> customers match
-              {' '}
-              <span className="text-[#8D857D]">({recovered?.percentage ?? 0}% of base)</span>
-            </span>
-            <button
-              type="button"
-              disabled={!recovered?.count}
-              onClick={() =>
-                setDrill({
-                  title: `Recovered customers — inactive ${recoveryInactiveDays}d, returned within ${recoveryWindowDays}d`,
-                  rows: recovered?.customers || [],
-                  columns: [
-                    { key: 'name', label: 'Customer' },
-                    { key: 'email', label: 'Email' },
-                    { key: 'tier', label: 'Tier', render: (v) => <TierBadge tier={v} /> },
-                    { key: 'total_visits', label: 'Visits' },
-                    { key: 'total_amount_paid', label: 'Spent', render: (v) => `€${(v || 0).toFixed(0)}` },
-                    { key: 'last_inactive_date', label: 'Gap started', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
-                    { key: 'returned_date', label: 'Returned', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
-                  ],
-                })
-              }
-              className="px-3 py-1.5 rounded-lg border text-sm font-semibold transition disabled:opacity-40"
-              style={{ borderColor: '#B85C38', color: '#B85C38' }}
-              title="Show the list of customers that match the filter above"
-            >
-              View the {recovered?.count ?? 0} customer{recovered?.count === 1 ? '' : 's'}
-            </button>
+
+          {/* Per-channel KPI tiles — count + percentage. Click to drill into customer list. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            {acquisitionChart.map((a) => {
+              const style = SOURCE_STYLE[a.raw] || { color: '#8D857D', bg: '#F5F4F1', icon: '•' };
+              return (
+                <button
+                  key={a.raw}
+                  type="button"
+                  onClick={() => drillCustomers(
+                    `Customers acquired via ${a.name}`,
+                    { source: a.raw }
+                  )}
+                  className="text-left p-3 rounded-lg border border-[#E9E5E0] hover:border-[#B85C38] hover:shadow-sm transition"
+                  style={{ backgroundColor: style.bg }}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-base">{style.icon}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: style.color }}>
+                      {a.name}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-[#171412] leading-tight">
+                    {a.value}
+                    <span className="text-sm text-[#8D857D] font-normal"> customers</span>
+                  </p>
+                  <p className="text-[11px] mt-0.5 font-semibold" style={{ color: style.color }}>
+                    {a.pct}% of total
+                  </p>
+                </button>
+              );
+            })}
           </div>
-        </div>
+
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={acquisitionChart} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--flc-line, #E9E5E0)" />
+              <XAxis type="number" stroke="var(--flc-ink3, #57504A)" />
+              <YAxis type="category" dataKey="name" stroke="var(--flc-ink3, #57504A)" width={110} />
+              <Tooltip
+                formatter={(value, _name, p) => [`${value} customers (${p?.payload?.pct || 0}%)`, 'Acquired']}
+              />
+              <Bar dataKey="value" radius={[0, 8, 8, 0]}>
+                {acquisitionChart.map((row, i) => (
+                  <Cell key={i} fill={(SOURCE_STYLE[row.raw] || {}).color || ACQ_COLORS[i % ACQ_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </section>
+
+
+      {/* Visits-by-day with campaign send markers (clickable for details).
+          The two range-selectable charts (acquisition history + visits over
+          time) are now placed up top inside the main analytics grid — no
+          longer duplicated here. */}
+      <VisitsWithCampaignsChart />
 
       {/* Row 4b — Customer reviews & sentiment */}
       <section
@@ -1735,12 +1651,90 @@ const AnalyticsPage = () => {
           onSent={loadAll}
         />
       )}
+      {/* Row 4 — Recovered Filter */}
+      <section
+        className="rounded-xl p-4 relative overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-ok, #0F8B58) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
+          border: '1px solid color-mix(in srgb, var(--flc-ok, #0F8B58) 27%, transparent)',
+          boxShadow: '0 6px 18px -10px #6FA89C55',
+        }}
+      >
+        <div className="relative flex flex-wrap items-start justify-between gap-3 mb-2">
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--flc-ok, #2d5016)' }}>
+            Customize Recovered Customers Filter
+          </h3>
+          <SendCampaignButton
+            label="Send to this filtered group"
+            onClick={() => openComposer(
+              { type: 'recovered', inactive_days: recoveryInactiveDays, window_days: recoveryWindowDays },
+              'Bon retour parmi nous, {first_name} !',
+              'Merci de revenir chez {business_name}. Il te reste {points_to_next_reward} points pour ta prochaine récompense.'
+            )}
+          />
+        </div>
+        <p className="text-sm text-[#57504A] mb-4">
+          "Customers who were quiet for X days and came back in the last Y days"
+        </p>
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-[#57504A]">Inactive for</label>
+            <NumberInput
+              min={1}
+              max={730}
+              emptyValue={30}
+              value={recoveryInactiveDays}
+              onChange={(n) => setRecoveryInactiveDays(n || 30)}
+              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
+            />
+            <span className="text-sm text-[#57504A]">days,</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-[#57504A]">came back in last</label>
+            <NumberInput
+              min={1}
+              max={730}
+              emptyValue={30}
+              value={recoveryWindowDays}
+              onChange={(n) => setRecoveryWindowDays(n || 30)}
+              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
+            />
+            <span className="text-sm text-[#57504A]">days</span>
+          </div>
+          <div className="ml-auto flex items-center gap-3 text-sm text-[#171412] font-medium">
+            <span>
+              <span className="text-[#B85C38] font-bold">{recovered?.count ?? 0}</span> customers match
+              {' '}
+              <span className="text-[#8D857D]">({recovered?.percentage ?? 0}% of base)</span>
+            </span>
+            <button
+              type="button"
+              disabled={!recovered?.count}
+              onClick={() =>
+                setDrill({
+                  title: `Recovered customers — inactive ${recoveryInactiveDays}d, returned within ${recoveryWindowDays}d`,
+                  rows: recovered?.customers || [],
+                  columns: [
+                    { key: 'name', label: 'Customer' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'tier', label: 'Tier', render: (v) => <TierBadge tier={v} /> },
+                    { key: 'total_visits', label: 'Visits' },
+                    { key: 'total_amount_paid', label: 'Spent', render: (v) => `€${(v || 0).toFixed(0)}` },
+                    { key: 'last_inactive_date', label: 'Gap started', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                    { key: 'returned_date', label: 'Returned', render: (v) => v ? new Date(v).toLocaleDateString() : '—' },
+                  ],
+                })
+              }
+              className="px-3 py-1.5 rounded-lg border text-sm font-semibold transition disabled:opacity-40"
+              style={{ borderColor: '#B85C38', color: '#B85C38' }}
+              title="Show the list of customers that match the filter above"
+            >
+              View the {recovered?.count ?? 0} customer{recovered?.count === 1 ? '' : 's'}
+            </button>
+          </div>
+        </div>
+      </section>
 
-      {/* Visits-by-day with campaign send markers (clickable for details).
-          The two range-selectable charts (acquisition history + visits over
-          time) are now placed up top inside the main analytics grid — no
-          longer duplicated here. */}
-      <VisitsWithCampaignsChart />
     </div>
   );
 };

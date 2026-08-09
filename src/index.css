@@ -192,12 +192,8 @@ html, body, #root {
    Inter — restful, modern, less heavy. The Card Designer catalogue
    and PremiumLoyaltyCard .ft-serif-title are excluded via overrides
    below so they keep their editorial character. */
-[style*="Cormorant Garamond"]:not(.ft-serif-title):not(.ft-card-title-font),
-[style*="cormorant garamond"]:not(.ft-serif-title):not(.ft-card-title-font) {
-  font-family: 'Inter', system-ui, sans-serif !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.018em !important;
-}
+/* (retired) inline Cormorant used to be forced to Inter here — the dual
+   theme brought the editorial serif back as the display voice. */
 
 /* Heading defaults — lighter than before. Components can still set their
    own weight when they really need emphasis, but the calm default is 500. */
@@ -1632,40 +1628,11 @@ textarea::placeholder {
   flex-direction: column;
   gap: 14px;
 }
-/* The legacy AnalyticsPage's children (after we hid #1 header and #2 AI
-   banner) are roughly:
-     #3  Lifetime KPI tiles wrapper
-     #4  Filter A heading
-     #5  SharedTimeFilter
-     #6  Visits + Acquisition charts (grid grid-cols-1 lg:grid-cols-2 gap-3)
-     #7  Donuts (AcquisitionDonut + TierDonut)
-     #8  Customer Tier Distribution + Acquisition Sources full panels (section)
-     #9  CustomerStatusKPI
-     #10 Activité section
-     #11 Recovered Filter section
-     #12 Reviews section
-     #13 Rankings section
-   We move the visual blocks (#6, #7, #8) above the KPI tiles, and keep
-   everything else in original order. */
+/* (retired) CSS used to reorder the legacy children — the narrative
+   order now lives in the JSX itself (Vue d'ensemble → statuts →
+   activité → fenêtre charts → impact campagnes → avis → classement →
+   recovered). Keep the flex column so gaps stay uniform. */
 .av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div.space-y-3 > * { margin: 0; }
-/* Filter A heading + SharedTimeFilter — sit at the TOP of the legacy
-   block, immediately above the charts they actually control. (Putting
-   them above the lifetime KPIs was wrong — lifetime KPIs don't use a
-   time filter.) */
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .flex.items-baseline.justify-between.gap-3.flex-wrap { order: 1; }
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .rounded-lg.border.bg-white { order: 2; }
-/* Visits + Acquisition charts row */
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 3; }
-/* Donuts row (Top sources d'acquisition + Tier) */
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > .grid.grid-cols-1.md\:grid-cols-2.gap-3 { order: 4; }
-/* Full Customer Tier Distribution + Acquisition Sources breakdown */
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > section.grid.grid-cols-1.lg\:grid-cols-2.gap-3 { order: 5; }
-/* Lifetime KPI tiles wrapper ("Vue d'ensemble — depuis le début") */
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div:has(> div > h3) { order: 6; }
-/* Everything else (CustomerStatusKPI, Activité, Recovered, Reviews,
-   Rankings) — defaults to a later order so they sit at the end. */
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > section:not(.grid.grid-cols-1.lg\:grid-cols-2.gap-3) { order: 8; }
-.av2-light-skin .av2-legacy-wrapper > div.space-y-3 > div:not(.flex):not(.grid):not(.rounded-lg) { order: 7; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    VisitsWithCampaignsChart — dark-skin overrides
@@ -1703,19 +1670,19 @@ textarea::placeholder {
    and keep numbers / labels readable. */
 .av2-light-skin .vwcc .bg-white,
 .av2-light-skin .vwcc [class*="bg-white"] {
-  background: hsl(228 28% 16%) !important;
-  border-color: hsl(230 32% 22%) !important;
+  background: var(--flc-card, #FFFFFF) !important;
+  border-color: var(--flc-line, #E9E5E0) !important;
 }
 /* Day-detail + campaign-detail accent panels — they use a faint
    colored tint on light. On dark we want a deeper tint of the same
    accent so the panel is still distinguishable but readable. */
 .av2-light-skin .vwcc .rounded-xl.p-4[style] {
-  background: hsl(228 28% 16%) !important;
-  border-color: rgb(184 92 56 / 0.45) !important;
+  background: color-mix(in srgb, var(--flc-accent, #C73E2C) 6%, var(--flc-card, #FFFFFF)) !important;
+  border-color: color-mix(in srgb, var(--flc-accent, #C73E2C) 45%, transparent) !important;
 }
 /* Recipient table rows — divider lines on dark. */
 .av2-light-skin .vwcc [class*="divide-y"] > * {
-  border-color: hsl(230 32% 22%) !important;
+  border-color: var(--flc-line, #E9E5E0) !important;
 }
 /* Tier badges + per-row YES/NO chips — preserve their accent colour
    identity but ensure the surrounding cell is readable. */
@@ -1991,8 +1958,8 @@ textarea::placeholder {
 /* Ambient veil: one warm flame wash top-right, a faint plum low-left (v31 jour);
    nuit swaps in the gold veil. Sits on the layout root behind everything. */
 .flc{background:
-  radial-gradient(50% 34% at 82% -4%, rgba(232,112,58,.10), transparent 70%),
-  radial-gradient(38% 30% at 4% 32%, rgba(214,51,92,.05), transparent 70%),
+  radial-gradient(52% 36% at 82% -4%, rgba(232,112,58,.14), transparent 70%),
+  radial-gradient(40% 32% at 4% 34%, rgba(214,51,92,.07), transparent 70%),
   var(--flc-paper)}
 .flc-nuit{background:
   radial-gradient(60% 45% at 72% 0%, rgba(212,175,110,.10), transparent 70%),
@@ -2018,3 +1985,56 @@ textarea::placeholder {
   font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;
   font-weight:500;letter-spacing:0}
 .fdt-dash .fd-kpi-value{font-size:38px}
+
+/* ================================================================
+   Uniform type system + time-filter (ftf) + vibrancy pass
+   ================================================================ */
+/* Section titles share one editorial voice everywhere. */
+.fdt-dash .fd-panel-h,.fdt-dash .fd-sp-title,
+.av2-light-skin .av2-card h3{
+  font-family:'Cormorant Garamond',Georgia,serif!important;
+  font-weight:600!important;font-size:17px!important;letter-spacing:0!important}
+.av2-light-skin .vwcc h3{font-family:'Cormorant Garamond',Georgia,serif!important;font-weight:600!important}
+
+/* ftf — the shared analytics time filter, one clean bar. */
+.ftf{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:var(--flc-card,#FFFFFF);border:1px solid var(--flc-line,#E9E5E0);
+  border-radius:14px;padding:10px 14px;box-shadow:0 1px 2px rgba(25,20,16,.04)}
+.ftf-left,.ftf-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ftf-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  color:var(--flc-ink3)}
+.ftf-pills{display:inline-flex;gap:3px;border:1px solid var(--flc-line);border-radius:999px;padding:3px;
+  background:color-mix(in srgb,var(--flc-paper2) 60%,transparent)}
+.ftf-pill{font-size:11.5px;font-weight:600;color:var(--flc-ink3);border:none;background:transparent;
+  border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:all .15s ease}
+.ftf-pill:hover{color:var(--flc-ink)}
+.ftf-pill.on{background:var(--flc-cta);color:var(--flc-on-cta);
+  box-shadow:0 4px 12px -4px color-mix(in srgb,var(--flc-accent) 55%,transparent)}
+.ftf-group{display:inline-flex;align-items:center;background:var(--flc-card);
+  border:1px solid var(--flc-line);border-radius:10px;overflow:hidden;transition:border-color .15s}
+.ftf-group.on{border-color:var(--flc-accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--flc-accent) 35%,transparent)}
+.ftf-num{width:52px;border:none!important;background:transparent!important;padding:6px 8px!important;
+  font-size:12.5px!important;font-weight:600;text-align:right;outline:none;color:var(--flc-ink)!important;
+  box-shadow:none!important;border-radius:0!important}
+.ftf-sep{width:1px;height:20px;background:var(--flc-line)}
+.ftf-unit,.ftf-date{border:none!important;background:transparent!important;padding:6px 10px!important;
+  font-size:12px!important;color:var(--flc-ink2)!important;cursor:pointer;outline:none;
+  box-shadow:none!important;border-radius:0!important}
+.ftf-mini{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--flc-ink3);
+  font-weight:600;padding-left:10px}
+.ftf-readout{font-size:11px;font-weight:600;color:var(--flc-accent-deep);
+  background:color-mix(in srgb,var(--flc-accent) 9%,transparent);
+  border-radius:999px;padding:4px 10px;font-variant-numeric:tabular-nums}
+
+/* Éclat vibrancy: the 8 KPI tiles get a soft semantic wash + tone edge. */
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi[class*="k-"]{position:relative}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-blue{background:linear-gradient(180deg,rgba(53,104,184,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(53,104,184,.55),0 1px 2px rgba(25,20,16,.04)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-emerald,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-green,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-mint{background:linear-gradient(180deg,rgba(15,139,88,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(15,139,88,.5),0 1px 2px rgba(25,20,16,.04)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-orange,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-amber,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-yellow,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-coral{background:linear-gradient(180deg,rgba(232,112,58,.08),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(232,112,58,.55),0 1px 2px rgba(25,20,16,.04)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-red,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-rose{background:linear-gradient(180deg,rgba(194,47,69,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(194,47,69,.5),0 1px 2px rgba(25,20,16,.04)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-purple,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-lilac{background:linear-gradient(180deg,rgba(199,62,44,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(199,62,44,.5),0 1px 2px rgba(25,20,16,.04)}
+/* fdz data-viz cards: warm lift on hover already; add faint top sheen. */
+.flc:not(.flc-nuit) .fdz-kpi{background:linear-gradient(180deg,#FFFFFF, #FFFDFB 70%)}
+/* Panels get a hair more depth in light. */
+.flc:not(.flc-nuit) .fdt-dash .fd-panel,.flc:not(.flc-nuit) .av2-light-skin .av2-card{
+  box-shadow:0 1px 2px rgba(25,20,16,.04),0 10px 30px -24px rgba(122,30,63,.18)}

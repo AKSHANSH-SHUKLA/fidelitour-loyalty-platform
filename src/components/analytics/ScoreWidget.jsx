@@ -40,7 +40,7 @@ const ScoreWidget = ({ score = 0, max = 100, delta, denominator = '100' }) => {
           fill="var(--flc-ink, #191410)"
           fontSize="14"
           fontWeight="500"
-          fontFamily="Inter, sans-serif"
+          fontFamily="Cormorant Garamond, Georgia, serif"
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
           {clamped}

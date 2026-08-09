@@ -148,7 +148,13 @@ export default function VisitsTwinChart({ controlledDays = null } = {}) {
                 formatter={(v, name) => [v, name === 'visits' ? 'Visites totales' : 'Clients uniques']}
                 labelFormatter={(l) => `Période ${l}`}
               />
-              <Bar dataKey="visits" fill="#B85C38" radius={[3, 3, 0, 0]} maxBarSize={18} />
+              <defs>
+                <linearGradient id="vtc-bar" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--flc-accent-2, #E8703A)" />
+                  <stop offset="100%" stopColor="var(--flc-accent-deep, #A82843)" />
+                </linearGradient>
+              </defs>
+              <Bar dataKey="visits" fill="url(#vtc-bar)" radius={[3, 3, 0, 0]} maxBarSize={18} />
               <Line
                 type="monotone" dataKey="uniques"
                 stroke="#5B7AB7" strokeWidth={1.8}

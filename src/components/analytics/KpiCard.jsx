@@ -20,12 +20,12 @@ import Sparkline from './Sparkline';
 // Chip colors are full CSS colors (not hue fragments) so the brand accent
 // can ride the --flc-* vars and flip with the theme.
 const ACCENT = {
-  purple:  { chipBg: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 15%, transparent)', chipFg: 'var(--flc-accent, #C73E2C)' },
-  pink:    { chipBg: 'hsl(355 60% 48% / .15)', chipFg: 'hsl(355 65% 60%)' },
-  cyan:    { chipBg: 'hsl(215 65% 48% / .15)', chipFg: 'hsl(208 55% 55%)' },
-  emerald: { chipBg: 'hsl(105 30% 38% / .15)', chipFg: 'hsl(95 32% 50%)' },
-  orange:  { chipBg: 'hsl(32 80% 50% / .15)',  chipFg: 'hsl(32 80% 55%)' },
-  amber:   { chipBg: 'hsl(42 78% 52% / .15)',  chipFg: 'hsl(42 78% 52%)' },
+  purple:  { chipBg: 'linear-gradient(135deg, color-mix(in srgb, var(--flc-accent-2, #E8703A) 26%, transparent), color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, transparent))', chipFg: 'var(--flc-accent, #C73E2C)' },
+  pink:    { chipBg: 'linear-gradient(135deg, hsl(355 60% 48% / .24), hsl(355 60% 48% / .10))', chipFg: 'hsl(355 60% 52%)' },
+  cyan:    { chipBg: 'linear-gradient(135deg, hsl(215 65% 48% / .24), hsl(215 65% 48% / .10))', chipFg: 'hsl(213 60% 46%)' },
+  emerald: { chipBg: 'linear-gradient(135deg, hsl(105 30% 38% / .24), hsl(105 30% 38% / .10))', chipFg: 'hsl(150 45% 34%)' },
+  orange:  { chipBg: 'linear-gradient(135deg, hsl(32 80% 50% / .26), hsl(32 80% 50% / .10))',  chipFg: 'hsl(28 78% 44%)' },
+  amber:   { chipBg: 'linear-gradient(135deg, hsl(42 78% 52% / .26), hsl(42 78% 52% / .10))',  chipFg: 'hsl(38 70% 42%)' },
 };
 
 const DeltaPill = ({ delta }) => {
