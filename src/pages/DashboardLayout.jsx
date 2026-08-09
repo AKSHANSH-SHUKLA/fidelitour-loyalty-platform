@@ -385,6 +385,17 @@ function UserMenu({ user, theme, role, onLogout }) {
 }
 
 const DashboardLayout = () => {
+  // Fidelity dual theme: Eclat (light) / Minuit Dore (dark). The class on the
+  // layout root drives every CSS var; PageShell tokens read those vars, so
+  // inline styles flip too.
+  const [nuit, setNuit] = React.useState(() => {
+    try { return localStorage.getItem('flc-theme') === 'nuit'; } catch { return false; }
+  });
+  const flipTheme = () => setNuit((v) => {
+    try { localStorage.setItem('flc-theme', v ? 'jour' : 'nuit'); } catch { /* ignore */ }
+    return !v;
+  });
+
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
@@ -493,7 +504,7 @@ const DashboardLayout = () => {
 
   return (
     <div
-      className="relative flex min-h-screen fdt-dash"
+      className={`relative flex min-h-screen fdt-dash flc ${nuit ? "flc-nuit" : ""}`}
       style={{
         background: 'linear-gradient(180deg, #FBF7EE 0%, #F5EFE0 100%)',
         transition: 'background 200ms ease',
@@ -742,6 +753,13 @@ const DashboardLayout = () => {
             <div className="flex-1 min-w-0 px-2">
               <BranchPillsBanner compact />
             </div>
+
+            {/* Theme: Eclat / Minuit Dore */}
+            <button type="button" onClick={flipTheme} aria-label="Mode jour / nuit"
+              className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ border: '1px solid var(--flc-line,#ECE8E2)', color: 'var(--flc-ink3,#524A40)' }}>
+              {nuit ? '\u2600' : '\u263E'}
+            </button>
 
             {/* Bell */}
             <div className="shrink-0">

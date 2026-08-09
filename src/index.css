@@ -1720,3 +1720,49 @@ textarea::placeholder {
 .av2-light-skin .vwcc .rounded-full {
   /* leave inline colors alone; they're already accent pills */
 }
+
+
+/* ================================================================
+   FIDELITY DUAL THEME — Eclat (light, default) / Minuit Dore (dark)
+   Scope: .flc on DashboardLayout root; .flc-nuit switches the vars.
+   PageShell C tokens read these vars, so inline styles follow.
+   ================================================================ */
+.flc{
+  --flc-paper:#FBFAF8; --flc-paper2:#F4F1EC; --flc-card:#FFFFFF;
+  --flc-ink:#191410; --flc-ink2:#3A332B; --flc-ink3:#524A40;
+  --flc-line:#ECE8E2;
+  --flc-accent:#C73E2C; --flc-accent-deep:#A82843; --flc-accent-2:#E8703A;
+  --flc-ok:#0F8B58; --flc-info:#3568B8;
+  background:var(--flc-paper);
+}
+.flc-nuit{
+  --flc-paper:#0D0B09; --flc-paper2:#1C1815; --flc-card:#141110;
+  --flc-ink:#F5F1E8; --flc-ink2:#C9C2B4; --flc-ink3:#8D8578;
+  --flc-line:rgba(212,175,110,.16);
+  --flc-accent:#D4AF6E; --flc-accent-deep:#A8823D; --flc-accent-2:#EBD5A0;
+  --flc-ok:#8FCDA8; --flc-info:#8ABDF0;
+  color-scheme:dark;
+}
+/* Retheme the recolored Tailwind arbitrary classes + white surfaces.
+   One block here beats re-editing fifty components ever again. */
+.flc .bg-white,.flc .bg-\[\#FAFAF8\],.flc .bg-\[\#F5F4F1\]{background-color:var(--flc-card)!important}
+.flc-nuit .bg-white,.flc-nuit .bg-\[\#FAFAF8\],.flc-nuit .bg-\[\#F5F4F1\],
+.flc-nuit .bg-\[\#EFEDE9\],.flc-nuit .bg-\[\#F6E9E2\]{background-color:var(--flc-card)!important}
+.flc-nuit .text-\[\#171412\],.flc-nuit .text-black{color:var(--flc-ink)!important}
+.flc-nuit .text-\[\#57504A\],.flc-nuit .text-\[\#3A332B\]{color:var(--flc-ink2)!important}
+.flc-nuit .text-\[\#8D857D\],.flc-nuit .text-\[\#9A9188\]{color:var(--flc-ink3)!important}
+.flc-nuit .text-\[\#B85C38\],.flc-nuit .text-\[\#96431F\]{color:var(--flc-accent)!important}
+.flc-nuit .bg-\[\#B85C38\]{background-color:var(--flc-accent)!important;color:#141110!important}
+.flc-nuit .border-\[\#E9E5E0\],.flc-nuit [class*="border"]{border-color:var(--flc-line)}
+.flc-nuit .fdt-dash,.flc-nuit{background:var(--flc-paper)}
+.flc-nuit .fd-kpi[class*="k-"]{background:var(--flc-card)!important;border-color:var(--flc-line)!important}
+.flc-nuit .fd-kpi[class*="k-"] .fd-kpi-value{color:var(--flc-ink)!important}
+.flc-nuit .fdt-dash .fd-btn-primary,.flc-nuit .fdt-dash .fd-btn-purple{
+  background:linear-gradient(135deg,#EBD5A0,#A8823D)!important;color:#141110!important}
+.flc .fdt-dash .fd-btn-primary,.flc .fdt-dash .fd-btn-purple{
+  background:linear-gradient(135deg,#E8703A,#C73E2C 55%,#A82843);color:#fff}
+.flc-nuit input,.flc-nuit select,.flc-nuit textarea{
+  background:rgba(255,255,255,.06)!important;color:var(--flc-ink)!important;
+  border-color:var(--flc-line)!important;color-scheme:dark}
+.flc-nuit ::placeholder{color:var(--flc-ink3)!important}
+.flc-nuit .shadow,.flc-nuit [class*="shadow-"]{--tw-shadow-color:rgba(0,0,0,.6)}

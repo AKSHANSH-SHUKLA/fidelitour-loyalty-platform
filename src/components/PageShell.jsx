@@ -11,17 +11,22 @@ import React from 'react';
 
 // Vibrant pastel palette — same tokens used on the landing page so the
 // in-app and marketing surfaces share a single visual identity.
+// Tokens read CSS variables so every inline style flips with the theme.
+// Light = Eclat (flame on gallery white), dark = Minuit Dore (champagne on
+// espresso). Values live in index.css under :root and .flc-nuit.
 export const C = {
-  terracotta:'#B85C38', terracottaDeep:'#9C4427',
-  ochre:'#D4A574',     amber:'#E3A869',
-  rose:'#E8917C',      coral:'#F2A48A',
-  lavender:'#9B7FB8',  lilac:'#C8B8DD',
-  sky:'#4A90E2',       azure:'#A8C7E8',
-  teal:'#3C9D9B',      mint:'#A7DCD3',
-  sage:'#7FA269',      meadow:'#D4E5C4',
-  inkDeep:'#171412',   inkSoft:'#2D2A26',  inkMute:'#57504A',
-  bone:'#FAFAF8',      cream:'#F5F1EA',    sand:'#EDE7DA',
-  hairline:'#E8E2D5',
+  terracotta:'var(--flc-accent,#C73E2C)', terracottaDeep:'var(--flc-accent-deep,#A82843)',
+  ochre:'var(--flc-accent-2,#E8703A)',    amber:'var(--flc-accent-2,#E8703A)',
+  rose:'var(--flc-accent,#C73E2C)',       coral:'var(--flc-accent-2,#E8703A)',
+  lavender:'var(--flc-accent,#C73E2C)',   lilac:'var(--flc-accent-2,#E8703A)',
+  sky:'var(--flc-info,#3568B8)',          azure:'var(--flc-info,#3568B8)',
+  teal:'var(--flc-ok,#0F8B58)',           mint:'var(--flc-ok,#0F8B58)',
+  sage:'var(--flc-ok,#0F8B58)',           meadow:'var(--flc-ok,#0F8B58)',
+  inkDeep:'var(--flc-ink,#191410)',       inkSoft:'var(--flc-ink2,#3A332B)',
+  inkMute:'var(--flc-ink3,#524A40)',
+  bone:'var(--flc-paper,#FBFAF8)',        cream:'var(--flc-paper2,#F4F1EC)',
+  sand:'var(--flc-paper2,#F4F1EC)',
+  hairline:'var(--flc-line,#ECE8E2)',
 };
 
 // Per-role accent gradient. Drives the brand mark, the active-nav glow,
