@@ -184,7 +184,7 @@ function PlanPicker({ trial, upgrading, onPick, onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'white', borderRadius: 18, padding: '28px 28px 22px',
+          background: 'var(--flc-card, #FFFFFF)', borderRadius: 18, padding: '28px 28px 22px',
           maxWidth: 760, width: '100%', boxShadow: '0 32px 80px rgba(0,0,0,0.25)',
           maxHeight: '90vh', overflowY: 'auto',
         }}

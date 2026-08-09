@@ -138,7 +138,7 @@ export const StatCard = ({
               boxShadow: '0 1px 2px rgba(28,25,23,0.05)',
             }
           : {
-              background: 'white',
+              background: 'var(--flc-card, #FFFFFF)',
               border: `1px solid ${C.hairline}`,
               boxShadow: '0 1px 2px rgba(28,25,23,0.04)',
             }
@@ -243,7 +243,7 @@ export const SecondaryButton = ({ className = '', children, ...rest }) => (
     style={{
       border: `1px solid ${C.hairline}`,
       color: C.inkSoft,
-      background: 'white',
+      background: 'var(--flc-card, #FFFFFF)',
     }}
   >
     {children}

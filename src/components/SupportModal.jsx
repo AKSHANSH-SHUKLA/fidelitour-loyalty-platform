@@ -95,7 +95,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--flc-card, #FFFFFF)',
           borderRadius: 16,
           width: 'min(560px, 100%)',
           maxHeight: 'calc(100vh - 32px)',
@@ -162,8 +162,8 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
               type="button"
               onClick={onClose}
               style={{
-                background: 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)',
-                color: '#FFFFFF', border: 'none', borderRadius: 10,
+                background: 'var(--flc-cta, linear-gradient(135deg, #E8703A, #C73E2C 55%, #A82843))',
+                color: 'var(--flc-on-cta, #FFFFFF)', border: 'none', borderRadius: 10,
                 padding: '10px 22px', fontSize: 13, fontWeight: 500,
                 cursor: 'pointer',
               }}
@@ -212,7 +212,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                 placeholder="e.g. Trouble with my QR scan setup"
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 8,
-                  border: `1px solid ${C.hairline}`, background: '#FFFFFF',
+                  border: `1px solid ${C.hairline}`, background: 'var(--flc-card, #FFFFFF)',
                   color: '#171412', fontSize: 13.5, font: 'inherit',
                   outline: 'none',
                 }}
@@ -240,7 +240,7 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                 placeholder="Describe your question or issue in as much detail as possible. Screenshots help — paste a link to any image you've uploaded."
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 8,
-                  border: `1px solid ${C.hairline}`, background: '#FFFFFF',
+                  border: `1px solid ${C.hairline}`, background: 'var(--flc-card, #FFFFFF)',
                   color: '#171412', fontSize: 13.5, lineHeight: 1.5,
                   font: 'inherit', resize: 'vertical', minHeight: 120,
                   outline: 'none',
@@ -285,9 +285,9 @@ export default function SupportModal({ open, onClose, defaultEmail = '', tenantS
                 disabled={!canSend}
                 style={{
                   background: canSend
-                    ? 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)'
+                    ? 'var(--flc-cta, linear-gradient(135deg, #E8703A, #C73E2C 55%, #A82843))'
                     : '#D6D3D1',
-                  color: '#FFFFFF', border: 'none', borderRadius: 10,
+                  color: 'var(--flc-on-cta, #FFFFFF)', border: 'none', borderRadius: 10,
                   padding: '9px 18px', fontSize: 13, fontWeight: 500,
                   cursor: canSend ? 'pointer' : 'not-allowed',
                   display: 'inline-flex', alignItems: 'center', gap: 7,

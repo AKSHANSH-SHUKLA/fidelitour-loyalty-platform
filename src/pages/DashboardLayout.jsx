@@ -89,13 +89,13 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
         title={t('nav.settings')}
         className="relative group flex items-center justify-center px-2 py-2 rounded-lg text-[13.5px] transition-all"
         style={{
-          color: active ? '#FFFFFF' : 'var(--ink-mute)',
-          background: active ? '#171412' : 'transparent',
+          color: active ? 'var(--flc-paper, #FFFFFF)' : 'var(--ink-mute)',
+          background: active ? 'var(--flc-ink, #171412)' : 'transparent',
         }}
       >
         <span
           className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center"
-          style={{ color: active ? '#FFFFFF' : C.inkMute }}
+          style={{ color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute }}
         >
           <Icon className="w-[18px] h-[18px]" />
         </span>
@@ -117,8 +117,8 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
         onClick={toggle}
         className="w-full relative group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all"
         style={{
-          color: active ? '#FFFFFF' : C.inkMute,
-          background: active ? '#171412' : 'transparent',
+          color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute,
+          background: active ? 'var(--flc-ink, #171412)' : 'transparent',
           boxShadow: active ? '0 6px 16px -8px rgba(23,20,18,0.45)' : 'none',
           fontWeight: active ? 600 : 450,
         }}
@@ -127,7 +127,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
           className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
           style={{
             background: 'transparent',
-            color: active ? '#FFFFFF' : C.inkMute,
+            color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute,
           }}
         >
           <Icon className="w-[18px] h-[18px]" />
@@ -181,15 +181,15 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge })
         // V2 "Encre & Terracotta": the active row is a solid ink pill.
         // The old treatment (white wash + gradient bar + tinted icon chip)
         // stacked three indicators for one state; one strong one reads faster.
-        color: active ? '#FFFFFF' : 'var(--ink-mute)',
-        background: active ? '#171412' : 'transparent',
+        color: active ? 'var(--flc-paper, #FFFFFF)' : 'var(--ink-mute)',
+        background: active ? 'var(--flc-ink, #171412)' : 'transparent',
         boxShadow: active ? '0 6px 16px -8px rgba(23,20,18,0.45)' : 'none',
         fontWeight: active ? 600 : 450,
       }}
     >
       <span
         className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
-        style={{ color: active ? '#FFFFFF' : C.inkMute }}
+        style={{ color: active ? 'var(--flc-paper, #FFFFFF)' : C.inkMute }}
       >
         <Icon className="w-[18px] h-[18px]" />
       </span>
@@ -199,7 +199,7 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge })
           {badge && (
             <span
               className="text-[9px] uppercase tracking-[0.12em] px-1.5 py-0.5 rounded font-bold shrink-0"
-              style={{ background: '#FEE0CF', color: '#9C4427', letterSpacing: '0.08em' }}
+              style={{ background: 'color-mix(in srgb, var(--flc-accent-2, #E8703A) 22%, var(--flc-card, #FFFFFF))', color: 'var(--flc-accent-deep, #9C4427)', letterSpacing: '0.08em' }}
             >
               {badge}
             </span>
@@ -223,8 +223,8 @@ const SignOutNavItem = ({ onClick, collapsed }) => {
       className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all w-full text-left`}
       style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
       onMouseOver={(e) => {
-        e.currentTarget.style.background = '#FAEDEB';
-        e.currentTarget.style.color = '#8A322B';
+        e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 10%, transparent)';
+        e.currentTarget.style.color = 'var(--flc-accent-deep, #8A322B)';
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.background = 'transparent';
@@ -253,8 +253,8 @@ const SupportNavItem = ({ onClick, collapsed }) => (
     className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all w-full text-left`}
     style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
     onMouseOver={(e) => {
-      e.currentTarget.style.background = 'hsl(258 90% 66% / .08)';
-      e.currentTarget.style.color = 'hsl(258 90% 50%)';
+      e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 8%, transparent)';
+      e.currentTarget.style.color = 'var(--flc-accent, #C73E2C)';
     }}
     onMouseOut={(e) => {
       e.currentTarget.style.background = 'transparent';
@@ -326,7 +326,7 @@ function UserMenu({ user, theme, role, onLogout }) {
         <span
           aria-hidden="true"
           className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full"
-          style={{ background: 'var(--tone-success-line, #7FA269)', boxShadow: '0 0 0 2px white' }}
+          style={{ background: 'var(--tone-success-line, #7FA269)', boxShadow: '0 0 0 2px var(--flc-card, #FFFFFF)' }}
         />
       </button>
 
@@ -334,7 +334,7 @@ function UserMenu({ user, theme, role, onLogout }) {
         <div
           className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden z-50"
           style={{
-            background: 'white',
+            background: 'var(--flc-card, #FFFFFF)',
             border: '1px solid var(--hairline, #EFEDE9)',
             boxShadow: '0 12px 28px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04)',
           }}
@@ -373,7 +373,7 @@ function UserMenu({ user, theme, role, onLogout }) {
             type="button"
             onClick={() => { setOpen(false); onLogout(); }}
             className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#FAEDEB] transition-colors"
-            style={{ color: '#8A322B', borderTop: '1px solid var(--hairline, #EFEDE9)' }}
+            style={{ color: 'var(--flc-accent-deep, #8A322B)', borderTop: '1px solid var(--hairline, #EFEDE9)' }}
           >
             <LogOut size={14} />
             {t('nav.sign_out')}
@@ -511,7 +511,7 @@ const DashboardLayout = () => {
     <div
       className={`relative flex min-h-screen fdt-dash flc ${nuit ? "flc-nuit" : ""}`}
       style={{
-        background: 'linear-gradient(180deg, #FBF7EE 0%, #F5EFE0 100%)',
+        background: 'var(--flc-paper, #FBFAF8)',
         transition: 'background 200ms ease',
       }}
     >
@@ -520,7 +520,7 @@ const DashboardLayout = () => {
       <aside
         className={`sticky top-0 z-10 ${collapsed ? 'w-[72px]' : 'w-64'} h-screen flex flex-col shrink-0 transition-[width,background-color] duration-200 ease-out fd-aside fd-sidebar-host`}
         style={{
-          background: 'rgba(255,255,255,0.78)',
+          background: 'color-mix(in srgb, var(--flc-card, #FFFFFF) 78%, transparent)',
           backdropFilter: 'blur(14px)',
           borderRight: `1px solid ${C.hairline}`,
           alignSelf: 'flex-start',
@@ -537,10 +537,10 @@ const DashboardLayout = () => {
           title={collapsed ? t('nav.expand_sidebar') : t('nav.collapse_sidebar')}
           className="absolute -right-3 top-6 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
           style={{
-            background: collapsed ? 'white' : '#171412',
-            border: `1px solid ${collapsed ? C.hairline : '#171412'}`,
+            background: collapsed ? 'var(--flc-card, #FFFFFF)' : 'var(--flc-ink, #171412)',
+            border: `1px solid ${collapsed ? C.hairline : 'var(--flc-ink, #171412)'}`,
             boxShadow: '0 2px 6px rgba(28,25,23,0.10)',
-            color: collapsed ? C.inkSoft : '#FFFFFF',
+            color: collapsed ? C.inkSoft : 'var(--flc-paper, #FFFFFF)',
           }}
         >
           <Menu size={14} strokeWidth={2.25} />
@@ -578,7 +578,7 @@ const DashboardLayout = () => {
           {!collapsed && tenantInfo && (
             <div
               className="mt-3 px-2.5 py-2 rounded-lg"
-              style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid var(--hairline)' }}
+              style={{ background: 'color-mix(in srgb, var(--flc-card, #FFFFFF) 55%, transparent)', border: '1px solid var(--hairline)' }}
               title={`${t('nav.account')} : ${tenantInfo.name || t('nav.account_no_name')} · slug: ${tenantInfo.slug || '—'}`}
             >
               <p
@@ -703,7 +703,7 @@ const DashboardLayout = () => {
           <div
             className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
             style={{
-              background: 'rgba(255,255,255,0.82)',
+              background: 'color-mix(in srgb, var(--flc-card, #FFFFFF) 82%, transparent)',
               borderBottom: '1px solid var(--hairline, #EFEDE9)',
             }}
           >
@@ -714,7 +714,7 @@ const DashboardLayout = () => {
             <form
               onSubmit={submitSearch}
               className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[280px]"
-              style={{ background: '#FFFFFF', border: '1px solid var(--hairline, #EFEDE9)' }}
+              style={{ background: 'var(--flc-card, #FFFFFF)', border: '1px solid var(--hairline, #EFEDE9)' }}
             >
               <button type="submit" aria-label={t('common.search')} className="shrink-0" style={{ lineHeight: 0 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #8D857D)' }}>
@@ -743,7 +743,7 @@ const DashboardLayout = () => {
               <kbd
                 className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
                 style={{
-                  background: '#F5F4F1',
+                  background: 'var(--flc-paper2, #F5F4F1)',
                   color: 'var(--ink-mute, #8D857D)',
                   border: '1px solid var(--hairline, #EFEDE9)',
                   fontWeight: 500,
@@ -780,7 +780,7 @@ const DashboardLayout = () => {
               title={t('nav.help')}
               className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
               style={{ background: 'transparent', border: '1px solid var(--hairline, #EFEDE9)', color: 'var(--ink-mute, #8D857D)' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = '#F5F4F1'; }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'var(--flc-paper2, #F5F4F1)'; }}
               onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

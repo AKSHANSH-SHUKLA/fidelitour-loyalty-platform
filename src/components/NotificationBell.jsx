@@ -186,7 +186,7 @@ const NotificationBell = () => {
         className="relative w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-105"
         style={{
           background: 'linear-gradient(135deg, #B85C38 0%, #E3A869 100%)',
-          border: '2px solid rgba(255,255,255,0.85)',
+          border: '2px solid color-mix(in srgb, var(--flc-card, #FFFFFF) 85%, transparent)',
           boxShadow: unreadCount > 0
             ? '0 4px 14px -4px rgba(184,92,56,0.55)'
             : '0 2px 8px -2px rgba(184,92,56,0.35)',
@@ -200,8 +200,8 @@ const NotificationBell = () => {
           <span
             className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center"
             style={{
-              background: '#FFFFFF',
-              color: '#B85C38',
+              background: 'var(--flc-card, #FFFFFF)',
+              color: 'var(--flc-accent, #B85C38)',
               border: '1.5px solid #B85C38',
               boxShadow: '0 2px 4px rgba(184,92,56,0.4)',
             }}
@@ -213,8 +213,8 @@ const NotificationBell = () => {
 
       {open && (
         <div
-          className="absolute right-0 mt-2 w-[380px] rounded-2xl bg-white border shadow-2xl z-50 overflow-hidden"
-          style={{ borderColor: '#EFE9E0' }}
+          className="absolute right-0 mt-2 w-[380px] rounded-2xl border shadow-2xl z-50 overflow-hidden"
+          style={{ borderColor: 'var(--flc-line, #EFE9E0)', background: 'var(--flc-card, #FFFFFF)' }}
         >
           {/* Account headline — the franchise/business name + every store under it */}
           <div
@@ -261,7 +261,7 @@ const NotificationBell = () => {
               </button>
             </div>
           </div>
-          <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: '#EFE9E0', background: '#FAFAF8' }}>
+          <div className="px-4 py-2 border-b flex items-center justify-between" style={{ borderColor: 'var(--flc-line, #EFE9E0)', background: 'var(--flc-paper2, #FAFAF8)' }}>
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8D857D' }}>
               Alertes par boutique
             </p>
@@ -331,7 +331,7 @@ const NotificationBell = () => {
                         type="button"
                         onClick={() => { setOpen(false); navigate(actions.customersUrl); }}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1 transition"
-                        style={{ background: '#F5F4F1', color: '#171412', border: '1px solid #E9E5E0' }}
+                        style={{ background: 'var(--flc-paper2, #F5F4F1)', color: 'var(--flc-ink, #171412)', border: '1px solid var(--flc-line, #E9E5E0)' }}
                       >
                         <Users size={11} /> Voir les clients
                       </button>
@@ -351,7 +351,7 @@ const NotificationBell = () => {
             )}
           </div>
           {alerts.length > 0 && (
-            <div className="px-4 py-2 border-t bg-[#FAFAF8] text-center" style={{ borderColor: '#EFE9E0' }}>
+            <div className="px-4 py-2 border-t text-center" style={{ borderColor: 'var(--flc-line, #EFE9E0)', background: 'var(--flc-paper2, #FAFAF8)' }}>
               <p className="text-[10px]" style={{ color: '#8D857D' }}>
                 {alerts.length} résumé{alerts.length > 1 ? 's' : ''} · Cliquez sur une carte pour voir le détail
               </p>

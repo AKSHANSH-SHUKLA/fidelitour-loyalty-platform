@@ -81,8 +81,8 @@ export default function BranchPillsBanner({ compact = false } = {}) {
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-all"
             style={
               isAll
-                ? { background: '#171412', color: '#FFFFFF', fontWeight: 500 }
-                : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
+                ? { background: 'var(--flc-ink, #171412)', color: 'var(--flc-paper, #FFFFFF)', fontWeight: 500 }
+                : { background: 'var(--flc-card, #FFFFFF)', color: 'var(--flc-ink, #171412)', border: '1px solid var(--flc-line, #E2DAC4)', fontWeight: 400 }
             }
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -102,8 +102,8 @@ export default function BranchPillsBanner({ compact = false } = {}) {
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] transition-all max-w-[160px] truncate"
                 style={
                   isActive
-                    ? { background: '#9C4427', color: '#FFFFFF', fontWeight: 500 }
-                    : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
+                    ? { background: 'var(--flc-accent-deep, #9C4427)', color: 'var(--flc-card, #FFFFFF)', fontWeight: 500 }
+                    : { background: 'var(--flc-card, #FFFFFF)', color: 'var(--flc-ink, #171412)', border: '1px solid var(--flc-line, #E2DAC4)', fontWeight: 400 }
                 }
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -154,8 +154,8 @@ export default function BranchPillsBanner({ compact = false } = {}) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] transition-all"
           style={
             isAll
-              ? { background: '#171412', color: '#FFFFFF', fontWeight: 500 }
-              : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
+              ? { background: 'var(--flc-ink, #171412)', color: 'var(--flc-paper, #FFFFFF)', fontWeight: 500 }
+              : { background: 'var(--flc-card, #FFFFFF)', color: 'var(--flc-ink, #171412)', border: '1px solid var(--flc-line, #E2DAC4)', fontWeight: 400 }
           }
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -180,8 +180,8 @@ export default function BranchPillsBanner({ compact = false } = {}) {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] transition-all"
               style={
                 isActive
-                  ? { background: '#9C4427', color: '#FFFFFF', fontWeight: 500 }
-                  : { background: '#FFFFFF', color: '#171412', border: '1px solid #E2DAC4', fontWeight: 400 }
+                  ? { background: 'var(--flc-accent-deep, #9C4427)', color: 'var(--flc-card, #FFFFFF)', fontWeight: 500 }
+                  : { background: 'var(--flc-card, #FFFFFF)', color: 'var(--flc-ink, #171412)', border: '1px solid var(--flc-line, #E2DAC4)', fontWeight: 400 }
               }
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
