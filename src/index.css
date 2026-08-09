@@ -1766,3 +1766,18 @@ textarea::placeholder {
   border-color:var(--flc-line)!important;color-scheme:dark}
 .flc-nuit ::placeholder{color:var(--flc-ink3)!important}
 .flc-nuit .shadow,.flc-nuit [class*="shadow-"]{--tw-shadow-color:rgba(0,0,0,.6)}
+/* Legacy tokens: many cards read the old light vars; remap them under nuit. */
+.flc-nuit{
+  --surface-card:#141110; --surface:#0D0B09; --surface-2:#1C1815;
+  --ink:#F5F1E8; --ink-deep:#F5F1E8; --ink-soft:#C9C2B4; --ink-mute:#8D8578;
+  --hairline:#2A241E; --brand:#D4AF6E;
+  --fd-bg:#0D0B09; --fd-card:#141110; --fd-text:#F5F1E8; --fd-text-2:#8D8578;
+  --fd-border:#2A241E; --fd-primary:#D4AF6E; --fd-primary-2:#A8823D;
+}
+.flc-nuit .bg-\[\#FFFFFF\],.flc-nuit .bg-\[\#fff\]{background-color:var(--flc-card)!important}
+.flc-nuit .fdt-dash .fd-kpi[class*="k-"]{background:#141110!important;border-color:#2A241E!important}
+.flc-nuit .fdt-dash .fd-kpi[class*="k-"] .fd-kpi-value{color:#F5F1E8!important}
+.flc-nuit .fdt-dash .fd-kpi[class*="k-"] .fd-kpi-label,
+.flc-nuit .fdt-dash .fd-kpi[class*="k-"] .fd-kpi-sub{color:#8D8578!important}
+.flc-nuit .av2-light-skin *{border-color:#2A241E}
+
