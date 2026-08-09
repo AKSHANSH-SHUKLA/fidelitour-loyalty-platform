@@ -14,7 +14,7 @@ import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 // hsl(...) strings sourced from the .fdt-analytics-v2 token table so each
 // sparkline reads as part of the same family as its parent card's icon chip.
 const ACCENT = {
-  purple:  { stroke: 'hsl(252, 90%, 76%)', fill: 'hsl(258, 90%, 66%)' },
+  purple:  { stroke: 'var(--flc-accent-2, #E8703A)', fill: 'var(--flc-accent, #C73E2C)' },
   pink:    { stroke: 'hsl(351, 95%, 71%)', fill: 'hsl(352, 89%, 60%)' },
   cyan:    { stroke: 'hsl(187, 85%, 53%)', fill: 'hsl(189, 94%, 43%)' },
   emerald: { stroke: 'hsl(158, 64%, 52%)', fill: 'hsl(160, 84%, 39%)' },

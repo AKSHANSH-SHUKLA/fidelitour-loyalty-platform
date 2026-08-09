@@ -38,7 +38,7 @@ const Card = ({ children, glow = false, style = {} }) => (
 
 const SectionTitle = ({ children, action }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-    <span style={{ fontSize: 13, fontWeight: 500, color: 'hsl(228 28% 14%)' }}>{children}</span>
+    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--flc-ink, #191410)' }}>{children}</span>
     {action}
   </div>
 );
@@ -49,26 +49,26 @@ const InsightItem = ({ text, cta, onClick }) => (
       aria-hidden="true"
       style={{
         flexShrink: 0, width: 26, height: 26, borderRadius: 8,
-        background: 'hsl(285 45% 42% / .15)',
+        background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 15%, transparent)',
         display: 'grid', placeItems: 'center',
-        color: 'hsl(285 45% 35%)',
+        color: 'var(--flc-accent-deep, #A82843)',
       }}
     >
       <Sparkles size={13} />
     </div>
     <div style={{ minWidth: 0, fontSize: 11.5, lineHeight: 1.45 }}>
-      <div style={{ color: 'hsl(228 14% 35%)' }}>{text}</div>
+      <div style={{ color: 'var(--flc-ink2, #3A332B)' }}>{text}</div>
       {cta && (
         <button
           type="button"
           onClick={onClick}
           style={{
-            background: 'transparent', border: '1px solid #ECE3D2',
+            background: 'transparent', border: '1px solid var(--flc-line, #ECE3D2)',
             borderRadius: 8, padding: '4px 9px', marginTop: 6, cursor: 'pointer',
-            color: 'hsl(228 28% 14%)', font: 'inherit', fontSize: 11, fontWeight: 500,
+            color: 'var(--flc-ink, #191410)', font: 'inherit', fontSize: 11, fontWeight: 500,
             transition: 'background 150ms ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(285 45% 42% / .08)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 8%, transparent)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
           {cta}
@@ -87,22 +87,22 @@ const QuickAction = ({ icon: Icon, label, onClick }) => (
       width: '100%', textAlign: 'left',
       padding: '9px 10px',
       background: 'transparent', border: 'none', cursor: 'pointer',
-      color: 'hsl(228 14% 35%)', font: 'inherit', fontSize: 12,
+      color: 'var(--flc-ink2, #3A332B)', font: 'inherit', fontSize: 12,
       borderRadius: 8,
       transition: 'background 150ms ease, color 150ms ease',
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.background = 'hsl(285 45% 42% / .08)';
-      e.currentTarget.style.color = 'hsl(228 28% 14%)';
+      e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 8%, transparent)';
+      e.currentTarget.style.color = 'var(--flc-ink, #191410)';
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.background = 'transparent';
-      e.currentTarget.style.color = 'hsl(228 14% 35%)';
+      e.currentTarget.style.color = 'var(--flc-ink2, #3A332B)';
     }}
   >
-    <Icon size={14} aria-hidden="true" style={{ color: 'hsl(285 45% 35%)', flexShrink: 0 }} />
+    <Icon size={14} aria-hidden="true" style={{ color: 'var(--flc-accent-deep, #A82843)', flexShrink: 0 }} />
     <span style={{ flex: 1 }}>{label}</span>
-    <ChevronRight size={14} aria-hidden="true" style={{ color: 'hsl(228 11% 45%)', flexShrink: 0 }} />
+    <ChevronRight size={14} aria-hidden="true" style={{ color: 'var(--flc-ink3, #524A40)', flexShrink: 0 }} />
   </button>
 );
 
@@ -138,34 +138,34 @@ const RightAiPanel = ({
       {/* AI Copilot — score + diagnostic CTA */}
       <Card glow>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'hsl(228 28% 14%)' }}>
-            <Sparkles size={14} aria-hidden="true" style={{ color: 'hsl(285 45% 35%)' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--flc-ink, #191410)' }}>
+            <Sparkles size={14} aria-hidden="true" style={{ color: 'var(--flc-accent-deep, #A82843)' }} />
             AI Copilot
           </span>
           <span
             style={{
               fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
-              color: 'hsl(285 45% 35%)',
-              background: 'hsl(285 45% 42% / .15)',
-              border: '1px solid hsl(285 45% 42% / .35)',
+              color: 'var(--flc-accent-deep, #A82843)',
+              background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 15%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--flc-accent, #C73E2C) 35%, transparent)',
               padding: '2px 6px', borderRadius: 99,
             }}
           >
             BETA
           </span>
         </div>
-        <div style={{ fontSize: 11, color: 'hsl(228 11% 45%)', marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)', marginBottom: 8 }}>
           Score de croissance
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           <ScoreWidget score={score} delta={null} denominator="100" />
         </div>
-        <div style={{ fontSize: 12, fontWeight: 500, color: 'hsl(160 84% 60%)', marginBottom: 4 }}>
+        <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--flc-ok, #0F8B58)', marginBottom: 4 }}>
           {scoreLabel(score)}
         </div>
         {scoreDelta != null && isFinite(scoreDelta) && (
-          <div style={{ fontSize: 11, color: 'hsl(228 14% 35%)', marginBottom: 10 }}>
-            <span style={{ color: scoreDelta >= 0 ? 'hsl(160 84% 60%)' : 'hsl(355 65% 60%)' }}>
+          <div style={{ fontSize: 11, color: 'var(--flc-ink2, #3A332B)', marginBottom: 10 }}>
+            <span style={{ color: scoreDelta >= 0 ? 'var(--flc-ok, #0F8B58)' : 'var(--flc-risk, #C22F45)' }}>
               {scoreDelta >= 0 ? '↑' : '↓'} {Math.abs(scoreDelta)} pts
             </span>{' '}
             vs mois précédent
@@ -176,15 +176,15 @@ const RightAiPanel = ({
           onClick={onDiagnostic}
           style={{
             width: '100%', padding: '8px 12px',
-            background: '#FFFFFF',
-            border: '1px solid #ECE3D2',
+            background: 'var(--flc-card, #FFFFFF)',
+            border: '1px solid var(--flc-line, #ECE3D2)',
             borderRadius: 9,
-            color: 'hsl(228 28% 14%)', cursor: 'pointer',
+            color: 'var(--flc-ink, #191410)', cursor: 'pointer',
             font: 'inherit', fontSize: 12, fontWeight: 500,
             transition: 'background 150ms ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'hsl(285 45% 42% / .1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 10%, transparent)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--flc-card, #FFFFFF)'; }}
         >
           Voir le diagnostic complet
         </button>
@@ -199,7 +199,7 @@ const RightAiPanel = ({
               onClick={onAllInsights}
               style={{
                 background: 'transparent', border: 'none', cursor: 'pointer',
-                color: 'hsl(285 45% 35%)', font: 'inherit', fontSize: 11, fontWeight: 500,
+                color: 'var(--flc-accent-deep, #A82843)', font: 'inherit', fontSize: 11, fontWeight: 500,
                 padding: 0,
               }}
             >
@@ -211,7 +211,7 @@ const RightAiPanel = ({
         </SectionTitle>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {insights.length === 0 ? (
-            <div style={{ fontSize: 11.5, color: 'hsl(228 11% 55%)', padding: '8px 0' }}>
+            <div style={{ fontSize: 11.5, color: 'var(--flc-ink3, #524A40)', padding: '8px 0' }}>
               Aucun insight pour cette période.
             </div>
           ) : insights.map((it, i) => (
@@ -240,7 +240,7 @@ const RightAiPanel = ({
       <Card>
         <SectionTitle>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Sparkles size={13} aria-hidden="true" style={{ color: 'hsl(285 45% 35%)' }} />
+            <Sparkles size={13} aria-hidden="true" style={{ color: 'var(--flc-accent-deep, #A82843)' }} />
             Assistant IA
           </span>
         </SectionTitle>
@@ -252,8 +252,8 @@ const RightAiPanel = ({
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '9px 11px',
-              background: '#FFFFFF',
-              border: '1px solid #ECE3D2',
+              background: 'var(--flc-card, #FFFFFF)',
+              border: '1px solid var(--flc-line, #ECE3D2)',
               borderRadius: 9,
             }}
           >
@@ -266,7 +266,7 @@ const RightAiPanel = ({
               style={{
                 flex: 1, minWidth: 0,
                 background: 'transparent', border: 'none', outline: 'none',
-                color: 'hsl(228 28% 14%)', font: 'inherit', fontSize: 11.5,
+                color: 'var(--flc-ink, #191410)', font: 'inherit', fontSize: 11.5,
               }}
             />
             <button
@@ -274,7 +274,7 @@ const RightAiPanel = ({
               aria-label="Envoyer la question"
               style={{
                 background: 'transparent', border: 'none', cursor: 'pointer',
-                color: 'hsl(285 45% 35%)', padding: 0,
+                color: 'var(--flc-accent-deep, #A82843)', padding: 0,
                 display: 'grid', placeItems: 'center',
               }}
             >

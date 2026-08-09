@@ -66,10 +66,10 @@ const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
       padding: children ? '7px 12px' : 0,
       width: children ? undefined : 36, height: 36,
       justifyContent: 'center',
-      background: '#FFFFFF',
+      background: 'var(--flc-card, #FFFFFF)',
       border: '1px solid #E9E5E0',
       borderRadius: children ? 99 : 10,
-      color: 'hsl(228 14% 35%)',
+      color: 'var(--flc-ink2, #3A332B)',
       fontSize: 12.5, fontWeight: 500,
       cursor: 'pointer', position: 'relative',
       font: 'inherit',
@@ -83,8 +83,8 @@ const HeaderChip = ({ icon: Icon, children, badge, onClick, label }) => (
           position: 'absolute', top: -3, right: -3,
           minWidth: 17, height: 17, padding: '0 4px',
           borderRadius: 99,
-          background: 'hsl(355 60% 48%)',
-          color: '#FFFFFF', fontSize: 9, fontWeight: 700,
+          background: 'var(--flc-risk, #C22F45)',
+          color: 'var(--flc-card, #FFFFFF)', fontSize: 9, fontWeight: 700,
           display: 'grid', placeItems: 'center',
         }}
       >
@@ -101,10 +101,10 @@ const PrimaryButton = ({ icon: Icon, children, onClick }) => (
     style={{
       display: 'inline-flex', alignItems: 'center', gap: 7,
       padding: '8px 14px',
-      background: 'linear-gradient(135deg, hsl(285 50% 48%) 0%, hsl(295 55% 36%) 60%, hsl(310 50% 30%) 100%)',
-      border: '1px solid hsl(285 50% 36%)',
+      background: 'var(--flc-cta, linear-gradient(135deg, #E8703A, #C73E2C 55%, #A82843))',
+      border: '1px solid transparent',
       borderRadius: 10,
-      color: '#FFFFFF',
+      color: 'var(--flc-on-cta, #FFFFFF)',
       fontSize: 12.5, fontWeight: 500,
       cursor: 'pointer',
       boxShadow: '0 6px 18px -8px rgb(184 92 56 / .55), 0 0 0 1px hsl(42 78% 52% / .15) inset',
@@ -126,7 +126,7 @@ const SectionDivider = ({ children }) => (
     <div style={{ height: 1, flex: 1, background: '#E9E5E0' }} />
     <span style={{
       fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
-      color: 'hsl(228 11% 45%)', fontWeight: 500, whiteSpace: 'nowrap',
+      color: 'var(--flc-ink3, #524A40)', fontWeight: 500, whiteSpace: 'nowrap',
     }}>
       {children}
     </span>
@@ -589,10 +589,10 @@ export default function AnalyticsPageV2() {
 
             {/* 2) Évolution des visites (wide) + Répartition par canal (donut). */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.30_days')}</span>}>
+              <ChartCard title={t('analytics.chart_visits_over_time')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>{t('analytics.30_days')}</span>}>
                 <VisitsBarLineChart data={displayVisitsChart} height={230} />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_channels')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.kpi_visits')}</span>}>
+              <ChartCard title={t('analytics.chart_channels')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>{t('analytics.kpi_visits')}</span>}>
                 {displayChannelDonut.length > 0 ? (
                   <ChannelDonut
                     data={displayChannelDonut}
@@ -601,7 +601,7 @@ export default function AnalyticsPageV2() {
                     size={150}
                   />
                 ) : (
-                  <div style={{ display: 'grid', placeItems: 'center', height: 200, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
+                  <div style={{ display: 'grid', placeItems: 'center', height: 200, color: 'var(--flc-ink3, #524A40)', fontSize: 12 }}>
                     {loading ? 'Chargement…' : 'Aucune source d\'acquisition pour cette branche.'}
                   </div>
                 )}
@@ -610,14 +610,14 @@ export default function AnalyticsPageV2() {
 
             {/* 3) RFM | Revenue trend | Top products. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>Segments</span>}>
+              <ChartCard title={t('analytics.chart_rfm')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>Segments</span>}>
                 <RfmHeatmap
                   matrix={displayRfmMatrix}
                   rowLabels={['Récemment', 'Modérément', 'Anciennement']}
                   colLabels={['Faible', 'Moyenne', 'Élevée']}
                 />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.30_days')}</span>} padding={14}>
+              <ChartCard title={t('analytics.chart_revenue')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>{t('analytics.30_days')}</span>} padding={14}>
                 <RevenueAreaChart
                   total={fmtNumFR(displayRevenueTotal)}
                   unit="€"
@@ -627,20 +627,20 @@ export default function AnalyticsPageV2() {
                   height={150}
                 />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.by_revenue')}</span>}>
+              <ChartCard title={t('analytics.chart_top_products')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>{t('analytics.by_revenue')}</span>}>
                 <TopProductsList items={displayTopProducts} />
               </ChartCard>
             </section>
 
             {/* 4) Heatmap + weekday bars + new vs returning donut. */}
             <section style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12 }}>
-              <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.kpi_visits')}</span>}>
+              <ChartCard title={t('analytics.chart_hours')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>{t('analytics.kpi_visits')}</span>}>
                 <HoursHeatmap matrix={displayHours.matrix} days={displayHours.days} hours={displayHours.hours} />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.kpi_visits')}</span>}>
+              <ChartCard title={t('analytics.chart_weekday')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>{t('analytics.kpi_visits')}</span>}>
                 <WeekdayBars counts={displayWeekday} days={SHORT_DAYS} height={120} />
               </ChartCard>
-              <ChartCard title={t('analytics.chart_new_vs_returning')} chip={<span style={{ fontSize: 11, color: 'hsl(228 11% 45%)' }}>{t('analytics.30_days')}</span>}>
+              <ChartCard title={t('analytics.chart_new_vs_returning')} chip={<span style={{ fontSize: 11, color: 'var(--flc-ink3, #524A40)' }}>{t('analytics.30_days')}</span>}>
                 {displayNvrSegments.length > 0 ? (
                   <ChannelDonut
                     data={displayNvrSegments}
@@ -649,7 +649,7 @@ export default function AnalyticsPageV2() {
                     size={130}
                   />
                 ) : (
-                  <div style={{ display: 'grid', placeItems: 'center', height: 130, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
+                  <div style={{ display: 'grid', placeItems: 'center', height: 130, color: 'var(--flc-ink3, #524A40)', fontSize: 12 }}>
                     Aucune donnée.
                   </div>
                 )}
@@ -665,7 +665,7 @@ export default function AnalyticsPageV2() {
                   onClick={() => navigate('/dashboard/campaigns')}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'hsl(285 45% 35%)', fontSize: 11.5, fontWeight: 500,
+                    color: 'var(--flc-accent-deep, #A82843)', fontSize: 11.5, fontWeight: 500,
                     padding: 0, font: 'inherit',
                   }}
                 >

@@ -34,7 +34,7 @@ const HoursHeatmap = ({ matrix = [], days = [], hours = [], peak }) => {
 
   if (!matrix.length || !hours.length) {
     return (
-      <div style={{ display: 'grid', placeItems: 'center', height: 140, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
+      <div style={{ display: 'grid', placeItems: 'center', height: 140, color: 'var(--flc-ink3, #524A40)', fontSize: 12 }}>
         Pas encore de visites.
       </div>
     );
@@ -43,10 +43,10 @@ const HoursHeatmap = ({ matrix = [], days = [], hours = [], peak }) => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-        <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'hsl(228 11% 45%)', fontWeight: 500 }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--flc-ink3, #524A40)', fontWeight: 500 }}>
           Pic
         </div>
-        <div className="av2-num" style={{ fontSize: 16, fontWeight: 500, color: 'hsl(228 28% 14%)' }}>
+        <div className="av2-num" style={{ fontSize: 16, fontWeight: 500, color: 'var(--flc-ink, #191410)' }}>
           {peakLabel}
         </div>
       </div>
@@ -62,7 +62,7 @@ const HoursHeatmap = ({ matrix = [], days = [], hours = [], peak }) => {
           <div
             key={h}
             style={{
-              fontSize: 9, color: 'hsl(228 11% 55%)', textAlign: 'center',
+              fontSize: 9, color: 'var(--flc-ink3, #524A40)', textAlign: 'center',
               fontVariantNumeric: 'tabular-nums',
             }}
           >
@@ -74,7 +74,7 @@ const HoursHeatmap = ({ matrix = [], days = [], hours = [], peak }) => {
           <React.Fragment key={ri}>
             <div
               style={{
-                fontSize: 9.5, color: 'hsl(228 11% 45%)',
+                fontSize: 9.5, color: 'var(--flc-ink3, #524A40)',
                 textAlign: 'right', paddingRight: 4, fontWeight: 500,
                 letterSpacing: '0.04em', alignSelf: 'center',
               }}
@@ -83,7 +83,7 @@ const HoursHeatmap = ({ matrix = [], days = [], hours = [], peak }) => {
             </div>
             {row.map((v, ci) => {
               const intensity = (Number(v) || 0) / max;
-              const alpha = (0.12 + intensity * 0.68).toFixed(2);
+              const pctAlpha = Math.round((0.12 + intensity * 0.68) * 100);
               const isPeak = computedPeak && computedPeak.dayIndex === ri && hours[ci] === computedPeak.hour;
               return (
                 <div
@@ -92,8 +92,8 @@ const HoursHeatmap = ({ matrix = [], days = [], hours = [], peak }) => {
                   style={{
                     aspectRatio: '1 / 1',
                     borderRadius: 3,
-                    background: `rgba(139, 92, 246, ${alpha})`,
-                    outline: isPeak ? '1px solid hsl(285 45% 35%)' : 'none',
+                    background: `color-mix(in srgb, var(--flc-accent, #C73E2C) ${pctAlpha}%, transparent)`,
+                    outline: isPeak ? '1px solid var(--flc-accent-deep, #A82843)' : 'none',
                     transition: 'transform 150ms cubic-bezier(.2,.7,.3,1)',
                   }}
                 />

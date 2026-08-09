@@ -21,7 +21,7 @@ import { useBranch } from '../contexts/BranchContext';
  *
  * Existing visits/analytics endpoints are NOT touched.
  */
-const CAMPAIGN_COLOR = '#7C3AED';   // distinct vivid purple — different from any other chart on the platform
+const CAMPAIGN_COLOR = 'var(--flc-info, #3568B8)'; // distinct info-blue marker — purple retired with the dual theme
 
 const VisitsWithCampaignsChart = () => {
   const [range, setRange] = useState({ unit: 'days', count: 30 });
@@ -97,7 +97,7 @@ const VisitsWithCampaignsChart = () => {
     const camps = campaignsOnDate(label);
     return (
       <div className="rounded-lg p-3 shadow-md text-xs"
-        style={{ background: 'white', border: `1px solid ${C_PS.hairline}` }}>
+        style={{ background: 'var(--flc-card, #FFFFFF)', border: `1px solid ${C_PS.hairline}` }}>
         <p className="font-bold mb-1" style={{ color: C_PS.inkDeep }}>{fmtFullDate(label)}</p>
         <p style={{ color: C_PS.inkMute }}>Visits: <span className="font-bold" style={{ color: C_PS.terracotta }}>{visits}</span></p>
         {camps.length > 0 && (
@@ -210,10 +210,10 @@ const VisitsWithCampaignsChart = () => {
               margin={{ top: 16, right: 16, bottom: 8, left: 0 }}
               onClick={onBarClick}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
-              <XAxis dataKey="date" tickFormatter={fmtTickDate} stroke="#57504A" fontSize={11}
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--flc-line, #E9E5E0)" />
+              <XAxis dataKey="date" tickFormatter={fmtTickDate} stroke="var(--flc-ink3, #57504A)" fontSize={11}
                 interval={Math.max(0, Math.floor(chartData.length / 12))} />
-              <YAxis stroke="#57504A" fontSize={11} allowDecimals={false} />
+              <YAxis stroke="var(--flc-ink3, #57504A)" fontSize={11} allowDecimals={false} />
               <Tooltip content={<TooltipContent />} />
               <Legend
                 payload={[
@@ -382,7 +382,7 @@ const VisitsWithCampaignsChart = () => {
 };
 
 const KPI = ({ label, value, accent }) => (
-  <div className="rounded-lg p-3" style={{ background: '#F5F4F1' }}>
+  <div className="rounded-lg p-3" style={{ background: 'var(--flc-paper2, #F5F4F1)' }}>
     <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: C_PS.inkMute }}>{label}</p>
     <p className="text-lg font-bold" style={{ color: accent || C_PS.inkDeep }}>{value}</p>
   </div>
@@ -408,7 +408,7 @@ const Metric = ({ label, value, icon: Icon, hint }) => (
 const CustomerList = ({ rows, mode }) => {
   const tierStyle = (tier) => {
     const t = (tier || 'bronze').toLowerCase();
-    if (t === 'vip')    return { bg: '#171412', color: '#FFFFFF' };
+    if (t === 'vip')    return { bg: 'var(--flc-ink, #171412)', color: 'var(--flc-paper, #FFFFFF)' };
     if (t === 'gold')   return { bg: '#E3A869', color: '#171412' };
     if (t === 'silver') return { bg: '#C0C0C0', color: '#171412' };
     return { bg: '#A0826D', color: '#FFFFFF' };

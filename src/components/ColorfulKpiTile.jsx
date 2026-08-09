@@ -44,7 +44,7 @@ const TONE_STYLE = {
   danger:  { vivid: '#E15A47', glow: 'rgba(225, 90, 71, 0.25)',   line: '#E15A47' },
   warning: { vivid: '#E8A53B', glow: 'rgba(232, 165, 59, 0.25)',  line: '#E8A53B' },
   info:    { vivid: '#3FA9D9', glow: 'rgba(63, 169, 217, 0.25)',  line: '#3FA9D9' },
-  purple:  { vivid: '#9A6DBF', glow: 'rgba(154, 109, 191, 0.25)', line: '#9A6DBF' },
+  purple:  { vivid: 'var(--flc-accent, #C73E2C)', glow: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 25%, transparent)', line: 'var(--flc-accent, #C73E2C)' },
   neutral: { vivid: '#8D857D', glow: 'rgba(122, 113, 108, 0.22)', line: '#8D857D' },
 };
 

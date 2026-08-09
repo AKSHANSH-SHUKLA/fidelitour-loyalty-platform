@@ -14,17 +14,17 @@ import {
 } from 'recharts';
 
 const TOOLTIP_STYLE = {
-  background: '#FFFFFF',
-  border: '1px solid #E7E5E4',
+  background: 'var(--flc-card, #FFFFFF)',
+  border: '1px solid var(--flc-line, #E7E5E4)',
   borderRadius: 10,
-  color: 'hsl(228 28% 14%)',
+  color: 'var(--flc-ink, #191410)',
   fontSize: 12,
   padding: '8px 10px',
   boxShadow: '0 12px 30px -12px rgba(0,0,0,.6)',
 };
 
 const LegendDot = ({ color, label }) => (
-  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'hsl(228 14% 35%)', fontSize: 11 }}>
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--flc-ink2, #3A332B)', fontSize: 11 }}>
     <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
     {label}
   </span>
@@ -39,7 +39,7 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
 
   if (!data.length) {
     return (
-      <div style={{ height, display: 'grid', placeItems: 'center', color: 'hsl(228 11% 55%)', fontSize: 12 }}>
+      <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--flc-ink3, #524A40)', fontSize: 12 }}>
         Aucune visite à afficher pour cette période.
       </div>
     );
@@ -48,7 +48,7 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
   return (
     <>
       <div style={{ display: 'flex', gap: 14, marginBottom: 4 }}>
-        <LegendDot color="hsl(285 45% 42%)" label="Visites totales" />
+        <LegendDot color="var(--flc-accent, #C73E2C)" label="Visites totales" />
         <LegendDot color="hsl(208 55% 40%)" label="Clients uniques" />
       </div>
       <div role="img" aria-label={ariaLabel || summary} style={{ height }}>
@@ -56,29 +56,29 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
           <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -22 }}>
             <defs>
               <linearGradient id="av2-vis-bar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stopColor="hsl(285 45% 42%)" />
-                <stop offset="100%" stopColor="hsl(295 50% 32%)" />
+                <stop offset="0%"   stopColor="var(--flc-accent, #C73E2C)" />
+                <stop offset="100%" stopColor="var(--flc-accent-deep, #A82843)" />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#ECE3D2" vertical={false} strokeDasharray="2 4" />
+            <CartesianGrid stroke="var(--flc-line, #ECE3D2)" vertical={false} strokeDasharray="2 4" />
             <XAxis
               dataKey="label"
-              tick={{ fill: 'hsl(228 11% 55%)', fontSize: 10 }}
+              tick={{ fill: 'var(--flc-ink3, #524A40)', fontSize: 10 }}
               tickLine={false}
               axisLine={false}
               interval="preserveStartEnd"
               minTickGap={28}
             />
             <YAxis
-              tick={{ fill: 'hsl(228 11% 55%)', fontSize: 10 }}
+              tick={{ fill: 'var(--flc-ink3, #524A40)', fontSize: 10 }}
               tickLine={false}
               axisLine={false}
               width={32}
             />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
-              labelStyle={{ color: 'hsl(228 11% 45%)', fontSize: 11 }}
-              cursor={{ fill: 'hsl(228 28% 14% / .55)' }}
+              labelStyle={{ color: 'var(--flc-ink3, #524A40)', fontSize: 11 }}
+              cursor={{ fill: 'color-mix(in srgb, var(--flc-ink, #191410) 6%, transparent)' }}
             />
             <Bar
               dataKey="visits"
@@ -93,7 +93,7 @@ const VisitsBarLineChart = ({ data = [], height = 200, ariaLabel }) => {
               dataKey="uniques"
               stroke="hsl(208 55% 40%)"
               strokeWidth={2}
-              dot={{ r: 2.5, fill: 'hsl(208 55% 40%)', stroke: '#FFFFFF', strokeWidth: 1 }}
+              dot={{ r: 2.5, fill: 'hsl(208 55% 40%)', stroke: 'var(--flc-card, #FFFFFF)', strokeWidth: 1 }}
               activeDot={{ r: 4 }}
               name="Uniques"
               isAnimationActive={false}

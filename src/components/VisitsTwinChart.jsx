@@ -125,26 +125,26 @@ export default function VisitsTwinChart({ controlledDays = null } = {}) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: -10 }}>
-              <CartesianGrid stroke="#EFEDE9" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="var(--flc-line, #EFEDE9)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="idx" tickLine={false} axisLine={false}
-                tick={{ fontSize: 10, fill: '#9C9590' }}
+                tick={{ fontSize: 10, fill: 'var(--flc-ink3, #9C9590)' }}
                 interval="preserveStartEnd"
               />
               <YAxis
                 tickLine={false} axisLine={false}
-                tick={{ fontSize: 10, fill: '#9C9590' }}
+                tick={{ fontSize: 10, fill: 'var(--flc-ink3, #9C9590)' }}
                 width={32}
               />
               <Tooltip
                 cursor={{ fill: 'rgba(184,92,56,0.06)' }}
                 contentStyle={{
-                  background: '#FFFFFF', border: '1px solid #EFEDE9',
+                  background: 'var(--flc-card, #FFFFFF)', border: '1px solid var(--flc-line, #EFEDE9)',
                   borderRadius: 8, padding: '6px 10px',
-                  fontSize: 12, color: '#171412',
+                  fontSize: 12, color: 'var(--flc-ink, #171412)',
                   boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
                 }}
-                labelStyle={{ color: '#8D857D', fontSize: 10, marginBottom: 2 }}
+                labelStyle={{ color: 'var(--flc-ink3, #8D857D)', fontSize: 10, marginBottom: 2 }}
                 formatter={(v, name) => [v, name === 'visits' ? 'Visites totales' : 'Clients uniques']}
                 labelFormatter={(l) => `Période ${l}`}
               />
@@ -152,7 +152,7 @@ export default function VisitsTwinChart({ controlledDays = null } = {}) {
               <Line
                 type="monotone" dataKey="uniques"
                 stroke="#5B7AB7" strokeWidth={1.8}
-                dot={{ r: 2.5, fill: '#5B7AB7', stroke: 'white', strokeWidth: 1 }}
+                dot={{ r: 2.5, fill: '#5B7AB7', stroke: 'var(--flc-card, #FFFFFF)', strokeWidth: 1 }}
                 activeDot={{ r: 3.5 }}
               />
             </ComposedChart>

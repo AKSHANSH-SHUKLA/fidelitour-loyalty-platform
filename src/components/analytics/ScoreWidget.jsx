@@ -18,11 +18,11 @@ const ScoreWidget = ({ score = 0, max = 100, delta, denominator = '100' }) => {
       <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
         <defs>
           <linearGradient id="av2-score-grad" x1="0" x2="1">
-            <stop offset="0%"   stopColor="hsl(285 45% 42%)" />
-            <stop offset="100%" stopColor="hsl(355 65% 60%)" />
+            <stop offset="0%"   stopColor="var(--flc-accent, #C73E2C)" />
+            <stop offset="100%" stopColor="var(--flc-accent-2, #E8703A)" />
           </linearGradient>
         </defs>
-        <circle cx="32" cy="32" r={radius} fill="none" stroke="#ECE3D2" strokeWidth="6" />
+        <circle cx="32" cy="32" r={radius} fill="none" stroke="var(--flc-line, #ECE3D2)" strokeWidth="6" />
         <circle
           cx="32" cy="32" r={radius}
           fill="none"
@@ -37,7 +37,7 @@ const ScoreWidget = ({ score = 0, max = 100, delta, denominator = '100' }) => {
         <text
           x="32" y="36"
           textAnchor="middle"
-          fill="hsl(228 28% 14%)"
+          fill="var(--flc-ink, #191410)"
           fontSize="14"
           fontWeight="500"
           fontFamily="Inter, sans-serif"
@@ -46,13 +46,13 @@ const ScoreWidget = ({ score = 0, max = 100, delta, denominator = '100' }) => {
           {clamped}
         </text>
       </svg>
-      <div style={{ fontSize: 11, color: 'hsl(228 14% 35%)', lineHeight: 1.45 }}>
+      <div style={{ fontSize: 11, color: 'var(--flc-ink2, #3A332B)', lineHeight: 1.45 }}>
         {delta != null && isFinite(delta) ? (
-          <div style={{ color: delta >= 0 ? 'hsl(160 84% 60%)' : 'hsl(355 65% 60%)' }}>
+          <div style={{ color: delta >= 0 ? 'var(--flc-ok, #0F8B58)' : 'var(--flc-risk, #C22F45)' }}>
             {delta >= 0 ? '+' : '−'}{Math.abs(delta)} vs sem. dernière
           </div>
-        ) : <div style={{ color: 'hsl(228 11% 45%)' }}>—</div>}
-        <div style={{ color: 'hsl(228 11% 45%)' }} className="av2-num">{clamped} / {denominator}</div>
+        ) : <div style={{ color: 'var(--flc-ink3, #524A40)' }}>—</div>}
+        <div style={{ color: 'var(--flc-ink3, #524A40)' }} className="av2-num">{clamped} / {denominator}</div>
       </div>
     </div>
   );

@@ -17,13 +17,15 @@
 import React from 'react';
 import Sparkline from './Sparkline';
 
+// Chip colors are full CSS colors (not hue fragments) so the brand accent
+// can ride the --flc-* vars and flip with the theme.
 const ACCENT = {
-  purple:  { hue: '285 45% 42%',  soft: '285 38% 55%' },
-  pink:    { hue: '355 60% 48%',  soft: '355 65% 60%' },
-  cyan:    { hue: '215 65% 48%',  soft: '208 55% 55%' },
-  emerald: { hue: '105 30% 38%',  soft: '95 32% 50%' },
-  orange:  { hue: '32 80% 50%',   soft: '32 80% 55%' },
-  amber:   { hue: '42 78% 52%',   soft: '42 78% 52%' },
+  purple:  { chipBg: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 15%, transparent)', chipFg: 'var(--flc-accent, #C73E2C)' },
+  pink:    { chipBg: 'hsl(355 60% 48% / .15)', chipFg: 'hsl(355 65% 60%)' },
+  cyan:    { chipBg: 'hsl(215 65% 48% / .15)', chipFg: 'hsl(208 55% 55%)' },
+  emerald: { chipBg: 'hsl(105 30% 38% / .15)', chipFg: 'hsl(95 32% 50%)' },
+  orange:  { chipBg: 'hsl(32 80% 50% / .15)',  chipFg: 'hsl(32 80% 55%)' },
+  amber:   { chipBg: 'hsl(42 78% 52% / .15)',  chipFg: 'hsl(42 78% 52%)' },
 };
 
 const DeltaPill = ({ delta }) => {
@@ -31,8 +33,8 @@ const DeltaPill = ({ delta }) => {
   const up = delta >= 0;
   const fmt = `${up ? '+' : '−'}${Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0)}%`;
   const tone = up
-    ? { fg: 'hsl(160 84% 50%)', bg: 'hsl(105 30% 38% / .12)' }
-    : { fg: 'hsl(355 65% 60%)', bg: 'hsl(355 60% 48% / .12)' };
+    ? { fg: 'var(--flc-ok, #0F8B58)', bg: 'color-mix(in srgb, var(--flc-ok, #0F8B58) 12%, transparent)' }
+    : { fg: 'var(--flc-risk, #C22F45)', bg: 'color-mix(in srgb, var(--flc-risk, #C22F45) 12%, transparent)' };
   return (
     <span
       style={{
@@ -72,25 +74,25 @@ const KpiCard = ({
         overflow: 'hidden',
         textAlign: 'left',
         cursor: onClick ? 'pointer' : 'default',
-        background: '#FFFFFF',
-        border: '1px solid #ECE3D2',
+        background: 'var(--flc-card, #FFFFFF)',
+        border: '1px solid var(--flc-line, #ECE3D2)',
         borderRadius: 18,
         padding: '14px 14px 0',
         boxShadow: '0 1px 0 0 rgba(255,255,255,.03) inset, 0 18px 40px -22px rgba(0,0,0,.7)',
-        color: 'hsl(228 28% 14%)',
+        color: 'var(--flc-ink, #191410)',
         font: 'inherit',
         transition: 'transform 180ms cubic-bezier(.2,.7,.3,1), border-color 180ms ease',
       }}
       onMouseEnter={(e) => {
         if (onClick) {
           e.currentTarget.style.transform = 'translateY(-1px)';
-          e.currentTarget.style.borderColor = 'hsl(228 28% 26%)';
+          e.currentTarget.style.borderColor = 'var(--flc-line-hi, #D9D3CA)';
         }
       }}
       onMouseLeave={(e) => {
         if (onClick) {
           e.currentTarget.style.transform = '';
-          e.currentTarget.style.borderColor = '#ECE3D2';
+          e.currentTarget.style.borderColor = 'var(--flc-line, #ECE3D2)';
         }
       }}
     >
@@ -101,9 +103,9 @@ const KpiCard = ({
             aria-hidden="true"
             style={{
               width: 30, height: 30, borderRadius: 9,
-              background: `hsl(${palette.hue} / .15)`,
+              background: palette.chipBg,
               display: 'grid', placeItems: 'center',
-              color: `hsl(${palette.soft})`,
+              color: palette.chipFg,
             }}
           >
             <Icon size={15} strokeWidth={2} />
@@ -116,7 +118,7 @@ const KpiCard = ({
       <div
         style={{
           fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: 'hsl(228 11% 45%)', fontWeight: 500,
+          color: 'var(--flc-ink3, #524A40)', fontWeight: 500,
         }}
       >
         {label}
@@ -127,7 +129,7 @@ const KpiCard = ({
         className="av2-num"
         style={{
           fontSize: 24, fontWeight: 500, lineHeight: 1.1, marginTop: 4,
-          color: 'hsl(228 28% 14%)',
+          color: 'var(--flc-ink, #191410)',
         }}
       >
         {loading ? (
@@ -135,19 +137,19 @@ const KpiCard = ({
             aria-busy="true"
             style={{
               display: 'inline-block', width: 64, height: 22, borderRadius: 6,
-              background: '#FFFFFF', verticalAlign: 'middle',
+              background: 'var(--flc-paper2, #F4F1EC)', verticalAlign: 'middle',
             }}
           />
         ) : (
           <>
             {value}
-            {unit ? <span style={{ fontSize: 14, color: 'hsl(228 11% 45%)', marginLeft: 2 }}>{unit}</span> : null}
+            {unit ? <span style={{ fontSize: 14, color: 'var(--flc-ink3, #524A40)', marginLeft: 2 }}>{unit}</span> : null}
           </>
         )}
       </div>
 
       {/* Subline (period) */}
-      <div style={{ fontSize: 10, color: 'hsl(228 11% 55%)', marginTop: 4, marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: 'var(--flc-ink3, #524A40)', marginTop: 4, marginBottom: 8 }}>
         {sublabel}
       </div>
 

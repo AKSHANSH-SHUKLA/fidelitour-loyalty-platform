@@ -125,17 +125,17 @@ export default function WeeklyAcquisitionPanel({ controlledDays = null } = {}) {
           <div style={{ width: '100%', height: 100 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: -28 }}>
-                <CartesianGrid stroke="#EFEDE9" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="var(--flc-line, #EFEDE9)" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="idx" tickLine={false} axisLine={false}
-                  tick={{ fontSize: 9, fill: '#9C9590' }}
+                  tick={{ fontSize: 9, fill: 'var(--flc-ink3, #9C9590)' }}
                   interval={3}
                 />
                 <YAxis hide />
                 <Tooltip
                   cursor={{ fill: 'rgba(127,162,105,0.08)' }}
                   contentStyle={{
-                    background: '#FFFFFF', border: '1px solid #EFEDE9',
+                    background: 'var(--flc-card, #FFFFFF)', border: '1px solid var(--flc-line, #EFEDE9)',
                     borderRadius: 8, padding: '4px 8px', fontSize: 11,
                     boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
                   }}

@@ -196,10 +196,10 @@ const HistoricalAcquisitionChart = () => {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--flc-line, #E9E5E0)" />
               <XAxis
                 dataKey="label"
-                stroke="#57504A"
+                stroke="var(--flc-ink3, #57504A)"
                 fontSize={10}
                 interval={tickInterval}
                 tickFormatter={formatTick}
@@ -208,7 +208,7 @@ const HistoricalAcquisitionChart = () => {
                 height={50}
                 tick={{ dy: 4 }}
               />
-              <YAxis stroke="#57504A" fontSize={11} allowDecimals={false} width={36} />
+              <YAxis stroke="var(--flc-ink3, #57504A)" fontSize={11} allowDecimals={false} width={36} />
               <Tooltip labelFormatter={formatTooltipLabel} />
               <Bar dataKey="count" fill={C_PS.sage} radius={[6, 6, 0, 0]} />
             </BarChart>

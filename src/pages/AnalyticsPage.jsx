@@ -1109,9 +1109,9 @@ const AnalyticsPage = () => {
 
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={acquisitionChart} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
-              <XAxis type="number" stroke="#57504A" />
-              <YAxis type="category" dataKey="name" stroke="#57504A" width={110} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--flc-line, #E9E5E0)" />
+              <XAxis type="number" stroke="var(--flc-ink3, #57504A)" />
+              <YAxis type="category" dataKey="name" stroke="var(--flc-ink3, #57504A)" width={110} />
               <Tooltip
                 formatter={(value, _name, p) => [`${value} customers (${p?.payload?.pct || 0}%)`, 'Acquired']}
               />
@@ -1276,13 +1276,13 @@ const AnalyticsPage = () => {
       <section
         className="rounded-xl p-4 relative overflow-hidden"
         style={{
-          background: `radial-gradient(circle at 100% 0%, #DDF1ED 0%, transparent 55%), radial-gradient(circle at 0% 100%, #E5F0DC 0%, transparent 60%), white`,
-          border: '1px solid #6FA89C44',
+          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-ok, #0F8B58) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
+          border: '1px solid color-mix(in srgb, var(--flc-ok, #0F8B58) 27%, transparent)',
           boxShadow: '0 6px 18px -10px #6FA89C55',
         }}
       >
         <div className="relative flex flex-wrap items-start justify-between gap-3 mb-2">
-          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#2d5016' }}>
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--flc-ok, #2d5016)' }}>
             Customize Recovered Customers Filter
           </h3>
           <SendCampaignButton
@@ -1360,17 +1360,17 @@ const AnalyticsPage = () => {
       <section
         className="rounded-xl p-4 space-y-3 relative overflow-hidden"
         style={{
-          background: `radial-gradient(circle at 100% 0%, #F0EBF8 0%, transparent 55%), radial-gradient(circle at 0% 100%, #FCE3DC 0%, transparent 60%), white`,
-          border: '1px solid #B85C3844',
+          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-accent-2, #E8703A) 9%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-accent, #C73E2C) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
+          border: '1px solid color-mix(in srgb, var(--flc-accent, #C73E2C) 27%, transparent)',
           boxShadow: '0 6px 18px -10px #B85C3866',
         }}
       >
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#5E527C' }}>
+            <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--flc-ink2, #3A332B)' }}>
               Customer reviews & sentiment
             </h3>
-            <p className="text-xs max-w-3xl mt-1" style={{ color: '#5E527C' }}>
+            <p className="text-xs max-w-3xl mt-1" style={{ color: 'var(--flc-ink2, #3A332B)' }}>
               Every rating is /10. Customers leave ratings on their wallet card after a visit.
               Sentiment and topics are computed from the review text on submit — numbers stay up to date
               automatically whenever a new review is posted.
@@ -1604,13 +1604,13 @@ const AnalyticsPage = () => {
       <section
         className="rounded-xl p-4 relative overflow-hidden"
         style={{
-          background: `radial-gradient(circle at 100% 0%, #DDEBF6 0%, transparent 55%), radial-gradient(circle at 0% 100%, #DDF1ED 0%, transparent 60%), white`,
-          border: '1px solid #6BA4D944',
+          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-info, #3568B8) 9%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-ok, #0F8B58) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
+          border: '1px solid color-mix(in srgb, var(--flc-info, #3568B8) 27%, transparent)',
           boxShadow: '0 6px 18px -10px #6BA4D955',
         }}
       >
         <div className="relative flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#1E40AF' }}>
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--flc-info, #1E40AF)' }}>
             Customer Ranking
           </h3>
           <div className="flex flex-wrap gap-2">

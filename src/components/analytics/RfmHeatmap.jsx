@@ -44,7 +44,7 @@ const RfmHeatmap = ({
               fontSize: 10,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              color: 'hsl(228 11% 45%)',
+              color: 'var(--flc-ink3, #524A40)',
               textAlign: 'center',
               fontWeight: 500,
             }}
@@ -60,7 +60,7 @@ const RfmHeatmap = ({
                 fontSize: 10,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: 'hsl(228 11% 45%)',
+                color: 'var(--flc-ink3, #524A40)',
                 fontWeight: 500,
                 writingMode: 'vertical-rl',
                 transform: 'rotate(180deg)',
@@ -72,8 +72,8 @@ const RfmHeatmap = ({
             </div>
             {row.map((v, ci) => {
               const intensity = (Number(v) || 0) / max;
-              const alpha = (0.12 + intensity * 0.68).toFixed(2);
-              const txtCol = intensity > 0.55 ? 'hsl(228 28% 14%)' : 'hsl(228 14% 35%)';
+              const pctAlpha = Math.round((0.12 + intensity * 0.68) * 100);
+              const txtCol = intensity > 0.55 ? 'var(--flc-card, #FFFFFF)' : 'var(--flc-ink, #191410)';
               return (
                 <div
                   key={ci}
@@ -83,7 +83,7 @@ const RfmHeatmap = ({
                     aspectRatio: '1 / 1',
                     minHeight: 60,
                     borderRadius: 10,
-                    background: `rgba(139, 92, 246, ${alpha})`,
+                    background: `color-mix(in srgb, var(--flc-accent, #C73E2C) ${pctAlpha}%, transparent)`,
                     display: 'grid',
                     placeItems: 'center',
                     fontSize: 14,

@@ -86,7 +86,7 @@ export default function TierDonut() {
                   startAngle={90}
                   endAngle={-270}
                   paddingAngle={1.5}
-                  stroke="white"
+                  stroke={"var(--flc-card, #FFFFFF)"}
                   strokeWidth={2}
                   isAnimationActive={false}
                 >
@@ -94,7 +94,7 @@ export default function TierDonut() {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    background: '#FFFFFF', border: '1px solid #EFEDE9',
+                    background: 'var(--flc-card, #FFFFFF)', border: '1px solid var(--flc-line, #EFEDE9)',
                     borderRadius: 8, padding: '4px 8px', fontSize: 11,
                     boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
                   }}

@@ -84,17 +84,17 @@ const pct = (n, total) => (total > 0 ? Math.round((n / total) * 100) : 0);
 
 const Tile = ({ label, value, pct, icon: Icon, tone }) => {
   const palette = {
-    success: { bg: '#ECFDF5', fg: '#065F46', accent: '#10B981' },
-    danger:  { bg: '#FEF2F2', fg: '#991B1B', accent: '#DC2626' },
-    info:    { bg: '#EFF6FF', fg: '#1E40AF', accent: '#3B82F6' },
-    default: { bg: '#F3F4F6', fg: '#374151', accent: '#6B7280' },
-  }[tone] || { bg: '#F3F4F6', fg: '#374151', accent: '#6B7280' };
+    success: { bg: 'color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, var(--flc-card, #FFFFFF))',   fg: 'var(--flc-ok, #065F46)',   accent: 'var(--flc-ok, #10B981)' },
+    danger:  { bg: 'color-mix(in srgb, var(--flc-risk, #C22F45) 10%, var(--flc-card, #FFFFFF))', fg: 'var(--flc-risk, #991B1B)', accent: 'var(--flc-risk, #DC2626)' },
+    info:    { bg: 'color-mix(in srgb, var(--flc-info, #3568B8) 10%, var(--flc-card, #FFFFFF))', fg: 'var(--flc-info, #1E40AF)', accent: 'var(--flc-info, #3B82F6)' },
+    default: { bg: 'var(--flc-paper2, #F3F4F6)', fg: 'var(--flc-ink2, #374151)', accent: 'var(--flc-ink3, #6B7280)' },
+  }[tone] || { bg: 'var(--flc-paper2, #F3F4F6)', fg: 'var(--flc-ink2, #374151)', accent: 'var(--flc-ink3, #6B7280)' };
 
   return (
     <div className="rounded-lg p-4 relative overflow-hidden" style={{ background: palette.bg }}>
       <div
         className="absolute top-3 right-3 w-9 h-9 rounded-lg flex items-center justify-center"
-        style={{ background: 'white', color: palette.accent }}
+        style={{ background: 'var(--flc-card, #FFFFFF)', color: palette.accent }}
       >
         <Icon size={18} />
       </div>

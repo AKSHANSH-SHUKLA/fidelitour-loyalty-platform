@@ -1018,11 +1018,13 @@ textarea::placeholder {
   --av2-text-dim: 228 14% 35%; /* secondary text */
   --av2-text-muted: 228 11% 45%; /* muted */
   --av2-text-faint: 228 11% 55%; /* very muted */
-  /* Brand */
-  --av2-purple-300: 252 95% 85%;
-  --av2-purple-400: 252 90% 76%;
-  --av2-purple: 258 90% 66%;
-  --av2-purple-600: 263 70% 50%;
+  /* Brand — purple retired; these triplets now carry the flame ramp
+     (renamed vars would touch dozens of call sites; the hue payload is
+     what matters). Dark remaps live under .flc-nuit below. */
+  --av2-purple-300: 24 79% 81%;
+  --av2-purple-400: 19 79% 57%;
+  --av2-purple: 7 64% 48%;
+  --av2-purple-600: 347 62% 41%;
   --av2-indigo: 239 84% 67%;
   --av2-pink: 352 89% 60%;
   --av2-pink-soft: 351 95% 71%;
@@ -1734,6 +1736,7 @@ textarea::placeholder {
   --flc-accent:#C73E2C; --flc-accent-deep:#A82843; --flc-accent-2:#E8703A;
   --flc-ok:#0F8B58; --flc-info:#3568B8;
   --flc-cta:linear-gradient(135deg,#E8703A,#C73E2C 55%,#A82843); --flc-on-cta:#FFFFFF;
+  --flc-line-hi:#D9D3CA; --flc-risk:#C22F45; --flc-warn:#A8862D;
   background:var(--flc-paper);
 }
 .flc-nuit{
@@ -1743,6 +1746,7 @@ textarea::placeholder {
   --flc-accent:#D4AF6E; --flc-accent-deep:#A8823D; --flc-accent-2:#EBD5A0;
   --flc-ok:#8FCDA8; --flc-info:#8ABDF0;
   --flc-cta:linear-gradient(135deg,#EBD5A0,#A8823D); --flc-on-cta:#141110;
+  --flc-line-hi:rgba(212,175,110,.38); --flc-risk:#E2938A; --flc-warn:#E8C36A;
   color-scheme:dark;
 }
 /* Retheme the recolored Tailwind arbitrary classes + white surfaces.
@@ -1908,4 +1912,17 @@ textarea::placeholder {
   --fd-border:#2A241E; --fd-divider:#2A241E;
   --fd-primary:#D4AF6E; --fd-primary-2:#A8823D;
   --fd-pos:#8FCDA8; --fd-neg:#E2938A; --fd-warn:#E8C36A;
+}
+.flc-nuit .bg-\[\#FAF6EE\],.flc-nuit .bg-\[\#F3F4F6\]{background-color:var(--flc-paper2)!important}
+
+/* Nuit: av2 HSL-triplet tokens (hsl(var(--x)) call sites) flip to espresso/gold. */
+.flc-nuit .av2-light-skin{
+  --bg: 30 18% 4%; --bg-2: 26 14% 10%;
+  --surface: 15 11% 7%; --surface-2: 15 11% 7%; --surface-3: 26 14% 10%;
+  --sidebar-dark: 26 14% 10%;
+  --hairline: 30 17% 14%; --av2-border: 30 17% 14%; --av2-border-strong: 36 22% 22%;
+  --av2-text: 42 39% 94%; --av2-text-dim: 40 16% 75%;
+  --av2-text-muted: 37 8% 51%; --av2-text-faint: 37 8% 51%;
+  --av2-purple-300: 43 68% 84%; --av2-purple-400: 43 65% 77%;
+  --av2-purple: 38 54% 63%; --av2-purple-600: 39 47% 45%;
 }

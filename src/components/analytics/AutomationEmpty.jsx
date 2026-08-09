@@ -15,7 +15,7 @@ const AutomationEmpty = ({ onClick, label = 'Créer' }) => (
       borderRadius: 14,
       padding: 12,
       background: 'transparent',
-      color: 'hsl(228 11% 45%)',
+      color: 'var(--flc-ink3, #524A40)',
       cursor: 'pointer',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
@@ -26,13 +26,13 @@ const AutomationEmpty = ({ onClick, label = 'Créer' }) => (
       transition: 'border-color 180ms ease, color 180ms ease, background 180ms ease',
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.borderColor = 'hsl(285 45% 42% / .55)';
-      e.currentTarget.style.color = 'hsl(285 45% 35%)';
-      e.currentTarget.style.background = 'hsl(285 45% 42% / .04)';
+      e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 55%, transparent)';
+      e.currentTarget.style.color = 'var(--flc-accent-deep, #A82843)';
+      e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 5%, transparent)';
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.borderColor = 'hsl(228 30% 26%)';
-      e.currentTarget.style.color = 'hsl(228 11% 45%)';
+      e.currentTarget.style.color = 'var(--flc-ink3, #524A40)';
       e.currentTarget.style.background = 'transparent';
     }}
   >

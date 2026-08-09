@@ -16,18 +16,18 @@ import React from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 const DEFAULT_PALETTE = [
-  { from: 'hsl(285 45% 42%)', to: 'hsl(295 50% 32%)' }, // purple
+  { from: 'var(--flc-accent, #C73E2C)', to: 'var(--flc-accent-deep, #A82843)' }, // purple
   { from: 'hsl(215 65% 48%)', to: 'hsl(208 55% 40%)' }, // cyan
-  { from: 'hsl(355 60% 48%)', to: 'hsl(355 65% 60%)' }, // pink
+  { from: 'var(--flc-risk, #C22F45)', to: 'var(--flc-risk, #C22F45)' }, // pink
   { from: 'hsl(105 30% 38%)', to: 'hsl(95 32% 50%)' }, // emerald
   { from: 'hsl(32 80% 50%)',  to: 'hsl(42 78% 52%)' },  // orange→amber
 ];
 
 const TOOLTIP_STYLE = {
-  background: '#FFFFFF',
-  border: '1px solid #E7E5E4',
+  background: 'var(--flc-card, #FFFFFF)',
+  border: '1px solid var(--flc-line, #E7E5E4)',
   borderRadius: 10,
-  color: 'hsl(228 28% 14%)',
+  color: 'var(--flc-ink, #191410)',
   fontSize: 12,
   padding: '8px 10px',
   boxShadow: '0 12px 30px -12px rgba(0,0,0,.6)',
@@ -53,7 +53,7 @@ const ChannelDonut = ({
 
   if (!segs.length) {
     return (
-      <div style={{ display: 'grid', placeItems: 'center', height: size, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
+      <div style={{ display: 'grid', placeItems: 'center', height: size, color: 'var(--flc-ink3, #524A40)', fontSize: 12 }}>
         Aucune donnée.
       </div>
     );
@@ -81,7 +81,7 @@ const ChannelDonut = ({
               cy="50%"
               innerRadius={size * 0.34}
               outerRadius={size * 0.46}
-              stroke="#FFFFFF"
+              stroke="var(--flc-card, #FFFFFF)"
               strokeWidth={3}
               startAngle={90}
               endAngle={-270}
@@ -110,12 +110,12 @@ const ChannelDonut = ({
             }}
           >
             {centerNum !== undefined && (
-              <div className="av2-num" style={{ fontSize: 18, fontWeight: 500, color: 'hsl(228 28% 14%)' }}>
+              <div className="av2-num" style={{ fontSize: 18, fontWeight: 500, color: 'var(--flc-ink, #191410)' }}>
                 {centerNum}
               </div>
             )}
             {centerLabel && (
-              <div style={{ fontSize: 9.5, color: 'hsl(228 11% 45%)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 9.5, color: 'var(--flc-ink3, #524A40)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 {centerLabel}
               </div>
             )}
@@ -130,14 +130,14 @@ const ChannelDonut = ({
             key={i}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 8, fontSize: 11, color: 'hsl(228 14% 35%)',
+              gap: 8, fontSize: 11, color: 'var(--flc-ink2, #3A332B)',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: s._from, flexShrink: 0 }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
             </span>
-            <span className="av2-num" style={{ color: 'hsl(228 11% 45%)', flexShrink: 0 }}>
+            <span className="av2-num" style={{ color: 'var(--flc-ink3, #524A40)', flexShrink: 0 }}>
               {s._pct}%
             </span>
           </div>

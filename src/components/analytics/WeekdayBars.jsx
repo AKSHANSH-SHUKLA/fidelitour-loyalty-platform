@@ -7,7 +7,7 @@ import React from 'react';
 const WeekdayBars = ({ counts = [], days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'], height = 110 }) => {
   if (!counts.length) {
     return (
-      <div style={{ display: 'grid', placeItems: 'center', height, color: 'hsl(228 11% 55%)', fontSize: 12 }}>
+      <div style={{ display: 'grid', placeItems: 'center', height, color: 'var(--flc-ink3, #524A40)', fontSize: 12 }}>
         Aucune donnée par jour.
       </div>
     );
@@ -35,9 +35,9 @@ const WeekdayBars = ({ counts = [], days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'], 
                 height: `${pct * 100}%`,
                 borderRadius: 4,
                 background: isPeak
-                  ? 'linear-gradient(180deg, hsl(285 45% 42%), hsl(285 45% 42% / .5))'
-                  : `hsl(285 45% 42% / ${(0.22 + pct * 0.36).toFixed(2)})`,
-                boxShadow: isPeak ? '0 0 12px hsl(285 45% 42% / .35)' : 'none',
+                  ? 'linear-gradient(180deg, var(--flc-accent, #C73E2C), color-mix(in srgb, var(--flc-accent, #C73E2C) 50%, transparent))'
+                  : `color-mix(in srgb, var(--flc-accent, #C73E2C) ${Math.round((0.22 + pct * 0.36) * 100)}%, transparent)`,
+                boxShadow: isPeak ? '0 0 12px color-mix(in srgb, var(--flc-accent, #C73E2C) 35%, transparent)' : 'none',
                 transition: 'height 250ms cubic-bezier(.2,.7,.3,1)',
               }}
             />
@@ -47,12 +47,12 @@ const WeekdayBars = ({ counts = [], days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'], 
       <div
         style={{
           display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 5, marginTop: 6, fontSize: 9.5, color: 'hsl(228 11% 45%)',
+          gap: 5, marginTop: 6, fontSize: 9.5, color: 'var(--flc-ink3, #524A40)',
           textAlign: 'center',
         }}
       >
         {days.map((d, i) => (
-          <span key={i} style={{ color: i === peakIdx ? 'hsl(285 45% 35%)' : undefined, fontWeight: i === peakIdx ? 500 : 400 }}>
+          <span key={i} style={{ color: i === peakIdx ? 'var(--flc-accent-deep, #A82843)' : undefined, fontWeight: i === peakIdx ? 500 : 400 }}>
             {d}
           </span>
         ))}
