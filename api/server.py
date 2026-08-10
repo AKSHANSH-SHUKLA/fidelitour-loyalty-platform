@@ -132,6 +132,25 @@ SENDGRID_FROM_EMAIL = "noreply@fidelitour.com"
 #   OPENROUTER_API_KEY → many free models (Llama 3, Hermes, etc.) under one key
 #   GEMINI_API_KEY     → Google Gemini Flash (1500 req/day free, no card)
 # If none are set, the endpoint serves a deterministic heuristic so testing works.
+# Anthropic sits FIRST in the chain whenever its key is present. The free
+# tiers below are fine for smoke-testing that a feature is wired up, but they
+# cannot tell you whether the *output* is good enough to ship — a Llama-3.2-3b
+# fallback writing a merchant's campaign copy is not the product. When you are
+# judging quality, you want the model you would actually ship on.
+#
+#   ANTHROPIC_API_KEY     from console.anthropic.com
+#   ANTHROPIC_MODEL       default claude-sonnet-5
+#   ANTHROPIC_VISION_MODEL  defaults to ANTHROPIC_MODEL (all Claude models see)
+#
+# Cost, Aug 2026: sonnet-5 $2/$10 per Mtok (intro pricing to 31 Aug 2026,
+# then $3/$15), haiku-4-5 $1/$5, opus-5 $5/$25. Prompts here are a few hundred
+# tokens, so $5 of credit is thousands of calls on Sonnet. Set
+# ANTHROPIC_MODEL=claude-haiku-4-5 for bulk/cheap paths.
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
+ANTHROPIC_VISION_MODEL = os.environ.get("ANTHROPIC_VISION_MODEL", "") or ANTHROPIC_MODEL
+ANTHROPIC_VERSION = "2023-06-01"
+
 NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
 # Sensible default: Llama 3.3 70B Instruct via NVIDIA's hosted NIM. Owner can
 # swap to nemotron, mixtral, deepseek, etc. by setting NVIDIA_MODEL.
@@ -2307,6 +2326,19 @@ def admin_env_status(token_data: TokenData = Depends(require_role(["super_admin"
             "consequence": "Cron endpoints are unauthenticated (anyone can trigger them). Set this in Vercel — Vercel Cron passes it automatically.",
         },
         {
+            "key": "ANTHROPIC_API_KEY",
+            "present": bool(ANTHROPIC_API_KEY),
+            "value": f"model: {ANTHROPIC_MODEL}" if ANTHROPIC_API_KEY else "(unset)",
+            "feature": "AI quality — Claude runs FIRST in both the text and vision chains",
+            "required": False,
+            "consequence": (
+                "Falls through to the free tiers (NVIDIA/Groq/OpenRouter/Gemini). "
+                "Those prove a feature is wired up but not that its output is "
+                "shippable. Set ANTHROPIC_MODEL to claude-haiku-4-5 for cheap "
+                "bulk paths, claude-sonnet-5 (default) for quality judgement."
+            ),
+        },
+        {
             "key": "NVIDIA_API_KEY or GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY",
             "present": bool(NVIDIA_API_KEY or GROQ_API_KEY or OPENROUTER_API_KEY or GEMINI_API_KEY),
             "feature": "AI insights, AI campaign analyzer, voice-to-campaign",
@@ -3870,6 +3902,51 @@ def _strip_data_url(b64: str) -> str:
     return b64
 
 
+def _call_vision_anthropic(image_b64: str, mime: str, prompt: str) -> tuple:
+    """Claude vision — used by the menu-photo → catalogue import.
+    Returns (output_text_or_none, error_string), same contract as the others.
+    """
+    if not ANTHROPIC_API_KEY:
+        return None, "ANTHROPIC_API_KEY not set"
+    # Anthropic accepts only these four; anything else (heic from an iPhone,
+    # a mislabelled upload) is rejected at the API rather than here, so pin
+    # the media type to a supported value and let the model cope.
+    media = (mime or "image/jpeg").lower()
+    if media not in ("image/jpeg", "image/png", "image/gif", "image/webp"):
+        media = "image/jpeg"
+    try:
+        import requests as _rq
+        r = _rq.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": ANTHROPIC_VERSION,
+                "content-type": "application/json",
+            },
+            json={
+                "model": ANTHROPIC_VISION_MODEL,
+                "max_tokens": 1500,
+                "temperature": 0.1,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "source": {
+                            "type": "base64", "media_type": media, "data": image_b64,
+                        }},
+                        {"type": "text", "text": prompt},
+                    ],
+                }],
+            },
+            timeout=60,
+        )
+        if r.status_code >= 400:
+            return None, f"anthropic HTTP {r.status_code}: {(r.text or '')[:200]}"
+        blocks = r.json().get("content") or []
+        return "".join(b.get("text", "") for b in blocks if b.get("type") == "text"), None
+    except Exception as e:
+        return None, f"anthropic error: {e}"
+
+
 def _call_vision_nvidia(image_b64: str, mime: str, prompt: str) -> tuple:
     """NVIDIA NIM vision — OpenAI-compatible. Tries the Llama 3.2 11B vision
     model by default (free tier). Returns (output_text_or_none, error_string).
@@ -4027,6 +4104,7 @@ def parse_menu_from_photo(
     provider = None
     errors = []  # collected per-provider errors for the failure response
     for fn, label in [
+        (_call_vision_anthropic,  'anthropic-vision'),
         (_call_vision_nvidia,     'nvidia-vision'),
         (_call_vision_groq,       'groq-vision'),
         (_call_vision_openrouter, 'openrouter-vision'),
@@ -4044,10 +4122,10 @@ def parse_menu_from_photo(
         # Otherwise (at least one key is set but all failed), surface the
         # actual upstream errors so the owner can see what's wrong (model
         # deprecated, rate limit, bad key, etc).
-        any_key_set = bool(NVIDIA_API_KEY or GROQ_API_KEY or OPENROUTER_API_KEY)
+        any_key_set = bool(ANTHROPIC_API_KEY or NVIDIA_API_KEY or GROQ_API_KEY or OPENROUTER_API_KEY)
         if not any_key_set:
-            msg = ("Aucun moteur de vision IA n'est configuré. Ajoutez NVIDIA_API_KEY, "
-                   "GROQ_API_KEY ou OPENROUTER_API_KEY sur Vercel et redéployez.")
+            msg = ("Aucun moteur de vision IA n'est configuré. Ajoutez ANTHROPIC_API_KEY, "
+                   "NVIDIA_API_KEY, GROQ_API_KEY ou OPENROUTER_API_KEY sur Vercel et redéployez.")
         else:
             msg = ("Les fournisseurs de vision IA configurés ont tous échoué. "
                    "Détails : " + " | ".join(errors[:3] or ["unknown error"]))
@@ -6409,6 +6487,49 @@ def _parse_bullets(text: str) -> list:
     return [ln for ln in lines if len(ln) > 12][:3]
 
 
+def _call_anthropic(prompt: str) -> Optional[list]:
+    """Anthropic Messages API.
+
+    NOT OpenAI-compatible, so this cannot reuse the payload shape the other
+    three providers share: the auth header is `x-api-key` (not a bearer), an
+    `anthropic-version` header is mandatory, and the reply arrives as a
+    content-block list rather than `choices[0].message.content`.
+    """
+    if not ANTHROPIC_API_KEY:
+        return None
+    try:
+        import requests as _rq
+        r = _rq.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": ANTHROPIC_VERSION,
+                "content-type": "application/json",
+            },
+            json={
+                "model": ANTHROPIC_MODEL,
+                "max_tokens": 400,
+                "temperature": 0.3,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=30,
+        )
+        if r.status_code >= 400:
+            # Surface the real reason. The two you will actually hit are a
+            # revoked key (401) and an exhausted balance (400, "credit balance
+            # is too low") — both of which otherwise look identical to "the
+            # model had nothing to say" once we return None.
+            print(f"_call_anthropic HTTP {r.status_code}: {(r.text or '')[:200]}")
+            return None
+        blocks = r.json().get("content") or []
+        text = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+        bullets = _parse_bullets(text)
+        return bullets if bullets else None
+    except Exception as e:
+        print(f"_call_anthropic error: {e}")
+        return None
+
+
 def _call_nvidia(prompt: str) -> Optional[list]:
     """NVIDIA NIM — OpenAI-compatible hosted models at integrate.api.nvidia.com.
 
@@ -6542,6 +6663,7 @@ def _call_llm(prompt: str) -> tuple:
     nothing, or errored. Skipped providers (no key) cost nothing.
     """
     for fn, label in (
+        (_call_anthropic, f"anthropic/{ANTHROPIC_MODEL}"),
         (_call_nvidia, f"nvidia/{NVIDIA_MODEL}"),
         (_call_groq, f"groq/{GROQ_MODEL}"),
         (_call_openrouter, f"openrouter/{OPENROUTER_MODEL}"),

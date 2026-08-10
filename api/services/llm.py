@@ -7,8 +7,11 @@ stays rule-based and testable; the LLM only *phrases* what the rules found, so a
 missing key or a bad model reply degrades to the caller's template, never a crash.
 
 CONFIG
-    LLM_PROVIDER   "groq" (default) | "nvidia"
-    GROQ_API_KEY / NVIDIA_API_KEY   (already on Vercel)
+    LLM_PROVIDER   "anthropic" | "groq" | "nvidia".
+                   Defaults to "anthropic" when ANTHROPIC_API_KEY is set,
+                   otherwise "groq" — so dropping the key in is enough to put
+                   every agent on Claude without touching another variable.
+    ANTHROPIC_API_KEY / GROQ_API_KEY / NVIDIA_API_KEY
     LLM_MODEL      optional override
 
 SEAM
@@ -27,16 +30,27 @@ logger = logging.getLogger("fidelitour.llm")
 _force_complete = None
 
 _ENDPOINTS = {
+    "anthropic": ("https://api.anthropic.com/v1/messages",
+                  "ANTHROPIC_API_KEY", "claude-sonnet-5"),
     "groq": ("https://api.groq.com/openai/v1/chat/completions",
              "GROQ_API_KEY", "llama-3.3-70b-versatile"),
     "nvidia": ("https://integrate.api.nvidia.com/v1/chat/completions",
                "NVIDIA_API_KEY", "meta/llama-3.3-70b-instruct"),
 }
 
+ANTHROPIC_VERSION = "2023-06-01"
+
+
+def _provider_name() -> str:
+    explicit = os.environ.get("LLM_PROVIDER", "").strip().lower()
+    if explicit in _ENDPOINTS:
+        return explicit
+    # No explicit choice: prefer Claude when its key is present, else Groq.
+    return "anthropic" if os.environ.get("ANTHROPIC_API_KEY", "").strip() else "groq"
+
 
 def _provider() -> tuple:
-    p = os.environ.get("LLM_PROVIDER", "groq").strip().lower()
-    return _ENDPOINTS.get(p, _ENDPOINTS["groq"])
+    return _ENDPOINTS[_provider_name()]
 
 
 def is_configured() -> bool:
@@ -54,6 +68,35 @@ def complete(system: str, user: str, *, max_tokens: int = 400,
     url, key_env, default_model = _provider()
     key = os.environ.get(key_env, "").strip()
     model = os.environ.get("LLM_MODEL", "").strip() or default_model
+
+    # Anthropic speaks its own dialect: x-api-key instead of a bearer token, a
+    # mandatory version header, `system` hoisted out of the message list, and a
+    # content-block array coming back. Same contract out (text or None), so
+    # every caller is unaffected.
+    if _provider_name() == "anthropic":
+        body = {
+            "model": model, "max_tokens": max_tokens, "temperature": temperature,
+            "messages": [{"role": "user", "content": user}],
+        }
+        # Only send `system` when there is one — the API rejects an empty
+        # string, and several callers pass "" when the prompt needs no framing.
+        if (system or "").strip():
+            body["system"] = system
+        try:
+            req = urllib.request.Request(
+                url, data=json.dumps(body).encode(),
+                headers={"x-api-key": key,
+                         "anthropic-version": ANTHROPIC_VERSION,
+                         "content-type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=45) as r:  # noqa: S310
+                data = json.loads(r.read().decode() or "{}")
+            blocks = data.get("content") or []
+            txt = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+            return (txt or "").strip() or None
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Anthropic completion failed: %s", exc)
+            return None
+
     payload = {
         "model": model, "temperature": temperature, "max_tokens": max_tokens,
         "messages": [{"role": "system", "content": system},
