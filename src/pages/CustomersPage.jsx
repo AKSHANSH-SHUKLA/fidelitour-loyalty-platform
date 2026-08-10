@@ -975,11 +975,24 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                {/* Barcode ID */}
+                {/* Barcode ID — clickable, opens the customer's actual card.
+                    The barcode was printed as dead text, so checking what a
+                    client sees meant copying the code by hand and typing the
+                    /card/ URL. It is the single most repeated action when
+                    testing or when a client asks "what does my card say?". */}
                 <div className="flex items-center font-mono"
                   style={{ color: 'var(--ink-soft)', fontSize: 12 }}
                 >
-                  {customer.barcode_id}
+                  <a
+                    href={`/card/${customer.barcode_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Ouvrir la carte de ce client dans un nouvel onglet"
+                    style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 3 }}
+                  >
+                    {customer.barcode_id}
+                  </a>
                 </div>
 
                 {/* Visits */}
