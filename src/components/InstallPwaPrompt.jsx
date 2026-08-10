@@ -33,6 +33,9 @@ export default function InstallPwaPrompt({ onInstalled, context = 'card', force 
   const [iosModalOpen, setIosModalOpen] = useState(false);
   const [installable, setInstallable] = useState(false);
   const [hidden, setHidden] = useState(false);
+  // iOS-only third state. See the dismiss() comment below: on Apple devices
+  // the banner is allowed to shrink, never to disappear.
+  const [collapsed, setCollapsed] = useState(false);
   const deferredPromptRef = useRef(null);
 
   // Detect platform once on mount.
@@ -47,18 +50,28 @@ export default function InstallPwaPrompt({ onInstalled, context = 'card', force 
     /iPhone|iPad|iPod/.test(window.navigator.userAgent) &&
     !window.MSStream;
 
+  // On iOS, an uninstalled card CANNOT receive push — Apple only allows Web
+  // Push from a home-screen PWA. So "dismissed" means something different on
+  // each platform, and conflating them is what silently cost us reach.
+  const iosBlocked = isIos && !isStandalone;
+
   // Hide if already installed, or recently dismissed (unless forced).
   useEffect(() => {
-    if (isStandalone) { setHidden(true); return; }
-    if (force) return;
+    if (isStandalone) { setHidden(true); setCollapsed(false); return; }
+    if (force) { setHidden(false); setCollapsed(false); return; }
     try {
       const dismissedAt = parseInt(localStorage.getItem('ft.installPrompt.dismissed') || '0', 10);
       const fourteenDays = 14 * 24 * 60 * 60 * 1000;
       if (dismissedAt && Date.now() - dismissedAt < fourteenDays) {
-        setHidden(true);
+        // Android/desktop: push works without installing, so honour the
+        // dismissal fully. iOS: collapse to a slim reminder instead — hiding
+        // it would leave the customer permanently unreachable while the
+        // dashboard happily reports the campaign as sent.
+        if (iosBlocked) setCollapsed(true);
+        else setHidden(true);
       }
     } catch (_e) { /* localStorage unavailable — show by default */ }
-  }, [isStandalone, force]);
+  }, [isStandalone, force, iosBlocked]);
 
   // Capture Android's install prompt event.
   useEffect(() => {
@@ -84,7 +97,8 @@ export default function InstallPwaPrompt({ onInstalled, context = 'card', force 
 
   const dismiss = () => {
     try { localStorage.setItem('ft.installPrompt.dismissed', String(Date.now())); } catch (_e) {}
-    setHidden(true);
+    if (iosBlocked) setCollapsed(true);   // shrink, don't vanish
+    else setHidden(true);
   };
 
   const handleInstallClick = async () => {
@@ -107,6 +121,28 @@ export default function InstallPwaPrompt({ onInstalled, context = 'card', force 
   // desktop without install, so no need to nag.)
   if (!installable && !isIos) return null;
 
+  // Collapsed iOS state: one quiet line that stays until the card is actually
+  // installed. It costs the customer nothing and it is the only thing standing
+  // between them and ever receiving an offer.
+  if (collapsed && iosBlocked) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => { setCollapsed(false); setIosModalOpen(true); }}
+          className="w-full flex items-center gap-2 my-2 px-3 py-2 rounded-xl border border-[#DD9F8B] bg-[#FCE3DC]/60 text-left"
+        >
+          <Bell size={14} className="text-[#B85C38] flex-shrink-0" />
+          <span className="text-[11px] text-[#57504A] flex-1 leading-snug">
+            Notifications inactives — ajoutez la carte à votre écran d'accueil.
+          </span>
+          <span className="text-[11px] font-semibold text-[#B85C38] whitespace-nowrap">Voir</span>
+        </button>
+        {iosModalOpen && <IosInstallModal onClose={() => setIosModalOpen(false)} />}
+      </>
+    );
+  }
+
   if (context === 'cta') {
     return (
       <>
@@ -128,7 +164,7 @@ export default function InstallPwaPrompt({ onInstalled, context = 'card', force 
       <div className="rounded-2xl border border-[#DD9F8B] bg-gradient-to-br from-[#FCE3DC] to-[#F8E8E2] p-4 my-3 relative">
         <button
           type="button"
-          aria-label="Fermer"
+          aria-label={iosBlocked ? 'Réduire' : 'Fermer'}
           onClick={dismiss}
           className="absolute top-2 right-2 text-[#9C4427] hover:text-[#171412] p-1"
         >

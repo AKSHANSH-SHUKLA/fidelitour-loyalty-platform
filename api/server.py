@@ -406,6 +406,70 @@ def send_email_to_customer(to_email: str, from_name: str, subject: str, body_htm
     return False
 
 
+# ════════════════════════════════════════════════════════════════════
+# dispatch_to_customer — THE single delivery path for anything we send
+# to a customer.
+#
+# History: this platform used to send by email. The email channel was
+# removed (send_email_to_customer above is a no-op shim), but the call
+# sites were never rewired — so campaigns were marked "sent", recipients
+# were recorded, attribution was armed, and NOTHING actually left the
+# server. Three separate endpoints had that bug. They now all call this.
+#
+# Channel order, matching auto_campaigns._dispatch_message():
+#   1. Web Push  — free, instant, customer opted in from their wallet card
+#   2. SMS       — fallback for customers with no push subscription
+#
+# Never raises: a delivery failure must not break the endpoint that
+# triggered it. Every attempt lands in `delivery_log` so a merchant asking
+# "did my message go out?" has an auditable answer.
+# ════════════════════════════════════════════════════════════════════
+def dispatch_to_customer(tenant_id: str, customer: dict, title: str, body: str,
+                         kind: str = "campaign") -> dict:
+    """Deliver one message to one customer. Returns {sent, channel}."""
+    now = datetime.now(timezone.utc)
+    result = {"sent": False, "channel": None}
+
+    # 1. Web Push
+    try:
+        from features.push_subscriptions import fan_out_to_customer   # noqa: WPS433
+        push_result = fan_out_to_customer(tenant_id, customer.get("id"), title, body)
+        if push_result.get("sent", 0) > 0:
+            result = {"sent": True, "channel": "web_push"}
+        try:
+            db.delivery_log.insert_one({
+                "tenant_id": tenant_id, "customer_id": customer.get("id"),
+                "channel": "web_push", "kind": kind,
+                "result": push_result, "timestamp": now,
+            })
+        except Exception:
+            pass
+    except Exception as exc:
+        print(f"dispatch_to_customer: push failed ({exc})")
+
+    # 2. SMS fallback — only when push reached no device.
+    if not result["sent"]:
+        try:
+            from services.sms import send_sms, is_configured           # noqa: WPS433
+            phone = customer.get("phone")
+            if phone and is_configured():
+                sms_result = send_sms(phone, f"{title}\n{body}" if title else body)
+                if sms_result.get("sent"):
+                    result = {"sent": True, "channel": "sms"}
+                try:
+                    db.delivery_log.insert_one({
+                        "tenant_id": tenant_id, "customer_id": customer.get("id"),
+                        "channel": "sms_fallback", "kind": kind, "phone": phone,
+                        "result": sms_result, "timestamp": now,
+                    })
+                except Exception:
+                    pass
+        except Exception as exc:
+            print(f"dispatch_to_customer: sms failed ({exc})")
+
+    return result
+
+
 _URL_RE = re.compile(
     r"(?P<url>https?://[^\s<>\"']+)",
     flags=re.IGNORECASE,
@@ -3611,22 +3675,32 @@ def send_campaign(
     campaign_content_raw = campaign.content or campaign.name
     targeted_customers = list(db.customers.find(query))
     for cust in targeted_customers:
-        if not cust.get("email"):
-            continue
         try:
             rendered_body = render_template(campaign_content_raw, cust, tenant)
             rendered_subject = render_template(campaign.name, cust, tenant)
-            html = _campaign_html(tenant_name, rendered_subject, rendered_body, cust, image_url=campaign.image_url)
-            sent_ok = send_email_to_customer(
-                to_email=cust["email"],
-                from_name=tenant_name,
-                subject=f"{tenant_name} - {rendered_subject}",
-                body_html=html,
-            )
-            if sent_ok:
+            # In-card feed first: the customer must find the offer when they
+            # open their wallet card, whether or not the push reaches them.
+            try:
+                db.push_notifications.insert_one({
+                    "customer_id": cust["id"],
+                    "tenant_id": token_data.tenant_id,
+                    "campaign_id": campaign.id,
+                    "image_url": campaign.image_url,
+                    "title": rendered_subject,
+                    "body": rendered_body,
+                    "type": "campaign",
+                    "sent_at": campaign.sent_at,
+                })
+            except Exception as _e:
+                print(f"Campaign card-feed write failed for {cust.get('id')}: {_e}")
+            # Then the real push / SMS.
+            if dispatch_to_customer(
+                token_data.tenant_id, cust, rendered_subject, rendered_body,
+                kind="campaign",
+            )["sent"]:
                 delivered += 1
         except Exception as e:
-            print(f"Campaign send failure for {cust.get('email')}: {e}")
+            print(f"Campaign send failure for {cust.get('id')}: {e}")
 
     campaign.delivered_count = delivered
 
@@ -4411,12 +4485,10 @@ def _evaluate_reward_state_and_notify(customer_doc, tenant_id: str) -> Dict[str,
             "sent_at": now,
         })
         fired["near_reward"] = True
-        if cust.get("email"):
-            try:
-                html = _campaign_html(biz, title, body, cust)
-                send_email_to_customer(cust["email"], biz, f"{biz} — {title}", html)
-            except Exception:
-                pass
+        try:
+            dispatch_to_customer(tenant_id, cust, title, body, kind="near_reward")
+        except Exception:
+            pass
 
     # ---- "Reward unlocked" push ----
     # Fires when the customer's current state is at-or-over the threshold AND
@@ -4436,12 +4508,10 @@ def _evaluate_reward_state_and_notify(customer_doc, tenant_id: str) -> Dict[str,
             "sent_at": now,
         })
         fired["reward_unlocked"] = True
-        if cust.get("email"):
-            try:
-                html = _campaign_html(biz, title, body, cust)
-                send_email_to_customer(cust["email"], biz, f"{biz} — {title}", html)
-            except Exception:
-                pass
+        try:
+            dispatch_to_customer(tenant_id, cust, title, body, kind="reward_unlocked")
+        except Exception:
+            pass
 
     return fired
 
@@ -4595,8 +4665,15 @@ def send_card_notification(
 
     now = datetime.now(timezone.utc)
     rows = []
-    emails = []
-    for c in db.customers.find(flt, {"id": 1, "name": 1, "email": 1}):
+    # Every matching customer is a recipient — the old code only collected the
+    # ones with an email address, on a platform where email is switched off.
+    # The projection carries what render_template() and the SMS fallback need.
+    recipients = []
+    for c in db.customers.find(flt, {
+        "id": 1, "tenant_id": 1, "name": 1, "email": 1, "phone": 1,
+        "tier": 1, "points": 1, "visits": 1, "total_amount_paid": 1,
+        "visits_at_last_redemption": 1,
+    }):
         body_rendered = render_template(req.body, c, tenant_doc)
         title_rendered = render_template(req.title, c, tenant_doc)
         rows.append({
@@ -4610,25 +4687,26 @@ def send_card_notification(
             "sent_at": now,
             "sender_name": biz,
         })
-        if c.get("email"):
-            emails.append((c["email"], title_rendered, body_rendered, c))
+        recipients.append((c, title_rendered, body_rendered))
 
     if rows:
         db.push_notifications.insert_many(rows)
 
-    # Best-effort email dispatch (mock when SENDGRID_API_KEY is missing)
-    email_sent = 0
-    for email, title, body, c in emails:
+    # Real delivery — push first, SMS fallback. Writing the row above only
+    # puts the message in the card's inbox; without this loop the customer
+    # never learns it arrived, which made flash sales useless.
+    pushed = 0
+    for c, title, body in recipients:
         try:
-            html = _campaign_html(biz, title, body, c)
-            if send_email_to_customer(email, biz, f"{biz} - {title}", html):
-                email_sent += 1
+            if dispatch_to_customer(t_id, c, title, body, kind=req.type)["sent"]:
+                pushed += 1
         except Exception:
             pass
 
     return {
-        "sent": len(rows),
-        "emails_sent": email_sent,
+        "sent": len(rows),          # written to the card inbox
+        "delivered": pushed,        # actually reached a device
+        "emails_sent": 0,           # email channel is disabled platform-wide
         "type": req.type,
         "title": req.title,
     }
@@ -5900,7 +5978,10 @@ def push_card_override(
             lv["$gte"] = now_utc - timedelta(days=int(f["inactive_days_max"]))
         query["last_visit_date"] = lv
 
-    targets = list(db.customers.find(query, {"id": 1, "name": 1, "first_name": 1, "tenant_id": 1}))
+    targets = list(db.customers.find(query, {
+        "id": 1, "name": 1, "first_name": 1, "tenant_id": 1,
+        "phone": 1, "tier": 1, "points": 1, "visits": 1,
+    }))
     if not targets:
         return {"status": "ok", "overlaid": 0, "pushed": 0, "skipped": 0}
 
@@ -5935,14 +6016,17 @@ def push_card_override(
         push_title = req.push_title or (override_payload.get("strip_title") or "Une offre vous attend")
         push_body  = req.push_body  or (override_payload.get("offer_box_text") or override_payload.get("strip_subtitle") or "Ouvrez votre carte fidélité pour la découvrir.")
         for cust in targets:
-            # Reuse the existing per-customer push helper if available.
+            # Was calling _send_web_push_to_customer(), which is defined
+            # nowhere in this codebase — every call fell into `except
+            # NameError` and reported pushed: 0 with no error at all.
             try:
-                ok = _send_web_push_to_customer(cust["id"], tenant_id, push_title, push_body)
-                if ok: pushed += 1
-                else:  skipped += 1
-            except NameError:
-                # Helper might not exist in this build — skip silently rather
-                # than 500 the whole batch.
+                if dispatch_to_customer(tenant_id, cust, push_title, push_body,
+                                        kind="card_override")["sent"]:
+                    pushed += 1
+                else:
+                    skipped += 1
+            except Exception as _e:
+                print(f"card override push failed for {cust.get('id')}: {_e}")
                 skipped += 1
 
     return {
@@ -6169,13 +6253,10 @@ def send_campaign_to_group(
     delivered = 0
     targeted_customers = list(db.customers.find({"id": {"$in": customer_ids}, "tenant_id": tid}))
     for cust in targeted_customers:
-        if not cust.get("email"):
-            continue
         rendered_body = render_template(content, cust, tenant)
         rendered_subject = render_template(name, cust, tenant)
-        html = _campaign_html(sender_name, rendered_subject, rendered_body, cust, image_url=image_url)
-        ok = send_email_to_customer(cust["email"], sender_name, f"{sender_name} - {rendered_subject}", html)
-        if ok:
+        if dispatch_to_customer(tid, cust, rendered_subject, rendered_body,
+                                kind="campaign")["sent"]:
             delivered += 1
 
     raw_source = (req.get("source") or "").strip().lower() or None
@@ -9677,10 +9758,12 @@ def _dispatch_campaign_to_customers(tenant: dict, name: str, content: str, custo
             "type": trigger_type,
             "sent_at": now,
         })
-        if cust.get("email"):
-            html = _campaign_html(sender_name, rendered_subject, rendered_body, cust)
-            if send_email_to_customer(cust["email"], sender_name, f"{sender_name} - {rendered_subject}", html):
-                delivered += 1
+        # Scheduled sends and the daily cron triggers run through here — they
+        # were on the dead email path too, so a scheduled campaign wrote a card
+        # row and reached nobody.
+        if dispatch_to_customer(tid, cust, rendered_subject, rendered_body,
+                                kind=trigger_type)["sent"]:
+            delivered += 1
     campaign = Campaign(
         id=str(uuid.uuid4()),
         tenant_id=tid,
@@ -10183,10 +10266,9 @@ def admin_broadcast(
             "sender_name": sender_name,
             "sent_at": now,
         })
-        if c.get("email"):
-            html = _campaign_html(sender_name, rendered_subject, rendered_body, c)
-            if send_email_to_customer(c["email"], sender_name, f"{sender_name} - {rendered_subject}", html):
-                delivered += 1
+        if dispatch_to_customer(tid, c, rendered_subject, rendered_body,
+                                kind="admin_broadcast")["sent"]:
+            delivered += 1
 
     doc = {
         "id": broadcast_id,
