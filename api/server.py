@@ -5715,6 +5715,23 @@ def _serialize_card_payload(cust: dict) -> dict:
             "website": t.get("website"),
         },
         "card": {
+            # Everything the Card Designer persists goes in FIRST, then the
+            # explicit entries below overwrite it.
+            #
+            # Why: this object used to be a hand-maintained whitelist, and it
+            # had drifted 25 fields behind the designer. tier_badge_bronze /
+            # silver / gold / vip, show_tier, show_points, show_title,
+            # show_greeting, show_barcode, show_card_number, show_back_link,
+            # the whole stamp_* group, the meter_* colours and use_full_name
+            # were all saved to the database, read by PremiumLoyaltyCard, and
+            # never put on the wire — so the merchant changed them, the save
+            # succeeded, and the customer's card rendered defaults. Any new
+            # toggle added to the designer would have joined them silently.
+            #
+            # Spreading first (not last) is deliberate: the explicit entries
+            # read from `tpl`, which already carries the per-customer override
+            # overlay applied above. Raw brand_fields must never clobber that.
+            **{k: v for k, v in brand_fields.items() if v is not None},
             "logo_url": tpl.get("logo_url"),
             "reward_description": tpl.get("reward_description", "Une récompense fidélité"),
             "reward_threshold": reward_threshold,
