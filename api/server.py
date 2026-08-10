@@ -7321,6 +7321,25 @@ def get_analytics_summary(
         "rewards_redeemed_total": rewards_total,
         "birthdays_this_month_count": birthdays_this_month_count,
         "vip_count": vip_count,
+        # ── Three fields the dashboard has always read and the API has never
+        # sent, so TOTAL VISITES, TAUX DE RETOUR and CLIENTS VIP were pinned
+        # at zero on every account, and the tier donut fell through to its
+        # DEMO constants — showing a merchant invented numbers.
+        #
+        # total_visits comes from the per-customer counter, not a count over
+        # the visits collection: the counter is what the scan endpoint
+        # increments and what the Clients page displays, so the headline
+        # figure and the per-client figures can never disagree.
+        "total_visits": sum(int(c.get("visits") or 0) for c in customers),
+        "repeat_rate": (
+            round(sum(1 for c in customers if int(c.get("visits") or 0) >= 2)
+                  / len(customers) * 100, 1)
+            if customers else 0.0
+        ),
+        "tier_distribution": {
+            tier: sum(1 for c in customers if (c.get("tier") or "bronze").lower() == tier)
+            for tier in ("bronze", "silver", "gold", "vip")
+        },
         # Wallet-card state KPIs (3 mutually-exclusive buckets that sum to total_customers)
         "wallet_active_count": wallet_active_count,
         "wallet_deleted_count": wallet_deleted_count,

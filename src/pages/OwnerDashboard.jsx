@@ -214,7 +214,11 @@ export default function OwnerDashboard() {
   const tiersTotal = tierData.reduce((s, p) => s + p.value, 0);
   // displayTierDist mirrors whichever data tierData used so the rows
   // and the donut stay in sync.
-  const displayTierDist = realTier.length >= 2 ? tierDist : DEMO_TIER_DIST;
+  // Never substitute DEMO_TIER_DIST for real data: a merchant reading
+  // invented tier counts off their own dashboard is worse than an empty
+  // chart. If the payload has no distribution, show nothing and let the
+  // empty state say so.
+  const displayTierDist = realTier.length >= 1 ? tierDist : {};
 
   // Visit-time heatmap — { day_of_week: { hour: count } } from the
   // analytics summary. If the backend has no real data yet (fresh
