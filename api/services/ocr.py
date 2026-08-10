@@ -15,8 +15,13 @@ HOW IT WORKS
     flagged needs_review. The human is always the last gate (see agent_saisie).
 
 CONFIG
-    OCR_PROVIDER   "groq" (default) | "nvidia"
-    GROQ_API_KEY   / NVIDIA_API_KEY   (already set on Vercel)
+    OCR_PROVIDER   "anthropic" | "groq" | "nvidia".
+                   Defaults to "anthropic" when ANTHROPIC_API_KEY is set,
+                   else "groq". Reading an invoice correctly is the whole
+                   value of this module — a wrong total_ttc costs the
+                   collaborateur more time than typing it would have — so
+                   the best available model should win by default.
+    ANTHROPIC_API_KEY / GROQ_API_KEY / NVIDIA_API_KEY
     OCR_MODEL      optional model override
 
 SEAM
@@ -38,11 +43,17 @@ logger = logging.getLogger("fidelitour.ocr")
 _force_extract = None
 
 _ENDPOINTS = {
+    "anthropic": ("https://api.anthropic.com/v1/messages",
+                  "ANTHROPIC_API_KEY", "claude-sonnet-5"),
     "groq": ("https://api.groq.com/openai/v1/chat/completions",
              "GROQ_API_KEY", "meta-llama/llama-4-scout-17b-16e-instruct"),
     "nvidia": ("https://integrate.api.nvidia.com/v1/chat/completions",
                "NVIDIA_API_KEY", "meta/llama-4-scout-17b-16e-instruct"),
 }
+
+ANTHROPIC_VERSION = "2023-06-01"
+# The only media types the Anthropic image block accepts.
+_ANTHROPIC_MEDIA = ("image/jpeg", "image/png", "image/gif", "image/webp")
 
 _PROMPT = (
     "You are an accounting OCR. Read this French supplier invoice/receipt image "
@@ -59,9 +70,15 @@ _PROMPT = (
 )
 
 
+def _provider_name() -> str:
+    explicit = os.environ.get("OCR_PROVIDER", "").strip().lower()
+    if explicit in _ENDPOINTS:
+        return explicit
+    return "anthropic" if os.environ.get("ANTHROPIC_API_KEY", "").strip() else "groq"
+
+
 def _provider() -> tuple:
-    p = os.environ.get("OCR_PROVIDER", "groq").strip().lower()
-    return _ENDPOINTS.get(p, _ENDPOINTS["groq"])
+    return _ENDPOINTS[_provider_name()]
 
 
 def is_configured() -> bool:
@@ -136,6 +153,37 @@ def _call_vision(image_b64: str, mime: str) -> dict:
     url, key_env, default_model = _provider()
     key = os.environ.get(key_env, "").strip()
     model = os.environ.get("OCR_MODEL", "").strip() or default_model
+
+    # Anthropic: own auth header, own version header, image as a base64 block
+    # rather than a data: URL, and the answer in a content-block array.
+    if _provider_name() == "anthropic":
+        media = (mime or "image/jpeg").lower()
+        if media not in _ANTHROPIC_MEDIA:
+            media = "image/jpeg"
+        body = {
+            "model": model, "max_tokens": 700, "temperature": 0,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {
+                        "type": "base64", "media_type": media, "data": image_b64}},
+                    {"type": "text", "text": _PROMPT},
+                ],
+            }],
+        }
+        req = urllib.request.Request(
+            url, data=json.dumps(body).encode(),
+            headers={"x-api-key": key,
+                     "anthropic-version": ANTHROPIC_VERSION,
+                     "content-type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=60) as r:  # noqa: S310
+            data = json.loads(r.read().decode() or "{}")
+        blocks = data.get("content") or []
+        content = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+        return _parse_json(content)
+
     payload = {
         "model": model,
         "temperature": 0,
