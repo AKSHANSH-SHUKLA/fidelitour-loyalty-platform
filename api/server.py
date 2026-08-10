@@ -2271,7 +2271,29 @@ def admin_env_status(token_data: TokenData = Depends(require_role(["super_admin"
         {
             "key": "JWT_SECRET", "present": bool(os.environ.get("JWT_SECRET", "")),
             "feature": "Authentication", "required": True,
-            "consequence": "Owners and staff cannot log in.",
+            "consequence": (
+                "Falls back to the signing key committed to the public repo — "
+                "anyone reading it can forge a super_admin token. "
+                "Fix: openssl rand -hex 32 -> Vercel env JWT_SECRET -> redeploy."
+            ),
+        },
+        {
+            # VAPID_SUBJECT is a contact URI, not a secret — it travels in
+            # clear inside every push JWT. Showing the value here is the only
+            # way to check it: Vercel hides the value of any variable marked
+            # "Sensitive", so the dashboard cannot answer "which address did
+            # I set?". Changing it is safe — subscriptions are bound to the
+            # public key, never to the subject.
+            "key": "VAPID_SUBJECT",
+            "present": bool(os.environ.get("VAPID_SUBJECT", "")),
+            "value": os.environ.get("VAPID_SUBJECT", "") or "(unset — defaults to mailto:contact@fidelitour.fr)",
+            "feature": "Web Push — contact address sent to Apple/Google/Mozilla",
+            "required": False,
+            "consequence": (
+                "Push still works on the built-in default. Set it to a real "
+                "address you read: push providers use it to reach you if your "
+                "sends start failing or get flagged."
+            ),
         },
         {
             "key": "VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY",
