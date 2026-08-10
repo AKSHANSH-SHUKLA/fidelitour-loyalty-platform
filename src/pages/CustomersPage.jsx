@@ -266,6 +266,9 @@ export default function CustomersPage() {
     try {
       sessionStorage.setItem('campaignHandoff', JSON.stringify({
         customer_ids: filteredCustomers.map(c => c.id),
+        // Ship one real customer so the composer's phone preview can resolve
+        // {first_name} etc. instead of falling back to the generic sample.
+        preview_customer: filteredCustomers[0] || null,
         suggested_name: activeLabel,
         suggested_message: 'Bonjour {first_name}, une attention pour vous chez {business_name} — à très vite !',
         source: 'push',

@@ -130,7 +130,10 @@ const ScanPage = () => {
   // includes items[] so the server can recompute the total from prices
   // it controls.
   const [catalog, setCatalog] = useState([]);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // Open by default: line items are what make the 'Top produits' analytics
+  // real. When the picker starts collapsed the cashier types a bare amount and
+  // the visit carries no items, so the product report stays empty forever.
+  const [pickerOpen, setPickerOpen] = useState(true);
   const [pickerQty, setPickerQty] = useState({}); // { [item.id]: qty }
   // App-wide branch context (item #18). Picking a branch here also reflects on every other page.
   const { branchId: _branchIdRaw, setBranchId: _setBranchIdGlobal, branches: _branchesCtx, setBranches: _setBranchesCtx } = useBranch();

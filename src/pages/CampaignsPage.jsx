@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Send, Plus, Filter, Users, MessageSquare, Clock, CheckCircle2, AlertCircle, Megaphone, Eye, AlertTriangle, TrendingUp, Zap, ChevronDown, ChevronUp, CalendarClock, Trash2, Pencil, X, Sparkles, BellRing } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ownerAPI } from '../lib/api';
@@ -7,6 +7,7 @@ import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import CampaignAudienceBuilder from '../components/CampaignAudienceBuilder';
 import PhonePushPreview from '../components/PhonePushPreview';
+import { renderTokens, SAMPLE_CUSTOMER, TOKEN_HELP } from '../lib/tokens';
 
 /**
  * ReEnableNotificationsButton — Strategy 2 (SMS re-enablement campaign).
@@ -209,6 +210,14 @@ export default function CampaignsPage() {
   const [sendConfirmation, setSendConfirmation] = useState(null);
   const [previewCount, setPreviewCount] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  // --- Live token preview context (see src/lib/tokens.js) ------------------
+  // The composer body keeps its raw {tokens} — the server substitutes them
+  // per-recipient at send time. Only the phone preview resolves them locally,
+  // against a real customer when we have one, otherwise a labelled sample.
+  // Nothing here changes the payload that gets sent.
+  const [previewCustomer, setPreviewCustomer] = useState(SAMPLE_CUSTOMER);
+  const [previewTenant, setPreviewTenant] = useState({});
+  const [previewCardTemplate, setPreviewCardTemplate] = useState({});
   const [selectedCampaignTab, setSelectedCampaignTab] = useState('by-filter'); // 'by-filter' or 'by-customers'
   const [campaignCustomers, setCampaignCustomers] = useState('');
   const [viewingTrackingId, setViewingTrackingId] = useState(null);
@@ -322,6 +331,44 @@ export default function CampaignsPage() {
     }
   };
 
+  // Reference data the phone preview needs: the tenant (for {business_name}),
+  // the card template (for {points_to_next_reward}) and one real customer to
+  // render against. All best-effort — any failure leaves the sample in place.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [tRes, cRes] = await Promise.allSettled([
+        ownerAPI.getTenant(),
+        ownerAPI.getCardTemplate(),
+      ]);
+      if (cancelled) return;
+      if (tRes.status === 'fulfilled') setPreviewTenant(tRes.value?.data || {});
+      if (cRes.status === 'fulfilled') setPreviewCardTemplate(cRes.value?.data || {});
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // The reference customer is fetched LAZILY, the first time the composer
+  // opens, because GET /owner/customers returns the whole list — not something
+  // to pull on every page mount just to render a preview name. A handoff that
+  // already supplied preview_customer, or a tenant with no customers at all,
+  // skips the call entirely.
+  const previewCustomerFetched = useRef(false);
+  useEffect(() => {
+    if (!showCreateModal || previewCustomerFetched.current) return;
+    if (previewCustomer && !previewCustomer.__sample) return;
+    previewCustomerFetched.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await ownerAPI.getCustomers({});
+        const rows = Array.isArray(r?.data) ? r.data : (r?.data?.customers || []);
+        if (!cancelled && rows.length) setPreviewCustomer(rows[0]);
+      } catch (_e) { /* no customers yet -> labelled sample stays */ }
+    })();
+    return () => { cancelled = true; };
+  }, [showCreateModal]);
+
   // Load campaigns + scheduled list on mount. Also pick up any handoff from
   // Customer Map (a list of customer IDs the user wants to campaign to).
   useEffect(() => {
@@ -340,6 +387,10 @@ export default function CampaignsPage() {
         if (handoff && Array.isArray(handoff.customer_ids) && handoff.customer_ids.length) {
           setSelectedCampaignTab('by-customers');
           setCampaignCustomers(handoff.customer_ids.join('\n'));
+          // When the sending page knew exactly which customers these are, it
+          // ships one of them along so the preview renders real values instead
+          // of the generic sample.
+          if (handoff.preview_customer) setPreviewCustomer(handoff.preview_customer);
           setFormData((prev) => ({
             ...prev,
             campaignName: handoff.suggested_name || 'Ciblage carte',
@@ -1432,14 +1483,34 @@ export default function CampaignsPage() {
                     <p className="text-[10px] mt-1.5" style={{ color: C_PS.inkMute }}>
                       Pro tip: paste a full <code>https://…</code> URL or an <code>@handle</code> — it becomes a clickable link automatically.
                     </p>
+                    {/* Token chips — tap to insert. The message keeps the raw
+                        {token}; the phone on the right shows it resolved
+                        against a real customer, so the owner can read the
+                        message the way the recipient will. */}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {TOKEN_HELP.map((tk) => (
+                        <button
+                          key={tk.token}
+                          type="button"
+                          title={tk.label}
+                          onClick={() => setFormData((prev) => ({ ...prev, message: (prev.message || '') + tk.token }))}
+                          className="px-2 py-0.5 rounded-full border text-[10px]"
+                          style={{ borderColor: '#E9E5E0', color: '#57504A', background: '#FFFFFF', fontFamily: 'ui-monospace, monospace' }}
+                        >
+                          {tk.token}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <PhonePushPreview
-                    businessName={formData.campaignName || 'Your shop'}
-                    title={formData.campaignName || ''}
-                    body={formData.message || ''}
+                    businessName={previewTenant.campaign_sender_name || previewTenant.name || formData.campaignName || 'Your shop'}
+                    title={renderTokens(formData.campaignName || '', previewCustomer, previewTenant, previewCardTemplate)}
+                    body={renderTokens(formData.message || '', previewCustomer, previewTenant, previewCardTemplate)}
                     primaryColor={C_PS.terracotta}
                     width={210}
-                    caption="Preview on customer's phone"
+                    caption={previewCustomer?.__sample
+                      ? 'Aperçu — exemple : Sophie Martin'
+                      : `Aperçu pour ${previewCustomer?.name || 'un client'}`}
                   />
                 </div>
               </div>
