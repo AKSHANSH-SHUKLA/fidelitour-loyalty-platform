@@ -3299,6 +3299,18 @@ def get_tenant(token_data: TokenData = Depends(require_role(["business_owner", "
     t = db.tenants.find_one({"id": token_data.tenant_id})
     if t:
         t.pop("_id", None)
+        # Ship the EFFECTIVE limits with the tenant. The dashboard used to
+        # carry its own hardcoded {basic:500, gold:2000, vip:10000} table,
+        # left over from a plan structure that no longer exists — so the
+        # "objectif du plan" gauge showed a ceiling the backend does not
+        # enforce, and silver (absent from that table) silently fell back to
+        # 2000 while joining is actually blocked at 1000. This is computed by
+        # the same get_plan_features() the enforcement uses, admin overrides
+        # included, so the number on screen is the number that applies.
+        try:
+            t["plan_features"] = get_plan_features(t.get("plan"))
+        except Exception as _e:
+            print(f"get_tenant: plan_features failed: {_e}")
     return t
 
 @app.put("/api/owner/tenant")

@@ -269,7 +269,14 @@ export default function OwnerDashboard() {
 
   // Plan usage
   const planName = (tenant?.plan || 'gold').toUpperCase();
-  const planLimit = ({ basic: 500, gold: 2000, vip: 10000, chain: 50000 })[tenant?.plan || 'gold'] || 2000;
+  // Real ceiling from the server (get_plan_features → baseline + admin
+  // overrides). The legacy map below is only a last resort for a payload
+  // that predates plan_features; its numbers do not match the live limits
+  // (silver 1000 / gold 3000 / vip 6000) and must never be trusted alone.
+  const planLimit =
+    Number(tenant?.plan_features?.max_customers) ||
+    ({ silver: 1000, gold: 3000, vip: 6000, basic: 1000, chain: 6000 })[tenant?.plan] ||
+    1000;
   const planUsedPct = planLimit > 0 ? Math.min(100, (totalCustomers / planLimit) * 100) : 0;
 
   // ─── P1 data-viz KPI cards (v31-adapted) — derived series ──────────
