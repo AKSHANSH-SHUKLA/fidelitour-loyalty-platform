@@ -1662,20 +1662,20 @@ def health_check():
         user_count = db.users.count_documents({})
         tenant_count = db.tenants.count_documents({})
         customer_count = db.customers.count_documents({})
-        users_list = []
-        for u in db.users.find({}, {"email": 1, "role": 1, "_id": 0}):
-            users_list.append(u)
+        # NOTE: this endpoint is public and unauthenticated. It used to return
+        # every user's email + role — 54 addresses handed to anyone who typed
+        # the URL. Counts are enough to answer "is the database reachable";
+        # the identities are personal data (RGPD art. 32). Use the
+        # authenticated /api/admin/tenants endpoints to inspect accounts.
         return {
             "status": "ok",
             "mongodb_uri_set": bool(MONGODB_URI),
-            "sendgrid_key_set": bool(SENDGRID_API_KEY),
             "seed_error": _seed_error,
             "counts": {
                 "users": user_count,
                 "tenants": tenant_count,
                 "customers": customer_count
             },
-            "users": users_list
         }
     except Exception as e:
         return {"status": "error", "detail": str(e), "mongodb_uri_set": bool(MONGODB_URI)}

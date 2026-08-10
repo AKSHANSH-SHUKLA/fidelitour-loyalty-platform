@@ -1,10 +1,35 @@
+import os
 import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
 from fastapi import Request, HTTPException, Depends
 from models import TokenData
 
-SECRET_KEY = "a3f8b2c1d4e5f67890abcdef12345678abcdef9087654321fedcba0987654321"
+# ─────────────────────────────────────────────────────────────────────
+# JWT signing key.
+#
+# This used to be a hardcoded constant — in a PUBLIC GitHub repo. HS256 is
+# symmetric, so that constant is all anyone needs to mint a valid token for
+# any email and any role, including super_admin: full admin console, every
+# tenant, every customer record, no password required.
+#
+# It now reads JWT_SECRET from the environment. The old constant remains
+# ONLY as a fallback so that a deploy without the env var doesn't lock
+# every existing user out mid-session — but it is a hole, not a default.
+#
+# TO CLOSE IT: set JWT_SECRET in Vercel (e.g. `openssl rand -hex 32`) and
+# redeploy. Every current session is invalidated by the change, so users
+# log in once more. That is the entire cost.
+# ─────────────────────────────────────────────────────────────────────
+_LEGACY_INSECURE_SECRET = "a3f8b2c1d4e5f67890abcdef12345678abcdef9087654321fedcba0987654321"
+SECRET_KEY = os.environ.get("JWT_SECRET", "").strip() or _LEGACY_INSECURE_SECRET
+if SECRET_KEY == _LEGACY_INSECURE_SECRET:
+    print(
+        "SECURITY WARNING: JWT_SECRET is not set — falling back to the secret "
+        "committed to the public repository. Anyone can forge a super_admin "
+        "token until this env var is set. Fix: openssl rand -hex 32 -> Vercel "
+        "env JWT_SECRET -> redeploy."
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 24 * 60
 
