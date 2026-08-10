@@ -10055,6 +10055,32 @@ def _resolve_segment(tid: str, segment: dict) -> list:
 # --- 1, 8, 3: Daily trigger cron -----------------------------
 # Vercel Cron sends GET requests; manual triggers (UI button + curl) use POST.
 # Both paths share the same handler below.
+def _supersede_pending(tenant_id: str, kind: str) -> int:
+    """Retire any batch of this kind still waiting for approval.
+
+    Why: a prepared batch is never logged in `auto_campaign_log` — only a
+    SENT one is. The cooldown that stops a customer being pestered therefore
+    never fires for a batch the owner has not approved, so the next run
+    recomputes the exact same audience and files an identical batch. Leave
+    that alone for a fortnight and the approval queue is thirty copies of
+    "vous nous manquez", all pointing at the same 110 people.
+
+    Superseding rather than skipping is deliberate: the newest batch is the
+    only one whose "inactive since" list is still true today. Old batches are
+    marked rather than deleted so the history stays auditable.
+    """
+    try:
+        res = db.pending_auto_runs.update_many(
+            {"tenant_id": tenant_id, "kind": kind, "status": "pending"},
+            {"$set": {"status": "superseded",
+                      "superseded_at": datetime.now(timezone.utc)}},
+        )
+        return res.modified_count
+    except Exception as e:
+        print(f"_supersede_pending failed ({kind}): {e}")
+        return 0
+
+
 @app.get("/api/cron/daily-triggers")
 @app.post("/api/cron/daily-triggers")
 def run_daily_triggers(request: Request):
@@ -10102,6 +10128,7 @@ def run_daily_triggers(request: Request):
             if bday_customers:
                 title = cfg.get("birthday_title") or "🎂 Joyeux anniversaire {first_name} !"
                 body = cfg.get("birthday_message") or "Joyeux anniversaire {first_name} ! Une attention vous attend chez {business_name}."
+                _supersede_pending(tid, "birthday")
                 db.pending_auto_runs.insert_one({
                     "id": str(uuid.uuid4()),
                     "tenant_id": tid,
@@ -10136,6 +10163,7 @@ def run_daily_triggers(request: Request):
             if fresh_inactive:
                 title = cfg.get("inactive_title") or "{business_name} — vous nous manquez"
                 body = cfg.get("inactive_message") or "{first_name}, ça fait un moment ! Revenez nous voir, une attention vous attend chez {business_name}."
+                _supersede_pending(tid, "inactive_rescue")
                 db.pending_auto_runs.insert_one({
                     "id": str(uuid.uuid4()),
                     "tenant_id": tid,
@@ -10186,6 +10214,7 @@ def run_daily_triggers(request: Request):
             if at_eligible:
                 title = cfg.get("almost_there_title") or "Plus qu'une visite ! 🎁"
                 body = cfg.get("almost_there_message") or "{first_name}, vous êtes à 1 visite d'une récompense chez {business_name} ! ☕"
+                _supersede_pending(tid, "almost_there")
                 db.pending_auto_runs.insert_one({
                     "id": str(uuid.uuid4()),
                     "tenant_id": tid,

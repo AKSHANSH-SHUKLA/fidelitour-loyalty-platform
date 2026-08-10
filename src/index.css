@@ -363,9 +363,23 @@ select {
   background: var(--surface-card);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
   transition: border-color var(--duration-fast) var(--ease-out),
               box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* Default padding, deliberately at specificity 0.
+   It used to live in the rule above, whose five :not() clauses give it a
+   specificity of (0,5,1) — far above any single Tailwind utility (0,1,0).
+   So `pl-14`, `px-4`, `py-4` were silently discarded on EVERY input in the
+   app. The visible symptom was the € icon on the scan page sitting on top
+   of the amount, because the icon is absolutely positioned at 16px while
+   the text still started at the global 12px.
+   Wrapping the selector in :where() drops it to (0,0,1), so a utility class
+   now wins and an input with no padding class still gets this default. */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"])),
+:where(textarea),
+:where(select) {
+  padding: 8px 12px;
 }
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover,
 textarea:hover,

@@ -228,6 +228,19 @@ def _prepare_run(tenant_id: str, kind: str, title: str, body_template: str,
         }
         for c in candidates
     ]
+    # Retire the previous unapproved batch of this kind — see the long note on
+    # server.py::_supersede_pending. Without it the queue accumulates one
+    # identical copy per run, because a prepared batch never writes the
+    # auto_campaign_log row that the cooldown checks.
+    try:
+        _db.pending_auto_runs.update_many(
+            {"tenant_id": tenant_id, "kind": kind, "status": "pending"},
+            {"$set": {"status": "superseded",
+                      "superseded_at": datetime.now(timezone.utc)}},
+        )
+    except Exception as _e:
+        print(f"_prepare_run: supersede failed ({kind}): {_e}")
+
     row_id = str(uuid.uuid4())
     _db.pending_auto_runs.insert_one({
         "id": row_id,

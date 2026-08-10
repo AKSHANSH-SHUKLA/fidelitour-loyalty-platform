@@ -356,10 +356,22 @@ const JoinPage = () => {
                   let them try again" pattern. Distinct copy per code so
                   the user knows whether to re-enable in settings (denied)
                   or retry the request (unavailable / timeout). */}
-              {(geoStatus === 'denied' || geoStatus === 'unavailable' || geoStatus === 'timeout' || geoStatus === 'error') && (
+              {/* "denied" is the one state where retrying is pointless: the
+                  browser has remembered the refusal and will not prompt again
+                  until the user resets the site permission themselves. Offering
+                  "Réessayer" there just fails instantly and makes the product
+                  look broken — so that state gets the instruction instead of
+                  the button. The transient states keep the retry, because for
+                  them a second attempt genuinely can succeed. */}
+              {geoStatus === 'denied' && (
+                <div className="text-xs text-[#92400E]">
+                  <p>{t('join.geo_denied')}</p>
+                  <p className="mt-1 text-[#78716C]">{t('join.geo_denied_howto')}</p>
+                </div>
+              )}
+              {(geoStatus === 'unavailable' || geoStatus === 'timeout' || geoStatus === 'error') && (
                 <div className="flex items-center gap-2 text-xs text-[#92400E]">
                   <span>
-                    {geoStatus === 'denied'      && t('join.geo_denied')}
                     {geoStatus === 'unavailable' && t('join.geo_unavailable')}
                     {geoStatus === 'timeout'     && t('join.geo_timeout')}
                     {geoStatus === 'error'       && t('join.geo_error')}

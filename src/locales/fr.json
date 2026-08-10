@@ -130,7 +130,8 @@
     "source_facebook": "👥 Facebook",
     "source_tiktok": "🎵 TikTok",
     "source_website": "🌐 Site web",
-    "source_other": "Autre"
+    "source_other": "Autre",
+    "geo_denied_howto": "Votre navigateur a mémorisé ce refus. Pour l'autoriser : cliquez sur l'icône à gauche de l'adresse du site, puis Réinitialiser les autorisations."
   },
   "card": {
     "loading": "Chargement de votre carte…",

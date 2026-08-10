@@ -115,7 +115,7 @@
     "geo_share": "Share my location",
     "geo_requesting": "Requesting location…",
     "geo_granted": "✓ Location shared",
-    "geo_denied": "Permission denied — you can still join.",
+    "geo_denied": "Permission denied — you can still register.",
     "geo_unavailable": "Position unavailable — Wi-Fi/GPS out of reach.",
     "geo_timeout": "Request timed out — try again or skip.",
     "geo_error": "Couldn't get your location — you can still join.",
@@ -130,7 +130,8 @@
     "source_facebook": "👥 Facebook",
     "source_tiktok": "🎵 TikTok",
     "source_website": "🌐 Website",
-    "source_other": "Other"
+    "source_other": "Other",
+    "geo_denied_howto": "Your browser has remembered this refusal. To allow it: click the icon to the left of the site address, then reset permissions."
   },
   "card": {
     "loading": "Loading your card…",

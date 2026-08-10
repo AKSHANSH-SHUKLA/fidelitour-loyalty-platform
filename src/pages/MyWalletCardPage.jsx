@@ -475,6 +475,58 @@ const MyWalletCardPage = () => {
     }
   };
 
+  // ── Merged "Offres" feed — MUST stay above every early return ───────
+  // React error #310 ("Rendered more hooks than during the previous
+  // render") lived here: this useMemo sat BELOW the `if (loading)` /
+  // `if (!data)` guards. First paint bailed out at `loading` and never
+  // reached the hook; the next paint got past the guards and ran it, so
+  // React saw the hook count grow between renders and tore the tree down.
+  // Every freshly-joined customer hit it, because their first visit to
+  // /card/:id is always loading-then-loaded.
+  //
+  // Hooks are positional: they must run in the same order on every
+  // render. Anything conditional goes INSIDE the hook, never around it —
+  // hence the `data?.` reads below instead of the destructured locals,
+  // which do not exist yet at this point in the function.
+  const mergedFeed = React.useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    // 1. Standing offer (kind:'primary') first, if present.
+    for (const o of (data?.offers || [])) {
+      if (o.kind === 'primary' && o.id && !seen.has(o.id)) {
+        seen.add(o.id);
+        out.push({ ...o, _ts: 9e15 /* always first */ });
+      }
+    }
+    // 2. Campaign-kind items from offers (already has body/image/link).
+    for (const o of (data?.offers || [])) {
+      if (o.kind === 'campaign' && o.id && !seen.has(o.id)) {
+        seen.add(o.id);
+        out.push({ ...o, _ts: o.sent_at ? Date.parse(o.sent_at) : 0 });
+      }
+    }
+    // 3. Anything in `notifications` that wasn't already in offers (fallback,
+    // future-proofing if backend ever returns extra notifications).
+    for (const n of (data?.notifications || [])) {
+      if (n.id && !seen.has(n.id)) {
+        seen.add(n.id);
+        out.push({
+          id: n.id,
+          kind: 'campaign',
+          title: n.title,
+          description: n.body || '',
+          body: n.body || '',
+          image_url: n.image_url,
+          link: n.link,
+          sent_at: n.sent_at,
+          _ts: n.sent_at ? Date.parse(n.sent_at) : 0,
+        });
+      }
+    }
+    out.sort((a, b) => (b._ts || 0) - (a._ts || 0));
+    return out;
+  }, [data?.offers, data?.notifications]);
+
   if (loading) {
     return <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center text-[#57504A]">Chargement de votre carte…</div>;
   }
@@ -562,49 +614,7 @@ const MyWalletCardPage = () => {
   const activeOffer = card.active_offer || {};
   const stampsTarget = card.reward_threshold || 10;
 
-  // ── Merged "Offres" feed ────────────────────────────────────────────
-  // The backend returns two arrays (`offers` and `notifications`) that
-  // overlap — the same campaigns appear in BOTH. We merge them here so
-  // the UI shows each item exactly once, in a single chronological feed,
-  // with the standing card-template offer pinned at the top.
-  const mergedFeed = React.useMemo(() => {
-    const seen = new Set();
-    const out = [];
-    // 1. Standing offer (kind:'primary') first, if present.
-    for (const o of (offers || [])) {
-      if (o.kind === 'primary' && o.id && !seen.has(o.id)) {
-        seen.add(o.id);
-        out.push({ ...o, _ts: 9e15 /* always first */ });
-      }
-    }
-    // 2. Campaign-kind items from offers (already has body/image/link).
-    for (const o of (offers || [])) {
-      if (o.kind === 'campaign' && o.id && !seen.has(o.id)) {
-        seen.add(o.id);
-        out.push({ ...o, _ts: o.sent_at ? Date.parse(o.sent_at) : 0 });
-      }
-    }
-    // 3. Anything in `notifications` that wasn't already in offers (fallback,
-    // future-proofing if backend ever returns extra notifications).
-    for (const n of (notifications || [])) {
-      if (n.id && !seen.has(n.id)) {
-        seen.add(n.id);
-        out.push({
-          id: n.id,
-          kind: 'campaign',
-          title: n.title,
-          description: n.body || '',
-          body: n.body || '',
-          image_url: n.image_url,
-          link: n.link,
-          sent_at: n.sent_at,
-          _ts: n.sent_at ? Date.parse(n.sent_at) : 0,
-        });
-      }
-    }
-    out.sort((a, b) => (b._ts || 0) - (a._ts || 0));
-    return out;
-  }, [offers, notifications]);
+
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] font-['Manrope'] py-10 px-4">
