@@ -15,20 +15,20 @@ import React from 'react';
 
 /* Eclat (light) — flame on gallery white. Mirrors .flc in index.css. */
 export const ECLAT = {
-  paper: '#FBFAF8', paper2: '#F4F1EC', card: '#FFFFFF',
-  line: '#ECE8E2', lineHi: '#D9D3CA',
-  ink: '#191410', ink2: '#3A332B', ink3: '#524A40', tick: '#8D857D',
-  accent: '#C73E2C', accentDeep: '#A82843', accentHi: '#E8703A',
-  ok: '#0F8B58', info: '#3568B8', risk: '#C22F45', warn: '#A8862D',
-  grid: '#F6E9E2',
+  paper: '#FFF7F2', paper2: '#F8EFF4', card: '#FFFFFF',
+  line: '#F0E3EA', lineHi: '#EBD5E2',
+  ink: '#221420', ink2: '#463442', ink3: '#7A5F72', tick: '#9A8090',
+  accent: '#E0397A', accentDeep: '#B02468', accentHi: '#FF7A59',
+  ok: '#0E9563', info: '#3E63DD', risk: '#E23D5C', warn: '#D98A1F',
+  grid: '#F8E6EF',
   // Chart series — semantic hues used across the dashboard data-viz.
-  serieBlue: '#3FA9D9', serieAmber: '#E8A53B', serieGreen: '#20714C',
-  serieRed: '#E15A47', serieSky: '#5984AC',
+  serieBlue: '#3E63DD', serieAmber: '#F2B23E', serieGreen: '#0E9563',
+  serieRed: '#E23D5C', serieSky: '#5856D6',
   tier: { bronze: '#D27A3E', silver: '#9AA6B3', gold: '#E8A53B', vip: '#9A6DBF' },
-  // Heatmap ramp anchors (pale paper -> deep flame-burgundy).
-  heatLo: [0xFD, 0xFB, 0xF7], heatHi: [0x6B, 0x21, 0x0F],
+  // Heatmap ramp anchors (pale paper -> deep rose-violet).
+  heatLo: [0xFF, 0xFB, 0xF8], heatHi: [0x6E, 0x1A, 0x52],
   heatEmpty: '#FAFAF8', heatTextHi: '#FAFAF8', heatTextLo: '#171412',
-  ctaGrad: 'linear-gradient(135deg,#E8703A,#C73E2C 55%,#A82843)',
+  ctaGrad: 'linear-gradient(120deg,#FF7A59,#E0397A 48%,#8B3FC3)',
   onCta: '#FFFFFF',
 };
 

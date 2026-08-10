@@ -635,10 +635,10 @@ textarea::placeholder {
   --fd-text: #1A1A1A;
   --fd-text-2: #555555;
   --fd-text-3: #8A8A8A;
-  --fd-primary: #DD5829;
-  --fd-primary-2: #C84A1F;
-  --fd-pos: #2D7A3E;
-  --fd-neg: #C84A1F;
+  --fd-primary: #E0397A;
+  --fd-primary-2: #B02468;
+  --fd-pos: #0E9563;
+  --fd-neg: #E23D5C;
   --fd-warn: #C68B1C;
   --fd-surface-2: #FBF7EF;
 
@@ -1017,10 +1017,10 @@ textarea::placeholder {
   /* Brand — purple retired; these triplets now carry the flame ramp
      (renamed vars would touch dozens of call sites; the hue payload is
      what matters). Dark remaps live under .flc-nuit below. */
-  --av2-purple-300: 24 79% 81%;
-  --av2-purple-400: 19 79% 57%;
-  --av2-purple: 7 64% 48%;
-  --av2-purple-600: 347 62% 41%;
+  --av2-purple-300: 336 80% 86%;
+  --av2-purple-400: 12 100% 67%;
+  --av2-purple: 336 73% 55%;
+  --av2-purple-600: 331 66% 42%;
   --av2-indigo: 239 84% 67%;
   --av2-pink: 352 89% 60%;
   --av2-pink-soft: 351 95% 71%;
@@ -1178,8 +1178,8 @@ textarea::placeholder {
   --fd-text-3:   hsl(228 11% 45%);
   /* Brand & semantics — bias toward the v2 purple while keeping
      the green / red / amber semantic accents readable. */
-  --fd-primary:   #B85C38;
-  --fd-primary-2: #B85C38;
+  --fd-primary:   #E0397A;
+  --fd-primary-2: #B02468;
   --fd-pos:       hsl(160 84% 50%);
   --fd-neg:       hsl(355 65% 60%);
   --fd-warn:      hsl(42 78% 58%);
@@ -1697,13 +1697,13 @@ textarea::placeholder {
    PageShell C tokens read these vars, so inline styles follow.
    ================================================================ */
 .flc{
-  --flc-paper:#FBFAF8; --flc-paper2:#F4F1EC; --flc-card:#FFFFFF;
+  --flc-paper:#FFF7F2; --flc-paper2:#F8EFF4; --flc-card:#FFFFFF;
   --flc-ink:#191410; --flc-ink2:#3A332B; --flc-ink3:#524A40;
-  --flc-line:#ECE8E2;
-  --flc-accent:#C73E2C; --flc-accent-deep:#A82843; --flc-accent-2:#E8703A;
-  --flc-ok:#0F8B58; --flc-info:#3568B8;
-  --flc-cta:linear-gradient(135deg,#E8703A,#C73E2C 55%,#A82843); --flc-on-cta:#FFFFFF;
-  --flc-line-hi:#D9D3CA; --flc-risk:#C22F45; --flc-warn:#A8862D;
+  --flc-line:#F0E3EA;
+  --flc-accent:#E0397A; --flc-accent-deep:#B02468; --flc-accent-2:#FF7A59;
+  --flc-ok:#0E9563; --flc-info:#3E63DD;
+  --flc-cta:linear-gradient(120deg,#FF7A59,#E0397A 48%,#8B3FC3); --flc-on-cta:#FFFFFF;
+  --flc-line-hi:#EBD5E2; --flc-risk:#E23D5C; --flc-warn:#D98A1F;
   background:var(--flc-paper);
 }
 .flc-nuit{
@@ -1733,7 +1733,7 @@ textarea::placeholder {
 .flc-nuit .fdt-dash .fd-btn-primary,.flc-nuit .fdt-dash .fd-btn-purple{
   background:linear-gradient(135deg,#EBD5A0,#A8823D)!important;color:#141110!important}
 .flc .fdt-dash .fd-btn-primary,.flc .fdt-dash .fd-btn-purple{
-  background:linear-gradient(135deg,#E8703A,#C73E2C 55%,#A82843);color:#fff}
+  background:var(--flc-cta);color:var(--flc-on-cta)}
 .flc-nuit input,.flc-nuit select,.flc-nuit textarea{
   background:rgba(255,255,255,.06)!important;color:var(--flc-ink)!important;
   border-color:var(--flc-line)!important;color-scheme:dark}
@@ -1775,10 +1775,10 @@ textarea::placeholder {
 .fdz-hero{border-radius:20px;padding:26px 30px 28px;position:relative;overflow:hidden;
   margin-bottom:20px;display:flex;flex-direction:column;color:#FFFFFF;
   background:
-    radial-gradient(115% 140% at 88% 12%, rgba(255,178,94,.85) 0%, transparent 46%),
-    radial-gradient(95% 130% at 8% 95%, rgba(224,53,107,.75) 0%, transparent 58%),
-    linear-gradient(135deg,#2B1028 0%,#7A1E3F 44%,#C73E2C 82%,#E8703A 100%);
-  box-shadow:0 30px 70px -30px rgba(122,30,63,.55)}
+    radial-gradient(115% 140% at 88% 10%, rgba(255,200,130,.70) 0%, transparent 46%),
+    radial-gradient(95% 130% at 6% 96%, rgba(120,50,200,.45) 0%, transparent 58%),
+    linear-gradient(120deg,#FF7A59 0%,#E0397A 46%,#8B3FC3 100%);
+  box-shadow:0 26px 60px -24px rgba(224,57,122,.5)}
 .fdz-hero::after{content:"";position:absolute;top:0;left:8%;right:8%;height:1px;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent)}
 .flc-nuit .fdz-hero{color:var(--flc-ink);border:1px solid rgba(212,175,110,.38);
@@ -1804,7 +1804,7 @@ textarea::placeholder {
   box-shadow:0 10px 26px -10px rgba(212,175,110,.55)}
 .fdz-hero h2{font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:500;
   font-size:34px;line-height:1.12;letter-spacing:.005em;margin:14px 0 0;max-width:24ch}
-.fdz-hero h2 em{font-style:italic;color:#FFCF9E}
+.fdz-hero h2 em{font-style:italic;color:#FFE3B8}
 .flc-nuit .fdz-hero h2 em{color:#EBD5A0}
 .fdz-sub{color:rgba(255,255,255,.82);font-size:13.5px;margin-top:10px;max-width:56ch}
 .flc-nuit .fdz-sub{color:var(--flc-ink2)}
@@ -1826,8 +1826,8 @@ textarea::placeholder {
 .fdz-kpi{background:var(--flc-card);border:1px solid var(--flc-line);border-radius:15px;
   padding:16px 18px;position:relative;transition:all .25s cubic-bezier(.16,1,.3,1);
   box-shadow:0 1px 2px rgba(25,20,16,.04)}
-.fdz-kpi:hover{transform:translateY(-3px);border-color:#D9D3CA;
-  box-shadow:0 18px 44px -22px rgba(122,30,63,.28)}
+.fdz-kpi:hover{transform:translateY(-3px);border-color:#EBD5E2;
+  box-shadow:0 20px 48px -20px rgba(224,57,122,.4)}
 .flc-nuit .fdz-kpi{box-shadow:none}
 .flc-nuit .fdz-kpi:hover{border-color:rgba(212,175,110,.38);
   box-shadow:0 18px 40px -20px rgba(0,0,0,.8),0 0 30px -12px rgba(212,175,110,.3)}
@@ -1843,7 +1843,7 @@ textarea::placeholder {
 .fdz-seg{display:flex;gap:3px;margin-top:12px}
 .fdz-seg i{flex:1;height:15px;border-radius:3px;background:#F0EDE7}
 .flc-nuit .fdz-seg i{background:rgba(141,133,120,.18)}
-.fdz-seg i.f{background:linear-gradient(180deg,#E8703A,#C73E2C)}
+.fdz-seg i.f{background:linear-gradient(180deg,#FF7A59,#E0397A)}
 .flc-nuit .fdz-seg i.f{background:linear-gradient(180deg,#EBD5A0,#A8823D)}
 .fdz-split{display:flex;gap:16px;margin-top:12px}
 .fdz-sp{flex:1;padding-left:9px;border-left:2px solid var(--flc-accent)}
@@ -1851,13 +1851,13 @@ textarea::placeholder {
 .fdz-sp b{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;color:var(--flc-ink);display:block}
 .fdz-sp span{font-size:10.5px;color:var(--flc-ink3)}
 .fdz-sp .fdz-bar{height:5px;border-radius:3px;margin-top:7px;
-  background:linear-gradient(90deg,#E8703A,#A82843)}
+  background:linear-gradient(90deg,#FF7A59,#B02468)}
 .flc-nuit .fdz-sp .fdz-bar{background:linear-gradient(90deg,#EBD5A0,#A8823D)}
 .fdz-sp.alt .fdz-bar{background:var(--flc-ok)}
 .fdz-mb{display:flex;align-items:flex-end;gap:5px;height:40px;margin-top:10px}
 .fdz-mb i{flex:1;border-radius:3px 3px 1px 1px;background:#F0EDE7}
 .flc-nuit .fdz-mb i{background:rgba(141,133,120,.2)}
-.fdz-mb i.hot{background:linear-gradient(180deg,#E8703A,#A82843)}
+.fdz-mb i.hot{background:linear-gradient(180deg,#FF7A59,#B02468)}
 .flc-nuit .fdz-mb i.hot{background:linear-gradient(180deg,#EBD5A0,#A8823D)}
 
 /* P1 sections slot into the approved .fd-main ordering. */
@@ -1868,8 +1868,7 @@ textarea::placeholder {
 /* Nuit fixes: hero heading color + heatmap legend ramp + ltv 'high' tint. */
 .fdz-hero h2{color:#FFFFFF}
 .flc-nuit .fdz-hero h2{color:var(--flc-ink)}
-.flc-nuit .fdt-dash .fd-hm-legend-ramp{
-  background:linear-gradient(90deg,#1C1815,#EBD5A0)!important}
+.flc-nuit .fdt-dash .fd-hm-legend-ramp{flex:1;max-width:220px;height:8px;border-radius:6px;background:linear-gradient(90deg,#FFFBF8,#6E1A52)}
 .flc-nuit .fdt-dash .fd-ltv-card.high{
   background:rgba(212,175,110,.12)!important;border-color:rgba(212,175,110,.35)!important}
 .flc-nuit .fdt-dash .fd-ltv-card.high .fd-lc-val{color:var(--flc-accent-2)}
@@ -1958,9 +1957,8 @@ textarea::placeholder {
 /* Ambient veil: one warm flame wash top-right, a faint plum low-left (v31 jour);
    nuit swaps in the gold veil. Sits on the layout root behind everything. */
 .flc{background:
-  radial-gradient(52% 36% at 82% -4%, rgba(232,112,58,.14), transparent 70%),
-  radial-gradient(40% 32% at 4% 34%, rgba(214,51,92,.07), transparent 70%),
-  var(--flc-paper)}
+  linear-gradient(118deg,#FFDDC4 0%,#FFCBDA 32%,#EDD9FF 66%,#CFE4FF 100%);
+  background-attachment:fixed}
 .flc-nuit{background:
   radial-gradient(60% 45% at 72% 0%, rgba(212,175,110,.10), transparent 70%),
   radial-gradient(45% 40% at 8% 90%, rgba(212,175,110,.05), transparent 70%),
@@ -1970,9 +1968,10 @@ textarea::placeholder {
    champagne wash (nuit). One treatment, palette flips. */
 .flc .flc-nav{color:var(--flc-ink3)}
 .flc .flc-nav:hover{color:var(--flc-ink);background:color-mix(in srgb,var(--flc-ink) 4%,transparent)}
-.flc .flc-nav.on{color:#A82843;background:rgba(199,62,44,.07)}
-.flc .flc-nav.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;
-  border-radius:2px;background:linear-gradient(180deg,#E8703A,#A82843)}
+.flc .flc-nav.on{color:#C33966;background:rgba(255,255,255,.92);
+  box-shadow:0 4px 14px -6px rgba(195,63,160,.45)}
+.flc .flc-nav.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2.5px;
+  border-radius:2px;background:linear-gradient(180deg,#FF7A59,#E0397A 55%,#8B3FC3)}
 .flc-nuit .flc-nav{color:var(--flc-ink2)}
 .flc-nuit .flc-nav:hover{color:var(--flc-ink);background:rgba(212,175,110,.06)}
 .flc-nuit .flc-nav.on{color:#EBD5A0;background:linear-gradient(90deg,rgba(212,175,110,.14),rgba(212,175,110,.03))}
@@ -2026,15 +2025,55 @@ textarea::placeholder {
   background:color-mix(in srgb,var(--flc-accent) 9%,transparent);
   border-radius:999px;padding:4px 10px;font-variant-numeric:tabular-nums}
 
-/* Éclat vibrancy: the 8 KPI tiles get a soft semantic wash + tone edge. */
-.flc:not(.flc-nuit) .av2-light-skin .fd-kpi[class*="k-"]{position:relative}
-.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-blue{background:linear-gradient(180deg,rgba(53,104,184,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(53,104,184,.55),0 1px 2px rgba(25,20,16,.04)}
-.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-emerald,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-green,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-mint{background:linear-gradient(180deg,rgba(15,139,88,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(15,139,88,.5),0 1px 2px rgba(25,20,16,.04)}
-.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-orange,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-amber,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-yellow,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-coral{background:linear-gradient(180deg,rgba(232,112,58,.08),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(232,112,58,.55),0 1px 2px rgba(25,20,16,.04)}
-.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-red,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-rose{background:linear-gradient(180deg,rgba(194,47,69,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(194,47,69,.5),0 1px 2px rgba(25,20,16,.04)}
-.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-purple,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-lilac{background:linear-gradient(180deg,rgba(199,62,44,.07),var(--flc-card) 55%)!important;box-shadow:inset 0 2px 0 rgba(199,62,44,.5),0 1px 2px rgba(25,20,16,.04)}
-/* fdz data-viz cards: warm lift on hover already; add faint top sheen. */
-.flc:not(.flc-nuit) .fdz-kpi{background:linear-gradient(180deg,#FFFFFF, #FFFDFB 70%)}
-/* Panels get a hair more depth in light. */
-.flc:not(.flc-nuit) .fdt-dash .fd-panel,.flc:not(.flc-nuit) .av2-light-skin .av2-card{
-  box-shadow:0 1px 2px rgba(25,20,16,.04),0 10px 30px -24px rgba(122,30,63,.18)}
+/* ================================================================
+   ÉCLAT AURORA — A(KPI cards) + B(glass canvas) mix
+   Light-only (.flc:not(.flc-nuit)); Minuit Doré untouched.
+   ================================================================ */
+/* Glass surfaces: panels/charts/side-panels/av2 cards/filter bar. */
+.flc:not(.flc-nuit) .fdt-dash .fd-panel,
+.flc:not(.flc-nuit) .fdt-dash .fd-chart,
+.flc:not(.flc-nuit) .fdt-dash .fd-side-panel,
+.flc:not(.flc-nuit) .av2-light-skin .av2-card,
+.flc:not(.flc-nuit) .ftf{
+  background:rgba(255,255,255,.62)!important;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-color:rgba(255,255,255,.9)!important;
+  box-shadow:0 10px 32px -18px rgba(224,57,122,.28)}
+/* Sidebar + topbar glass. */
+.flc:not(.flc-nuit) aside.fd-sidebar-host{
+  background:rgba(255,255,255,.55)!important;
+  border-right-color:rgba(255,255,255,.85)!important}
+/* Analytics wrappers must not paint over the sunset canvas. */
+.flc:not(.flc-nuit) .av2-light-skin{background:transparent!important}
+.flc:not(.flc-nuit) [data-route-dark="true"]{background:transparent!important}
+.flc:not(.flc-nuit) .fdt-analytics-v2{background:transparent!important}
+/* Legacy tinted section wrappers ride the glass too. */
+.flc:not(.flc-nuit) .av2-legacy-wrapper section[style*="radial-gradient"]{
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+
+/* A-treatment: 4 data-viz KPI cards — white, gradient-text value, own glow. */
+.flc:not(.flc-nuit) .fdz-kpi{background:#FFFFFF;border-color:#F6E7EF}
+.flc:not(.flc-nuit) .fdz-kpis .fdz-kpi:nth-child(1){box-shadow:0 16px 34px -18px rgba(255,122,89,.55)}
+.flc:not(.flc-nuit) .fdz-kpis .fdz-kpi:nth-child(2){box-shadow:0 16px 34px -18px rgba(139,63,195,.45)}
+.flc:not(.flc-nuit) .fdz-kpis .fdz-kpi:nth-child(3){box-shadow:0 16px 34px -18px rgba(224,57,122,.45)}
+.flc:not(.flc-nuit) .fdz-kpis .fdz-kpi:nth-child(4){box-shadow:0 16px 34px -18px rgba(14,149,99,.45)}
+.flc:not(.flc-nuit) .fdz-kpi .v{
+  background:linear-gradient(120deg,#FF7A59,#D6284E);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.flc:not(.flc-nuit) .fdz-kpis .fdz-kpi:nth-child(2) .v{background:linear-gradient(120deg,#8B3FC3,#3E63DD);-webkit-background-clip:text;background-clip:text}
+.flc:not(.flc-nuit) .fdz-kpis .fdz-kpi:nth-child(4) .v{background:linear-gradient(120deg,#0E9563,#0A6E8A);-webkit-background-clip:text;background-clip:text}
+.flc:not(.flc-nuit) .fdz-kpi .v small{-webkit-text-fill-color:var(--flc-ink3);color:var(--flc-ink3)}
+
+/* A-treatment: 8-grid KPI tiles — white + tone glow + gradient-text numbers. */
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi[class*="k-"]{
+  background:#FFFFFF!important;border-color:#F6E7EF!important;position:relative}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-blue{box-shadow:0 14px 30px -18px rgba(62,99,221,.5)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-emerald,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-green,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-mint{box-shadow:0 14px 30px -18px rgba(14,149,99,.5)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-orange,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-amber,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-yellow,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-coral{box-shadow:0 14px 30px -18px rgba(255,122,89,.55)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-red,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-rose{box-shadow:0 14px 30px -18px rgba(226,61,92,.5)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-purple,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-lilac{box-shadow:0 14px 30px -18px rgba(139,63,195,.5)}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-blue .fd-kpi-value{background:linear-gradient(120deg,#3E63DD,#5856D6);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-emerald .fd-kpi-value,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-green .fd-kpi-value,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-mint .fd-kpi-value{background:linear-gradient(120deg,#0E9563,#0A6E8A);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-orange .fd-kpi-value,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-amber .fd-kpi-value,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-yellow .fd-kpi-value,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-coral .fd-kpi-value{background:linear-gradient(120deg,#FF7A59,#E0397A);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-red .fd-kpi-value,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-rose .fd-kpi-value{background:linear-gradient(120deg,#E23D5C,#B02468);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-purple .fd-kpi-value,.flc:not(.flc-nuit) .av2-light-skin .fd-kpi.k-lilac .fd-kpi-value{background:linear-gradient(120deg,#E0397A,#8B3FC3);-webkit-background-clip:text;background-clip:text;color:transparent!important}

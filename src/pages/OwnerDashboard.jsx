@@ -161,14 +161,14 @@ export default function OwnerDashboard() {
   const sources = useMemo(() => {
     // Vibrant multi-color palette — joyful but each source stays distinct.
     const palette = {
-      direct:    'hsl(215 65% 48%)', // bleu de France
-      qr_store:  'hsl(215 65% 48%)',
-      instagram: 'hsl(8 75% 62%)',   // coral
-      google:    'hsl(105 30% 42%)', // sauge
-      facebook:  'hsl(208 55% 40%)', // deep bleu
+      direct:    '#3E63DD', // cobalt
+      qr_store:  '#5856D6',
+      instagram: '#E0397A', // rose
+      google:    '#0E9563', // emerald
+      facebook:  '#4A63E7', // indigo
       tiktok:    T.ink,              // ink (flips with theme)
-      manual:    '#B85C38', // aubergine
-      website:   'hsl(42 78% 52%)',  // or / brass
+      manual:    '#B02468', // magenta
+      website:   '#F2B23E', // amber
     };
     const labels = {
       direct: 'Sur place', qr_store: 'QR in-store',
@@ -189,11 +189,11 @@ export default function OwnerDashboard() {
     // information value — replace with realistic French café demo mix.
     if (real.length >= 2) return real;
     return [
-      { key: 'direct',    name: 'Sur place',   value: 56, color: 'hsl(215 65% 48%)' },
-      { key: 'google',    name: 'Google Maps', value: 22, color: 'hsl(105 30% 42%)' },
-      { key: 'instagram', name: 'Instagram',   value: 16, color: 'hsl(8 75% 62%)' },
-      { key: 'website',   name: 'Site Web',    value:  9, color: 'hsl(42 78% 52%)' },
-      { key: 'manual',    name: 'Autres',      value:  5, color: '#B85C38' },
+      { key: 'direct',    name: 'Sur place',   value: 56, color: '#3E63DD' },
+      { key: 'google',    name: 'Google Maps', value: 22, color: '#0E9563' },
+      { key: 'instagram', name: 'Instagram',   value: 16, color: '#E0397A' },
+      { key: 'website',   name: 'Site Web',    value:  9, color: '#F2B23E' },
+      { key: 'manual',    name: 'Autres',      value:  5, color: '#B02468' },
     ];
   }, [acqSources, T]);
   const sourcesTotal = sources.reduce((s, p) => s + p.value, 0);
@@ -390,7 +390,7 @@ export default function OwnerDashboard() {
           <div className="fd-actions-grid fd-actions-grid-top">
             <ActionTile
               icon={<RefreshCw size={14} />}
-              color="#B26344"
+              color="#E0397A"
               title="Relance inactifs 14–29j"
               desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
               cta="Créer la campagne"
@@ -398,7 +398,7 @@ export default function OwnerDashboard() {
             />
             <ActionTile
               icon={<Award size={14} />}
-              color="#96431F"
+              color="#8B3FC3"
               title="Segmentez vos VIP"
               desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
               cta="Voir les VIP"
@@ -406,7 +406,7 @@ export default function OwnerDashboard() {
             />
             <ActionTile
               icon={<UserPlus size={14} />}
-              color="#4A7BA8"
+              color="#3E63DD"
               title="Boostez les nouveaux clients"
               desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
               cta="Créer une campagne"
@@ -414,7 +414,7 @@ export default function OwnerDashboard() {
             />
             <ActionTile
               icon={<Sparkles size={14} />}
-              color="#4A7861"
+              color="#0E9563"
               title="Voir plus d'insights"
               desc="Explorez plus d'opportunités pour votre croissance."
               cta="Explorer"
