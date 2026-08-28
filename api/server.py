@@ -1475,7 +1475,10 @@ def seed_extended_tenants():
             spend = round(visits * random.uniform(avg_spend * 0.7, avg_spend * 1.3), 2)
             source = random.choices(
                 ACQUISITION_SOURCES,
-                weights=[5, 4, 3, 2],  # QR + Instagram most common, then FB, then TikTok
+                # One weight per source — ["qr_store","instagram","facebook","tiktok","website"].
+                # "website" was appended to the list without a weight, which made
+                # random.choices raise and killed server startup on a fresh DB.
+                weights=[5, 4, 3, 2, 2],
                 k=1
             )[0]
             pass_issued = random.random() < 0.7 if visits >= 3 else random.random() < 0.3
