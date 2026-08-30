@@ -159,16 +159,21 @@ export default function OwnerDashboard() {
 
   // Sources donut
   const sources = useMemo(() => {
-    // Vibrant multi-color palette — joyful but each source stays distinct.
-    const palette = {
-      direct:    '#0F6FDE', // cobalt
-      qr_store:  '#1453BD',
-      instagram: '#0F6FDE', // rose
-      google:    '#087A31', // emerald
-      facebook:  '#0F6FDE', // indigo
-      tiktok:    T.ink,              // ink (flips with theme)
-      manual:    '#1453BD', // magenta
-      website:   '#1453BD', // amber
+    // P6: acquisition sources are drawn as a SEQUENTIAL BLUE RAMP at
+    // decreasing alpha, assigned by rank after sorting by volume —
+    // exactly the treatment the loyalty tiers get. No new hue is
+    // introduced: every step is --blue at an alpha over the card.
+    //
+    // These sources are nominally categorical, so a ramp needs a
+    // justification: the marks are displayed SORTED BY VOLUME, so the
+    // ramp encodes the same thing the arc length already encodes. That
+    // is redundant, not misleading. Where a ramp genuinely would
+    // mislead — an unsorted or non-ordinal breakdown — use one blue and
+    // rely on direct labels instead of colour.
+    const rampStep = (i, n) => {
+      // 1.00 -> 0.22 across the ranks; a single item stays fully solid.
+      const a = n <= 1 ? 1 : 1 - (i / (n - 1)) * 0.78;
+      return `rgba(15, 111, 222, ${a.toFixed(3)})`;
     };
     const labels = {
       direct: 'Sur place', qr_store: 'QR in-store',
@@ -179,22 +184,21 @@ export default function OwnerDashboard() {
     const real = acqSources
       ? Object.entries(acqSources)
           .filter(([, v]) => typeof v === 'number' && v > 0)
-          .map(([k, v]) => ({
-            key: k, name: labels[k] || k, value: v, color: palette[k] || '#626F7E',
-          }))
+          .map(([k, v]) => ({ key: k, name: labels[k] || k, value: v }))
           .sort((a, b) => b.value - a.value)
+          .map((row, i, arr) => ({ ...row, color: rampStep(i, arr.length) }))
       : [];
     // Show demo whenever real data isn't useful for a donut comparison
     // (0 or 1 channels). A donut with one segment = a solid circle, no
     // information value — replace with realistic French café demo mix.
     if (real.length >= 2) return real;
     return [
-      { key: 'direct',    name: 'Sur place',   value: 56, color: '#0F6FDE' },
-      { key: 'google',    name: 'Google Maps', value: 22, color: '#087A31' },
-      { key: 'instagram', name: 'Instagram',   value: 16, color: '#0F6FDE' },
-      { key: 'website',   name: 'Site Web',    value:  9, color: '#1453BD' },
-      { key: 'manual',    name: 'Autres',      value:  5, color: '#1453BD' },
-    ];
+      { key: 'direct',    name: 'Sur place',   value: 56 },
+      { key: 'google',    name: 'Google Maps', value: 22 },
+      { key: 'instagram', name: 'Instagram',   value: 16 },
+      { key: 'website',   name: 'Site Web',    value:  9 },
+      { key: 'manual',    name: 'Autres',      value:  5 },
+    ].map((row, i, arr) => ({ ...row, color: rampStep(i, arr.length) }));
   }, [acqSources, T]);
   const sourcesTotal = sources.reduce((s, p) => s + p.value, 0);
 
@@ -324,24 +328,24 @@ export default function OwnerDashboard() {
   // Vibrant multi-colour palette shared with the sources donut so the
   // dashboard reads as one joyful product.
   const statusDonut = [
-    { key: 'active',  name: 'Actifs',     value: activeCustomers,  color: T.serieGreen },
-    { key: 'dormant', name: 'Dormants',   value: dormantCustomers, color: T.serieAmber },
-    { key: 'risk',    name: 'À risque',   value: atRiskCustomers,  color: T.serieRed },
-    { key: 'new',     name: 'Nouveaux',   value: newWithoutVisits, color: T.serieBlue },
+    { key: 'active',  name: 'Actifs',     value: activeCustomers,  color: T.seriePositive },
+    { key: 'dormant', name: 'Dormants',   value: dormantCustomers, color: T.serieNeutralAlt },
+    { key: 'risk',    name: 'À risque',   value: atRiskCustomers,  color: T.serieNegative },
+    { key: 'new',     name: 'Nouveaux',   value: newWithoutVisits, color: T.serieNeutral },
   ].filter(d => d.value > 0);
 
   const churnDonut = [
-    { key: 'engaged', name: 'Engagés',         value: Math.max(0, totalCustomers - (summary?.one_visit_count || 0) - dormantCustomers - (summary?.churned_90d_count || 0)), color: T.serieGreen },
-    { key: 'one',     name: '1 visite',        value: summary?.one_visit_count || 0,    color: T.serieBlue },
-    { key: 'dormant', name: 'Inactifs 30j',    value: dormantCustomers,                 color: T.serieAmber },
-    { key: 'churned', name: 'Churned 90j',     value: summary?.churned_90d_count || 0,  color: T.serieRed },
+    { key: 'engaged', name: 'Engagés',         value: Math.max(0, totalCustomers - (summary?.one_visit_count || 0) - dormantCustomers - (summary?.churned_90d_count || 0)), color: T.seriePositive },
+    { key: 'one',     name: '1 visite',        value: summary?.one_visit_count || 0,    color: T.serieNeutral },
+    { key: 'dormant', name: 'Inactifs 30j',    value: dormantCustomers,                 color: T.serieNeutralAlt },
+    { key: 'churned', name: 'Churned 90j',     value: summary?.churned_90d_count || 0,  color: T.serieNegative },
   ].filter(d => d.value > 0);
 
   // Plan usage radial data
   const planUsed = Math.min(totalCustomers, planLimit);
   const planRemaining = Math.max(0, planLimit - planUsed);
   const planDonut = [
-    { key: 'used', name: 'Utilisé',    value: planUsed,      color: T.serieGreen },
+    { key: 'used', name: 'Utilisé',    value: planUsed,      color: T.seriePositive },
     { key: 'free', name: 'Disponible', value: planRemaining, color: T.paper2 },
   ];
 
@@ -552,10 +556,10 @@ export default function OwnerDashboard() {
             </div>
             <div className="fd-status-row">
               <div className="fd-status-grid">
-                <StatusCell label={t('dashboard.status_active')}    value={activeCustomers}    total={totalCustomers} icon={<Users size={16} />} ink={T.serieGreen} />
-                <StatusCell label={t('dashboard.status_dormant')}   value={dormantCustomers}   total={totalCustomers} icon={<Moon size={16} />}  ink={T.warn} />
-                <StatusCell label={t('dashboard.status_at_risk')}   value={atRiskCustomers}    total={totalCustomers} icon={<AlertTriangle size={16} />} ink={T.serieRed} />
-                <StatusCell label={t('dashboard.status_new')}       value={newWithoutVisits}   total={totalCustomers} icon={<UserPlus size={16} />} ink={T.serieSky} />
+                <StatusCell label={t('dashboard.status_active')}    value={activeCustomers}    total={totalCustomers} icon={<Users size={16} />} ink={T.seriePositiveInk} />
+                <StatusCell label={t('dashboard.status_dormant')}   value={dormantCustomers}   total={totalCustomers} icon={<Moon size={16} />}  ink={T.serieNeutralAlt} />
+                <StatusCell label={t('dashboard.status_at_risk')}   value={atRiskCustomers}    total={totalCustomers} icon={<AlertTriangle size={16} />} ink={T.serieNegativeInk} />
+                <StatusCell label={t('dashboard.status_new')}       value={newWithoutVisits}   total={totalCustomers} icon={<UserPlus size={16} />} ink={T.serieMuted} />
               </div>
               <div className="fd-status-donut">
                 <div className="fd-mini-donut">
@@ -576,10 +580,10 @@ export default function OwnerDashboard() {
               </div>
             </div>
             <div className="fd-status-bar">
-              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: T.serieGreen }} />
-              <div style={{ width: `${pct(dormantCustomers, totalCustomers)}%`, background: T.serieAmber }} />
-              <div style={{ width: `${pct(atRiskCustomers, totalCustomers)}%`, background: T.serieRed }} />
-              <div style={{ width: `${pct(newWithoutVisits, totalCustomers)}%`, background: T.serieBlue }} />
+              <div style={{ width: `${pct(activeCustomers, totalCustomers)}%`, background: T.seriePositive }} />
+              <div style={{ width: `${pct(dormantCustomers, totalCustomers)}%`, background: T.serieNeutralAlt }} />
+              <div style={{ width: `${pct(atRiskCustomers, totalCustomers)}%`, background: T.serieNegative }} />
+              <div style={{ width: `${pct(newWithoutVisits, totalCustomers)}%`, background: T.serieNeutral }} />
             </div>
           </div>
 
@@ -655,7 +659,8 @@ export default function OwnerDashboard() {
                       padding: '5px 10px', fontSize: 11.5, fontWeight: 500,
                       border: `1px solid ${active ? '#0F6FDE' : 'var(--fd-border)'}`,
                       background: active ? 'var(--tint-blue, #E5F1FF)' : 'var(--flc-card, #FFFFFF)',
-                      color: active ? '#0F6FDE' : 'var(--fd-text-2)',
+                      // #0F6FDE on --tint-blue is 4.22:1; --blue-deep is 6.12:1.
+                      color: active ? 'var(--blue-deep, #1453BD)' : 'var(--fd-text-2)',
                       borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit',
                       transition: 'all 120ms ease',
                     }}
@@ -683,8 +688,8 @@ export default function OwnerDashboard() {
                 <span className="fd-ch-title">Visites dans le temps</span>
               </div>
               <div className="fd-ch-legend">
-                <span><span className="fd-ch-dot" style={{ background: T.serieBlue }} />Visites totales</span>
-                <span><span className="fd-ch-dot" style={{ background: T.serieAmber }} />Clients uniques</span>
+                <span><span className="fd-ch-dot" style={{ background: T.serieNeutral }} />Visites totales</span>
+                <span><span className="fd-ch-dot" style={{ background: T.serieNeutralAlt }} />Clients uniques</span>
               </div>
               <div style={{ height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -693,8 +698,8 @@ export default function OwnerDashboard() {
                     <XAxis dataKey="idx" tick={{ fontSize: 10, fill: T.tick }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: T.tick }} tickLine={false} axisLine={false} width={28} />
                     <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: `1px solid ${T.line}`, background: T.card, color: T.ink }} />
-                    <Bar dataKey="visits" fill={T.serieBlue} radius={[3, 3, 0, 0]} maxBarSize={14} />
-                    <Line type="monotone" dataKey="uniques" stroke={T.serieAmber} strokeWidth={2} dot={{ r: 3, fill: T.serieAmber }} />
+                    <Bar dataKey="visits" fill={T.serieNeutral} radius={[3, 3, 0, 0]} maxBarSize={14} />
+                    <Line type="monotone" dataKey="uniques" stroke={T.serieNeutralAlt} strokeWidth={2} dot={{ r: 3, fill: T.serieNeutralAlt }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -741,13 +746,13 @@ export default function OwnerDashboard() {
                     <XAxis dataKey="idx" tick={{ fontSize: 10, fill: T.tick }} tickLine={false} axisLine={false} interval={3} />
                     <YAxis tick={{ fontSize: 10, fill: T.tick }} tickLine={false} axisLine={false} width={28} />
                     <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: `1px solid ${T.line}`, background: T.card, color: T.ink }} />
-                    <Bar dataKey="value" fill={T.serieGreen} radius={[3, 3, 0, 0]} maxBarSize={12} />
+                    <Bar dataKey="value" fill={T.seriePositive} radius={[3, 3, 0, 0]} maxBarSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               <div className="fd-ch-foot">
                 <span style={{ fontSize: 12, color: 'var(--fd-text-2)' }}>Tendance</span>
-                <span style={{ fontWeight: 700, color: 'var(--fd-green-ico)' }}>En croissance régulière</span>
+                <span style={{ fontWeight: 700, color: 'var(--green-deep, #087A31)' }}>En croissance régulière</span>
                 <TrendingUp size={20} color="#087A31" />
               </div>
             </div>
@@ -795,7 +800,10 @@ export default function OwnerDashboard() {
                               const intensity = count / maxCount;
                               const bgColor = count === 0 ? T.heatEmpty : heatColor(T, intensity);
                               // Flip text once the cell crosses mid-ramp.
-                              const textColor = intensity > 0.55 ? T.heatTextHi : T.heatTextLo;
+                              // The ramp runs --canvas -> --blue-deep. Dark ink holds >=4.5:1 up to
+                              // t~=0.78; white only clears 4.5:1 above that. Flipping at
+                              // 0.55 left the mid cells at 3.22:1.
+                              const textColor = intensity > T.heatFlip ? T.heatTextHi : T.heatTextLo;
                               return (
                                 <td
                                   key={day}

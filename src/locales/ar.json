@@ -53,7 +53,10 @@
     "collapse_sidebar": "طي الشريط الجانبي",
     "help": "مساعدة",
     "account_menu": "قائمة الحساب",
-    "account_no_name": "بدون اسم"
+    "account_no_name": "بدون اسم",
+    "group_overview": "نظرة عامة",
+    "group_customers": "العملاء",
+    "group_engagement": "التفاعل"
   },
   "auth": {
     "login_title": "تسجيل الدخول",

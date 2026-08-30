@@ -53,7 +53,10 @@
     "collapse_sidebar": "Réduire la barre latérale",
     "help": "Aide",
     "account_menu": "Menu du compte",
-    "account_no_name": "Sans nom"
+    "account_no_name": "Sans nom",
+    "group_overview": "Vue d'ensemble",
+    "group_customers": "Clients",
+    "group_engagement": "Engagement"
   },
   "auth": {
     "login_title": "Connexion",

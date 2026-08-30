@@ -720,7 +720,7 @@ textarea::placeholder {
 .fdt-dash .fd-live {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
-  background: #DCEFD6; color: #2D7A3E; letter-spacing: 0.4px;
+  background: #DCEFD6; color: #076B2B; letter-spacing: 0.4px;  /* 5.52:1 — #2D7A3E was 4.38 */
 }
 .fdt-dash .fd-live::before { content: ''; width: 7px; height: 7px; background: #2D7A3E; border-radius: 50%; animation: fdPulse 2s infinite; }
 @keyframes fdPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -880,7 +880,7 @@ textarea::placeholder {
 .fdt-dash .fd-ch-legend { display: flex; gap: 14px; font-size: 12px; color: var(--fd-text-2); margin-bottom: 8px; }
 .fdt-dash .fd-ch-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .fdt-dash .fd-ch-dot { width: 8px; height: 8px; border-radius: 50%; }
-.fdt-dash .fd-ch-foot { margin-top: 12px; padding: 10px 14px; background: var(--fd-green); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
+.fdt-dash .fd-ch-foot { margin-top: 12px; padding: 10px 14px; background: var(--tint-blue, #E5F1FF); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; }
 
 /* Stats inside chart */
 .fdt-dash .fd-chart-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
@@ -946,7 +946,7 @@ textarea::placeholder {
 .fdt-dash .fd-plan-num-total { font-size: 16px; color: var(--fd-text-3); font-weight: 600; }
 .fdt-dash .fd-plan-tag-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fdt-dash .fd-plan-chip { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 999px; background: var(--fd-yellow); color: var(--fd-yellow-ico); font-weight: 700; font-size: 12px; letter-spacing: 0.5px; }
-.fdt-dash .fd-plan-pct { background: #DCEFD6; color: #2D7A3E; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.fdt-dash .fd-plan-pct { background: #DCEFD6; color: #076B2B; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 .fdt-dash .fd-plan-aside { background: var(--fd-surface-2); border: 1px solid var(--fd-border); border-radius: 12px; padding: 16px 18px; }
 .fdt-dash .fd-pa-h { font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .fdt-dash .fd-pa-list { list-style: none; padding: 0; margin: 0 0 10px; font-size: 13px; color: var(--fd-text-2); }
@@ -997,7 +997,7 @@ textarea::placeholder {
 .fdt-dash .fd-summary-row:last-of-type { border-bottom: 0; }
 .fdt-dash .fd-sm-val { display: flex; align-items: center; gap: 7px; font-weight: 700; }
 .fdt-dash .fd-sm-delta { font-size: 10.5px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
-.fdt-dash .fd-sm-delta.pos { background: #DCEFD6; color: #2D7A3E; }
+.fdt-dash .fd-sm-delta.pos { background: #DCEFD6; color: #076B2B; }  /* 5.52:1 */
 .fdt-dash .fd-sm-delta.neg { background: #FAD9D2; color: var(--fd-neg); }
 
 /* Card Designer preview pane.
@@ -1332,7 +1332,7 @@ textarea::placeholder {
 .av2-light-skin .fd-cs-sub { color: var(--flc-ink3, #626F7E); }
 .av2-light-skin .fd-pt-lbl { color: var(--flc-ink3, #626F7E); }
 .av2-light-skin .fd-pt-val { color: var(--flc-ink, #030E1D); }
-.av2-light-skin .fd-pt-delta      { color: var(--green, #10BC4C); }
+.av2-light-skin .fd-pt-delta      { color: var(--green-deep, #087A31); }  /* --green is 2.52:1 — fills only */
 .av2-light-skin .fd-pt-delta.neg  { color: var(--red, #D93036); }
 
 /* Donuts — center text and legend rows. */
@@ -1392,7 +1392,7 @@ textarea::placeholder {
   color: #0F6FDE !important;
   border-color: rgb(15 111 222 / .35) !important;
 }
-.av2-light-skin .fd-plan-pct { color: var(--flc-ink3, #626F7E); }
+.av2-light-skin .fd-plan-pct { color: #076B2B; }  /* 5.52:1 on the #DCEFD6 pill; --ink-muted was 4.24:1 */
 .av2-light-skin .fd-pa-h     { color: var(--flc-ink2, #556272); }
 .av2-light-skin .fd-pa-list  { color: var(--flc-ink2, #556272); }
 .av2-light-skin .fd-pa-list li b { color: var(--flc-ink, #030E1D); }

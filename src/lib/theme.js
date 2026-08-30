@@ -57,16 +57,25 @@ export const PALETTE = {
 
   grid: '#ECEFF4',
 
-  /* Chart series. Five categorical marks drawn from three permitted
-     hues — `serieAmber` and `serieSky` are DEPRECATED NAMES that do
-     not resolve to amber or to a third blue. Series separation at
-     five categories is genuinely tight under this palette and is
-     flagged as an open P7 question, not solved here. */
-  serieBlue: '#0F6FDE',
-  serieAmber: '#1453BD',   // deprecated name — NOT amber
-  serieGreen: '#10BC4C',   // a chart mark, not text
-  serieRed: '#D93036',
-  serieSky: '#626F7E',     // deprecated name — neutral slate, not a third blue
+  /* Chart series, named by ROLE rather than by hue. The old hue names
+     (serieBlue/Amber/Green/Red/Sky) were renamed in P6 rather than
+     aliased: there were only 27 call sites in 2 files, so keeping a
+     `serieAmber` that resolves to blue would have been a lie for no
+     saving. There are no aliases — the old names are gone.
+
+     Each role exists in two variants where it is used both ways:
+       ·  plain  = a FILL or a chart mark (bar, donut segment, dot)
+       · `Ink`   = a text colour or an ICON GLYPH, which needs >=3:1
+                   as a graphical object and >=4.5:1 as text.
+     This split exists because --green is 2.52:1 against white in both
+     directions: legal as a bar, illegal as an icon or a label. */
+  seriePositive:    '#10BC4C',  // fills/marks only
+  seriePositiveInk: '#087A31',  // 5.47:1 on white — text and glyphs
+  serieNegative:    '#D93036',  // 4.74:1 — marks, and white glyphs on it
+  serieNegativeInk: '#A81E27',  // 7.29:1 — text and glyphs
+  serieNeutral:     '#0F6FDE',  // the primary blue
+  serieNeutralAlt:  '#1453BD',  // the second neutral series (was serieAmber)
+  serieMuted:       '#626F7E',  // 5.13:1 — slate, not a third blue
 
   /* Tiers are ORDINAL (bronze < silver < gold < vip), so they get a
      sequential ramp rather than four categorical hues. That is correct
