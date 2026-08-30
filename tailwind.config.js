@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: ["class"],
+  // P6: the dark theme was removed. There is no dark variant to enable,
+  // and no `dark:` utility anywhere in src/. Do not re-add this.
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",

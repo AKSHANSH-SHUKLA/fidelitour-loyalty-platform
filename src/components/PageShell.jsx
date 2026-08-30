@@ -13,20 +13,43 @@ import React from 'react';
 // in-app and marketing surfaces share a single visual identity.
 // Tokens read CSS variables so every inline style flips with the theme.
 // Light = Eclat (flame on gallery white), dark = Minuit Dore (champagne on
-// espresso). Values live in index.css under :root and .flc-nuit.
+// P6: single light palette. Values live in index.css under :root and .flc.
 export const C = {
-  terracotta:'var(--flc-accent,#C73E2C)', terracottaDeep:'var(--flc-accent-deep,#A82843)',
-  ochre:'var(--flc-accent-2,#E8703A)',    amber:'var(--flc-accent-2,#E8703A)',
-  rose:'var(--flc-accent,#C73E2C)',       coral:'var(--flc-accent-2,#E8703A)',
-  lavender:'var(--flc-accent,#C73E2C)',   lilac:'var(--flc-accent-2,#E8703A)',
-  sky:'var(--flc-info,#3568B8)',          azure:'var(--flc-info,#3568B8)',
-  teal:'var(--flc-ok,#0F8B58)',           mint:'var(--flc-ok,#0F8B58)',
-  sage:'var(--flc-ok,#0F8B58)',           meadow:'var(--flc-ok,#0F8B58)',
-  inkDeep:'var(--flc-ink,#191410)',       inkSoft:'var(--flc-ink2,#3A332B)',
-  inkMute:'var(--flc-ink3,#524A40)',
-  bone:'var(--flc-paper,#FBFAF8)',        cream:'var(--flc-paper2,#F4F1EC)',
-  sand:'var(--flc-paper2,#F4F1EC)',
-  hairline:'var(--flc-line,#ECE8E2)',
+  /* ── DEPRECATED WARM-NAME ALIASES ─────────────────────────────────
+     Every name below is a LIE as of P6: terracotta, coral, lilac,
+     lavender, rose, ochre, amber and sage all resolve to a token in
+     the blue / green / red product palette. None keeps a warm value.
+
+     AMBER especially: #FFB60A measures 1.76:1 on white and is
+     forbidden as a value, so the NAME cannot resolve to amber. It
+     resolves to the pressed blue.
+
+     These are kept only so that a recolour phase does not become a
+     747-reference rename. P10: rename the call sites, delete this map.
+     Fallbacks are the literal token values, so a missing var can never
+     reintroduce a warm colour. ──────────────────────────────────── */
+  terracotta:'var(--flc-accent,#0F6FDE)',     terracottaDeep:'var(--flc-accent-deep,#1453BD)',
+  ochre:'var(--flc-accent-2,#0D62C4)',        amber:'var(--flc-accent-2,#0D62C4)',
+  rose:'var(--flc-accent,#0F6FDE)',           coral:'var(--flc-accent-2,#0D62C4)',
+  lavender:'var(--flc-accent,#0F6FDE)',       lilac:'var(--flc-accent-2,#0D62C4)',
+  sky:'var(--flc-info,#0F6FDE)',              azure:'var(--flc-info,#0F6FDE)',
+  teal:'var(--flc-ok,#087A31)',               mint:'var(--flc-ok,#087A31)',
+  sage:'var(--flc-ok,#087A31)',               meadow:'var(--flc-ok,#087A31)',
+  inkDeep:'var(--flc-ink,#030E1D)',           inkSoft:'var(--flc-ink2,#556272)',
+  inkMute:'var(--flc-ink3,#626F7E)',
+  bone:'var(--flc-paper,#F1F5FA)',            cream:'var(--flc-paper2,#F8F9FC)',
+  sand:'var(--flc-paper2,#F8F9FC)',
+  hairline:'var(--flc-line,#ECEFF4)',
+
+  /* ── P6 palette, by its real name. Prefer these in new code. ──── */
+  blue:'var(--blue,#0F6FDE)',                 bluePressed:'var(--blue-pressed,#0D62C4)',
+  blueDeep:'var(--blue-deep,#1453BD)',        tintBlue:'var(--tint-blue,#E5F1FF)',
+  green:'var(--green,#10BC4C)',               /* bar + track fills ONLY */
+  greenDeep:'var(--green-deep,#087A31)',      /* text + white-glyph chips */
+  red:'var(--red,#D93036)',                   /* dots, non-text marks */
+  redDeep:'var(--red-deep,#A81E27)',          /* count badges: a numeral is text */
+  canvas:'var(--canvas,#F1F5FA)',             surface:'var(--surface-1,#FFFFFF)',
+  borderStrong:'var(--border-strong,#CBD3DC)',
 };
 
 // Per-role accent gradient. Drives the brand mark, the active-nav glow,
@@ -34,11 +57,15 @@ export const C = {
 // Keeping each role visually distinct helps an admin who's switched
 // accounts immediately know which view they're in.
 export const ROLE_THEME = {
-  super_admin:    { from: C.terracotta, mid: C.rose,     to: C.lavender, label: 'Super Admin',    ring: C.terracotta },
-  business_owner: { from: C.ochre,      mid: C.amber,    to: C.terracotta, label: 'Business Owner', ring: C.ochre },
-  manager:        { from: C.teal,       mid: C.mint,     to: C.sky,      label: 'Manager',         ring: C.teal },
-  staff:          { from: C.sky,        mid: C.azure,    to: C.lavender, label: 'Staff',           ring: C.sky },
-  default:        { from: C.terracotta, mid: C.ochre,    to: C.rose,     label: 'FidéliTour',      ring: C.terracotta },
+  /* P6: role accents collapse onto the single product blue. The brand
+     mark is a flat fill, not a gradient — `from`/`mid`/`to` are kept
+     so existing call sites still resolve, but they are the same value
+     on purpose. P10 removes the triple. */
+  super_admin:    { from: C.blue, mid: C.blue, to: C.blue, label: 'Super Admin',    ring: C.blue },
+  business_owner: { from: C.blue, mid: C.blue, to: C.blue, label: 'Business Owner', ring: C.blue },
+  manager:        { from: C.blue, mid: C.blue, to: C.blue, label: 'Manager',        ring: C.blue },
+  staff:          { from: C.blue, mid: C.blue, to: C.blue, label: 'Staff',          ring: C.blue },
+  default:        { from: C.blue, mid: C.blue, to: C.blue, label: 'FidéliTour',     ring: C.blue },
 };
 
 export const themeForRole = (role) => ROLE_THEME[role] || ROLE_THEME.default;

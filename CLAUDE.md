@@ -257,3 +257,62 @@ Paste this as your first message in the new chat (after selecting the `website_a
 > "Read website_antiG/FIDELITOUR_HANDOFF.md completely — it's the full project handoff. Confirm you've absorbed: (1) current state & conventions, (2) the open 'platform not loading' issue, (3) pending work list. Then [YOUR TASK HERE]."
 
 That's it. The handoff file gives Claude everything.
+
+---
+
+## P6 CORRECTION — 2026-08-31 (dated correction, not a silent edit)
+
+**This file was WRONG about the dark theme.** Section 6 stated "Dark theme is
+REMOVED (functionally dead)" and "`isAnalyticsDark = false` hard-coded". That was
+untrue from P3/P4 onward: a second dark theme, **Minuit Doré**, shipped and was
+live — a moon toggle in the dashboard header, ~109 lines of `.flc-nuit` CSS in
+`src/index.css`, a `MINUIT` palette and a `MutationObserver` in `src/lib/theme.js`,
+and a `localStorage['flc-theme']` key. Anyone trusting this file would have missed
+all of it. Treat the pre-P6 text below as unreliable on theming specifically.
+
+**As of P6 the dark theme is removed, and it must not return.**
+- Hard rule: no dark background, band, panel, card or footer at any breakpoint.
+- `dark:` Tailwind variants in `src/`: **0** (was 17). `darkMode` removed from
+  `tailwind.config.js`.
+- `.flc-nuit`, the moon toggle, `MINUIT` and the theme observer are all deleted.
+- `localStorage['flc-theme']` is cleared by a one-shot delete-only migration at
+  module scope in `DashboardLayout.jsx`. Nothing reads or writes it any more.
+
+**Also corrected here:** section 6's "Saint-Germain" palette (aubergine / or /
+coral / cream `#FBF7EF`) is superseded. The product palette is now declared in
+one place — the `.flc` token block in `src/index.css`, mirrored on `:root`:
+
+| role | token | value |
+|---|---|---|
+| canvas | `--canvas` | `#F1F5FA` (L* 96.37, a 3.63 step below white) |
+| surfaces | `--surface-1/2/3` | `#FFFFFF` · `#F8F9FC` · `#FBFCFD` |
+| blue tint | `--tint-blue` | `#E5F1FF` |
+| ink | `--ink-head/eyebrow/body/muted` | `#030E1D` · `#052D5B` · `#556272` · `#626F7E` |
+| accent | `--blue/-pressed/-deep` | `#0F6FDE` · `#0D62C4` · `#1453BD` |
+| borders | `--border/-strong` | `#ECEFF4` · `#CBD3DC` |
+| positive | `--green` / `--green-deep` | `#10BC4C` fills only · `#087A31` text |
+| negative | `--red` / `--red-deep` | `#D93036` marks · `#A81E27` text + count badges |
+
+**AMBER IS FORBIDDEN.** `#FFB60A` measures 1.76:1 on white. There is deliberately
+no amber token. A warning is red.
+
+**`--green` is fills only.** It measures 2.52:1 against white in *both*
+directions, so it is never a text colour and never a chip with a white glyph.
+
+**Deprecated alias layer.** ~747 call sites still spell warm names (`terracotta`,
+`coral`, `lilac`, `lavender`, `rose`, `ochre`, `amber`, `sage`) via the `C` map in
+`PageShell.jsx` and the `--flc-*` / `--fd-*` variables. Every one now resolves to a
+token above; none keeps a warm value. **These names are lies** and are kept only so
+a recolour phase did not become a 747-reference rename. See P10 below.
+
+### P10 tracked items (do not start without sign-off)
+1. Rename the ~747 warm-named call sites and delete the alias blocks in
+   `src/index.css` and `PageShell.jsx`.
+2. `.mc-dark` — a second dark surface, 13 lines in `src/index.css`, used by
+   `src/components/cabinet/CabinetShell.jsx` and `src/pages/CabinetDashboard.jsx`.
+   It falls under the no-dark rule but is a different module with its own shell,
+   so it was deliberately left out of the P6 /dashboard commit.
+3. `--flc-risk` and `--flc-warn` were two distinct status hues and now collapse
+   onto one red pair, because amber is forbidden. That is a lost semantic slot.
+4. Chart series separation: five categorical marks now come from three permitted
+   hues. Flagged as a P7 question.

@@ -59,6 +59,15 @@ const SETTINGS_SECTIONS = [
   { anchor: 'settings-cleanup',      i18nKey: 'settings.section_cleanup' },
 ];
 
+/* ── P6 one-shot migration ────────────────────────────────────────────
+   The Minuit Doré dark theme was removed in P6. Nothing reads this key
+   any more, so this is hygiene rather than a theme read: it clears the
+   stale value out of the browsers of anyone who was holding 'nuit'. It
+   runs at MODULE SCOPE — at import time, strictly before first render —
+   rather than in an effect that would run after paint. Delete-only:
+   nothing in the product ever writes this key again. */
+try { window.localStorage.removeItem('flc-theme'); } catch { /* blocked storage — fine */ }
+
 const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
   const { t } = useTranslation();
   const active = isNavActive(currentPath, '/dashboard/settings');
@@ -157,6 +166,14 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
   );
 };
 
+/* Sidebar group label — sentence case, deliberately, not capitals.
+   Option B: labels drop at the seams the nav already had, so no item
+   moves. Reordering the nav is an information-architecture decision,
+   not a recolour, and is out of scope for P6. */
+const NavGroup = ({ label, collapsed }) => (
+  collapsed ? null : <p className="flc-navgroup">{label}</p>
+);
+
 const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge }) => {
   const active = isNavActive(currentPath, to);
   const theme = themeForRole(role);
@@ -167,9 +184,13 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge })
       className={`flc-nav ${active ? 'on' : ''} relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-xl text-[13.5px] transition-all`}
       style={{ fontWeight: active ? 600 : 450 }}
     >
+      {/* Active: the icon sits in a solid blue filled circle with a white
+          glyph. Inactive: a bare glyph in the body ink. */}
       <span
-        className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors"
-        style={{ color: 'inherit' }}
+        className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center transition-colors"
+        style={active
+          ? { background: C.blue, color: '#FFFFFF' }
+          : { background: 'transparent', color: 'inherit' }}
       >
         <Icon className="w-[18px] h-[18px]" />
       </span>
@@ -179,7 +200,7 @@ const NavLink = ({ to, icon: Icon, label, currentPath, role, collapsed, badge })
           {badge && (
             <span
               className="text-[9px] uppercase tracking-[0.12em] px-1.5 py-0.5 rounded font-bold shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--flc-accent-2, #E8703A) 22%, var(--flc-card, #FFFFFF))', color: 'var(--flc-accent-deep, #9C4427)', letterSpacing: '0.08em' }}
+              style={{ background: C.tintBlue, color: C.blueDeep, letterSpacing: '0.08em' }}
             >
               {badge}
             </span>
@@ -203,8 +224,8 @@ const SignOutNavItem = ({ onClick, collapsed }) => {
       className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all w-full text-left`}
       style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
       onMouseOver={(e) => {
-        e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 10%, transparent)';
-        e.currentTarget.style.color = 'var(--flc-accent-deep, #8A322B)';
+        e.currentTarget.style.background = 'var(--surface-2, #F8F9FC)';
+        e.currentTarget.style.color = C.inkDeep;
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.background = 'transparent';
@@ -233,8 +254,8 @@ const SupportNavItem = ({ onClick, collapsed }) => (
     className={`relative group flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-2.5'} py-2 rounded-lg text-[13.5px] transition-all w-full text-left`}
     style={{ color: 'var(--ink-mute)', background: 'transparent', fontWeight: 400 }}
     onMouseOver={(e) => {
-      e.currentTarget.style.background = 'color-mix(in srgb, var(--flc-accent, #C73E2C) 8%, transparent)';
-      e.currentTarget.style.color = 'var(--flc-accent, #C73E2C)';
+      e.currentTarget.style.background = 'var(--surface-2, #F8F9FC)';
+      e.currentTarget.style.color = C.blueDeep;
     }}
     onMouseOut={(e) => {
       e.currentTarget.style.background = 'transparent';
@@ -296,7 +317,7 @@ function UserMenu({ user, theme, role, onLogout }) {
         onClick={() => setOpen((v) => !v)}
         className="relative w-9 h-9 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
         style={{
-          background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
+          background: C.blue,
           fontWeight: 500,
           fontSize: 13,
           letterSpacing: '0.02em',
@@ -315,16 +336,16 @@ function UserMenu({ user, theme, role, onLogout }) {
           className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden z-50"
           style={{
             background: 'var(--flc-card, #FFFFFF)',
-            border: '1px solid var(--hairline, #EFEDE9)',
+            border: '1px solid var(--hairline, #ECEFF4)',
             boxShadow: '0 12px 28px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04)',
           }}
         >
-          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--hairline, #EFEDE9)' }}>
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--hairline, #ECEFF4)' }}>
             <div className="flex items-center gap-2.5">
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0"
                 style={{
-                  background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`,
+                  background: C.blue,
                   fontWeight: 500, fontSize: 13,
                 }}
               >
@@ -352,8 +373,8 @@ function UserMenu({ user, theme, role, onLogout }) {
           <button
             type="button"
             onClick={() => { setOpen(false); onLogout(); }}
-            className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#FAEDEB] transition-colors"
-            style={{ color: 'var(--flc-accent-deep, #8A322B)', borderTop: '1px solid var(--hairline, #EFEDE9)' }}
+            className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[#F8F9FC] transition-colors"
+            style={{ color: 'var(--flc-accent-deep, #1453BD)', borderTop: '1px solid var(--hairline, #ECEFF4)' }}
           >
             <LogOut size={14} />
             {t('nav.sign_out')}
@@ -365,20 +386,11 @@ function UserMenu({ user, theme, role, onLogout }) {
 }
 
 const DashboardLayout = () => {
-  // Fidelity dual theme: Eclat (light) / Minuit Dore (dark). The class on the
-  // layout root drives every CSS var; PageShell tokens read those vars, so
-  // inline styles flip too.
-  // Dark mode shipped with P3/P4: every dashboard page passed the
-  // dual-theme probe (no bright surfaces left under .flc-nuit).
-  const FLC_DARK_READY = true;
-  const [nuit, setNuit] = React.useState(() => {
-    if (!FLC_DARK_READY) return false;
-    try { return localStorage.getItem('flc-theme') === 'nuit'; } catch { return false; }
-  });
-  const flipTheme = () => setNuit((v) => {
-    try { localStorage.setItem('flc-theme', v ? 'jour' : 'nuit'); } catch { /* ignore */ }
-    return !v;
-  });
+  // P6: the Minuit Doré dark theme was REMOVED. The state, the .flc-nuit
+  // class, the toggle and theme.js's observer are all gone, so nothing
+  // reads localStorage['flc-theme'] any more and no returning user can
+  // land on a half-removed theme. The delete-only migration at module
+  // scope above just clears the stale key out of their browser.
 
   const { user, logout } = useAuth();
   const { t } = useTranslation();
@@ -488,16 +500,17 @@ const DashboardLayout = () => {
 
   return (
     <div
-      className={`relative flex min-h-screen fdt-dash flc ${nuit ? "flc-nuit" : ""}`}
-      style={{ transition: 'background 200ms ease' }}
+      className="relative flex min-h-screen fdt-dash flc"
+      /* Card edge is a hairline OR a shadow, never both — one attribute so
+         both variants can be captured without an edit between shots. */
+      data-card-edge="shadow"
     >
       <AmbientBackdrop role={role} />
 
       <aside
         className={`sticky top-0 z-10 ${collapsed ? 'w-[72px]' : 'w-64'} h-screen flex flex-col shrink-0 transition-[width,background-color] duration-200 ease-out fd-aside fd-sidebar-host`}
         style={{
-          background: 'color-mix(in srgb, var(--flc-card, #FFFFFF) 78%, transparent)',
-          backdropFilter: 'blur(14px)',
+          background: C.surface,
           borderRight: `1px solid ${C.hairline}`,
           alignSelf: 'flex-start',
         }}
@@ -513,8 +526,8 @@ const DashboardLayout = () => {
           title={collapsed ? t('nav.expand_sidebar') : t('nav.collapse_sidebar')}
           className="absolute -right-3 top-6 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
           style={{
-            background: collapsed ? 'var(--flc-card, #FFFFFF)' : 'var(--flc-ink, #171412)',
-            border: `1px solid ${collapsed ? C.hairline : 'var(--flc-ink, #171412)'}`,
+            background: collapsed ? 'var(--flc-card, #FFFFFF)' : 'var(--flc-ink, #030E1D)',
+            border: `1px solid ${collapsed ? C.hairline : 'var(--flc-ink, #030E1D)'}`,
             boxShadow: '0 2px 6px rgba(28,25,23,0.10)',
             color: collapsed ? C.inkSoft : 'var(--flc-paper, #FFFFFF)',
           }}
@@ -527,7 +540,7 @@ const DashboardLayout = () => {
           <Link to="/" className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm shadow-sm shrink-0"
-              style={{ background: `linear-gradient(135deg, ${theme.from} 0%, ${theme.to} 100%)`, fontWeight: 500 }}
+              style={{ background: C.blue, fontWeight: 500 }}
               title={collapsed ? `FidéliTour · ${theme.label}` : undefined}
             >
               F
@@ -554,7 +567,7 @@ const DashboardLayout = () => {
           {!collapsed && tenantInfo && (
             <div
               className="mt-3 px-2.5 py-2 rounded-lg"
-              style={{ background: 'color-mix(in srgb, var(--flc-card, #FFFFFF) 55%, transparent)', border: '1px solid var(--hairline)' }}
+              style={{ background: 'var(--surface-2, #F8F9FC)', border: '1px solid var(--hairline)' }}
               title={`${t('nav.account')} : ${tenantInfo.name || t('nav.account_no_name')} · slug: ${tenantInfo.slug || '—'}`}
             >
               <p
@@ -588,14 +601,17 @@ const DashboardLayout = () => {
         <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-3'} py-4 space-y-0.5 overflow-y-auto`}>
           {role === 'business_owner' && (
             <>
+              <NavGroup label="Overview" collapsed={collapsed} />
               <NavLink to="/dashboard"               icon={Home}         label={t('nav.dashboard')}        currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/dashboard/analytics"     icon={BarChart3}    label={t('nav.analytics')}        currentPath={currentPath} role={role} collapsed={collapsed} />
+              <NavGroup label="Customers" collapsed={collapsed} />
               <NavLink to="/dashboard/settings#settings-status" icon={Shield} label={t('nav.customer_status')}  currentPath={currentPath} role={role} collapsed={collapsed} badge={t('nav.new_badge')} />
               <NavLink to="/dashboard/insights"      icon={Sparkles}     label={t('nav.insights')}         currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/dashboard/customers"     icon={Users}        label={t('nav.customers')}        currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/dashboard/map"           icon={MapPin}       label={t('nav.customer_map')}     currentPath={currentPath} role={role} collapsed={collapsed} />
               {/* Scan Visit is intentionally NOT in the owner sidebar — that page
                   is the staff workspace. Owners can reach it via direct URL. */}
+              <NavGroup label="Engagement" collapsed={collapsed} />
               <NavLink to="/dashboard/card-designer" icon={CreditCard}   label={t('nav.card_designer')} currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/dashboard/campaigns"     icon={Megaphone}    label={t('nav.campaigns')}     currentPath={currentPath} role={role} collapsed={collapsed} />
               <NavLink to="/dashboard/ai-assistant"  icon={BrainCircuit} label={t('nav.ai_assistant')}  currentPath={currentPath} role={role} collapsed={collapsed} />
@@ -645,7 +661,7 @@ const DashboardLayout = () => {
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-1'}`}>
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-              style={{ background: `linear-gradient(135deg, ${theme.from}, ${theme.to})` }}
+              style={{ background: C.blue }}
               title={collapsed ? (user?.email || '') : undefined}
             >
               {(user?.email || '?').slice(0, 1).toUpperCase()}
@@ -680,7 +696,7 @@ const DashboardLayout = () => {
             className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
             style={{
               background: 'color-mix(in srgb, var(--flc-card, #FFFFFF) 82%, transparent)',
-              borderBottom: '1px solid var(--hairline, #EFEDE9)',
+              borderBottom: '1px solid var(--hairline, #ECEFF4)',
             }}
           >
             {/* Global search — Enter routes to /dashboard/customers with
@@ -690,10 +706,10 @@ const DashboardLayout = () => {
             <form
               onSubmit={submitSearch}
               className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[280px]"
-              style={{ background: 'var(--flc-card, #FFFFFF)', border: '1px solid var(--hairline, #EFEDE9)' }}
+              style={{ background: 'var(--flc-card, #FFFFFF)', border: '1px solid var(--hairline, #ECEFF4)' }}
             >
               <button type="submit" aria-label={t('common.search')} className="shrink-0" style={{ lineHeight: 0 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #8D857D)' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #626F7E)' }}>
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.3-4.3" />
                 </svg>
@@ -705,23 +721,23 @@ const DashboardLayout = () => {
                 placeholder={t('nav.search_placeholder')}
                 aria-label={t('common.search')}
                 className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
-                style={{ color: 'var(--ink, #171412)', fontWeight: 400 }}
+                style={{ color: 'var(--ink, #030E1D)', fontWeight: 400 }}
               />
               {searchQ && (
                 <button
                   type="button"
                   onClick={() => setSearchQ('')}
                   aria-label={t('nav.search_clear')}
-                  className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F5F4F1]"
-                  style={{ color: 'var(--ink-mute, #8D857D)' }}
+                  className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F8F9FC]"
+                  style={{ color: 'var(--ink-mute, #626F7E)' }}
                 >✕</button>
               )}
               <kbd
                 className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
                 style={{
-                  background: 'var(--flc-paper2, #F5F4F1)',
-                  color: 'var(--ink-mute, #8D857D)',
-                  border: '1px solid var(--hairline, #EFEDE9)',
+                  background: 'var(--flc-paper2, #F8F9FC)',
+                  color: 'var(--ink-mute, #626F7E)',
+                  border: '1px solid var(--hairline, #ECEFF4)',
                   fontWeight: 500,
                 }}
                 title={t('nav.search_enter_hint')}
@@ -735,14 +751,7 @@ const DashboardLayout = () => {
               <BranchPillsBanner compact />
             </div>
 
-            {/* Theme: Eclat / Minuit Dore */}
-            {FLC_DARK_READY && (
-            <button type="button" onClick={flipTheme} aria-label="Mode jour / nuit"
-              className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ border: '1px solid var(--flc-line,#ECE8E2)', color: 'var(--flc-ink3,#524A40)' }}>
-              {nuit ? '\u2600' : '\u263E'}
-            </button>
-            )}
+            {/* P6: the day/night toggle went with the dark theme. */}
 
             {/* Bell */}
             <div className="shrink-0">
@@ -755,8 +764,8 @@ const DashboardLayout = () => {
               aria-label={t('nav.help')}
               title={t('nav.help')}
               className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'transparent', border: '1px solid var(--hairline, #EFEDE9)', color: 'var(--ink-mute, #8D857D)' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = 'var(--flc-paper2, #F5F4F1)'; }}
+              style={{ background: 'transparent', border: '1px solid var(--hairline, #ECEFF4)', color: 'var(--ink-mute, #626F7E)' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'var(--flc-paper2, #F8F9FC)'; }}
               onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

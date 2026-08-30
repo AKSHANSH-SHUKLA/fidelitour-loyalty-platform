@@ -55,7 +55,7 @@ const fmtEUR = (n) => `${Number(n || 0).toLocaleString('fr-FR', { minimumFractio
 export default function OwnerDashboard() {
   const { t } = useTranslation();
   // Dual-theme palette for everything Recharts/SVG renders via JS props.
-  const { nuit, T } = useTheme();
+  const { T } = useTheme();
   const TIER_COLORS = T.tier;
   const navigate = useNavigate();
   const { branchId, setBranchId, branches } = useBranch();
@@ -161,14 +161,14 @@ export default function OwnerDashboard() {
   const sources = useMemo(() => {
     // Vibrant multi-color palette — joyful but each source stays distinct.
     const palette = {
-      direct:    '#3E63DD', // cobalt
-      qr_store:  '#5856D6',
-      instagram: '#E0397A', // rose
-      google:    '#0E9563', // emerald
-      facebook:  '#4A63E7', // indigo
+      direct:    '#0F6FDE', // cobalt
+      qr_store:  '#1453BD',
+      instagram: '#0F6FDE', // rose
+      google:    '#087A31', // emerald
+      facebook:  '#0F6FDE', // indigo
       tiktok:    T.ink,              // ink (flips with theme)
-      manual:    '#B02468', // magenta
-      website:   '#F2B23E', // amber
+      manual:    '#1453BD', // magenta
+      website:   '#1453BD', // amber
     };
     const labels = {
       direct: 'Sur place', qr_store: 'QR in-store',
@@ -180,7 +180,7 @@ export default function OwnerDashboard() {
       ? Object.entries(acqSources)
           .filter(([, v]) => typeof v === 'number' && v > 0)
           .map(([k, v]) => ({
-            key: k, name: labels[k] || k, value: v, color: palette[k] || '#B5B0A8',
+            key: k, name: labels[k] || k, value: v, color: palette[k] || '#626F7E',
           }))
           .sort((a, b) => b.value - a.value)
       : [];
@@ -189,11 +189,11 @@ export default function OwnerDashboard() {
     // information value — replace with realistic French café demo mix.
     if (real.length >= 2) return real;
     return [
-      { key: 'direct',    name: 'Sur place',   value: 56, color: '#3E63DD' },
-      { key: 'google',    name: 'Google Maps', value: 22, color: '#0E9563' },
-      { key: 'instagram', name: 'Instagram',   value: 16, color: '#E0397A' },
-      { key: 'website',   name: 'Site Web',    value:  9, color: '#F2B23E' },
-      { key: 'manual',    name: 'Autres',      value:  5, color: '#B02468' },
+      { key: 'direct',    name: 'Sur place',   value: 56, color: '#0F6FDE' },
+      { key: 'google',    name: 'Google Maps', value: 22, color: '#087A31' },
+      { key: 'instagram', name: 'Instagram',   value: 16, color: '#0F6FDE' },
+      { key: 'website',   name: 'Site Web',    value:  9, color: '#1453BD' },
+      { key: 'manual',    name: 'Autres',      value:  5, color: '#1453BD' },
     ];
   }, [acqSources, T]);
   const sourcesTotal = sources.reduce((s, p) => s + p.value, 0);
@@ -401,7 +401,7 @@ export default function OwnerDashboard() {
           <div className="fd-actions-grid fd-actions-grid-top">
             <ActionTile
               icon={<RefreshCw size={14} />}
-              color="#E0397A"
+              color="#0F6FDE"
               title="Relance inactifs 14–29j"
               desc={`Envoyez une campagne "We miss you" à ${atRiskCustomers} clients.`}
               cta="Créer la campagne"
@@ -409,7 +409,7 @@ export default function OwnerDashboard() {
             />
             <ActionTile
               icon={<Award size={14} />}
-              color="#8B3FC3"
+              color="#1453BD"
               title="Segmentez vos VIP"
               desc={`${vipCount} clients VIP génèrent une part importante de vos revenus.`}
               cta="Voir les VIP"
@@ -417,7 +417,7 @@ export default function OwnerDashboard() {
             />
             <ActionTile
               icon={<UserPlus size={14} />}
-              color="#3E63DD"
+              color="#0F6FDE"
               title="Boostez les nouveaux clients"
               desc={`${newCustomers.value || 0} nouveaux cette semaine. Activez une campagne d'acquisition.`}
               cta="Créer une campagne"
@@ -425,7 +425,7 @@ export default function OwnerDashboard() {
             />
             <ActionTile
               icon={<Sparkles size={14} />}
-              color="#0E9563"
+              color="#087A31"
               title="Voir plus d'insights"
               desc="Explorez plus d'opportunités pour votre croissance."
               cta="Explorer"
@@ -433,7 +433,7 @@ export default function OwnerDashboard() {
             />
           </div>
 
-          {/* ── Hero band — Éclat flame mesh / Minuit espresso + gold ── */}
+          {/* ── Hero band — flat white card on the canvas (P6) ── */}
           <div className="fdz-hero">
             <div className="fdz-hero-top">
               <span className="fdz-eyebrow">Programme fidélité · en direct</span>
@@ -472,8 +472,8 @@ export default function OwnerDashboard() {
                 <path d={sparkPath.d} fill="none" stroke={T.accent} strokeWidth="2" strokeLinecap="round" />
                 {sparkPath.last && (
                   <>
-                    <circle cx={sparkPath.last[0]} cy={sparkPath.last[1]} r="3.5" fill={nuit ? T.accentHi : T.accentDeep} />
-                    <text x={sparkPath.last[0] - 6} y={Math.max(9, sparkPath.last[1] - 7)} textAnchor="end" fontSize="9" fontWeight="700" fill={nuit ? T.accentHi : T.accentDeep}>
+                    <circle cx={sparkPath.last[0]} cy={sparkPath.last[1]} r="3.5" fill={T.accentDeep} />
+                    <text x={sparkPath.last[0] - 6} y={Math.max(9, sparkPath.last[1] - 7)} textAnchor="end" fontSize="9" fontWeight="700" fill={T.accentDeep}>
                       {fmtNum(sparkPath.lastVal)}
                     </text>
                   </>
@@ -544,7 +544,7 @@ export default function OwnerDashboard() {
             <div className="fd-panel-head">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="fd-panel-title">{t('dashboard.section_customer_status')}</span>
-                <span title={t('dashboard.status_tooltip') || 'État détaillé de chaque segment client'} style={{ width: 16, height: 16, borderRadius: 8, background: 'var(--flc-paper2, #F4EEE0)', color: 'var(--flc-ink3, #8D857D)', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
+                <span title={t('dashboard.status_tooltip') || 'État détaillé de chaque segment client'} style={{ width: 16, height: 16, borderRadius: 8, background: 'var(--flc-paper2, #F8F9FC)', color: 'var(--flc-ink3, #626F7E)', display: 'inline-grid', placeItems: 'center', fontSize: 10, fontStyle: 'italic', fontWeight: 600 }}>i</span>
               </div>
               <button onClick={() => navigate('/dashboard/customers')} style={{ color: 'var(--fd-primary)', fontSize: 13, fontWeight: 500, border: 0, background: 'transparent', cursor: 'pointer' }}>
                 {t('dashboard.view_all_customers')} →
@@ -591,7 +591,7 @@ export default function OwnerDashboard() {
             display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10,
             margin: '0 0 12px',
           }}>
-            <Calendar size={14} color="#B85C38" />
+            <Calendar size={14} color="#0F6FDE" />
             <span style={{
               fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
               fontWeight: 700, color: 'var(--fd-text-3)',
@@ -653,9 +653,9 @@ export default function OwnerDashboard() {
                     onClick={() => setDashWindow({ count: q.count, unit: q.unit })}
                     style={{
                       padding: '5px 10px', fontSize: 11.5, fontWeight: 500,
-                      border: `1px solid ${active ? '#B85C38' : 'var(--fd-border)'}`,
-                      background: active ? 'rgb(184 92 56 / .08)' : 'var(--flc-card, #FFFFFF)',
-                      color: active ? '#B85C38' : 'var(--fd-text-2)',
+                      border: `1px solid ${active ? '#0F6FDE' : 'var(--fd-border)'}`,
+                      background: active ? 'var(--tint-blue, #E5F1FF)' : 'var(--flc-card, #FFFFFF)',
+                      color: active ? '#0F6FDE' : 'var(--fd-text-2)',
                       borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit',
                       transition: 'all 120ms ease',
                     }}
@@ -748,7 +748,7 @@ export default function OwnerDashboard() {
               <div className="fd-ch-foot">
                 <span style={{ fontSize: 12, color: 'var(--fd-text-2)' }}>Tendance</span>
                 <span style={{ fontWeight: 700, color: 'var(--fd-green-ico)' }}>En croissance régulière</span>
-                <TrendingUp size={20} color="#4F7A36" />
+                <TrendingUp size={20} color="#087A31" />
               </div>
             </div>
 
@@ -1056,11 +1056,11 @@ export default function OwnerDashboard() {
             </div>
             {/* Insight strip — top channel + its % share, color-coded */}
             <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8,
-                          background: 'linear-gradient(135deg, rgb(184 92 56 / .06), hsl(42 78% 52% / .06))',
+                          background: 'var(--surface-2, #F8F9FC)',
                           fontSize: 11, color: 'var(--fd-text-2)', lineHeight: 1.4 }}>
               <span style={{ fontWeight: 600, color: 'var(--fd-text)' }}>{sources[0]?.name}</span>
               {' génère '}
-              <span style={{ fontWeight: 700, color: '#B85C38' }}>{pct(sources[0]?.value || 0, sourcesTotal)}%</span>
+              <span style={{ fontWeight: 700, color: '#0F6FDE' }}>{pct(sources[0]?.value || 0, sourcesTotal)}%</span>
               {' de vos clients.'}
             </div>
           </div>
@@ -1113,9 +1113,9 @@ export default function OwnerDashboard() {
             </div>
             {/* Insight strip — VIP share spotlight */}
             <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8,
-                          background: 'linear-gradient(135deg, hsl(42 78% 52% / .08), rgb(184 92 56 / .06))',
+                          background: 'var(--surface-2, #F8F9FC)',
                           fontSize: 11, color: 'var(--fd-text-2)', lineHeight: 1.4 }}>
-              <span style={{ fontWeight: 700, color: 'hsl(32 80% 48%)' }}>{displayTierDist.vip || 0} VIP</span>
+              <span style={{ fontWeight: 700, color: 'var(--blue-deep, #1453BD)' }}>{displayTierDist.vip || 0} VIP</span>
               {' génèrent typiquement '}
               <span style={{ fontWeight: 600, color: 'var(--fd-text)' }}>30-50% du revenu</span>
               {' — gardez-les heureux.'}
@@ -1128,8 +1128,12 @@ export default function OwnerDashboard() {
             const s = notifStats || { total: 156, subscribed: 108, not_subscribed: 48, subscribed_pct: 69.2 };
             const pct = Math.round(s.subscribed_pct || 0);
             const tone = pct >= 80 ? 'good' : pct >= 60 ? 'ok' : 'warn';
-            const toneColor = tone === 'good' ? (nuit ? T.ok : 'hsl(150 70% 26%)') : tone === 'ok' ? (nuit ? T.warn : 'hsl(42 78% 38%)') : (nuit ? T.risk : 'hsl(355 70% 38%)');
-            const toneBg    = tone === 'good' ? 'hsl(150 55% 40% / .12)' : tone === 'ok' ? 'hsl(42 78% 52% / .14)' : 'hsl(355 60% 48% / .12)';
+            // P6: the middle 'ok' tone was amber (hsl(42 78% 38%)). Amber is
+            // forbidden — #A81E27 measures 1.76:1 — and there is no third
+            // status hue left, so a neutral middle tone reads as blue.
+            const toneColor = tone === 'good' ? T.ok : tone === 'ok' ? T.accentDeep : T.riskDeep;
+            // Amber is forbidden, so the middle tone takes the blue tint.
+            const toneBg    = tone === 'good' ? 'rgb(8 122 49 / .12)' : tone === 'ok' ? 'var(--tint-blue, #E5F1FF)' : 'rgb(217 48 54 / .12)';
             return (
               <div className="fd-side-panel">
                 <div className="fd-sp-head">
@@ -1156,7 +1160,7 @@ export default function OwnerDashboard() {
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: nuit ? T.ok : 'hsl(150 70% 26%)' }} />
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.ok }} />
                         <span style={{ color: 'var(--fd-text-2)' }}>Abonnés</span>
                       </span>
                       <span style={{ color: 'var(--fd-text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -1165,7 +1169,7 @@ export default function OwnerDashboard() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: nuit ? T.risk : 'hsl(355 60% 48%)' }} />
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.risk }} />
                         <span style={{ color: 'var(--fd-text-2)' }}>Sans push</span>
                       </span>
                       <span style={{ color: 'var(--fd-text)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -1265,7 +1269,7 @@ function Alert({ color, icon, title, sub, time }) {
         <div className="fd-alert-sub">{sub}</div>
         <div className="fd-alert-time">{time}</div>
       </div>
-      <ChevronRight size={14} color="#8D857D" style={{ alignSelf: 'center' }} />
+      <ChevronRight size={14} color="#626F7E" style={{ alignSelf: 'center' }} />
     </div>
   );
 }

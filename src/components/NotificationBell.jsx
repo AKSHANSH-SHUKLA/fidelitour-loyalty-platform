@@ -200,10 +200,13 @@ const NotificationBell = () => {
           <span
             className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center"
             style={{
-              background: 'var(--flc-card, #FFFFFF)',
-              color: 'var(--flc-accent, #B85C38)',
-              border: '1.5px solid #B85C38',
-              boxShadow: '0 2px 4px rgba(184,92,56,0.4)',
+              // A count badge contains a NUMERAL, i.e. text, at 10px bold.
+              // --red (#D93036) with white is 4.74:1 — legal but thin at
+              // this size — so the badge fills with --red-deep at 7.29:1.
+              background: 'var(--red-deep, #A81E27)',
+              color: '#FFFFFF',
+              border: '1.5px solid var(--surface-1, #FFFFFF)',
+              boxShadow: 'none',
             }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}

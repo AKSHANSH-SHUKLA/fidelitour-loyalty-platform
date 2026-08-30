@@ -1,102 +1,104 @@
 /* =====================================================================
-   theme.js — JS-side palette for the Fidelity dual theme.
+   theme.js — JS-side palette for the product UI.
 
-   CSS vars (--flc-*) flip automatically with the .flc-nuit class, but
-   Recharts/SVG charts take colors as JS props — they can't read CSS
-   at render time. This hook observes the .flc-nuit class on the
-   DashboardLayout root and hands components a palette object, so
-   chart colors flip with the theme like everything else.
+   CSS vars (--flc-*, --blue, --red…) cover everything styled in CSS,
+   but Recharts/SVG charts take colours as JS props — they can't read
+   CSS at render time. This module hands those components the same
+   palette the stylesheet uses.
+
+   P6 (2026-08-30): the Minuit Doré dark theme was REMOVED. There is
+   one palette. The .flc-nuit class, the MINUIT object and the
+   MutationObserver that watched for a theme flip are all gone, and
+   must not return — no dark background, band, panel, card or footer
+   at any breakpoint.
 
    Usage:
-     const { nuit, T } = useTheme();
+     const { T } = useTheme();
      <CartesianGrid stroke={T.grid} />
    ===================================================================== */
 import React from 'react';
 
-/* Eclat (light) — flame on gallery white. Mirrors .flc in index.css. */
-export const ECLAT = {
-  paper: '#FFF7F2', paper2: '#F8EFF4', card: '#FFFFFF',
-  line: '#F0E3EA', lineHi: '#EBD5E2',
-  ink: '#221420', ink2: '#463442', ink3: '#7A5F72', tick: '#9A8090',
-  accent: '#E0397A', accentDeep: '#B02468', accentHi: '#FF7A59',
-  ok: '#0E9563', info: '#3E63DD', risk: '#E23D5C', warn: '#D98A1F',
-  grid: '#F8E6EF',
-  // Chart series — semantic hues used across the dashboard data-viz.
-  serieBlue: '#3E63DD', serieAmber: '#F2B23E', serieGreen: '#0E9563',
-  serieRed: '#E23D5C', serieSky: '#5856D6',
-  tier: { bronze: '#D27A3E', silver: '#9AA6B3', gold: '#E8A53B', vip: '#9A6DBF' },
-  // Heatmap ramp anchors (pale paper -> deep rose-violet).
-  heatLo: [0xFF, 0xFB, 0xF8], heatHi: [0x6E, 0x1A, 0x52],
-  heatEmpty: '#FAFAF8', heatTextHi: '#FAFAF8', heatTextLo: '#171412',
-  ctaGrad: 'linear-gradient(120deg,#FF7A59,#E0397A 48%,#8B3FC3)',
+/* The single product palette. Mirrors the .flc token block in index.css.
+   Measured ratios are noted where a value is text-bearing. */
+export const PALETTE = {
+  paper: '#F1F5FA',        // --canvas
+  paper2: '#F8F9FC',
+  card: '#FFFFFF',
+  line: '#ECEFF4', lineHi: '#CBD3DC',
+
+  ink: '#030E1D',          // 19.37:1 on white
+  ink2: '#556272',         //  6.22:1 on white
+  ink3: '#626F7E',         //  5.13:1 on white
+  tick: '#626F7E',
+
+  accent: '#0F6FDE',       // white label on it = 4.83:1
+  accentDeep: '#1453BD',   // 7.00:1 on white, 6.12:1 on #E5F1FF
+  accentHi: '#0D62C4',
+  tint: '#E5F1FF',
+
+  /* Two-token positive. #10BC4C is 2.52:1 against white in BOTH
+     directions, so `ok` (a text-bearing role) must be the deep one.
+     Use `okFill` for bars and tracks only — never as a text colour,
+     never as a chip carrying a white glyph. */
+  ok: '#087A31',           // 5.47:1 on white
+  okFill: '#10BC4C',
+
+  /* Two-token negative, lightness-matched to the blue pair.
+     `risk` for dots and non-text marks (a white ICON GLYPH on it is
+     fine); `riskDeep` for text and for count badges, because a
+     numeral is text. */
+  risk: '#D93036',         // 4.74:1 with white
+  riskDeep: '#A81E27',     // 7.29:1 with white
+
+  /* `warn` no longer has its own hue: amber is forbidden (#FFB60A is
+     1.76:1), so a warning is red. `risk` and `warn` collapsing onto
+     one pair is a known lost semantic slot, tracked in P10. */
+  warn: '#A81E27',
+
+  grid: '#ECEFF4',
+
+  /* Chart series. Five categorical marks drawn from three permitted
+     hues — `serieAmber` and `serieSky` are DEPRECATED NAMES that do
+     not resolve to amber or to a third blue. Series separation at
+     five categories is genuinely tight under this palette and is
+     flagged as an open P7 question, not solved here. */
+  serieBlue: '#0F6FDE',
+  serieAmber: '#1453BD',   // deprecated name — NOT amber
+  serieGreen: '#10BC4C',   // a chart mark, not text
+  serieRed: '#D93036',
+  serieSky: '#626F7E',     // deprecated name — neutral slate, not a third blue
+
+  /* Tiers are ORDINAL (bronze < silver < gold < vip), so they get a
+     sequential ramp rather than four categorical hues. That is correct
+     for ordinal data and it removes the amber (`gold`) and violet
+     (`vip`) problem outright. These are --blue at decreasing alpha
+     resolved over white: a tint of the declared blue, not a new blue.
+     Labels on the three light steps must be `ink`; only vip takes
+     white (7.00:1). */
+  tier: { bronze: '#CADFF8', silver: '#93BEF0', gold: '#5297E7', vip: '#1453BD' },
+
+  /* Heatmap ramp: canvas -> deepest blue. `ink` holds >=4.5:1 up to
+     t~=0.78; white takes over above that (7.00:1 at the top). */
+  heatLo: [0xF1, 0xF5, 0xFA], heatHi: [0x14, 0x53, 0xBD],
+  heatFlip: 0.78,
+  heatEmpty: '#F8F9FC', heatTextHi: '#FFFFFF', heatTextLo: '#030E1D',
+
+  /* Flat, not a gradient: the product has no gradient panel anywhere. */
+  ctaGrad: '#0F6FDE',
   onCta: '#FFFFFF',
 };
 
-/* Minuit Dore (dark) — champagne on espresso. Mirrors .flc-nuit. */
-export const MINUIT = {
-  paper: '#0D0B09', paper2: '#1C1815', card: '#141110',
-  line: 'rgba(212,175,110,.16)', lineHi: 'rgba(212,175,110,.38)',
-  ink: '#F5F1E8', ink2: '#C9C2B4', ink3: '#8D8578', tick: '#8D8578',
-  accent: '#D4AF6E', accentDeep: '#A8823D', accentHi: '#EBD5A0',
-  ok: '#8FCDA8', info: '#8ABDF0', risk: '#E2938A', warn: '#E8C36A',
-  grid: 'rgba(212,175,110,.12)',
-  serieBlue: '#7FC4E8', serieAmber: '#E8C36A', serieGreen: '#8FCDA8',
-  serieRed: '#E2938A', serieSky: '#8ABDF0',
-  tier: { bronze: '#D89B6A', silver: '#B9C2CC', gold: '#EBD5A0', vip: '#C0A0E0' },
-  // Heatmap ramp: espresso -> champagne gold (dark cells idle, gold = peak).
-  heatLo: [0x1C, 0x18, 0x15], heatHi: [0xEB, 0xD5, 0xA0],
-  heatEmpty: '#141110', heatTextHi: '#141110', heatTextLo: '#C9C2B4',
-  ctaGrad: 'linear-gradient(135deg,#EBD5A0,#A8823D)',
-  onCta: '#141110',
-};
-
-/* ── flc-nuit class observer ─────────────────────────────────────────
- * One MutationObserver for the whole app; components subscribe via
- * useSyncExternalStore so a theme flip re-renders every chart. */
-const listeners = new Set();
-let observer = null;
-
-const isNuit = () => {
-  if (typeof document === 'undefined') return false;
-  return !!document.querySelector('.flc-nuit');
-};
-
-let current = isNuit();
-
-const ensureObserver = () => {
-  if (observer || typeof document === 'undefined') return;
-  observer = new MutationObserver(() => {
-    const next = isNuit();
-    if (next !== current) {
-      current = next;
-      listeners.forEach((l) => l());
-    }
-  });
-  observer.observe(document.body, {
-    attributes: true, attributeFilter: ['class'], subtree: true,
-  });
-};
-
-const subscribe = (cb) => {
-  ensureObserver();
-  listeners.add(cb);
-  return () => listeners.delete(cb);
-};
-
-const getSnapshot = () => {
-  // Cheap re-check on snapshot: covers the initial-mount race where the
-  // class landed before the observer attached.
-  current = isNuit();
-  return current;
-};
+/* Kept as the export name so the ~30 existing call sites keep resolving. */
+export const ECLAT = PALETTE;
 
 export function useTheme() {
-  const nuit = React.useSyncExternalStore(subscribe, getSnapshot, () => false);
-  const T = nuit ? MINUIT : ECLAT;
-  return { nuit, T };
+  // One palette, no observer, no subscription. `nuit` is retained as a
+  // permanently-false field only so any stray `nuit ? a : b` still
+  // resolves to the light branch; P10 removes it with the call sites.
+  return { nuit: false, T: PALETTE };
 }
 
-/* Heatmap ramp helper — lerp between the theme's two anchors. */
+/* Heatmap ramp helper — lerp between the two anchors. */
 export const heatColor = (T, t) => {
   const lerp = (a, b) => Math.round(a + (b - a) * t);
   return `rgb(${lerp(T.heatLo[0], T.heatHi[0])}, ${lerp(T.heatLo[1], T.heatHi[1])}, ${lerp(T.heatLo[2], T.heatHi[2])})`;
