@@ -1933,6 +1933,47 @@ textarea::placeholder {
 .flc .flc-navgroup{ padding:12px 10px 4px; font-size:10.5px; }
 
 /* ================================================================
+   P6C-0c — SIDEBAR SEARCH SLOTS + PAYFIT NAV DENSITY
+   The search is ONE implementation (renderSearchForm in
+   DashboardLayout) rendered into one of two placement slots. Width is
+   owned by the slot, never by the form, which is why the same markup
+   can be full-bleed in the sidebar and a fixed utility field in the
+   topbar. Normal document flow only: no position:fixed, no offsets,
+   no coordinate variables, no viewport listener.
+   ================================================================ */
+.flc .fd-searchslot--side{ padding:2px 12px 12px; }
+.flc .fd-searchslot--side .fd-search{ width:100%; }
+
+/* Topbar widths reproduce the pre-P6C-0c field exactly, so the collapsed
+   and below-lg placements are visually unchanged from production. */
+.flc .fd-searchslot--top .fd-search{ width:200px; }
+@media (min-width:1024px){ .flc .fd-searchslot--top .fd-search{ width:280px; } }
+
+/* The field has to read as a field against the white sidebar: --border is
+   1.05:1 on white and effectively invisible at this size. */
+.flc .fd-search{ border-color:var(--border-strong)!important; }
+.flc .fd-search:focus-within{ border-color:var(--blue)!important; }
+
+/* Nav rhythm — tighter, consistent rows. The hover no longer shifts the
+   ink as well as the ground; one change per state reads calmer. */
+.flc .flc-nav{ padding-top:6px; padding-bottom:6px; }
+.flc .flc-nav:hover{ background:var(--surface-2); color:var(--ink-body); }
+.flc .flc-nav.on:hover{ background:var(--tint-blue); color:var(--blue-deep); }
+.flc .flc-navgroup{ padding:14px 10px 5px; font-size:11px; }
+
+/* Brand header — compact, no card treatment; the tenant card that used to
+   sit here has moved into the single bottom workspace block. Gated to lg+
+   so it cannot override the 72px-rail padding set in the max-width block
+   above it, which wins on source order alone. */
+@media (min-width:1024px){
+  .flc aside.fd-sidebar-host > div:first-of-type{ padding:18px 16px 10px; }
+}
+
+/* Workspace/account block — one structured group, quiet divider. */
+.flc .fd-workspace{ border-top-color:var(--border)!important; }
+.flc .fd-workspace .fd-railhide > p + p{ margin-top:1px; }
+
+/* ================================================================
    SIDEBAR NAV PILLS
    Active = a light blue pill. The icon goes into a solid blue filled
    circle (rendered in DashboardLayout). The coral left rule is gone:

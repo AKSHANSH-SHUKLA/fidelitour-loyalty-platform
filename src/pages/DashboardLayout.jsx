@@ -460,6 +460,62 @@ const DashboardLayout = () => {
     // 3) Fallback — free-text customer search.
     navigate(`/dashboard/customers?q=${encodeURIComponent(raw)}`);
   };
+
+  /* P6C-0c — ONE search implementation, two placement slots.
+     This is the exact form that used to sit inline in the topbar, lifted
+     into a local render unit so the sidebar and the topbar can call the
+     same markup. It reads and writes the same `searchQ`, submits through
+     the same `submitSearch`, and therefore carries the same synonym
+     routing, FT-code detection and free-text fallback. No new state, no
+     second parser, no duplicate handler. Width is deliberately absent —
+     the placement slot owns it, so one unit can be 100% wide in the
+     sidebar and 200/280px in the topbar. Exactly one slot is ever
+     interactive; the other is display:none via Tailwind `hidden`, which
+     removes it from the tab order and the accessibility tree. */
+  const renderSearchForm = () => (
+    <form
+      onSubmit={submitSearch}
+      className="fd-search flex items-center gap-1.5 rounded-lg px-2.5 py-1"
+      style={{ background: 'var(--surface-2, #F8F9FC)', border: '1px solid var(--border, #ECEFF4)' }}
+    >
+      <button type="submit" aria-label={t('common.search')} className="shrink-0" style={{ lineHeight: 0 }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #626F7E)' }}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+      </button>
+      <input
+        type="text"
+        value={searchQ}
+        onChange={(e) => setSearchQ(e.target.value)}
+        placeholder={t('nav.search_placeholder')}
+        aria-label={t('common.search')}
+        className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
+        style={{ color: 'var(--ink, #030E1D)', fontWeight: 400 }}
+      />
+      {searchQ && (
+        <button
+          type="button"
+          onClick={() => setSearchQ('')}
+          aria-label={t('nav.search_clear')}
+          className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F8F9FC]"
+          style={{ color: 'var(--ink-mute, #626F7E)' }}
+        >✕</button>
+      )}
+      <kbd
+        className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
+        style={{
+          background: 'var(--flc-paper2, #F8F9FC)',
+          color: 'var(--ink-mute, #626F7E)',
+          border: '1px solid var(--hairline, #ECEFF4)',
+          fontWeight: 500,
+        }}
+        title={t('nav.search_enter_hint')}
+      >
+        ↵
+      </kbd>
+    </form>
+  );
   const currentPath = location.pathname;
   const role = user?.role || 'default';
   const theme = themeForRole(role);
@@ -563,36 +619,17 @@ const DashboardLayout = () => {
             )}
           </Link>
 
-          {/* Tenant identity badge — only when expanded */}
-          {!collapsed && tenantInfo && (
-            <div
-              className="mt-3 px-2.5 py-2 rounded-lg fd-railhide"
-              style={{ background: 'var(--surface-2, #F8F9FC)', border: '1px solid var(--hairline)' }}
-              title={`${t('nav.account')} : ${tenantInfo.name || t('nav.account_no_name')} · slug: ${tenantInfo.slug || '—'}`}
-            >
-              <p
-                className="text-[9px] uppercase tracking-[0.16em]"
-                style={{ color: 'var(--ink-mute)', fontWeight: 500 }}
-              >
-                {t('nav.account')}
-              </p>
-              <p
-                className="text-[13px] truncate mt-0.5"
-                style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.01em' }}
-              >
-                {tenantInfo.name || t('nav.account_no_name')}
-              </p>
-              {tenantInfo.slug && (
-                <p
-                  className="text-[10px] font-mono truncate mt-0.5"
-                  style={{ color: 'var(--ink-mute)' }}
-                >
-                  /join/{tenantInfo.slug}
-                </p>
-              )}
-            </div>
-          )}
         </div>
+
+        {/* P6C-0c — sidebar search slot. Mounted only when the sidebar is
+            expanded, and shown only at lg+ where the aside is actually 232px
+            wide; below lg it is display:none via `hidden`, so the rail never
+            contains a search field and the topbar slot is the live one. */}
+        {role === 'business_owner' && !collapsed && (
+          <div className="hidden lg:block fd-searchslot fd-searchslot--side">
+            {renderSearchForm()}
+          </div>
+        )}
 
         <div className="px-4">
           <div className="h-px" style={{ background: C.hairline }} />
@@ -657,7 +694,18 @@ const DashboardLayout = () => {
         </nav>
 
         {/* User chip — sign-out moved into the nav, directly below Settings */}
-        <div className={`${collapsed ? 'p-3' : 'p-4'} mt-auto`} style={{ borderTop: `1px solid ${C.hairline}` }}>
+        {/* P6C-0c — ONE workspace/account block. The tenant identity that used
+            to sit in a second card up in the header now lives here, next to the
+            account it belongs to. Every value is the same value as before —
+            tenant name, /join slug, user email, role label — and the tenant
+            card's title string is carried over so no information is lost. */}
+        <div
+          className={`fd-workspace ${collapsed ? 'p-3' : 'p-4'} mt-auto`}
+          style={{ borderTop: `1px solid ${C.hairline}` }}
+          title={!collapsed && tenantInfo
+            ? `${t('nav.account')} : ${tenantInfo.name || t('nav.account_no_name')} · slug: ${tenantInfo.slug || '—'}`
+            : undefined}
+        >
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5 px-1'}`}>
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
@@ -668,12 +716,33 @@ const DashboardLayout = () => {
             </div>
             {!collapsed && (
               <div className="min-w-0 fd-railhide">
-                <p className="text-xs font-semibold truncate" style={{ color: C.inkDeep }}>
+                {tenantInfo ? (
+                  <p
+                    className="text-[9px] uppercase tracking-[0.16em]"
+                    style={{ color: 'var(--ink-mute)', fontWeight: 500 }}
+                  >
+                    {t('nav.account')}
+                  </p>
+                ) : null}
+                {tenantInfo ? (
+                  <p
+                    className="text-[13px] truncate"
+                    style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.01em' }}
+                  >
+                    {tenantInfo.name || t('nav.account_no_name')}
+                  </p>
+                ) : null}
+                <p className="text-[11px] truncate" style={{ color: 'var(--ink-mute)' }}>
                   {user?.email || '—'}
                 </p>
-                <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: theme.from }}>
+                <p className="text-[10px] tracking-[0.10em] uppercase mt-0.5" style={{ color: 'var(--ink-mute)', fontWeight: 600 }}>
                   {theme.label}
                 </p>
+                {tenantInfo && tenantInfo.slug && (
+                  <p className="text-[10px] font-mono truncate mt-0.5" style={{ color: 'var(--ink-mute)' }}>
+                    /join/{tenantInfo.slug}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -699,52 +768,14 @@ const DashboardLayout = () => {
               borderBottom: '1px solid var(--border, #ECEFF4)',
             }}
           >
-            {/* Global search — Enter routes to /dashboard/customers with
-                the query. Barcode-style inputs (FT-XXXX) hit the customer
-                page filter by barcode_id; everything else hits the free
-                text search. */}
-            <form
-              onSubmit={submitSearch}
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 shrink-0 w-[200px] lg:w-[280px]"
-              style={{ background: 'var(--surface-2, #F8F9FC)', border: '1px solid var(--border, #ECEFF4)' }}
-            >
-              <button type="submit" aria-label={t('common.search')} className="shrink-0" style={{ lineHeight: 0 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #626F7E)' }}>
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M21 21l-4.3-4.3" />
-                </svg>
-              </button>
-              <input
-                type="text"
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder={t('nav.search_placeholder')}
-                aria-label={t('common.search')}
-                className="flex-1 min-w-0 bg-transparent outline-none text-[12.5px]"
-                style={{ color: 'var(--ink, #030E1D)', fontWeight: 400 }}
-              />
-              {searchQ && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQ('')}
-                  aria-label={t('nav.search_clear')}
-                  className="shrink-0 text-[10px] px-1 py-0.5 rounded hover:bg-[#F8F9FC]"
-                  style={{ color: 'var(--ink-mute, #626F7E)' }}
-                >✕</button>
-              )}
-              <kbd
-                className="text-[9.5px] px-1 py-0.5 rounded shrink-0"
-                style={{
-                  background: 'var(--flc-paper2, #F8F9FC)',
-                  color: 'var(--ink-mute, #626F7E)',
-                  border: '1px solid var(--hairline, #ECEFF4)',
-                  fontWeight: 500,
-                }}
-                title={t('nav.search_enter_hint')}
-              >
-                ↵
-              </kbd>
-            </form>
+            {/* P6C-0c — topbar search slot. Same renderSearchForm() the sidebar
+                calls. Live whenever the sidebar cannot host it: manually
+                collapsed at any width, or below lg where the aside is a 72px
+                rail. At lg+ expanded it is display:none, so exactly one form
+                is interactive at a time and neither carries its own state. */}
+            <div className={`fd-searchslot fd-searchslot--top shrink-0${collapsed ? '' : ' lg:hidden'}`}>
+              {renderSearchForm()}
+            </div>
 
             {/* Branch banner inline — fills the middle */}
             <div className="flex-1 min-w-0 px-2">
