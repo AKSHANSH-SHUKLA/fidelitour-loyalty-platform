@@ -870,21 +870,22 @@ def mock_seed_data():
     cafe_branches = ["branch-lumiere-main", "branch-lumiere-plumereau"]
 
     def _demo_is_stale() -> bool:
-        latest = db.visits.find_one({"tenant_id": "tenant-1"},
-                                    sort=[("created_at", -1)])
-        if not latest or not latest.get("created_at"):
-            return True
-        ts = latest["created_at"]
-        if isinstance(ts, str):
-            try:
-                ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-            except ValueError:
-                return True
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
-        # 3 days of silence would be unremarkable for a real shop but is
-        # exactly the point at which a café demo starts looking dead.
-        return (datetime.now(timezone.utc) - ts) > timedelta(days=3)
+        # Measure freshness on the BULK of the data, not the newest single
+        # visit: the c-akshansh test customer below is re-seeded with fresh
+        # dates on every cold start, so "newest visit" is always young and a
+        # newest-visit check never fires (which is exactly how the first
+        # version of this check silently did nothing in production).
+        #
+        # A café with 110 customers should show dozens of visits a month.
+        # Fewer than 15 in the last 30 days (excluding the always-fresh test
+        # customer) means the window charts are running on fumes.
+        cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        recent = db.visits.count_documents({
+            "tenant_id": "tenant-1",
+            "customer_id": {"$ne": "c-akshansh"},
+            "created_at": {"$gte": cutoff},
+        })
+        return recent < 15
 
     needs_cafe_reseed = (
         db.customers.count_documents({"tenant_id": "tenant-1"}) < 80
