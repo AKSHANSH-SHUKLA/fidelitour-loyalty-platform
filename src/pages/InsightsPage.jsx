@@ -15,13 +15,13 @@ import {
 
 // Small reusable card shell
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white border border-[var(--border, #ECEFF4)] rounded-xl p-5 ${className}`}>{children}</div>
+  <div className={`bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-5 ${className}`}>{children}</div>
 );
 
 const SectionHead = ({ icon: Icon, title, subtitle }) => (
   <div className="flex items-start gap-3 mb-4">
-    <div className="w-10 h-10 rounded-lg bg-[var(--tint-blue, #E5F1FF)]/10 flex items-center justify-center shrink-0">
-      <Icon className="w-5 h-5 text-[var(--blue-deep, #1453BD)]" />
+    <div className="w-10 h-10 rounded-lg bg-[var(--tint-blue,_#E5F1FF)]/10 flex items-center justify-center shrink-0">
+      <Icon className="w-5 h-5 text-[var(--blue-deep,_#1453BD)]" />
     </div>
     <div>
       <h2 className="text-lg font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>{title}</h2>
@@ -33,9 +33,9 @@ const SectionHead = ({ icon: Icon, title, subtitle }) => (
 const StatPill = ({ label, value, hint, tone = 'default' }) => {
   const toneMap = {
     default: 'bg-[#F5F4F1] text-[#171412]',
-    danger:  'bg-red-50 text-[#991B1B]',
-    warning: 'bg-amber-50 text-[#92400E]',
-    success: 'bg-emerald-50 text-[#065F46]',
+    danger:  'bg-[#FBE3E4] text-[#A81E27]',
+    warning: 'bg-[#F8F9FC] text-[#A81E27]',
+    success: 'bg-[#DCF2E4] text-[#087A31]',
   };
   return (
     <div className={`rounded-lg px-3 py-2 ${toneMap[tone]}`}>
@@ -209,10 +209,10 @@ export default function InsightsPage() {
   }
 
   const alertToneBg = {
-    danger: 'bg-red-50 border-red-200',
-    warning: 'bg-amber-50 border-amber-200',
-    success: 'bg-emerald-50 border-emerald-200',
-    info: 'bg-sky-50 border-sky-200',
+    danger:  'bg-[#FBE3E4] border-[#EBA5A9]',
+    warning: 'bg-[#F8F9FC] border-[#CBD3DC]',
+    success: 'bg-[#DCF2E4] border-[#8FCFAA]',
+    info:    'bg-[#E5F1FF] border-[#A8C6EC]',
   };
 
   return (
@@ -256,8 +256,8 @@ export default function InsightsPage() {
             <div className="flex gap-1.5">
               {Object.entries(proactiveAlerts.counts_by_severity || {}).filter(([, n]) => n > 0).map(([sev, n]) => {
                 const palette = {
-                  critical: { bg: '#FEE2E2', fg: '#991B1B' },
-                  warning:  { bg: '#FEF3C7', fg: '#92400E' },
+                  critical: { bg: '#FBE3E4', fg: '#A81E27' },
+                  warning:  { bg: '#F8F9FC', fg: '#A81E27' },
                   win:      { bg: `${C_PS.sage}1A`, fg: C_PS.sage },
                   info:     { bg: `${C_PS.sky}1A`, fg: C_PS.sky },
                 }[sev] || { bg: C_PS.bone, fg: C_PS.inkMute };
@@ -274,8 +274,8 @@ export default function InsightsPage() {
           <div className="relative grid grid-cols-1 md:grid-cols-2 gap-3">
             {proactiveAlerts.alerts.map((a) => {
               const sevPalette = {
-                critical: { accent: '#DC2626', bg: '#FEF2F2', icon: AlertTriangle, label: 'Critical' },
-                warning:  { accent: '#D97706', bg: '#FFFBEB', icon: AlertTriangle, label: 'Warning' },
+                critical: { accent: '#D93036', bg: '#FBE3E4', icon: AlertTriangle, label: 'Critical' },
+                warning:  { accent: '#A81E27', bg: '#F8F9FC', icon: AlertTriangle, label: 'Warning' },
                 win:      { accent: C_PS.sage, bg: `${C_PS.sage}0D`, icon: Sparkles,  label: 'Win'    },
                 info:     { accent: C_PS.sky,  bg: `${C_PS.sky}0D`,  icon: Calendar,  label: 'Info'   },
               }[a.severity] || { accent: C_PS.inkMute, bg: 'white', icon: AlertTriangle, label: 'Note' };
@@ -360,7 +360,8 @@ export default function InsightsPage() {
                   {s.why}
                 </p>
                 <div className="mt-3 mb-4 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest self-start px-2 py-1 rounded-full"
-                     style={{ background: `${C_PS.lavender}1A`, color: C_PS.lavender, border: `1px solid ${C_PS.lavender}33` }}>
+                     style={{ background: 'var(--tint-blue, #E5F1FF)', color: 'var(--blue-deep, #1453BD)',
+                              border: '1px solid var(--border, #ECEFF4)' }}>
                   <Users size={10} /> {s.audience_count} customers
                 </div>
                 <button
@@ -488,7 +489,7 @@ export default function InsightsPage() {
                 type="button"
                 onClick={() => { setAiQuestion(q); askAI(q); }}
                 disabled={aiLoading}
-                className="text-xs px-3 py-1.5 rounded-full border border-[var(--border, #ECEFF4)] bg-white hover:bg-[var(--border, #ECEFF4)] hover:text-white hover:border-[var(--border, #ECEFF4)] transition disabled:opacity-60"
+                className="text-xs px-3 py-1.5 rounded-full border border-[var(--border,_#ECEFF4)] bg-white hover:bg-[var(--border,_#ECEFF4)] hover:text-white hover:border-[var(--border,_#ECEFF4)] transition disabled:opacity-60"
                 title="Ask this question"
               >
                 {q}
@@ -503,14 +504,14 @@ export default function InsightsPage() {
               onChange={(e) => setAiQuestion(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !aiLoading) askAI(); }}
               placeholder="e.g. How do I win back gold-tier customers who went quiet last month?"
-              className="flex-1 px-4 py-2 border border-[var(--border, #ECEFF4)] rounded-lg text-sm"
+              className="flex-1 px-4 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
               disabled={aiLoading}
             />
             <button
               type="button"
               onClick={() => askAI()}
               disabled={aiLoading || !aiQuestion.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--tint-blue, #E5F1FF)] text-white text-sm font-semibold hover:bg-[#9C4E2F] disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--blue,_#0F6FDE)] text-white text-sm font-semibold hover:bg-[#9C4E2F] disabled:opacity-60"
             >
               <Wand2 size={14} />
               {aiLoading ? 'Thinking…' : 'Get a recommendation'}
@@ -518,19 +519,19 @@ export default function InsightsPage() {
           </div>
 
           {aiError && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800">
+            <div className="p-3 rounded-lg bg-[#FBE3E4] border border-[#EBA5A9] text-sm text-[#A81E27]">
               {aiError}
             </div>
           )}
 
           {aiAnswer && (
-            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[var(--border, #ECEFF4)]">
+            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[var(--border,_#ECEFF4)]">
               <div className="flex items-start gap-2 mb-2">
-                <Sparkles size={16} className="text-[var(--blue-deep, #1453BD)] shrink-0 mt-0.5" />
-                <p className="text-xs font-semibold text-[var(--blue-deep, #1453BD)] uppercase tracking-wider">AI recommendation</p>
+                <Sparkles size={16} className="text-[var(--blue-deep,_#1453BD)] shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider">AI recommendation</p>
               </div>
               <div className="text-sm text-[#171412] whitespace-pre-wrap leading-relaxed">{aiAnswer}</div>
-              <div className="mt-3 pt-3 border-t border-[var(--border, #ECEFF4)] text-[11px] text-[#8D857D]">
+              <div className="mt-3 pt-3 border-t border-[var(--border,_#ECEFF4)] text-[11px] text-[#626F7E]">
                 Tip: every insight below (churn, LTV, alerts, city breakdown…) can also be fed back into this box. Copy a number, paste it here, and ask "what does this mean for me?"
               </div>
             </div>
@@ -546,7 +547,7 @@ export default function InsightsPage() {
         ) : (
           <div className="space-y-3">
             {alerts.map((a, i) => (
-              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${alertToneBg[a.level] || 'bg-[#F5F4F1] border-[var(--border, #ECEFF4)]'}`}>
+              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${alertToneBg[a.level] || 'bg-[#F5F4F1] border-[var(--border,_#ECEFF4)]'}`}>
                 <div className="text-2xl">{a.icon}</div>
                 <div className="flex-1">
                   <p className="font-semibold text-[#171412]">{a.title}</p>
@@ -583,7 +584,7 @@ export default function InsightsPage() {
               tone={churn.churned_90d_pct >= 30 ? 'danger' : 'default'}
             />
           </div>
-          <p className="text-xs text-[#57504A] mt-4 border-t border-[var(--border, #ECEFF4)] pt-3">
+          <p className="text-xs text-[#57504A] mt-4 border-t border-[var(--border,_#ECEFF4)] pt-3">
             "1 visite seulement" = clients venus une seule fois qui ne sont pas revenus. "Inactifs 30j" = n'ont pas visité depuis 30 jours.
           </p>
         </Card>
@@ -602,7 +603,7 @@ export default function InsightsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--border, #ECEFF4)]">
+                  <tr className="border-b border-[var(--border,_#ECEFF4)]">
                     <th className="text-left py-2 px-2 text-[#57504A] font-semibold">Tier</th>
                     <th className="text-right py-2 px-2 text-[#57504A] font-semibold">Clients</th>
                     <th className="text-right py-2 px-2 text-[#57504A] font-semibold">LTV moyenne</th>
@@ -645,8 +646,8 @@ export default function InsightsPage() {
             </div>
           </div>
           {activeCards.suggest_upgrade && (
-            <div className="mt-4 p-3 bg-[var(--tint-blue, #E5F1FF)]/10 border border-[var(--border, #ECEFF4)]/30 rounded-lg flex flex-wrap items-center gap-3 justify-between">
-              <p className="font-semibold text-[var(--blue-deep, #1453BD)]">
+            <div className="mt-4 p-3 bg-[var(--tint-blue,_#E5F1FF)]/10 border border-[var(--border,_#ECEFF4)]/30 rounded-lg flex flex-wrap items-center gap-3 justify-between">
+              <p className="font-semibold text-[var(--blue-deep,_#1453BD)]">
                 ⚡ Vous approchez de votre limite. Passez à <span className="uppercase">{activeCards.next_plan}</span> pour {activeCards.next_plan_cap?.toLocaleString()} cartes max ({activeCards.next_plan_price}€/mois).
               </p>
               <button
@@ -662,7 +663,7 @@ export default function InsightsPage() {
                     alert('Erreur: ' + (e?.response?.data?.detail || e?.message));
                   }
                 }}
-                className="px-4 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg text-sm font-medium hover:bg-[#9C4E2F]"
+                className="px-4 py-2 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg text-sm font-medium hover:bg-[#9C4E2F]"
               >
                 Demander la montée de plan
               </button>
@@ -722,7 +723,7 @@ export default function InsightsPage() {
               <div className="space-y-1 max-h-64 overflow-y-auto">
                 {city.by_departement.slice(0, 10).map((d) => (
                   <div key={d.code} className="flex justify-between px-3 py-2 rounded bg-[#F5F4F1]">
-                    <span><span className="font-mono text-xs text-[var(--blue-deep, #1453BD)]">{d.code}</span> {d.name}</span>
+                    <span><span className="font-mono text-xs text-[var(--blue-deep,_#1453BD)]">{d.code}</span> {d.name}</span>
                     <span className="font-semibold">{d.customer_count}</span>
                   </div>
                 ))}
@@ -768,7 +769,7 @@ export default function InsightsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--border, #ECEFF4)]">
+                    <tr className="border-b border-[var(--border,_#ECEFF4)]">
                       <th className="text-left py-1 px-2">Nom</th>
                       <th className="text-right py-1 px-2">Ciblés</th>
                       <th className="text-right py-1 px-2">Livrés</th>
@@ -800,8 +801,8 @@ export default function InsightsPage() {
       {reactivation && (
         <Card>
           <SectionHead icon={Send} title="Relance clients inactifs" subtitle={`Template adapté à votre secteur : ${reactivation.sector}`} />
-          <div className="p-4 bg-[#F5F4F1] rounded-lg border border-[var(--border, #ECEFF4)]">
-            <p className="font-semibold text-[var(--blue-deep, #1453BD)] mb-1">{reactivation.template.title}</p>
+          <div className="p-4 bg-[#F5F4F1] rounded-lg border border-[var(--border,_#ECEFF4)]">
+            <p className="font-semibold text-[var(--blue-deep,_#1453BD)] mb-1">{reactivation.template.title}</p>
             <p className="text-sm text-[#171412]">{reactivation.template.content}</p>
           </div>
           <p className="text-xs text-[#57504A] mt-3">
@@ -819,12 +820,12 @@ export default function InsightsPage() {
             value={senderName}
             onChange={(e) => setSenderName(e.target.value)}
             placeholder="Ex: Café Lumière"
-            className="flex-1 border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2 focus:ring-[var(--border, #ECEFF4)]/20 focus:border-[var(--border, #ECEFF4)]"
+            className="flex-1 border border-[var(--border,_#ECEFF4)] rounded-lg px-3 py-2 focus:ring-[var(--border,_#ECEFF4)]/20 focus:border-[var(--border,_#ECEFF4)]"
           />
           <button
             onClick={saveSenderName}
             disabled={senderNameSaving}
-            className="px-4 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50"
+            className="px-4 py-2 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50"
           >
             {senderNameSaving ? 'Saving…' : 'Save'}
           </button>
@@ -841,7 +842,7 @@ export default function InsightsPage() {
             placeholder="email@example.com"
             value={addTeamForm.email}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, email: e.target.value })}
-            className="flex-1 min-w-[180px] border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2"
+            className="flex-1 min-w-[180px] border border-[var(--border,_#ECEFF4)] rounded-lg px-3 py-2"
           />
           <input
             type="password"
@@ -849,17 +850,17 @@ export default function InsightsPage() {
             placeholder="Mot de passe"
             value={addTeamForm.password}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, password: e.target.value })}
-            className="w-40 border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2"
+            className="w-40 border border-[var(--border,_#ECEFF4)] rounded-lg px-3 py-2"
           />
           <select
             value={addTeamForm.role}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, role: e.target.value })}
-            className="border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2"
+            className="border border-[var(--border,_#ECEFF4)] rounded-lg px-3 py-2"
           >
             <option value="staff">Staff</option>
             <option value="manager">Manager</option>
           </select>
-          <button className="px-4 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] flex items-center gap-2">
+          <button className="px-4 py-2 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] flex items-center gap-2">
             <UserPlus size={16} /> Ajouter
           </button>
         </form>
@@ -871,7 +872,7 @@ export default function InsightsPage() {
               <div key={m.email} className="flex items-center justify-between px-3 py-2 bg-[#F5F4F1] rounded">
                 <span className="text-sm">{m.email}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs uppercase font-bold px-2 py-0.5 rounded bg-[var(--tint-blue, #E5F1FF)] text-white">{m.role}</span>
+                  <span className="text-xs uppercase font-bold px-2 py-0.5 rounded bg-[var(--blue,_#0F6FDE)] text-white">{m.role}</span>
                   <button onClick={() => removeTeamMember(m.email)} className="text-red-600 hover:text-red-800">
                     <Trash2 size={16} />
                   </button>

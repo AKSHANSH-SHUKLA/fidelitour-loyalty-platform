@@ -84,9 +84,12 @@ const pct = (n, total) => (total > 0 ? Math.round((n / total) * 100) : 0);
 
 const Tile = ({ label, value, pct, icon: Icon, tone }) => {
   const palette = {
-    success: { bg: 'color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, var(--flc-card, #FFFFFF))',   fg: 'var(--flc-ok, #065F46)',   accent: 'var(--flc-ok, #10B981)' },
-    danger:  { bg: 'color-mix(in srgb, var(--flc-risk, #C22F45) 10%, var(--flc-card, #FFFFFF))', fg: 'var(--flc-risk, #991B1B)', accent: 'var(--flc-risk, #DC2626)' },
-    info:    { bg: 'color-mix(in srgb, var(--flc-info, #3568B8) 10%, var(--flc-card, #FFFFFF))', fg: 'var(--flc-info, #1E40AF)', accent: 'var(--flc-info, #3B82F6)' },
+    // The tint and the label must not be the same token: a mid-tone accent on
+    // a 10% tint of itself lands around 4.2-4.4:1. The fill keeps the accent;
+    // the label takes the deep variant, which is the text role.
+    success: { bg: 'color-mix(in srgb, var(--green, #10BC4C) 10%, var(--surface-1, #FFFFFF))', fg: 'var(--green-deep, #087A31)', accent: 'var(--green, #10BC4C)' },
+    danger:  { bg: 'color-mix(in srgb, var(--red, #D93036) 10%, var(--surface-1, #FFFFFF))',   fg: 'var(--red-deep, #A81E27)',   accent: 'var(--red, #D93036)' },
+    info:    { bg: 'color-mix(in srgb, var(--blue, #0F6FDE) 10%, var(--surface-1, #FFFFFF))',  fg: 'var(--blue-deep, #1453BD)',  accent: 'var(--blue, #0F6FDE)' },
     default: { bg: 'var(--flc-paper2, #F3F4F6)', fg: 'var(--flc-ink2, #374151)', accent: 'var(--flc-ink3, #6B7280)' },
   }[tone] || { bg: 'var(--flc-paper2, #F3F4F6)', fg: 'var(--flc-ink2, #374151)', accent: 'var(--flc-ink3, #6B7280)' };
 

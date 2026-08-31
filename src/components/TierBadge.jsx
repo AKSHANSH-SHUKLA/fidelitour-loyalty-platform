@@ -5,34 +5,41 @@ import { Crown } from 'lucide-react';
  * Tier badge with color + crown icon.
  * Usage: <TierBadge tier="gold" />  or  <TierBadge tier="silver" size="sm" />
  */
+/* Tiers are ORDINAL (bronze < silver < gold < vip), so they take the same
+   sequential blue ramp used in lib/theme.js and AnalyticsPage rather than four
+   categorical hues. That preserves the ranking, removes the legacy warm/violet
+   values, and keeps every label above the 4.5:1 text floor.
+
+   Fills are flat: the old gradients were decorative. The crown matches the
+   label colour — at the `gold` step a --blue-deep crown measured 2.31:1,
+   under the 3:1 graphical-object floor. */
 const TIER_STYLES = {
   bronze: {
-    bg: 'linear-gradient(135deg, #B85C38 0%, #8C3E22 100%)',
-    border: '#8C3E22',
-    text: '#FFFFFF',
-    crown: '#FFE1B8',
+    bg: '#CADFF8',            // --blue @ .22
+    border: '#ABCDF3',
+    text: '#030E1D',          // 14.22:1
+    crown: '#030E1D',
     label: 'Bronze',
   },
   silver: {
-    bg: 'linear-gradient(135deg, #D9D9D9 0%, #A8A8A8 100%)',
-    border: '#888888',
-    text: '#171412',
-    crown: '#6B6B6B',
+    bg: '#93BEF0',            // --blue @ .45
+    border: '#6DA7EB',
+    text: '#030E1D',          // 10.02:1
+    crown: '#030E1D',
     label: 'Silver',
   },
   gold: {
-    bg: 'linear-gradient(135deg, #F5D97A 0%, #D4A574 100%)',
-    border: '#B8852C',
-    text: '#171412',
-    crown: '#8C5C15',
+    bg: '#5297E7',            // --blue @ .72
+    border: '#2E82E2',
+    text: '#030E1D',          // 6.40:1
+    crown: '#030E1D',
     label: 'Gold',
   },
   vip: {
-    // Deep burgundy → black gradient — clearly "above" gold.
-    bg: 'linear-gradient(135deg, #96431F 0%, #171412 100%)',
-    border: '#171412',
-    text: '#F5D97A',
-    crown: '#F5D97A',
+    bg: '#1453BD',            // --blue-deep, the deepest step
+    border: '#0D3F91',
+    text: '#FFFFFF',          // 7.00:1
+    crown: '#FFFFFF',
     label: 'VIP',
   },
 };

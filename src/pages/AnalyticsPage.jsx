@@ -95,8 +95,8 @@ const SendCampaignButton = ({ label = 'Send campaign', onClick, compact = false,
     }}
     className={
       compact
-        ? 'inline-flex items-center gap-1 text-[11px] px-2 py-1 bg-[var(--tint-blue, #E5F1FF)]/10 text-[var(--tint-blue, #E5F1FF)] rounded-full hover:bg-[var(--tint-blue, #E5F1FF)] hover:text-white transition'
-        : 'inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[var(--tint-blue, #E5F1FF)]/10 text-[var(--tint-blue, #E5F1FF)] rounded-full hover:bg-[var(--tint-blue, #E5F1FF)] hover:text-white transition font-medium'
+        ? 'inline-flex items-center gap-1 text-[11px] px-2 py-1 bg-[var(--tint-blue,_#E5F1FF)]/10 text-[var(--blue-deep,_#1453BD)] rounded-full hover:bg-[var(--tint-blue,_#E5F1FF)] hover:text-white transition'
+        : 'inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[var(--tint-blue,_#E5F1FF)]/10 text-[var(--blue-deep,_#1453BD)] rounded-full hover:bg-[var(--tint-blue,_#E5F1FF)] hover:text-white transition font-medium'
     }
     title="Send a campaign to this segment"
   >
@@ -247,7 +247,7 @@ const KPICard = ({
 }) => (
   <div
     onClick={onClick}
-    className={`relative bg-white p-3 rounded-xl border border-[var(--border, #ECEFF4)] ${
+    className={`relative bg-white p-3 rounded-xl border border-[var(--border,_#ECEFF4)] ${
       onClick ? 'cursor-pointer hover:shadow-md transition' : ''
     }`}
   >
@@ -270,7 +270,7 @@ const KPICard = ({
       <div className="min-w-0 pr-5">
         <p className="text-[10px] text-[#57504A] uppercase tracking-wide font-semibold truncate">{title}</p>
         <p className="text-lg font-bold text-[#171412] leading-tight">{value}</p>
-        {sublabel && <p className="text-[10.5px] text-[#8D857D] mt-0.5 truncate">{sublabel}</p>}
+        {sublabel && <p className="text-[10.5px] text-[#626F7E] mt-0.5 truncate">{sublabel}</p>}
       </div>
     </div>
   </div>
@@ -280,7 +280,7 @@ const KPICard = ({
 // ChartCard with optional Send CTA
 // ------------------------------------------------------------------
 const ChartCard = ({ title, hint, children, segment, openComposer, presetName, presetContent }) => (
-  <div className="bg-white p-4 rounded-xl border border-[var(--border, #ECEFF4)]">
+  <div className="bg-white p-4 rounded-xl border border-[var(--border,_#ECEFF4)]">
     <div className="flex items-start justify-between gap-2 mb-0.5">
       <h2
         className="text-base font-semibold text-[#171412]"
@@ -295,7 +295,7 @@ const ChartCard = ({ title, hint, children, segment, openComposer, presetName, p
         />
       )}
     </div>
-    {hint && <p className="text-[10.5px] text-[#8D857D] mt-0.5 mb-2">{hint}</p>}
+    {hint && <p className="text-[10.5px] text-[#626F7E] mt-0.5 mb-2">{hint}</p>}
     {children}
   </div>
 );
@@ -378,10 +378,10 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
-              <Megaphone className="inline mr-2 text-[var(--blue-deep, #1453BD)]" size={22} /> Composer une campagne
+              <Megaphone className="inline mr-2 text-[var(--blue-deep,_#1453BD)]" size={22} /> Composer une campagne
             </h3>
-            <p className="text-xs text-[#8D857D] mt-1">
-              Cible : <span className="font-medium text-[var(--blue-deep, #1453BD)]">{segmentLabel(segment)}</span>
+            <p className="text-xs text-[#626F7E] mt-1">
+              Cible : <span className="font-medium text-[var(--blue-deep,_#1453BD)]">{segmentLabel(segment)}</span>
               {preview != null && <span className="ml-2">({preview} destinataires)</span>}
             </p>
           </div>
@@ -396,7 +396,7 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex : Offre spéciale {first_name} 🎁"
-              className="w-full px-3 py-2 border border-[var(--border, #ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--border, #ECEFF4)]"
+              className="w-full px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--border,_#ECEFF4)]"
             />
           </div>
           <div>
@@ -406,14 +406,14 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Bonjour {first_name}, il te reste {points_to_next_reward} points pour débloquer ta récompense chez {business_name} !"
-              className="w-full px-3 py-2 border border-[var(--border, #ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--border, #ECEFF4)] font-['Manrope']"
+              className="w-full px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--border,_#ECEFF4)] font-['Manrope']"
             />
-            <p className="text-[11px] text-[#8D857D] mt-1">
+            <p className="text-[11px] text-[#626F7E] mt-1">
               Variables : <code>{'{first_name}'}</code>, <code>{'{name}'}</code>, <code>{'{tier}'}</code>, <code>{'{points_to_next_reward}'}</code>, <code>{'{points}'}</code>, <code>{'{business_name}'}</code>
             </p>
           </div>
 
-          <div className="p-3 bg-[#F5F4F1] rounded-lg border border-[var(--border, #ECEFF4)]">
+          <div className="p-3 bg-[#F5F4F1] rounded-lg border border-[var(--border,_#ECEFF4)]">
             <div className="flex items-center gap-4 mb-2">
               <label className="inline-flex items-center gap-1 text-sm">
                 <input type="radio" checked={scheduleMode === 'now'} onChange={() => setScheduleMode('now')} />
@@ -430,12 +430,12 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
                   type="datetime-local"
                   value={runAt}
                   onChange={(e) => setRunAt(e.target.value)}
-                  className="px-2 py-1 border border-[var(--border, #ECEFF4)] rounded"
+                  className="px-2 py-1 border border-[var(--border,_#ECEFF4)] rounded"
                 />
                 <select
                   value={recurrence}
                   onChange={(e) => setRecurrence(e.target.value)}
-                  className="px-2 py-1 border border-[var(--border, #ECEFF4)] rounded text-sm"
+                  className="px-2 py-1 border border-[var(--border,_#ECEFF4)] rounded text-sm"
                 >
                   <option value="">Une seule fois</option>
                   <option value="daily">Quotidien</option>
@@ -449,14 +449,14 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-[var(--border, #ECEFF4)] text-[#171412] rounded-lg hover:bg-[#F5F4F1]"
+              className="px-4 py-2 border border-[var(--border,_#ECEFF4)] text-[#171412] rounded-lg hover:bg-[#F5F4F1]"
             >
               Annuler
             </button>
             <button
               disabled={sending}
               onClick={send}
-              className="px-5 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-5 py-2 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50 inline-flex items-center gap-2"
             >
               {scheduleMode === 'later' ? <Clock size={16} /> : <Send size={16} />}
               {sending ? 'Envoi…' : scheduleMode === 'later' ? 'Programmer' : 'Envoyer maintenant'}
@@ -899,7 +899,7 @@ const AnalyticsPage = () => {
           <h3 className="text-[13px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Vue d'ensemble — depuis le début
           </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">Totaux lifetime · pas de filtre temps</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#626F7E]">Totaux lifetime · pas de filtre temps</span>
         </div>
         {/* Lifetime row 1 — base totals, every tile tone-tagged for vivid colour */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -988,7 +988,7 @@ const AnalyticsPage = () => {
           <h3 className="text-[13px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Activité dans la période choisie
           </h3>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#626F7E]">
             {tilesDays} jour{tilesDays === 1 ? '' : 's'}
           </span>
         </div>
@@ -1130,7 +1130,7 @@ const AnalyticsPage = () => {
         <h3 className="text-[12px] font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
           Fenêtre de temps — Visites · Acquisition
         </h3>
-        <span className="text-[10px] uppercase tracking-widest font-bold text-[#8D857D]">
+        <span className="text-[10px] uppercase tracking-widest font-bold text-[#626F7E]">
           {chartsDays} jour{chartsDays === 1 ? '' : 's'}
         </span>
       </div>
@@ -1155,7 +1155,7 @@ const AnalyticsPage = () => {
                 key={t.key}
                 type="button"
                 onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[var(--border, #ECEFF4)] bg-[#FAFAF8] hover:bg-[var(--border, #ECEFF4)]/5 hover:border-[var(--border, #ECEFF4)] transition cursor-pointer text-left"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[var(--border,_#ECEFF4)] bg-[#FAFAF8] hover:bg-[var(--border,_#ECEFF4)]/5 hover:border-[var(--border,_#ECEFF4)] transition cursor-pointer text-left"
                 title={`Click to view ${t.name} customers`}
               >
                 <div className="flex items-center gap-2">
@@ -1163,7 +1163,7 @@ const AnalyticsPage = () => {
                   <span className="text-xs font-semibold text-[#171412]">{t.name}</span>
                 </div>
                 <span className="text-lg font-bold">{t.value}</span>
-                <span className="text-[10px] text-[#8D857D]">
+                <span className="text-[10px] text-[#626F7E]">
                   {totalCustomers ? `${Math.round((t.value / totalCustomers) * 100)}%` : '—'} · click to view
                 </span>
                 <SendCampaignButton
@@ -1200,14 +1200,16 @@ const AnalyticsPage = () => {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
+              <Legend formatter={(value) => (
+                <span style={{ color: 'var(--ink-body, #556272)' }}>{value}</span>
+              )} />
             </PieChart>
           </ResponsiveContainer>
         </ChartCard>
 
         <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
           {/* Lifetime headline */}
-          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[var(--border, #ECEFF4)]">
+          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[var(--border,_#ECEFF4)]">
             <p className="text-3xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
               {acquisitionTotal}
             </p>
@@ -1217,7 +1219,7 @@ const AnalyticsPage = () => {
           {/* Per-channel KPI tiles — count + percentage. Click to drill into customer list. */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
             {acquisitionChart.map((a) => {
-              const style = SOURCE_STYLE[a.raw] || { color: '#8D857D', bg: '#F5F4F1', icon: '•' };
+              const style = SOURCE_STYLE[a.raw] || { color: 'var(--ink-muted, #626F7E)', bg: '#F5F4F1', icon: '•' };
               return (
                 <button
                   key={a.raw}
@@ -1226,7 +1228,7 @@ const AnalyticsPage = () => {
                     `Customers acquired via ${a.name}`,
                     { source: a.raw }
                   )}
-                  className="text-left p-3 rounded-lg border border-[var(--border, #ECEFF4)] hover:border-[var(--border, #ECEFF4)] hover:shadow-sm transition"
+                  className="text-left p-3 rounded-lg border border-[var(--border,_#ECEFF4)] hover:border-[var(--border,_#ECEFF4)] hover:shadow-sm transition"
                   style={{ backgroundColor: style.bg }}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
@@ -1237,7 +1239,7 @@ const AnalyticsPage = () => {
                   </div>
                   <p className="text-2xl font-bold text-[#171412] leading-tight">
                     {a.value}
-                    <span className="text-sm text-[#8D857D] font-normal"> customers</span>
+                    <span className="text-sm text-[#626F7E] font-normal"> customers</span>
                   </p>
                   <p className="text-[11px] mt-0.5 font-semibold" style={{ color: style.color }}>
                     {a.pct}% of total
@@ -1300,7 +1302,7 @@ const AnalyticsPage = () => {
         </div>
 
         {reviewAnalytics && reviewAnalytics.total_reviews === 0 ? (
-          <p className="text-sm text-[#8D857D] italic">
+          <p className="text-sm text-[#626F7E] italic">
             No reviews yet. Once customers start rating visits from their wallet card, the KPIs will appear here.
           </p>
         ) : reviewAnalytics ? (
@@ -1409,11 +1411,11 @@ const AnalyticsPage = () => {
             {/* Rating distribution + topic breakdown side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
               {/* Rating distribution (1-10 histogram) */}
-              <div className="border border-[var(--border, #ECEFF4)] rounded-lg p-4">
+              <div className="border border-[var(--border,_#ECEFF4)] rounded-lg p-4">
                 <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Star size={14} /> Rating distribution
                 </p>
-                <p className="text-xs text-[#8D857D] mb-3">
+                <p className="text-xs text-[#626F7E] mb-3">
                   How many reviews landed at each score. Bars show share of total.
                 </p>
                 <div className="space-y-1">
@@ -1439,16 +1441,16 @@ const AnalyticsPage = () => {
               </div>
 
               {/* Topic breakdown */}
-              <div className="border border-[var(--border, #ECEFF4)] rounded-lg p-4">
+              <div className="border border-[var(--border,_#ECEFF4)] rounded-lg p-4">
                 <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Activity size={14} /> Topic / theme breakdown
                 </p>
-                <p className="text-xs text-[#8D857D] mb-3">
+                <p className="text-xs text-[#626F7E] mb-3">
                   Which themes customers mention and the average rating per theme. Lets you see
                   <em> why</em> ratings move — not just that they did.
                 </p>
                 {(reviewAnalytics.topic_breakdown || []).length === 0 ? (
-                  <p className="text-xs text-[#8D857D] italic">No text mentions to cluster yet.</p>
+                  <p className="text-xs text-[#626F7E] italic">No text mentions to cluster yet.</p>
                 ) : (
                   <div className="space-y-2">
                     {reviewAnalytics.topic_breakdown.map((t) => {
@@ -1461,7 +1463,7 @@ const AnalyticsPage = () => {
                       }[t.topic] || t.topic;
                       const avgColor = t.avg_rating >= 8 ? 'var(--green-deep, #087A31)' : t.avg_rating >= 6 ? 'var(--blue-deep, #1453BD)' : 'var(--red-deep, #A81E27)';
                       return (
-                        <div key={t.topic} className="p-2 rounded bg-[#FAFAF8] border border-[var(--border, #ECEFF4)]">
+                        <div key={t.topic} className="p-2 rounded bg-[#FAFAF8] border border-[var(--border,_#ECEFF4)]">
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-semibold text-[#171412]">{label}</span>
                             <span style={{ color: avgColor }} className="font-bold">{t.avg_rating}/10 · {t.count} mention{t.count === 1 ? '' : 's'}</span>
@@ -1471,7 +1473,7 @@ const AnalyticsPage = () => {
                             <div style={{ width: `${100 - t.positive_pct - t.negative_pct}%`, backgroundColor: 'var(--tint-blue, #E5F1FF)' }} />
                             <div style={{ width: `${t.negative_pct}%`, backgroundColor: 'var(--tint-blue, #E5F1FF)' }} />
                           </div>
-                          <p className="text-[10px] text-[#8D857D] mt-1">
+                          <p className="text-[10px] text-[#626F7E] mt-1">
                             {t.positive_pct}% positive · {t.negative_pct}% negative · {t.mention_pct}% of reviews mention this
                           </p>
                         </div>
@@ -1484,22 +1486,27 @@ const AnalyticsPage = () => {
 
             {/* Recent reviews feed */}
             {(reviewAnalytics.recent || []).length > 0 && (
-              <div className="border border-[var(--border, #ECEFF4)] rounded-lg p-4">
+              <div className="border border-[var(--border,_#ECEFF4)] rounded-lg p-4">
                 <p className="text-sm font-bold text-[#171412] mb-2">Most recent reviews</p>
                 <div className="space-y-2">
                   {reviewAnalytics.recent.map((r) => (
-                    <div key={r.id} className="p-3 rounded bg-[#FAFAF8] border border-[var(--border, #ECEFF4)] flex items-start gap-3">
-                      <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-white`}
-                           style={{ backgroundColor: r.rating >= 8 ? 'var(--green, #10BC4C)' : r.rating >= 5 ? 'var(--tint-blue, #E5F1FF)' : 'var(--red, #D93036)' }}>
+                    <div key={r.id} className="p-3 rounded bg-[#FAFAF8] border border-[var(--border,_#ECEFF4)] flex items-start gap-3">
+                      <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold`}
+                           style={{
+                             backgroundColor: r.rating >= 8 ? 'var(--green, #10BC4C)' : r.rating >= 5 ? 'var(--tint-blue, #E5F1FF)' : 'var(--red, #D93036)',
+                             // ink follows the tone: --green is a fill and cannot carry
+                             // white text (2.52:1), nor can the tint (1.09:1).
+                             color: r.rating >= 8 ? 'var(--ink-head, #030E1D)' : r.rating >= 5 ? 'var(--blue-deep, #1453BD)' : '#FFFFFF',
+                           }}>
                         {r.rating}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap text-xs">
                           <span className="font-semibold text-[#171412]">{r.sentiment}</span>
                           {r.topics?.length > 0 && (
-                            <span className="text-[#8D857D]">· {r.topics.join(', ')}</span>
+                            <span className="text-[#626F7E]">· {r.topics.join(', ')}</span>
                           )}
-                          <span className="text-[#8D857D] ml-auto">
+                          <span className="text-[#626F7E] ml-auto">
                             {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}
                           </span>
                         </div>
@@ -1512,7 +1519,7 @@ const AnalyticsPage = () => {
             )}
           </>
         ) : (
-          <p className="text-sm text-[#8D857D]">Loading review data…</p>
+          <p className="text-sm text-[#626F7E]">Loading review data…</p>
         )}
       </section>
 
@@ -1526,7 +1533,7 @@ const AnalyticsPage = () => {
         }}
       >
         <div className="relative flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--flc-info, #1E40AF)' }}>
+          <h3 className="text-base font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--blue-deep, #1453BD)' }}>
             Customer Ranking
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -1544,8 +1551,8 @@ const AnalyticsPage = () => {
                   onClick={() => setRankingMode(t.key)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors ${
                     active
-                      ? 'bg-[var(--tint-blue, #E5F1FF)] text-white'
-                      : 'bg-[#F5F4F1] text-[#57504A] hover:bg-[var(--border, #ECEFF4)]'
+                      ? 'bg-[var(--tint-blue,_#E5F1FF)] text-[#1453BD]'
+                      : 'bg-[#F5F4F1] text-[#57504A] hover:bg-[var(--border,_#ECEFF4)]'
                   }`}
                 >
                   <Icon size={14} />
@@ -1562,7 +1569,7 @@ const AnalyticsPage = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[var(--border, #ECEFF4)] text-[#57504A]">
+              <tr className="border-b border-[var(--border,_#ECEFF4)] text-[#57504A]">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2 px-3">Customer</th>
                 <th className="py-2 px-3">Email</th>
@@ -1573,11 +1580,11 @@ const AnalyticsPage = () => {
             </thead>
             <tbody>
               {rankedCustomers.length === 0 ? (
-                <tr><td colSpan={6} className="py-6 text-center text-[#8D857D]">No customers to rank yet.</td></tr>
+                <tr><td colSpan={6} className="py-6 text-center text-[#626F7E]">No customers to rank yet.</td></tr>
               ) : (
                 rankedCustomers.map((c, i) => (
-                  <tr key={c.id || i} className="border-b border-[var(--border, #ECEFF4)] hover:bg-[#F5F4F1]">
-                    <td className="py-2 px-3 text-[#8D857D]">{i + 1}</td>
+                  <tr key={c.id || i} className="border-b border-[var(--border,_#ECEFF4)] hover:bg-[#F5F4F1]">
+                    <td className="py-2 px-3 text-[#626F7E]">{i + 1}</td>
                     <td className="py-2 px-3 font-medium text-[#171412]">{c.name || '—'}</td>
                     <td className="py-2 px-3 text-[#57504A] text-xs">{c.email || '—'}</td>
                     <td className="py-2 px-3"><TierBadge tier={c.tier} /></td>
@@ -1612,13 +1619,13 @@ const AnalyticsPage = () => {
             {drillLoading ? (
               <p className="text-[#57504A] py-8 text-center">Loading customers…</p>
             ) : drill.error ? (
-              <p className="text-[var(--blue-deep, #1453BD)] py-8 text-center">Error: {drill.error}</p>
+              <p className="text-[var(--blue-deep,_#1453BD)] py-8 text-center">Error: {drill.error}</p>
             ) : (!drill.rows || drill.rows.length === 0) ? (
               <p className="text-[#57504A] py-8 text-center">No matching records.</p>
             ) : (
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--border, #ECEFF4)] text-[#57504A]">
+                  <tr className="border-b border-[var(--border,_#ECEFF4)] text-[#57504A]">
                     {drill.columns.map((c) => (
                       <th key={c.key} className="py-2 px-3">{c.label}</th>
                     ))}
@@ -1626,7 +1633,7 @@ const AnalyticsPage = () => {
                 </thead>
                 <tbody>
                   {drill.rows.map((r, i) => (
-                    <tr key={i} className="border-b border-[var(--border, #ECEFF4)]">
+                    <tr key={i} className="border-b border-[var(--border,_#ECEFF4)]">
                       {drill.columns.map((c) => (
                         <td key={c.key} className="py-2 px-3 text-[#171412]">
                           {c.render ? c.render(r[c.key]) : (r[c.key] ?? '—')}
@@ -1685,7 +1692,7 @@ const AnalyticsPage = () => {
               emptyValue={30}
               value={recoveryInactiveDays}
               onChange={(n) => setRecoveryInactiveDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[var(--border, #ECEFF4)] rounded text-center"
+              className="w-20 px-2 py-1 border border-[var(--border,_#ECEFF4)] rounded text-center"
             />
             <span className="text-sm text-[#57504A]">days,</span>
           </div>
@@ -1697,15 +1704,15 @@ const AnalyticsPage = () => {
               emptyValue={30}
               value={recoveryWindowDays}
               onChange={(n) => setRecoveryWindowDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[var(--border, #ECEFF4)] rounded text-center"
+              className="w-20 px-2 py-1 border border-[var(--border,_#ECEFF4)] rounded text-center"
             />
             <span className="text-sm text-[#57504A]">days</span>
           </div>
           <div className="ml-auto flex items-center gap-3 text-sm text-[#171412] font-medium">
             <span>
-              <span className="text-[var(--blue-deep, #1453BD)] font-bold">{recovered?.count ?? 0}</span> customers match
+              <span className="text-[var(--blue-deep,_#1453BD)] font-bold">{recovered?.count ?? 0}</span> customers match
               {' '}
-              <span className="text-[#8D857D]">({recovered?.percentage ?? 0}% of base)</span>
+              <span className="text-[#626F7E]">({recovered?.percentage ?? 0}% of base)</span>
             </span>
             <button
               type="button"
@@ -1726,7 +1733,7 @@ const AnalyticsPage = () => {
                 })
               }
               className="px-3 py-1.5 rounded-lg border text-sm font-semibold transition disabled:opacity-40"
-              style={{ borderColor: 'var(--border, #ECEFF4)', color: 'var(--border, #ECEFF4)' }}
+              style={{ borderColor: 'var(--border, #ECEFF4)', color: 'var(--blue-deep, #1453BD)' }}
               title="Show the list of customers that match the filter above"
             >
               View the {recovered?.count ?? 0} customer{recovered?.count === 1 ? '' : 's'}
