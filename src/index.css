@@ -1949,6 +1949,26 @@ textarea::placeholder {
 .flc .fd-searchslot--top .fd-search{ width:200px; }
 @media (min-width:1024px){ .flc .fd-searchslot--top .fd-search{ width:280px; } }
 
+/* ================================================================
+   P6C-0d — MOBILE TOPBAR FIT
+   Below sm the owner main column is only ~303px wide at 375 (and 248 at
+   320), while the toolbar's min-content is ~385: search 200 + bell 40 +
+   help 33 + menu 33 + gaps + padding. Four of the five children are
+   shrink-0, the row is nowrap, and only the branch banner can absorb —
+   it bottoms out at 15px. The excess was painted past the viewport edge,
+   so help and the user menu (and the bell at 320) were unreachable.
+
+   Fix is one wrap plus one flex-basis: the search takes row 1, the other
+   four wrap to row 2 in DOM order. Nothing is repositioned, hidden,
+   duplicated, reordered or made scrollable, so the tab sequence and every
+   handler are untouched.
+   ================================================================ */
+@media (max-width:639.98px){
+  .flc .fd-topbar{ flex-wrap:wrap; row-gap:8px; padding-left:12px; padding-right:12px; }
+  .flc .fd-topbar > .fd-searchslot--top{ flex:1 1 100%; }
+  .flc .fd-topbar .fd-searchslot--top .fd-search{ width:100%; }
+}
+
 /* The field has to read as a field against the white sidebar: --border is
    1.05:1 on white and effectively invisible at this size. */
 .flc .fd-search{ border-color:var(--border-strong)!important; }

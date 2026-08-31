@@ -762,7 +762,7 @@ const DashboardLayout = () => {
             slot hidden so staff don't see owner-only alerts. */}
         {role === 'business_owner' && (
           <div
-            className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
+            className="fd-topbar sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
             style={{
               background: 'var(--surface-1, #FFFFFF)',
               borderBottom: '1px solid var(--border, #ECEFF4)',
