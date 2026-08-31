@@ -129,7 +129,7 @@ const SettingsNavLink = ({ icon: Icon, currentPath, role, collapsed }) => {
         >
           <Icon className="w-[18px] h-[18px]" />
         </span>
-        <span className="truncate flex-1 text-left">{t('nav.settings')}</span>
+        <span className="truncate flex-1 text-left fd-railhide">{t('nav.settings')}</span>
         <span
           aria-hidden="true"
           className="transition-transform shrink-0"
@@ -238,7 +238,7 @@ const SignOutNavItem = ({ onClick, collapsed }) => {
       >
         <LogOut className="w-[18px] h-[18px]" />
       </span>
-      {!collapsed && <span className="truncate">{t('nav.sign_out')}</span>}
+      {!collapsed && <span className="truncate fd-railhide">{t('nav.sign_out')}</span>}
     </button>
   );
 };
@@ -268,7 +268,7 @@ const SupportNavItem = ({ onClick, collapsed }) => (
     >
       <LifeBuoy className="w-[18px] h-[18px]" />
     </span>
-    {!collapsed && <span className="truncate">Support</span>}
+    {!collapsed && <span className="truncate fd-railhide">Support</span>}
   </button>
 );
 
@@ -500,15 +500,22 @@ const DashboardLayout = () => {
 
   return (
     <div
-      className="relative flex min-h-screen fdt-dash flc"
+      className="relative min-h-screen fdt-dash flc fd-canvas"
       /* Card edge is a hairline OR a shadow, never both — one attribute so
          both variants can be captured without an edit between shots. */
       data-card-edge="shadow"
     >
       <AmbientBackdrop role={role} />
 
+      {/* Floating application frame. The canvas above is the ground the app
+          sits on; this is the app. Sidebar and main are columns inside it and
+          clip to its radius. Full-bleed below lg — a rounded card forced into
+          a narrow viewport wastes width. Shadow-only, per the root
+          data-card-edge policy: no second edge treatment. */}
+      <div className="fd-frame">
+
       <aside
-        className={`sticky top-0 z-10 ${collapsed ? 'w-[72px]' : 'w-64'} h-screen flex flex-col shrink-0 transition-[width,background-color] duration-200 ease-out fd-aside fd-sidebar-host`}
+        className={`sticky top-0 z-10 ${collapsed ? 'w-[72px]' : 'w-[72px] lg:w-64'} h-screen flex flex-col shrink-0 transition-[width,background-color] duration-200 ease-out fd-aside fd-sidebar-host`}
         style={{
           background: C.surface,
           borderRight: `1px solid ${C.hairline}`,
@@ -546,7 +553,7 @@ const DashboardLayout = () => {
               F
             </div>
             {!collapsed && (
-              <div className="min-w-0">
+              <div className="min-w-0 fd-railhide">
                 <p
                   className="text-[15px] leading-none"
                   style={{ color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.015em' }}
@@ -566,7 +573,7 @@ const DashboardLayout = () => {
           {/* Tenant identity badge — only when expanded */}
           {!collapsed && tenantInfo && (
             <div
-              className="mt-3 px-2.5 py-2 rounded-lg"
+              className="mt-3 px-2.5 py-2 rounded-lg fd-railhide"
               style={{ background: 'var(--surface-2, #F8F9FC)', border: '1px solid var(--hairline)' }}
               title={`${t('nav.account')} : ${tenantInfo.name || t('nav.account_no_name')} · slug: ${tenantInfo.slug || '—'}`}
             >
@@ -667,7 +674,7 @@ const DashboardLayout = () => {
               {(user?.email || '?').slice(0, 1).toUpperCase()}
             </div>
             {!collapsed && (
-              <div className="min-w-0">
+              <div className="min-w-0 fd-railhide">
                 <p className="text-xs font-semibold truncate" style={{ color: C.inkDeep }}>
                   {user?.email || '—'}
                 </p>
@@ -784,6 +791,8 @@ const DashboardLayout = () => {
           <Outlet />
         </div>
       </main>
+
+      </div>{/* /fd-frame */}
 
       {/* Support modal — opened from any sidebar "Support" item, mounted
           once here so it overlays every dashboard page consistently. */}
