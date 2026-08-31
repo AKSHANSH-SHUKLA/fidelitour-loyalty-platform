@@ -1893,43 +1893,20 @@ textarea::placeholder {
 }
 
 /* ================================================================
-   P6C-0 — FLOATING APPLICATION SHELL
-   The canvas is the ground the app sits on; the frame is the app.
-   Shadow-only, following the root [data-card-edge] policy — the frame
-   gets no hairline, because one edge treatment is the rule.
-   Full-bleed below lg: a rounded card forced into a narrow viewport
-   wastes width, which is the opposite of the point.
+   P6C-0b — FULL-VIEWPORT APPLICATION SHELL
+   The authenticated product is a full-page SaaS shell, not a card
+   floating in a canvas. The earlier contained-frame treatment read as a
+   boxed demo at desktop — at 1024 it left a wide gutter around a
+   shrunken app — so it is removed entirely: no outer padding, no
+   max-width frame, no desktop radius, no app-level shadow, and no
+   substitute outer container or global border.
+
+   The canvas token still exists and still shows through page grounds;
+   it is simply no longer painted as a margin around the application.
+
+   Unchanged below: the compact sidebar rhythm and the <lg icon-rail
+   rules, which are a separate mechanism and were already correct.
    ================================================================ */
-.flc.fd-canvas{
-  background:var(--canvas);
-  padding:0;                       /* full-bleed by default (mobile-first) */
-}
-.fd-frame{
-  display:flex;
-  min-height:100vh;
-  background:var(--surface-1);
-  border-radius:0;                 /* squared until lg */
-  overflow:hidden;                 /* sidebar + main clip to the frame */
-  box-shadow:none;
-}
-@media (min-width:1024px){          /* lg — the floating frame appears */
-  .flc.fd-canvas{ padding:20px; }
-  .fd-frame{
-    max-width:1600px;
-    margin:0 auto;
-    min-height:calc(100vh - 40px);
-    border-radius:20px;
-    /* the one approved restrained shadow; no border, ever */
-    box-shadow:0 1px 2px rgba(3,14,29,.05), 0 8px 24px -16px rgba(3,14,29,.16);
-  }
-}
-@media (min-width:1440px){ .flc.fd-canvas{ padding:24px; } }
-
-/* The aside is sticky inside the frame; its own scroll, its own hairline. */
-.fd-frame > aside.fd-sidebar-host{ height:auto; min-height:100%; }
-
-/* The topbar sticks to the top of the FRAME, not the viewport. */
-.fd-frame > main{ min-width:0; }
 
 /* Below lg the aside is the 72px icon rail, so its expanded-only content
    must collapse too — changing the width alone leaves labels wrapping and

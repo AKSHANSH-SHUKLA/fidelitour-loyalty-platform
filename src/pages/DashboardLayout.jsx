@@ -500,19 +500,12 @@ const DashboardLayout = () => {
 
   return (
     <div
-      className="relative min-h-screen fdt-dash flc fd-canvas"
+      className="relative flex min-h-screen fdt-dash flc"
       /* Card edge is a hairline OR a shadow, never both — one attribute so
          both variants can be captured without an edit between shots. */
       data-card-edge="shadow"
     >
       <AmbientBackdrop role={role} />
-
-      {/* Floating application frame. The canvas above is the ground the app
-          sits on; this is the app. Sidebar and main are columns inside it and
-          clip to its radius. Full-bleed below lg — a rounded card forced into
-          a narrow viewport wastes width. Shadow-only, per the root
-          data-card-edge policy: no second edge treatment. */}
-      <div className="fd-frame">
 
       <aside
         className={`sticky top-0 z-10 ${collapsed ? 'w-[72px]' : 'w-[72px] lg:w-64'} h-screen flex flex-col shrink-0 transition-[width,background-color] duration-200 ease-out fd-aside fd-sidebar-host`}
@@ -702,8 +695,8 @@ const DashboardLayout = () => {
           <div
             className="sticky top-0 z-30 flex items-center gap-3 px-6 lg:px-8 py-2.5 backdrop-blur"
             style={{
-              background: 'color-mix(in srgb, var(--flc-card, #FFFFFF) 82%, transparent)',
-              borderBottom: '1px solid var(--hairline, #ECEFF4)',
+              background: 'var(--surface-1, #FFFFFF)',
+              borderBottom: '1px solid var(--border, #ECEFF4)',
             }}
           >
             {/* Global search — Enter routes to /dashboard/customers with
@@ -712,8 +705,8 @@ const DashboardLayout = () => {
                 text search. */}
             <form
               onSubmit={submitSearch}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1 shrink-0 w-[200px] lg:w-[280px]"
-              style={{ background: 'var(--flc-card, #FFFFFF)', border: '1px solid var(--hairline, #ECEFF4)' }}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 shrink-0 w-[200px] lg:w-[280px]"
+              style={{ background: 'var(--surface-2, #F8F9FC)', border: '1px solid var(--border, #ECEFF4)' }}
             >
               <button type="submit" aria-label={t('common.search')} className="shrink-0" style={{ lineHeight: 0 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--ink-mute, #626F7E)' }}>
@@ -791,8 +784,6 @@ const DashboardLayout = () => {
           <Outlet />
         </div>
       </main>
-
-      </div>{/* /fd-frame */}
 
       {/* Support modal — opened from any sidebar "Support" item, mounted
           once here so it overlays every dashboard page consistently. */}
