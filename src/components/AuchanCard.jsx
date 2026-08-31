@@ -1032,7 +1032,7 @@ export function AuchanEditor({ layout, onChange, ctx = {}, businessName }) {
           Live preview · Apple Wallet
         </div>
         <div className="rounded-xl p-4 flex justify-center"
-          style={{ background: 'linear-gradient(180deg, #F3EFE7 0%, #E7E5E4 100%)' }}>
+          style={{ background: 'var(--surface-2, #F8F9FC)' }}>
           <AppleWalletFrame width={420}>
             <AuchanPreview layout={L} ctx={ctx} width={360} />
           </AppleWalletFrame>

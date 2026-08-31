@@ -141,6 +141,10 @@ Applied across dashboard+analytics (commit 07bcf7f). USE THESE, not the old elec
 7. **Commit style:** detailed multi-paragraph messages explaining what+why. Co-author line: `Co-Authored-By: Claude <noreply@anthropic.com>`. Always push after commit.
 8. **Validation before push:** `python3 -c "import ast; ast.parse(open('api/server.py').read())"` and `npx --no-install esbuild --bundle=false --loader:.jsx=jsx <file> --outfile=/tmp/x.js`. Local `npx vite build` works too (~3s).
 9. **i18n:** react-i18next FR/EN/AR + custom translator.js for full-page. RTL was killed intentionally. Pluralization uses _one/_other suffixes.
+10. **Confirmation before source edits (permanent):** Before editing source files,
+    present the proposed change, affected files, scope, risks, and validation plan,
+    then wait for explicit user confirmation. This does not apply to read-only
+    inspection, measurement, reporting, or status checks.
 
 ## 8. EVERYTHING BUILT (feature inventory)
 

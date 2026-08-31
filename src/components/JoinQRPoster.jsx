@@ -40,7 +40,7 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
       const compositeSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <rect width="${W}" height="${H}" fill="#FAFAF8"/>
-  <rect x="80" y="80" width="${W - 160}" height="${H - 160}" rx="40" fill="#ffffff" stroke="#E9E5E0" stroke-width="2"/>
+  <rect x="80" y="80" width="${W - 160}" height="${H - 160}" rx="40" fill="#ffffff" stroke="var(--border, #ECEFF4)" stroke-width="2"/>
   <text x="${W / 2}" y="220" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="56" font-weight="700" fill="#171412">${safeName}</text>
   <text x="${W / 2}" y="290" text-anchor="middle" font-family="Manrope, sans-serif" font-size="28" fill="#B85C38" letter-spacing="4">REJOIGNEZ NOTRE PROGRAMME DE FIDÉLITÉ</text>
   <g transform="translate(${(W - 600) / 2}, 380)">
@@ -136,15 +136,15 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
   };
 
   return (
-    <div ref={posterRef} className="bg-white rounded-2xl border border-[#E9E5E0] p-5 mt-4">
+    <div ref={posterRef} className="bg-white rounded-2xl border border-[var(--border, #ECEFF4)] p-5 mt-4">
       <div className="text-xs font-bold uppercase tracking-widest text-[#8D857D] mb-3">
         Affiche QR pour le comptoir
       </div>
       <div className="flex flex-col md:flex-row gap-5 items-start">
         {/* Mini preview */}
-        <div className="bg-[#FAFAF8] border border-[#E9E5E0] rounded-xl p-4 text-center mx-auto" id="poster-qr-preview">
+        <div className="bg-[#FAFAF8] border border-[var(--border, #ECEFF4)] rounded-xl p-4 text-center mx-auto" id="poster-qr-preview">
           <p className="text-xs font-bold mb-1" style={{ color: '#171412' }}>{businessName || 'Notre boutique'}</p>
-          <p className="text-[9px] uppercase tracking-widest mb-2" style={{ color: '#B85C38' }}>Rejoignez notre programme</p>
+          <p className="text-[9px] uppercase tracking-widest mb-2" style={{ color: 'var(--blue-deep, #1453BD)' }}>Rejoignez notre programme</p>
           <div ref={svgRef} id="poster-qr" className="bg-white p-2 rounded inline-block">
             <QRCodeSVG value={joinUrl} size={140} level="M" />
           </div>
@@ -177,7 +177,7 @@ const JoinQRPoster = ({ joinUrl, businessName }) => {
               onClick={downloadPNG}
               disabled={downloading}
               className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg border"
-              style={{ borderColor: '#E9E5E0', color: '#171412' }}
+              style={{ borderColor: 'var(--border, #ECEFF4)', color: '#171412' }}
             >
               <ImageIcon size={13} /> {downloading ? 'Génération…' : 'Télécharger en PNG'}
             </button>

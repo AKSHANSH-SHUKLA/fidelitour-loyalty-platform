@@ -128,7 +128,7 @@ export default function BillingBanner() {
         {/* Primary CTA — same intent everywhere, label adapts to urgency. */}
         <button
           onClick={() => setShowPicker(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white text-[#171412] font-semibold text-xs hover:bg-[#FAFAF8] transition-colors border border-[#E9E5E0] shrink-0"
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white text-[#171412] font-semibold text-xs hover:bg-[#FAFAF8] transition-colors border border-[var(--border, #ECEFF4)] shrink-0"
           type="button"
         >
           {isExpired ? 'Unlock now' : isReminder ? 'Choose a plan' : 'View plans'}

@@ -110,7 +110,7 @@ const PointsRuleCard = ({ id }) => {
             <p className="text-sm font-bold" style={{ color: C.inkDeep }}>
               📌 Forfait par visite
             </p>
-            <p className="text-xs mt-1" style={{ color: C.inkMute }}>
+            <p className="text-xs mt-1" style={{ color: C.inkSoft }}>
               Toujours <b>{perVisit || 0}</b> points par scan, peu importe le montant.
               Simple et prévisible.
             </p>

@@ -171,7 +171,7 @@ const VisitsOverTimeChart = () => {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 10, right: 12, bottom: 24, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #ECEFF4)" />
               <XAxis
                 dataKey="label"
                 stroke="#57504A"

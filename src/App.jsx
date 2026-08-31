@@ -21,7 +21,7 @@ class RootErrorBoundary extends React.Component {
       return (
         <div style={{
           minHeight: '100vh', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', background: '#FDFBF7',
+          justifyContent: 'center', background: 'var(--surface-2, #F8F9FC)',
           fontFamily: 'system-ui, -apple-system, sans-serif',
           padding: '2rem', textAlign: 'center',
         }}>
@@ -43,7 +43,7 @@ class RootErrorBoundary extends React.Component {
               </summary>
               <code style={{
                 display: 'block', marginTop: 8, padding: 8,
-                background: '#F3EFE7', borderRadius: 6,
+                background: 'var(--border, #ECEFF4)', borderRadius: 6,
                 fontSize: 11, color: '#57534E',
                 whiteSpace: 'pre-wrap', wordBreak: 'break-word',
               }}>

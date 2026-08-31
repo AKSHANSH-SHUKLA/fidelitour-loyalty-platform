@@ -497,7 +497,7 @@ const Pill = ({ on, labelOn, labelOff, colorOn }) => (
     style={{
       background: on ? `${colorOn}1A` : '#F5F5F4',
       color: on ? colorOn : '#A8A29E',
-      border: `1px solid ${on ? colorOn + '44' : '#E9E5E0'}`,
+      border: `1px solid ${on ? colorOn + '44' : 'var(--border, #ECEFF4)'}`,
     }}
   >
     {on ? labelOn : labelOff}

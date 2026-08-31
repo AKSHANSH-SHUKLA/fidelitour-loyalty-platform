@@ -61,7 +61,7 @@ export default function BillingCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-[#E9E5E0] p-5">
+      <div className="bg-white rounded-2xl border border-[var(--border, #ECEFF4)] p-5">
         <div className="text-sm text-[#57504A]">Chargement de l'abonnement…</div>
       </div>
     );
@@ -69,7 +69,7 @@ export default function BillingCard() {
 
   if (!status?.configured) {
     return (
-      <div className="bg-white rounded-2xl border border-[#E9E5E0] p-5">
+      <div className="bg-white rounded-2xl border border-[var(--border, #ECEFF4)] p-5">
         <div className="flex items-start gap-3">
           <CreditCard className="text-[#8D857D] flex-shrink-0 mt-0.5" size={20} />
           <div>
@@ -96,8 +96,8 @@ export default function BillingCard() {
   const isActive = subStatus === 'active' || isTrialing;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E9E5E0] overflow-hidden">
-      <div className="p-5 border-b border-[#E9E5E0] flex items-center justify-between">
+    <div className="bg-white rounded-2xl border border-[var(--border, #ECEFF4)] overflow-hidden">
+      <div className="p-5 border-b border-[var(--border, #ECEFF4)] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CreditCard size={18} className="text-[#B85C38]" />
           <h3 className="text-base font-semibold text-[#171412]">Abonnement</h3>
@@ -165,7 +165,7 @@ export default function BillingCard() {
         )}
       </div>
 
-      <div className="p-5 border-t border-[#E9E5E0]">
+      <div className="p-5 border-t border-[var(--border, #ECEFF4)]">
         {(status.has_stripe_customer && (isActive || isPastDue)) ? (
           <button
             onClick={openPortal}
@@ -193,7 +193,7 @@ export default function BillingCard() {
                       'relative px-3 py-3 rounded-lg border-2 text-sm font-semibold transition-all ' + (
                         isCurrent
                           ? 'border-[#7FA269] bg-[#E6EFE0] text-[#3F5E2A]'
-                          : 'border-[#E9E5E0] hover:border-[#B85C38] hover:bg-[#F8E8E2] text-[#171412] disabled:opacity-50'
+                          : 'border-[var(--border, #ECEFF4)] hover:border-[#B85C38] hover:bg-[#F8E8E2] text-[#171412] disabled:opacity-50'
                       )
                     }
                   >

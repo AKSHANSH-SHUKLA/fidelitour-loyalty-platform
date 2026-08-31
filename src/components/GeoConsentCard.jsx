@@ -177,7 +177,7 @@ export default function GeoConsentCard({
                   Vous nous avez bloqué la localisation. Pour recevoir les offres
                   quand vous passez devant la boutique, réautorisez-la :
                 </p>
-                <p className="text-xs text-[#171412] bg-white rounded-lg p-2 border border-[#E9E5E0] mb-2">
+                <p className="text-xs text-[#171412] bg-white rounded-lg p-2 border border-[var(--border, #ECEFF4)] mb-2">
                   {browserResetHint}
                 </p>
                 <button

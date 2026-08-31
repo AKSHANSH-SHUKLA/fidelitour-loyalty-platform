@@ -48,7 +48,7 @@ const BranchSelectorBar = () => {
         background: branchId
           ? 'linear-gradient(135deg, #FCE3DC 0%, #FBE0E8 100%)'
           : 'linear-gradient(135deg, white 0%, #F5EFE5 100%)',
-        border: `1.5px solid ${branchId ? '#B85C3866' : '#E9E5E0'}`,
+        border: `1.5px solid ${branchId ? '#B85C3866' : 'var(--border, #ECEFF4)'}`,
         boxShadow: branchId ? '0 6px 18px -10px #B85C3866' : '0 2px 6px -2px rgba(28,25,23,0.06)',
       }}
     >
@@ -85,7 +85,7 @@ const BranchSelectorBar = () => {
               ? 'linear-gradient(135deg, #171412, #2A1C2E)'
               : 'white',
             color: branchId === null ? 'white' : '#3D2820',
-            border: `1px solid ${branchId === null ? 'transparent' : '#E9E5E0'}`,
+            border: `1px solid ${branchId === null ? 'transparent' : 'var(--border, #ECEFF4)'}`,
             boxShadow: branchId === null ? '0 4px 12px -4px rgba(28,25,23,0.4)' : 'none',
           }}
         >
@@ -107,7 +107,7 @@ const BranchSelectorBar = () => {
                   ? 'linear-gradient(135deg, #B85C38, #D77FA0)'
                   : 'white',
                 color: isActive ? 'white' : '#3D2820',
-                border: `1px solid ${isActive ? 'transparent' : '#E9E5E0'}`,
+                border: `1px solid ${isActive ? 'transparent' : 'var(--border, #ECEFF4)'}`,
                 boxShadow: isActive ? '0 4px 12px -4px #B85C3866' : 'none',
               }}
             >

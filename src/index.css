@@ -1595,7 +1595,7 @@ textarea::placeholder {
 .av2-light-skin .av2-legacy-wrapper .bg-white,
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#F8F9FC]"],
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#F1F5FA]"],
-.av2-light-skin .av2-legacy-wrapper [class*="bg-[#F3EFE7]"],
+.av2-light-skin .av2-legacy-wrapper [class*="bg-[#F8F9FC]"],
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#F8F9FC]"],
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#FAF6EE]"],
 .av2-light-skin .av2-legacy-wrapper [class*="bg-[#ECEFF4]"] {
@@ -1627,7 +1627,7 @@ textarea::placeholder {
 
 /* All cream borders inside the legacy block → dark hairlines. */
 .av2-light-skin .av2-legacy-wrapper [class*="border-[#ECEFF4]"],
-.av2-light-skin .av2-legacy-wrapper [class*="border-[#F3EFE7]"],
+.av2-light-skin .av2-legacy-wrapper [class*="border-[#ECEFF4]"],
 .av2-light-skin .av2-legacy-wrapper [class*="border-[#ECE3D5]"],
 .av2-light-skin .av2-legacy-wrapper [class*="border-[#ECEFF4]"] {
   border-color: #ECEFF4 !important;

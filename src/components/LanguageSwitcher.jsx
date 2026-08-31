@@ -56,7 +56,7 @@ export default function LanguageSwitcher({ variant = 'full' }) {
                 padding: '3px 8px',
                 fontSize: 13,
                 borderRadius: 6,
-                border: active ? '1px solid #B85C38' : '1px solid #E9E5E0',
+                border: active ? '1px solid #B85C38' : '1px solid var(--border, #ECEFF4)',
                 background: active ? 'color-mix(in srgb, var(--flc-accent-2, #E8703A) 12%, var(--flc-card, #FFFFFF))' : 'var(--flc-card, #FFFFFF)',
                 cursor: 'pointer',
                 font: 'inherit',
@@ -96,7 +96,7 @@ export default function LanguageSwitcher({ variant = 'full' }) {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '8px 14px', borderRadius: 10,
-                border: active ? '1px solid #B85C38' : '1px solid #E9E5E0',
+                border: active ? '1px solid #B85C38' : '1px solid var(--border, #ECEFF4)',
                 background: active ? 'color-mix(in srgb, var(--flc-accent-2, #E8703A) 12%, var(--flc-card, #FFFFFF))' : 'var(--flc-card, #FFFFFF)',
                 cursor: 'pointer',
                 color: '#171412', font: 'inherit', fontSize: 13.5, fontWeight: 500,
