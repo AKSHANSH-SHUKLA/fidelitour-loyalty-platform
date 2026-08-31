@@ -15,13 +15,13 @@ import {
 
 // Small reusable card shell
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white border border-[#E9E5E0] rounded-xl p-5 ${className}`}>{children}</div>
+  <div className={`bg-white border border-[var(--border, #ECEFF4)] rounded-xl p-5 ${className}`}>{children}</div>
 );
 
 const SectionHead = ({ icon: Icon, title, subtitle }) => (
   <div className="flex items-start gap-3 mb-4">
-    <div className="w-10 h-10 rounded-lg bg-[#B85C38]/10 flex items-center justify-center shrink-0">
-      <Icon className="w-5 h-5 text-[#B85C38]" />
+    <div className="w-10 h-10 rounded-lg bg-[var(--tint-blue, #E5F1FF)]/10 flex items-center justify-center shrink-0">
+      <Icon className="w-5 h-5 text-[var(--blue-deep, #1453BD)]" />
     </div>
     <div>
       <h2 className="text-lg font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>{title}</h2>
@@ -488,7 +488,7 @@ export default function InsightsPage() {
                 type="button"
                 onClick={() => { setAiQuestion(q); askAI(q); }}
                 disabled={aiLoading}
-                className="text-xs px-3 py-1.5 rounded-full border border-[#E9E5E0] bg-white hover:bg-[#B85C38] hover:text-white hover:border-[#B85C38] transition disabled:opacity-60"
+                className="text-xs px-3 py-1.5 rounded-full border border-[var(--border, #ECEFF4)] bg-white hover:bg-[var(--border, #ECEFF4)] hover:text-white hover:border-[var(--border, #ECEFF4)] transition disabled:opacity-60"
                 title="Ask this question"
               >
                 {q}
@@ -503,14 +503,14 @@ export default function InsightsPage() {
               onChange={(e) => setAiQuestion(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !aiLoading) askAI(); }}
               placeholder="e.g. How do I win back gold-tier customers who went quiet last month?"
-              className="flex-1 px-4 py-2 border border-[#E9E5E0] rounded-lg text-sm"
+              className="flex-1 px-4 py-2 border border-[var(--border, #ECEFF4)] rounded-lg text-sm"
               disabled={aiLoading}
             />
             <button
               type="button"
               onClick={() => askAI()}
               disabled={aiLoading || !aiQuestion.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#B85C38] text-white text-sm font-semibold hover:bg-[#9C4E2F] disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--tint-blue, #E5F1FF)] text-white text-sm font-semibold hover:bg-[#9C4E2F] disabled:opacity-60"
             >
               <Wand2 size={14} />
               {aiLoading ? 'Thinking…' : 'Get a recommendation'}
@@ -524,13 +524,13 @@ export default function InsightsPage() {
           )}
 
           {aiAnswer && (
-            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
+            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[var(--border, #ECEFF4)]">
               <div className="flex items-start gap-2 mb-2">
-                <Sparkles size={16} className="text-[#B85C38] shrink-0 mt-0.5" />
-                <p className="text-xs font-semibold text-[#B85C38] uppercase tracking-wider">AI recommendation</p>
+                <Sparkles size={16} className="text-[var(--blue-deep, #1453BD)] shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold text-[var(--blue-deep, #1453BD)] uppercase tracking-wider">AI recommendation</p>
               </div>
               <div className="text-sm text-[#171412] whitespace-pre-wrap leading-relaxed">{aiAnswer}</div>
-              <div className="mt-3 pt-3 border-t border-[#E9E5E0] text-[11px] text-[#8D857D]">
+              <div className="mt-3 pt-3 border-t border-[var(--border, #ECEFF4)] text-[11px] text-[#8D857D]">
                 Tip: every insight below (churn, LTV, alerts, city breakdown…) can also be fed back into this box. Copy a number, paste it here, and ask "what does this mean for me?"
               </div>
             </div>
@@ -546,7 +546,7 @@ export default function InsightsPage() {
         ) : (
           <div className="space-y-3">
             {alerts.map((a, i) => (
-              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${alertToneBg[a.level] || 'bg-[#F5F4F1] border-[#E9E5E0]'}`}>
+              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${alertToneBg[a.level] || 'bg-[#F5F4F1] border-[var(--border, #ECEFF4)]'}`}>
                 <div className="text-2xl">{a.icon}</div>
                 <div className="flex-1">
                   <p className="font-semibold text-[#171412]">{a.title}</p>
@@ -583,7 +583,7 @@ export default function InsightsPage() {
               tone={churn.churned_90d_pct >= 30 ? 'danger' : 'default'}
             />
           </div>
-          <p className="text-xs text-[#57504A] mt-4 border-t border-[#E9E5E0] pt-3">
+          <p className="text-xs text-[#57504A] mt-4 border-t border-[var(--border, #ECEFF4)] pt-3">
             "1 visite seulement" = clients venus une seule fois qui ne sont pas revenus. "Inactifs 30j" = n'ont pas visité depuis 30 jours.
           </p>
         </Card>
@@ -602,7 +602,7 @@ export default function InsightsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#E9E5E0]">
+                  <tr className="border-b border-[var(--border, #ECEFF4)]">
                     <th className="text-left py-2 px-2 text-[#57504A] font-semibold">Tier</th>
                     <th className="text-right py-2 px-2 text-[#57504A] font-semibold">Clients</th>
                     <th className="text-right py-2 px-2 text-[#57504A] font-semibold">LTV moyenne</th>
@@ -637,7 +637,7 @@ export default function InsightsPage() {
               </div>
               <div className="h-3 bg-[#F5F4F1] rounded-full overflow-hidden">
                 <div
-                  className={`h-full ${activeCards.near_limit ? 'bg-[#B85C38]' : 'bg-[#4A5D23]'}`}
+                  className={`h-full ${activeCards.near_limit ? 'bg-[var(--red,#D93036)]' : 'bg-[var(--green,#10BC4C)]'}`}
                   style={{ width: `${Math.min(activeCards.usage_pct, 100)}%` }}
                 />
               </div>
@@ -645,8 +645,8 @@ export default function InsightsPage() {
             </div>
           </div>
           {activeCards.suggest_upgrade && (
-            <div className="mt-4 p-3 bg-[#B85C38]/10 border border-[#B85C38]/30 rounded-lg flex flex-wrap items-center gap-3 justify-between">
-              <p className="font-semibold text-[#B85C38]">
+            <div className="mt-4 p-3 bg-[var(--tint-blue, #E5F1FF)]/10 border border-[var(--border, #ECEFF4)]/30 rounded-lg flex flex-wrap items-center gap-3 justify-between">
+              <p className="font-semibold text-[var(--blue-deep, #1453BD)]">
                 ⚡ Vous approchez de votre limite. Passez à <span className="uppercase">{activeCards.next_plan}</span> pour {activeCards.next_plan_cap?.toLocaleString()} cartes max ({activeCards.next_plan_price}€/mois).
               </p>
               <button
@@ -662,7 +662,7 @@ export default function InsightsPage() {
                     alert('Erreur: ' + (e?.response?.data?.detail || e?.message));
                   }
                 }}
-                className="px-4 py-2 bg-[#B85C38] text-white rounded-lg text-sm font-medium hover:bg-[#9C4E2F]"
+                className="px-4 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg text-sm font-medium hover:bg-[#9C4E2F]"
               >
                 Demander la montée de plan
               </button>
@@ -681,11 +681,11 @@ export default function InsightsPage() {
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={timeSeg.daypart_breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #ECEFF4)" />
                     <XAxis dataKey="name" stroke="#57504A" fontSize={11} />
                     <YAxis stroke="#57504A" fontSize={11} />
                     <Tooltip />
-                    <Bar dataKey="visits" fill="#B85C38" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="visits" fill="var(--blue, #0F6FDE)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -695,11 +695,11 @@ export default function InsightsPage() {
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={timeSeg.weekday_breakdown}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E9E5E0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #ECEFF4)" />
                     <XAxis dataKey="day" stroke="#57504A" fontSize={11} />
                     <YAxis stroke="#57504A" fontSize={11} />
                     <Tooltip />
-                    <Bar dataKey="visits" fill="#4A5D23" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="visits" fill="var(--green, #10BC4C)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -722,7 +722,7 @@ export default function InsightsPage() {
               <div className="space-y-1 max-h-64 overflow-y-auto">
                 {city.by_departement.slice(0, 10).map((d) => (
                   <div key={d.code} className="flex justify-between px-3 py-2 rounded bg-[#F5F4F1]">
-                    <span><span className="font-mono text-xs text-[#B85C38]">{d.code}</span> {d.name}</span>
+                    <span><span className="font-mono text-xs text-[var(--blue-deep, #1453BD)]">{d.code}</span> {d.name}</span>
                     <span className="font-semibold">{d.customer_count}</span>
                   </div>
                 ))}
@@ -768,7 +768,7 @@ export default function InsightsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[#E9E5E0]">
+                    <tr className="border-b border-[var(--border, #ECEFF4)]">
                       <th className="text-left py-1 px-2">Nom</th>
                       <th className="text-right py-1 px-2">Ciblés</th>
                       <th className="text-right py-1 px-2">Livrés</th>
@@ -800,8 +800,8 @@ export default function InsightsPage() {
       {reactivation && (
         <Card>
           <SectionHead icon={Send} title="Relance clients inactifs" subtitle={`Template adapté à votre secteur : ${reactivation.sector}`} />
-          <div className="p-4 bg-[#F5F4F1] rounded-lg border border-[#E9E5E0]">
-            <p className="font-semibold text-[#B85C38] mb-1">{reactivation.template.title}</p>
+          <div className="p-4 bg-[#F5F4F1] rounded-lg border border-[var(--border, #ECEFF4)]">
+            <p className="font-semibold text-[var(--blue-deep, #1453BD)] mb-1">{reactivation.template.title}</p>
             <p className="text-sm text-[#171412]">{reactivation.template.content}</p>
           </div>
           <p className="text-xs text-[#57504A] mt-3">
@@ -819,12 +819,12 @@ export default function InsightsPage() {
             value={senderName}
             onChange={(e) => setSenderName(e.target.value)}
             placeholder="Ex: Café Lumière"
-            className="flex-1 border border-[#E9E5E0] rounded-lg px-3 py-2 focus:ring-[#B85C38]/20 focus:border-[#B85C38]"
+            className="flex-1 border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2 focus:ring-[var(--border, #ECEFF4)]/20 focus:border-[var(--border, #ECEFF4)]"
           />
           <button
             onClick={saveSenderName}
             disabled={senderNameSaving}
-            className="px-4 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50"
+            className="px-4 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50"
           >
             {senderNameSaving ? 'Saving…' : 'Save'}
           </button>
@@ -841,7 +841,7 @@ export default function InsightsPage() {
             placeholder="email@example.com"
             value={addTeamForm.email}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, email: e.target.value })}
-            className="flex-1 min-w-[180px] border border-[#E9E5E0] rounded-lg px-3 py-2"
+            className="flex-1 min-w-[180px] border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2"
           />
           <input
             type="password"
@@ -849,17 +849,17 @@ export default function InsightsPage() {
             placeholder="Mot de passe"
             value={addTeamForm.password}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, password: e.target.value })}
-            className="w-40 border border-[#E9E5E0] rounded-lg px-3 py-2"
+            className="w-40 border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2"
           />
           <select
             value={addTeamForm.role}
             onChange={(e) => setAddTeamForm({ ...addTeamForm, role: e.target.value })}
-            className="border border-[#E9E5E0] rounded-lg px-3 py-2"
+            className="border border-[var(--border, #ECEFF4)] rounded-lg px-3 py-2"
           >
             <option value="staff">Staff</option>
             <option value="manager">Manager</option>
           </select>
-          <button className="px-4 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F] flex items-center gap-2">
+          <button className="px-4 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] flex items-center gap-2">
             <UserPlus size={16} /> Ajouter
           </button>
         </form>
@@ -871,7 +871,7 @@ export default function InsightsPage() {
               <div key={m.email} className="flex items-center justify-between px-3 py-2 bg-[#F5F4F1] rounded">
                 <span className="text-sm">{m.email}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs uppercase font-bold px-2 py-0.5 rounded bg-[#B85C38] text-white">{m.role}</span>
+                  <span className="text-xs uppercase font-bold px-2 py-0.5 rounded bg-[var(--tint-blue, #E5F1FF)] text-white">{m.role}</span>
                   <button onClick={() => removeTeamMember(m.email)} className="text-red-600 hover:text-red-800">
                     <Trash2 size={16} />
                   </button>

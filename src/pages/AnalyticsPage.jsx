@@ -26,8 +26,8 @@ import WeeklyAcquisitionPanel from '../components/WeeklyAcquisitionPanel';
 import useTileMetric from '../hooks/useTileMetric';
 import { Trash2, UserPlus2, RefreshCcw, Repeat as RepeatIcon, BadgeCheck } from 'lucide-react';
 
-const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869', vip: '#96431F' };
-const ACQ_COLORS = ['#B85C38', '#E3A869', '#4A5D23', '#96431F', '#5B8DEF', '#AA6EBE', '#8B6914'];
+const TIER_COLORS = { bronze: '#CADFF8', silver: '#93BEF0', gold: '#5297E7', vip: '#1453BD' };
+const ACQ_COLORS = ['#0F6FDE', '#2E82E2', '#4D94E7', '#6DA7EB', '#8CBAEF', '#ABCDF3', '#CADFF8'];
 
 // ─────────────────────────────────────────────────────────────────────
 // DEMO REVIEW ANALYTICS — paints the "Customer reviews & sentiment"
@@ -95,8 +95,8 @@ const SendCampaignButton = ({ label = 'Send campaign', onClick, compact = false,
     }}
     className={
       compact
-        ? 'inline-flex items-center gap-1 text-[11px] px-2 py-1 bg-[#B85C38]/10 text-[#B85C38] rounded-full hover:bg-[#B85C38] hover:text-white transition'
-        : 'inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#B85C38]/10 text-[#B85C38] rounded-full hover:bg-[#B85C38] hover:text-white transition font-medium'
+        ? 'inline-flex items-center gap-1 text-[11px] px-2 py-1 bg-[var(--tint-blue, #E5F1FF)]/10 text-[var(--tint-blue, #E5F1FF)] rounded-full hover:bg-[var(--tint-blue, #E5F1FF)] hover:text-white transition'
+        : 'inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[var(--tint-blue, #E5F1FF)]/10 text-[var(--tint-blue, #E5F1FF)] rounded-full hover:bg-[var(--tint-blue, #E5F1FF)] hover:text-white transition font-medium'
     }
     title="Send a campaign to this segment"
   >
@@ -242,12 +242,12 @@ const SharedTimeFilter = ({ value, onChange, sharedDays }) => {
 // KPI card with optional Send Campaign CTA in top-right corner.
 // ------------------------------------------------------------------
 const KPICard = ({
-  icon: Icon, title, value, sublabel, onClick, accent = '#B85C38',
+  icon: Icon, title, value, sublabel, onClick, accent = 'var(--blue, #0F6FDE)',
   segment, openComposer, presetName, presetContent,
 }) => (
   <div
     onClick={onClick}
-    className={`relative bg-white p-3 rounded-xl border border-[#E9E5E0] ${
+    className={`relative bg-white p-3 rounded-xl border border-[var(--border, #ECEFF4)] ${
       onClick ? 'cursor-pointer hover:shadow-md transition' : ''
     }`}
   >
@@ -280,7 +280,7 @@ const KPICard = ({
 // ChartCard with optional Send CTA
 // ------------------------------------------------------------------
 const ChartCard = ({ title, hint, children, segment, openComposer, presetName, presetContent }) => (
-  <div className="bg-white p-4 rounded-xl border border-[#E9E5E0]">
+  <div className="bg-white p-4 rounded-xl border border-[var(--border, #ECEFF4)]">
     <div className="flex items-start justify-between gap-2 mb-0.5">
       <h2
         className="text-base font-semibold text-[#171412]"
@@ -378,10 +378,10 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
-              <Megaphone className="inline mr-2 text-[#B85C38]" size={22} /> Composer une campagne
+              <Megaphone className="inline mr-2 text-[var(--blue-deep, #1453BD)]" size={22} /> Composer une campagne
             </h3>
             <p className="text-xs text-[#8D857D] mt-1">
-              Cible : <span className="font-medium text-[#B85C38]">{segmentLabel(segment)}</span>
+              Cible : <span className="font-medium text-[var(--blue-deep, #1453BD)]">{segmentLabel(segment)}</span>
               {preview != null && <span className="ml-2">({preview} destinataires)</span>}
             </p>
           </div>
@@ -396,7 +396,7 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex : Offre spéciale {first_name} 🎁"
-              className="w-full px-3 py-2 border border-[#E9E5E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
+              className="w-full px-3 py-2 border border-[var(--border, #ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--border, #ECEFF4)]"
             />
           </div>
           <div>
@@ -406,14 +406,14 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Bonjour {first_name}, il te reste {points_to_next_reward} points pour débloquer ta récompense chez {business_name} !"
-              className="w-full px-3 py-2 border border-[#E9E5E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38] font-['Manrope']"
+              className="w-full px-3 py-2 border border-[var(--border, #ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--border, #ECEFF4)] font-['Manrope']"
             />
             <p className="text-[11px] text-[#8D857D] mt-1">
               Variables : <code>{'{first_name}'}</code>, <code>{'{name}'}</code>, <code>{'{tier}'}</code>, <code>{'{points_to_next_reward}'}</code>, <code>{'{points}'}</code>, <code>{'{business_name}'}</code>
             </p>
           </div>
 
-          <div className="p-3 bg-[#F5F4F1] rounded-lg border border-[#E9E5E0]">
+          <div className="p-3 bg-[#F5F4F1] rounded-lg border border-[var(--border, #ECEFF4)]">
             <div className="flex items-center gap-4 mb-2">
               <label className="inline-flex items-center gap-1 text-sm">
                 <input type="radio" checked={scheduleMode === 'now'} onChange={() => setScheduleMode('now')} />
@@ -430,12 +430,12 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
                   type="datetime-local"
                   value={runAt}
                   onChange={(e) => setRunAt(e.target.value)}
-                  className="px-2 py-1 border border-[#E9E5E0] rounded"
+                  className="px-2 py-1 border border-[var(--border, #ECEFF4)] rounded"
                 />
                 <select
                   value={recurrence}
                   onChange={(e) => setRecurrence(e.target.value)}
-                  className="px-2 py-1 border border-[#E9E5E0] rounded text-sm"
+                  className="px-2 py-1 border border-[var(--border, #ECEFF4)] rounded text-sm"
                 >
                   <option value="">Une seule fois</option>
                   <option value="daily">Quotidien</option>
@@ -449,14 +449,14 @@ const CampaignComposer = ({ segment, presetName, presetContent, onClose, onSent 
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-[#E9E5E0] text-[#171412] rounded-lg hover:bg-[#F5F4F1]"
+              className="px-4 py-2 border border-[var(--border, #ECEFF4)] text-[#171412] rounded-lg hover:bg-[#F5F4F1]"
             >
               Annuler
             </button>
             <button
               disabled={sending}
               onClick={send}
-              className="px-5 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-5 py-2 bg-[var(--tint-blue, #E5F1FF)] text-white rounded-lg font-medium hover:bg-[#9C4E2F] disabled:opacity-50 inline-flex items-center gap-2"
             >
               {scheduleMode === 'later' ? <Clock size={16} /> : <Send size={16} />}
               {sending ? 'Envoi…' : scheduleMode === 'later' ? 'Programmer' : 'Envoyer maintenant'}
@@ -753,7 +753,7 @@ const AnalyticsPage = () => {
     instagram: { color: '#E1306C', bg: 'rgba(225,48,108,0.08)', icon: '📸' },
     facebook:  { color: '#1877F2', bg: 'rgba(24,119,242,0.08)', icon: '👥' },
     tiktok:    { color: '#000000', bg: 'rgba(0,0,0,0.06)',       icon: '🎵' },
-    qr_store:  { color: '#B85C38', bg: 'rgba(184,92,56,0.10)',   icon: '📍' },
+    qr_store:  { color: 'var(--blue-deep, #1453BD)', bg: 'rgba(184,92,56,0.10)',   icon: '📍' },
   };
 
   const rankedCustomers = useMemo(() => {
@@ -1031,14 +1031,14 @@ const AnalyticsPage = () => {
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <MetricTile controlledDays={tilesDays}
-            icon={CreditCard} title="Cartes complétées" accent="#4A5D23"
+            icon={CreditCard} title="Cartes complétées" accent="var(--blue, #0F6FDE)"
             metric="cards_filled" branchId={branchId}
             initial={{ value: 1, unit: 'month' }}
             sublabel={(d) => `Récompenses débloquées · ${d}j`}
             onDrill={() => drillCustomers('Clients ayant rempli une carte', { cards_filled: true })}
           />
           <MetricTile controlledDays={tilesDays}
-            icon={RefreshCcw} title="Clients récupérés" accent="#B85C38"
+            icon={RefreshCcw} title="Clients récupérés" accent="var(--blue, #0F6FDE)"
             metric="recovered" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Revenus après ${d}j de silence`}
@@ -1089,7 +1089,7 @@ const AnalyticsPage = () => {
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <MetricTile controlledDays={tilesDays}
-            icon={Trophy} title="Loyal" accent="#96431F"
+            icon={Trophy} title="Loyal" accent="var(--blue, #0F6FDE)"
             metric="loyal_customers" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `≥ seuil "Loyal" sur ${d}j`}
@@ -1103,14 +1103,14 @@ const AnalyticsPage = () => {
             onDrill={() => drillCustomers('Regular customers', { loyalty_bucket: 'regular' })}
           />
           <MetricTile controlledDays={tilesDays}
-            icon={Activity} title="Visites totales" accent="#4A5D23"
+            icon={Activity} title="Visites totales" accent="var(--blue, #0F6FDE)"
             metric="total_visits" branchId={branchId}
             initial={{ value: 30, unit: 'day' }}
             sublabel={(d) => `Visites enregistrées sur ${d}j`}
             onDrill={(d) => drillCustomers(`Customers visited last ${d}d`, { active_within_days: d })}
           />
           <MetricTile controlledDays={tilesDays}
-            icon={Calendar} title="Anniversaires ce mois" accent="#E3A869"
+            icon={Calendar} title="Anniversaires ce mois" accent="var(--blue, #0F6FDE)"
             metric="birthdays_this_month_static"
             branchId={branchId}
             staticValue={birthdaysThisMonth}
@@ -1155,7 +1155,7 @@ const AnalyticsPage = () => {
                 key={t.key}
                 type="button"
                 onClick={() => drillCustomers(`${t.name} tier customers`, { tier: t.key })}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[#E9E5E0] bg-[#FAFAF8] hover:bg-[#B85C38]/5 hover:border-[#B85C38] transition cursor-pointer text-left"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-[var(--border, #ECEFF4)] bg-[#FAFAF8] hover:bg-[var(--border, #ECEFF4)]/5 hover:border-[var(--border, #ECEFF4)] transition cursor-pointer text-left"
                 title={`Click to view ${t.name} customers`}
               >
                 <div className="flex items-center gap-2">
@@ -1196,7 +1196,7 @@ const AnalyticsPage = () => {
                 style={{ cursor: 'pointer' }}
               >
                 {tierData.map((t, i) => (
-                  <Cell key={i} fill={TIER_COLORS[t.key] || '#B85C38'} />
+                  <Cell key={i} fill={TIER_COLORS[t.key] || 'var(--blue, #0F6FDE)'} />
                 ))}
               </Pie>
               <Tooltip />
@@ -1207,7 +1207,7 @@ const AnalyticsPage = () => {
 
         <ChartCard title="Acquisition Sources" hint="Lifetime customers acquired through each channel — all-time totals.">
           {/* Lifetime headline */}
-          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[#E9E5E0]">
+          <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-[var(--border, #ECEFF4)]">
             <p className="text-3xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
               {acquisitionTotal}
             </p>
@@ -1226,7 +1226,7 @@ const AnalyticsPage = () => {
                     `Customers acquired via ${a.name}`,
                     { source: a.raw }
                   )}
-                  className="text-left p-3 rounded-lg border border-[#E9E5E0] hover:border-[#B85C38] hover:shadow-sm transition"
+                  className="text-left p-3 rounded-lg border border-[var(--border, #ECEFF4)] hover:border-[var(--border, #ECEFF4)] hover:shadow-sm transition"
                   style={{ backgroundColor: style.bg }}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
@@ -1278,7 +1278,7 @@ const AnalyticsPage = () => {
         style={{
           background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-accent-2, #E8703A) 9%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-accent, #C73E2C) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
           border: '1px solid color-mix(in srgb, var(--flc-accent, #C73E2C) 27%, transparent)',
-          boxShadow: '0 6px 18px -10px #B85C3866',
+          boxShadow: '0 6px 18px -10px #0F6FDE66',
         }}
       >
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
@@ -1312,7 +1312,7 @@ const AnalyticsPage = () => {
                 title="Average rating"
                 value={reviewAnalytics.average_rating != null ? `${reviewAnalytics.average_rating}/10` : '—'}
                 sublabel="The mean rating across every review."
-                accent="#E3A869"
+                accent="var(--blue, #0F6FDE)"
                 onClick={() => drillCustomers('All reviewers', {})}
                 segment={{ type: 'all' }}
                 openComposer={openComposer}
@@ -1324,7 +1324,7 @@ const AnalyticsPage = () => {
                 title="Negative review rate"
                 value={`${reviewAnalytics.negative_review_rate_pct}%`}
                 sublabel="% of reviews at 1–4 / 10. Leading indicator of churn."
-                accent="#B85C38"
+                accent="var(--blue, #0F6FDE)"
                 onClick={async () => {
                   try {
                     const r = await ownerAPI.listReviews(params({ max_rating: 4, limit: 200 }));
@@ -1352,7 +1352,7 @@ const AnalyticsPage = () => {
                 title="Sentiment score"
                 value={`${reviewAnalytics.sentiment_score > 0 ? '+' : ''}${reviewAnalytics.sentiment_score}`}
                 sublabel="Positive % minus negative %. -100 = all bad, +100 = all good."
-                accent="#4A5D23"
+                accent="var(--blue, #0F6FDE)"
                 onClick={async () => {
                   try {
                     const r = await ownerAPI.listReviews(params({ sentiment: 'negative', limit: 200 }));
@@ -1382,7 +1382,7 @@ const AnalyticsPage = () => {
                     ? `+${reviewAnalytics.review_velocity.delta_pct}% vs. the 30 days before (${reviewAnalytics.review_velocity.prev_30d})`
                     : `${reviewAnalytics.review_velocity.delta_pct}% vs. the 30 days before (${reviewAnalytics.review_velocity.prev_30d})`
                 }
-                accent="#96431F"
+                accent="var(--blue, #0F6FDE)"
                 onClick={async () => {
                   try {
                     const r = await ownerAPI.listReviews(params({ limit: 30 }));
@@ -1409,7 +1409,7 @@ const AnalyticsPage = () => {
             {/* Rating distribution + topic breakdown side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
               {/* Rating distribution (1-10 histogram) */}
-              <div className="border border-[#E9E5E0] rounded-lg p-4">
+              <div className="border border-[var(--border, #ECEFF4)] rounded-lg p-4">
                 <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Star size={14} /> Rating distribution
                 </p>
@@ -1423,7 +1423,7 @@ const AnalyticsPage = () => {
                     return [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => {
                       const v = dist[String(n)] || 0;
                       const pct = Math.round((v / max) * 100);
-                      const color = n >= 8 ? '#4A5D23' : n >= 5 ? '#E3A869' : '#B85C38';
+                      const color = n >= 8 ? 'var(--green-deep, #087A31)' : n >= 5 ? 'var(--blue-deep, #1453BD)' : 'var(--red-deep, #A81E27)';
                       return (
                         <div key={n} className="flex items-center gap-2 text-xs">
                           <span className="w-6 text-right font-semibold text-[#171412]">{n}</span>
@@ -1439,7 +1439,7 @@ const AnalyticsPage = () => {
               </div>
 
               {/* Topic breakdown */}
-              <div className="border border-[#E9E5E0] rounded-lg p-4">
+              <div className="border border-[var(--border, #ECEFF4)] rounded-lg p-4">
                 <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Activity size={14} /> Topic / theme breakdown
                 </p>
@@ -1459,17 +1459,17 @@ const AnalyticsPage = () => {
                         price: '💶 Price / value',
                         wait_time: '⏱ Wait time',
                       }[t.topic] || t.topic;
-                      const avgColor = t.avg_rating >= 8 ? '#4A5D23' : t.avg_rating >= 6 ? '#E3A869' : '#B85C38';
+                      const avgColor = t.avg_rating >= 8 ? 'var(--green-deep, #087A31)' : t.avg_rating >= 6 ? 'var(--blue-deep, #1453BD)' : 'var(--red-deep, #A81E27)';
                       return (
-                        <div key={t.topic} className="p-2 rounded bg-[#FAFAF8] border border-[#E9E5E0]">
+                        <div key={t.topic} className="p-2 rounded bg-[#FAFAF8] border border-[var(--border, #ECEFF4)]">
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-semibold text-[#171412]">{label}</span>
                             <span style={{ color: avgColor }} className="font-bold">{t.avg_rating}/10 · {t.count} mention{t.count === 1 ? '' : 's'}</span>
                           </div>
                           <div className="mt-1 flex h-1.5 rounded overflow-hidden">
-                            <div style={{ width: `${t.positive_pct}%`, backgroundColor: '#4A5D23' }} />
-                            <div style={{ width: `${100 - t.positive_pct - t.negative_pct}%`, backgroundColor: '#E3A869' }} />
-                            <div style={{ width: `${t.negative_pct}%`, backgroundColor: '#B85C38' }} />
+                            <div style={{ width: `${t.positive_pct}%`, backgroundColor: 'var(--green, #10BC4C)' }} />
+                            <div style={{ width: `${100 - t.positive_pct - t.negative_pct}%`, backgroundColor: 'var(--tint-blue, #E5F1FF)' }} />
+                            <div style={{ width: `${t.negative_pct}%`, backgroundColor: 'var(--tint-blue, #E5F1FF)' }} />
                           </div>
                           <p className="text-[10px] text-[#8D857D] mt-1">
                             {t.positive_pct}% positive · {t.negative_pct}% negative · {t.mention_pct}% of reviews mention this
@@ -1484,13 +1484,13 @@ const AnalyticsPage = () => {
 
             {/* Recent reviews feed */}
             {(reviewAnalytics.recent || []).length > 0 && (
-              <div className="border border-[#E9E5E0] rounded-lg p-4">
+              <div className="border border-[var(--border, #ECEFF4)] rounded-lg p-4">
                 <p className="text-sm font-bold text-[#171412] mb-2">Most recent reviews</p>
                 <div className="space-y-2">
                   {reviewAnalytics.recent.map((r) => (
-                    <div key={r.id} className="p-3 rounded bg-[#FAFAF8] border border-[#E9E5E0] flex items-start gap-3">
+                    <div key={r.id} className="p-3 rounded bg-[#FAFAF8] border border-[var(--border, #ECEFF4)] flex items-start gap-3">
                       <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-white`}
-                           style={{ backgroundColor: r.rating >= 8 ? '#4A5D23' : r.rating >= 5 ? '#E3A869' : '#B85C38' }}>
+                           style={{ backgroundColor: r.rating >= 8 ? 'var(--green, #10BC4C)' : r.rating >= 5 ? 'var(--tint-blue, #E5F1FF)' : 'var(--red, #D93036)' }}>
                         {r.rating}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1544,8 +1544,8 @@ const AnalyticsPage = () => {
                   onClick={() => setRankingMode(t.key)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors ${
                     active
-                      ? 'bg-[#B85C38] text-white'
-                      : 'bg-[#F5F4F1] text-[#57504A] hover:bg-[#E9E5E0]'
+                      ? 'bg-[var(--tint-blue, #E5F1FF)] text-white'
+                      : 'bg-[#F5F4F1] text-[#57504A] hover:bg-[var(--border, #ECEFF4)]'
                   }`}
                 >
                   <Icon size={14} />
@@ -1562,7 +1562,7 @@ const AnalyticsPage = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#E9E5E0] text-[#57504A]">
+              <tr className="border-b border-[var(--border, #ECEFF4)] text-[#57504A]">
                 <th className="py-2 px-3">#</th>
                 <th className="py-2 px-3">Customer</th>
                 <th className="py-2 px-3">Email</th>
@@ -1576,7 +1576,7 @@ const AnalyticsPage = () => {
                 <tr><td colSpan={6} className="py-6 text-center text-[#8D857D]">No customers to rank yet.</td></tr>
               ) : (
                 rankedCustomers.map((c, i) => (
-                  <tr key={c.id || i} className="border-b border-[#E9E5E0] hover:bg-[#F5F4F1]">
+                  <tr key={c.id || i} className="border-b border-[var(--border, #ECEFF4)] hover:bg-[#F5F4F1]">
                     <td className="py-2 px-3 text-[#8D857D]">{i + 1}</td>
                     <td className="py-2 px-3 font-medium text-[#171412]">{c.name || '—'}</td>
                     <td className="py-2 px-3 text-[#57504A] text-xs">{c.email || '—'}</td>
@@ -1612,13 +1612,13 @@ const AnalyticsPage = () => {
             {drillLoading ? (
               <p className="text-[#57504A] py-8 text-center">Loading customers…</p>
             ) : drill.error ? (
-              <p className="text-[#B85C38] py-8 text-center">Error: {drill.error}</p>
+              <p className="text-[var(--blue-deep, #1453BD)] py-8 text-center">Error: {drill.error}</p>
             ) : (!drill.rows || drill.rows.length === 0) ? (
               <p className="text-[#57504A] py-8 text-center">No matching records.</p>
             ) : (
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[#E9E5E0] text-[#57504A]">
+                  <tr className="border-b border-[var(--border, #ECEFF4)] text-[#57504A]">
                     {drill.columns.map((c) => (
                       <th key={c.key} className="py-2 px-3">{c.label}</th>
                     ))}
@@ -1626,7 +1626,7 @@ const AnalyticsPage = () => {
                 </thead>
                 <tbody>
                   {drill.rows.map((r, i) => (
-                    <tr key={i} className="border-b border-[#E9E5E0]">
+                    <tr key={i} className="border-b border-[var(--border, #ECEFF4)]">
                       {drill.columns.map((c) => (
                         <td key={c.key} className="py-2 px-3 text-[#171412]">
                           {c.render ? c.render(r[c.key]) : (r[c.key] ?? '—')}
@@ -1685,7 +1685,7 @@ const AnalyticsPage = () => {
               emptyValue={30}
               value={recoveryInactiveDays}
               onChange={(n) => setRecoveryInactiveDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
+              className="w-20 px-2 py-1 border border-[var(--border, #ECEFF4)] rounded text-center"
             />
             <span className="text-sm text-[#57504A]">days,</span>
           </div>
@@ -1697,13 +1697,13 @@ const AnalyticsPage = () => {
               emptyValue={30}
               value={recoveryWindowDays}
               onChange={(n) => setRecoveryWindowDays(n || 30)}
-              className="w-20 px-2 py-1 border border-[#E9E5E0] rounded text-center"
+              className="w-20 px-2 py-1 border border-[var(--border, #ECEFF4)] rounded text-center"
             />
             <span className="text-sm text-[#57504A]">days</span>
           </div>
           <div className="ml-auto flex items-center gap-3 text-sm text-[#171412] font-medium">
             <span>
-              <span className="text-[#B85C38] font-bold">{recovered?.count ?? 0}</span> customers match
+              <span className="text-[var(--blue-deep, #1453BD)] font-bold">{recovered?.count ?? 0}</span> customers match
               {' '}
               <span className="text-[#8D857D]">({recovered?.percentage ?? 0}% of base)</span>
             </span>
@@ -1726,7 +1726,7 @@ const AnalyticsPage = () => {
                 })
               }
               className="px-3 py-1.5 rounded-lg border text-sm font-semibold transition disabled:opacity-40"
-              style={{ borderColor: '#B85C38', color: '#B85C38' }}
+              style={{ borderColor: 'var(--border, #ECEFF4)', color: 'var(--border, #ECEFF4)' }}
               title="Show the list of customers that match the filter above"
             >
               View the {recovered?.count ?? 0} customer{recovered?.count === 1 ? '' : 's'}
