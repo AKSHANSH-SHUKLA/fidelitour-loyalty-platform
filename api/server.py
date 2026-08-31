@@ -857,11 +857,39 @@ def mock_seed_data():
 
     # Check and seed customers — Café Lumière is a 2-branch café in Tours.
     # Reseed when count is low OR when the customers haven't been tagged to a
-    # branch yet (legacy data from before branch_id was wired into the seed).
+    # branch yet (legacy data from before branch_id was wired into the seed),
+    # OR when the demo has gone STALE.
+    #
+    # Staleness matters because every windowed chart (évolution des visites,
+    # acquisition, campaign impact) filters on recent dates. The seed writes
+    # 14 months of history relative to "now", but the count-based conditions
+    # meant it ran exactly once per database: months later the lifetime tiles
+    # still show totals while every "last 30 days" panel is empty, which reads
+    # as a broken product in a demo. A cold start lands here anyway, so a
+    # date check makes the demo self-refreshing with no cron and no endpoint.
     cafe_branches = ["branch-lumiere-main", "branch-lumiere-plumereau"]
+
+    def _demo_is_stale() -> bool:
+        latest = db.visits.find_one({"tenant_id": "tenant-1"},
+                                    sort=[("created_at", -1)])
+        if not latest or not latest.get("created_at"):
+            return True
+        ts = latest["created_at"]
+        if isinstance(ts, str):
+            try:
+                ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            except ValueError:
+                return True
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        # 3 days of silence would be unremarkable for a real shop but is
+        # exactly the point at which a café demo starts looking dead.
+        return (datetime.now(timezone.utc) - ts) > timedelta(days=3)
+
     needs_cafe_reseed = (
         db.customers.count_documents({"tenant_id": "tenant-1"}) < 80
         or db.customers.count_documents({"tenant_id": "tenant-1", "branch_id": {"$in": cafe_branches}}) == 0
+        or _demo_is_stale()
     )
     if needs_cafe_reseed:
         db.customers.delete_many({"tenant_id": "tenant-1"})
@@ -900,9 +928,28 @@ def mock_seed_data():
     #    makes the "Promo Printemps" example actually visible to existing
     #    deploys instead of being permanently shadowed by old seed data.
     existing_camp1 = db.campaigns.find_one({"id": "camp-1", "tenant_id": "tenant-1"})
+
+    def _camp_is_stale() -> bool:
+        # Campaign dates are written relative to seed-time "now" (J-2, J-14,
+        # J-21). Once camp-1 drifts past ~30 days every campaign-impact chart
+        # windows it out — same staleness disease as the visits above.
+        if not existing_camp1 or not existing_camp1.get("sent_at"):
+            return False  # covered by the count condition
+        ts = existing_camp1["sent_at"]
+        if isinstance(ts, str):
+            try:
+                ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            except ValueError:
+                return True
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - ts) > timedelta(days=30)
+
     needs_reseed = (
         db.campaigns.count_documents({"tenant_id": "tenant-1"}) < 3
         or (existing_camp1 is not None and not existing_camp1.get("image_url"))
+        or _camp_is_stale()
+        or needs_cafe_reseed  # fresh visits deserve campaigns dated with them
     )
     if needs_reseed:
         db.campaigns.delete_many({"tenant_id": "tenant-1"})
