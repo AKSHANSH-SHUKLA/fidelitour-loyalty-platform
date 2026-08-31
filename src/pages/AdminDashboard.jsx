@@ -105,15 +105,15 @@ export default function AdminDashboard() {
   };
 
   const PLAN_COLORS = {
-    'Basic': '#4A5D23',
-    'Gold': '#E3A869',
-    'VIP': '#B85C38',
+    'Basic': '#93BEF0',
+    'Gold': '#5297E7',
+    'VIP': '#1453BD',
   };
 
   const BUSINESS_HEALTH_COLORS = {
-    regular: '#2D7D9A',
-    growing: '#4A5D23',
-    declining: '#B85C38',
+    regular: 'var(--blue, #0F6FDE)',
+    growing: 'var(--green, #10BC4C)',
+    declining: 'var(--red, #D93036)',
   };
 
   const handleKPIClick = (type) => {
@@ -200,8 +200,7 @@ export default function AdminDashboard() {
           value={`€${(stats?.monthlyRevenue || 0).toLocaleString()}`}
           sublabel="Subscription revenue this month"
           icon={DollarSign}
-          color={C.sage}
-          variant="dark"
+          color="var(--green, #10BC4C)"
         />
         <StatCard
           label="Active (30d)"
@@ -391,8 +390,8 @@ export default function AdminDashboard() {
       {selectedModal && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-auto">
-            <div className="sticky top-0 bg-white border-b border-[#E7E5E4] p-6 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <div className="sticky top-0 bg-white border-b border-[var(--border-strong,_#CBD3DC)] p-6 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
                 {selectedModal === 'businesses' && 'All Businesses'}
                 {selectedModal === 'customers' && 'Total Customers'}
                 {selectedModal === 'visits' && 'Platform Visits'}
@@ -402,7 +401,7 @@ export default function AdminDashboard() {
               </h2>
               <button
                 onClick={() => setSelectedModal(null)}
-                className="text-[#A8A29E] hover:text-[#1C1917]"
+                className="text-[var(--ink-muted,_#626F7E)] hover:text-[var(--ink-head,_#030E1D)]"
               >
                 <X size={24} />
               </button>
@@ -410,33 +409,33 @@ export default function AdminDashboard() {
             <div className="p-6">
               {selectedModal === 'customers' || selectedModal === 'visits' ? (
                 <div className="text-center py-8">
-                  <p className="text-3xl font-bold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>
+                  <p className="text-3xl font-bold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
                     {modalData[0]?.value || 0}
                   </p>
-                  <p className="text-[#57534E] mt-2">{modalData[0]?.name}</p>
+                  <p className="text-[var(--ink-body,_#556272)] mt-2">{modalData[0]?.name}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-[#E7E5E4]">
-                        <th className="py-3 px-4 font-semibold text-[#57534E]">Business Name</th>
-                        <th className="py-3 px-4 font-semibold text-[#57534E]">Customers</th>
-                        <th className="py-3 px-4 font-semibold text-[#57534E]">Visits</th>
-                        <th className="py-3 px-4 font-semibold text-[#57534E]">Plan</th>
+                      <tr className="border-b border-[var(--border-strong,_#CBD3DC)]">
+                        <th className="py-3 px-4 font-semibold text-[var(--ink-body,_#556272)]">Business Name</th>
+                        <th className="py-3 px-4 font-semibold text-[var(--ink-body,_#556272)]">Customers</th>
+                        <th className="py-3 px-4 font-semibold text-[var(--ink-body,_#556272)]">Visits</th>
+                        <th className="py-3 px-4 font-semibold text-[var(--ink-body,_#556272)]">Plan</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(selectedModal === 'businesses' ? enhancedAnalytics?.top_performers || [] : modalData).map((item, idx) => (
-                        <tr key={idx} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7]">
-                          <td className="py-3 px-4 text-[#1C1917]">{item.name}</td>
-                          <td className="py-3 px-4 text-[#57534E]">{item.customer_count || 0}</td>
-                          <td className="py-3 px-4 text-[#57534E]">{item.total_visits || 0}</td>
+                        <tr key={idx} className="border-b border-[var(--border-strong,_#CBD3DC)] hover:bg-[var(--surface-2,_#F8F9FC)]">
+                          <td className="py-3 px-4 text-[var(--ink-head,_#030E1D)]">{item.name}</td>
+                          <td className="py-3 px-4 text-[var(--ink-body,_#556272)]">{item.customer_count || 0}</td>
+                          <td className="py-3 px-4 text-[var(--ink-body,_#556272)]">{item.total_visits || 0}</td>
                           <td className="py-3 px-4">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase
-                              ${item.plan === 'vip' ? 'bg-[#B85C38] text-white' :
-                                item.plan === 'gold' ? 'bg-[#E3A869] text-[#1C1917]' :
-                                'bg-[#4A5D23] text-white'}`}>
+                              ${item.plan === 'vip' ? 'bg-[#1453BD] text-white' :
+                                item.plan === 'gold' ? 'bg-[#5297E7] text-[#030E1D]' :
+                                'bg-[#93BEF0] text-[#030E1D]'}`}>
                               {item.plan}
                             </span>
                           </td>

@@ -25,7 +25,7 @@ const AdminCampaignsPage = () => {
         role="super_admin"
       />
 
-      <div className="flex gap-2 border-b border-[#E7E5E4]">
+      <div className="flex gap-2 border-b border-[var(--border-strong,_#CBD3DC)]">
         {[
           { key: 'business', label: 'To a Business Owner', icon: Mail },
           { key: 'broadcast', label: 'Broadcast to End-Customers', icon: Radio },
@@ -39,8 +39,8 @@ const AdminCampaignsPage = () => {
               onClick={() => setTab(t.key)}
               className={`px-4 py-2 -mb-px border-b-2 text-sm font-medium inline-flex items-center gap-2 ${
                 active
-                  ? 'border-[#B85C38] text-[#B85C38]'
-                  : 'border-transparent text-[#57534E] hover:text-[#1C1917]'
+                  ? 'border-[var(--blue,_#0F6FDE)] text-[var(--blue-deep,_#1453BD)]'
+                  : 'border-transparent text-[var(--ink-body,_#556272)] hover:text-[var(--ink-head,_#030E1D)]'
               }`}
             >
               <Icon size={16} />
@@ -148,13 +148,13 @@ const BusinessCampaignSection = () => {
     setCampaignForm({ subject: '', body: '' });
   };
 
-  if (loading) return <div className="text-[#57534E]">Loading businesses…</div>;
+  if (loading) return <div className="text-[var(--ink-body,_#556272)]">Loading businesses…</div>;
 
   return (
     <div className="space-y-8">
       {toast && (
         <div className={`fixed top-4 right-4 p-4 rounded-lg flex items-center gap-2 z-50 ${
-          toast.type === 'success' ? 'bg-[#4A5D23] text-white' : 'bg-[#B85C38] text-white'
+          toast.type === 'success' ? 'bg-[var(--green-deep,_#087A31)] text-white' : 'bg-[var(--blue,_#0F6FDE)] text-white'
         }`}>
           {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           {toast.message}
@@ -162,27 +162,27 @@ const BusinessCampaignSection = () => {
       )}
 
       {!isComposing ? (
-        <div className="bg-white p-8 rounded-lg border border-[#E7E5E4]">
-          <h2 className="text-2xl font-bold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-            <Users className="inline-block mr-2 w-6 h-6 text-[#B85C38]" />
+        <div className="bg-white p-8 rounded-lg border border-[var(--border,_#ECEFF4)]">
+          <h2 className="text-2xl font-bold text-[var(--ink-head,_#030E1D)] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <Users className="inline-block mr-2 w-6 h-6 text-[var(--blue-deep,_#1453BD)]" />
             Select a Business
           </h2>
           <div className="mb-6 space-y-3">
             <div className="relative">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-[#A8A29E]" />
+              <Search className="absolute left-3 top-3 w-5 h-5 text-[var(--ink-muted,_#626F7E)]" />
               <input
                 type="text"
                 placeholder="Search by business name or slug..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
+                className="w-full pl-10 pr-4 py-2.5 border border-[var(--border,_#ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--blue,_#0F6FDE)]"
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <select
                 value={planFilter}
                 onChange={(e) => setPlanFilter(e.target.value)}
-                className="px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+                className="px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
               >
                 <option value="">All plans</option>
                 {uniquePlans.map((p) => (
@@ -192,7 +192,7 @@ const BusinessCampaignSection = () => {
               <select
                 value={sectorFilter}
                 onChange={(e) => setSectorFilter(e.target.value)}
-                className="px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+                className="px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
               >
                 <option value="">All sectors</option>
                 {uniqueSectors.map((s) => (
@@ -204,9 +204,9 @@ const BusinessCampaignSection = () => {
                 value={deptFilter}
                 onChange={(e) => setDeptFilter(e.target.value)}
                 placeholder="Dept code (e.g. 37)"
-                className="px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+                className="px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
               />
-              <div className="flex items-center justify-between px-3 py-2 border border-[#E7E5E4] rounded-lg text-sm text-[#57534E] bg-[#F3EFE7]">
+              <div className="flex items-center justify-between px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm text-[var(--ink-body,_#556272)] bg-[var(--surface-2,_#F8F9FC)]">
                 <span>{filteredTenants.length} of {tenants.length} matching</span>
                 {(searchTerm || planFilter || sectorFilter || deptFilter) && (
                   <button
@@ -216,7 +216,7 @@ const BusinessCampaignSection = () => {
                       setSectorFilter('');
                       setDeptFilter('');
                     }}
-                    className="text-[#B85C38] font-semibold hover:underline text-xs"
+                    className="text-[var(--blue-deep,_#1453BD)] font-semibold hover:underline text-xs"
                   >
                     Clear
                   </button>
@@ -229,24 +229,24 @@ const BusinessCampaignSection = () => {
               {filteredTenants.map((tenant) => (
                 <div
                   key={tenant.id}
-                  className="p-4 border border-[#E7E5E4] rounded-lg hover:border-[#B85C38] hover:shadow-md transition-all cursor-pointer"
+                  className="p-4 border border-[var(--border,_#ECEFF4)] rounded-lg hover:border-[var(--blue,_#0F6FDE)] hover:shadow-md transition-all cursor-pointer"
                   onClick={() => handleSelectTenant(tenant)}
                 >
                   <div className="mb-3">
-                    <h3 className="font-semibold text-[#1C1917]">{tenant.name}</h3>
-                    <p className="text-sm text-[#A8A29E]">{tenant.slug}</p>
+                    <h3 className="font-semibold text-[var(--ink-head,_#030E1D)]">{tenant.name}</h3>
+                    <p className="text-sm text-[var(--ink-muted,_#626F7E)]">{tenant.slug}</p>
                   </div>
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs text-[#57534E] uppercase font-semibold">Plan</p>
-                      <p className="text-sm font-bold text-[#B85C38]">{tenant.plan}</p>
+                      <p className="text-xs text-[var(--ink-body,_#556272)] uppercase font-semibold">Plan</p>
+                      <p className="text-sm font-bold text-[var(--blue-deep,_#1453BD)]">{tenant.plan}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-[#57534E] uppercase font-semibold">Customers</p>
-                      <p className="text-sm font-bold text-[#1C1917]">{tenant.customer_count || 0}</p>
+                      <p className="text-xs text-[var(--ink-body,_#556272)] uppercase font-semibold">Customers</p>
+                      <p className="text-sm font-bold text-[var(--ink-head,_#030E1D)]">{tenant.customer_count || 0}</p>
                     </div>
                   </div>
-                  <button className="w-full py-2 bg-[#F3EFE7] hover:bg-[#E7E5E4] text-[#1C1917] rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                  <button className="w-full py-2 bg-[var(--surface-2,_#F8F9FC)] hover:bg-[var(--tint-blue,_#E5F1FF)] text-[var(--ink-head,_#030E1D)] rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
                     <Send className="w-4 h-4" />
                     Send Campaign
                   </button>
@@ -254,47 +254,47 @@ const BusinessCampaignSection = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 bg-[#F3EFE7] rounded-lg">
-              <p className="text-[#57534E]">No businesses found</p>
+            <div className="text-center py-8 bg-[var(--surface-2,_#F8F9FC)] rounded-lg">
+              <p className="text-[var(--ink-body,_#556272)]">No businesses found</p>
             </div>
           )}
         </div>
       ) : (
-        <div className="bg-white p-8 rounded-lg border border-[#E7E5E4] max-w-2xl">
-          <h2 className="text-2xl font-bold text-[#1C1917] mb-6" style={{ fontFamily: 'Cormorant Garamond' }}>
-            <Mail className="inline-block mr-2 w-6 h-6 text-[#B85C38]" />
+        <div className="bg-white p-8 rounded-lg border border-[var(--border,_#ECEFF4)] max-w-2xl">
+          <h2 className="text-2xl font-bold text-[var(--ink-head,_#030E1D)] mb-6" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <Mail className="inline-block mr-2 w-6 h-6 text-[var(--blue-deep,_#1453BD)]" />
             Compose — To {selectedTenant?.name}
           </h2>
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-[#1C1917] mb-2">Subject</label>
+            <label className="block text-sm font-semibold text-[var(--ink-head,_#030E1D)] mb-2">Subject</label>
             <input
               type="text"
               value={campaignForm.subject}
               onChange={(e) => setCampaignForm({ ...campaignForm, subject: e.target.value })}
-              className="w-full px-4 py-3 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38]"
+              className="w-full px-4 py-3 border border-[var(--border,_#ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--blue,_#0F6FDE)]"
             />
           </div>
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-[#1C1917] mb-2">Message</label>
+            <label className="block text-sm font-semibold text-[var(--ink-head,_#030E1D)] mb-2">Message</label>
             <textarea
               rows="8"
               value={campaignForm.body}
               onChange={(e) => setCampaignForm({ ...campaignForm, body: e.target.value })}
-              className="w-full px-4 py-3 border border-[#E7E5E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B85C38] resize-none"
+              className="w-full px-4 py-3 border border-[var(--border,_#ECEFF4)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--blue,_#0F6FDE)] resize-none"
             />
           </div>
           <div className="flex gap-4 justify-end">
             <button
               onClick={handleCancel}
               disabled={submitting}
-              className="px-6 py-2.5 border border-[#E7E5E4] text-[#1C1917] rounded-lg font-semibold hover:bg-[#F3EFE7] transition-colors disabled:opacity-50"
+              className="px-6 py-2.5 border border-[var(--border,_#ECEFF4)] text-[var(--ink-head,_#030E1D)] rounded-lg font-semibold hover:bg-[var(--surface-2,_#F8F9FC)] transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSendCampaign}
               disabled={submitting || !campaignForm.subject.trim() || !campaignForm.body.trim()}
-              className="px-6 py-2.5 bg-[#B85C38] text-white rounded-lg font-semibold hover:bg-[#A34D2C] transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2.5 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg font-semibold hover:bg-[var(--blue-pressed,_#0D62C4)] transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
               {submitting ? 'Sending...' : 'Send Campaign'}
@@ -304,14 +304,14 @@ const BusinessCampaignSection = () => {
       )}
 
       {campaignHistory.length > 0 && (
-        <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
-          <h3 className="text-xl font-bold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <div className="bg-white p-6 rounded-lg border border-[var(--border,_#ECEFF4)]">
+          <h3 className="text-xl font-bold text-[var(--ink-head,_#030E1D)] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
             Recent sends (this session)
           </h3>
           <ul className="text-sm space-y-1">
             {campaignHistory.map((c) => (
-              <li key={c.id} className="text-[#57534E]">
-                <span className="font-medium text-[#1C1917]">{c.tenantName}</span> — {c.subject}
+              <li key={c.id} className="text-[var(--ink-body,_#556272)]">
+                <span className="font-medium text-[var(--ink-head,_#030E1D)]">{c.tenantName}</span> — {c.subject}
               </li>
             ))}
           </ul>
@@ -403,50 +403,50 @@ const BroadcastSection = () => {
     <div className="space-y-6">
       {toast && (
         <div className={`fixed top-4 right-4 p-4 rounded-lg flex items-center gap-2 z-50 ${
-          toast.type === 'success' ? 'bg-[#4A5D23] text-white' : 'bg-[#B85C38] text-white'
+          toast.type === 'success' ? 'bg-[var(--green-deep,_#087A31)] text-white' : 'bg-[var(--blue,_#0F6FDE)] text-white'
         }`}>
           {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           {toast.message}
         </div>
       )}
-      <div className="bg-white p-8 rounded-lg border border-[#E7E5E4] max-w-3xl">
-        <h2 className="text-2xl font-bold text-[#1C1917] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
-          <Radio className="inline mr-2 w-6 h-6 text-[#B85C38]" />
+      <div className="bg-white p-8 rounded-lg border border-[var(--border,_#ECEFF4)] max-w-3xl">
+        <h2 className="text-2xl font-bold text-[var(--ink-head,_#030E1D)] mb-2" style={{ fontFamily: 'Cormorant Garamond' }}>
+          <Radio className="inline mr-2 w-6 h-6 text-[var(--blue-deep,_#1453BD)]" />
           Broadcast to End-Customers
         </h2>
-        <p className="text-sm text-[#57534E] mb-5">
+        <p className="text-sm text-[var(--ink-body,_#556272)] mb-5">
           Message every end-customer in the platform (optionally filtered). Sent under your chosen "from" name.
           Variables supported: <code>{'{first_name}'}</code>, <code>{'{name}'}</code>, <code>{'{tier}'}</code>, <code>{'{business_name}'}</code>, <code>{'{points_to_next_reward}'}</code>.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="text-xs font-semibold text-[#57534E] uppercase">Sender name (From)</label>
+            <label className="text-xs font-semibold text-[var(--ink-body,_#556272)] uppercase">Sender name (From)</label>
             <input
               type="text"
               value={form.sender_name}
               onChange={(e) => setForm({ ...form, sender_name: e.target.value })}
-              className="w-full mt-1 px-3 py-2 border border-[#E7E5E4] rounded-lg"
+              className="w-full mt-1 px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-[#57534E] uppercase">Subject</label>
+            <label className="text-xs font-semibold text-[var(--ink-body,_#556272)] uppercase">Subject</label>
             <input
               type="text"
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              className="w-full mt-1 px-3 py-2 border border-[#E7E5E4] rounded-lg"
+              className="w-full mt-1 px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg"
             />
           </div>
         </div>
 
         <div className="mb-4">
-          <label className="text-xs font-semibold text-[#57534E] uppercase">Message</label>
+          <label className="text-xs font-semibold text-[var(--ink-body,_#556272)] uppercase">Message</label>
           <textarea
             rows={6}
             value={form.body}
             onChange={(e) => setForm({ ...form, body: e.target.value })}
-            className="w-full mt-1 px-3 py-2 border border-[#E7E5E4] rounded-lg font-['Manrope']"
+            className="w-full mt-1 px-3 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg font-['Manrope']"
             placeholder="Bonjour {first_name}, une actualité importante de {business_name}..."
           />
         </div>
@@ -455,7 +455,7 @@ const BroadcastSection = () => {
           <select
             value={form.tier}
             onChange={(e) => setForm({ ...form, tier: e.target.value })}
-            className="px-2 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+            className="px-2 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
           >
             <option value="">All tiers</option>
             <option value="bronze">Bronze</option>
@@ -467,19 +467,19 @@ const BroadcastSection = () => {
             value={form.sector}
             onChange={(e) => setForm({ ...form, sector: e.target.value })}
             placeholder="Sector (e.g. restaurant)"
-            className="px-2 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+            className="px-2 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
           />
           <input
             type="text"
             value={form.department_code}
             onChange={(e) => setForm({ ...form, department_code: e.target.value })}
             placeholder="Dept code (e.g. 37)"
-            className="px-2 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+            className="px-2 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
           />
           <select
             value={form.acquisition}
             onChange={(e) => setForm({ ...form, acquisition: e.target.value })}
-            className="px-2 py-2 border border-[#E7E5E4] rounded-lg text-sm"
+            className="px-2 py-2 border border-[var(--border,_#ECEFF4)] rounded-lg text-sm"
           >
             <option value="">Any source</option>
             <option value="qr_store">QR store</option>
@@ -495,13 +495,13 @@ const BroadcastSection = () => {
               onClick={runPreview}
               disabled={previewLoading}
               className="px-4 py-2 border rounded-lg text-sm font-semibold inline-flex items-center gap-2"
-              style={{ borderColor: '#B85C38', color: '#B85C38' }}
+              style={{ borderColor: 'var(--blue, #0F6FDE)', color: 'var(--blue-deep, #1453BD)' }}
             >
               <Search size={14} /> {previewLoading ? 'Previewing…' : 'Preview audience'}
             </button>
             {preview && (
-              <div className="text-sm text-[#57534E]">
-                <span className="font-bold text-[#B85C38]">{preview.count}</span> customer{preview.count === 1 ? '' : 's'} match
+              <div className="text-sm text-[var(--ink-body,_#556272)]">
+                <span className="font-bold text-[var(--blue-deep,_#1453BD)]">{preview.count}</span> customer{preview.count === 1 ? '' : 's'} match
                 {' '}— <span className="font-semibold">{preview.with_email}</span> have an email on file
               </div>
             )}
@@ -509,7 +509,7 @@ const BroadcastSection = () => {
           <button
             disabled={submitting}
             onClick={send}
-            className="px-6 py-2.5 bg-[#B85C38] text-white rounded-lg font-semibold hover:bg-[#A34D2C] disabled:opacity-50 inline-flex items-center gap-2"
+            className="px-6 py-2.5 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg font-semibold hover:bg-[var(--blue-pressed,_#0D62C4)] disabled:opacity-50 inline-flex items-center gap-2"
           >
             <Zap size={16} /> {submitting ? 'Sending…' : 'Send Broadcast'}
           </button>
@@ -517,14 +517,14 @@ const BroadcastSection = () => {
       </div>
 
       {history.length > 0 && (
-        <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
-          <h3 className="text-xl font-bold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <div className="bg-white p-6 rounded-lg border border-[var(--border,_#ECEFF4)]">
+          <h3 className="text-xl font-bold text-[var(--ink-head,_#030E1D)] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
             Recent Broadcasts
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+                <tr className="border-b border-[var(--border-strong,_#CBD3DC)] text-[var(--ink-body,_#556272)]">
                   <th className="py-2 px-3">Sent</th>
                   <th className="py-2 px-3">Sender</th>
                   <th className="py-2 px-3">Subject</th>
@@ -534,10 +534,10 @@ const BroadcastSection = () => {
               </thead>
               <tbody>
                 {history.map((b) => (
-                  <tr key={b.id} className="border-b border-[#E7E5E4]">
-                    <td className="py-2 px-3 text-[#57534E]">{new Date(b.sent_at).toLocaleString()}</td>
-                    <td className="py-2 px-3 font-medium text-[#1C1917]">{b.sender_name}</td>
-                    <td className="py-2 px-3 text-[#1C1917]">{b.subject}</td>
+                  <tr key={b.id} className="border-b border-[var(--border-strong,_#CBD3DC)]">
+                    <td className="py-2 px-3 text-[var(--ink-body,_#556272)]">{new Date(b.sent_at).toLocaleString()}</td>
+                    <td className="py-2 px-3 font-medium text-[var(--ink-head,_#030E1D)]">{b.sender_name}</td>
+                    <td className="py-2 px-3 text-[var(--ink-head,_#030E1D)]">{b.subject}</td>
                     <td className="py-2 px-3 text-right">{b.targeted_count}</td>
                     <td className="py-2 px-3 text-right">{b.delivered_count}</td>
                   </tr>
@@ -572,23 +572,23 @@ const UpgradeRequestsSection = () => {
     } catch (e) { alert('Error: ' + (e?.response?.data?.detail || e?.message)); }
   };
 
-  if (loading) return <div className="text-[#57534E]">Loading upgrade requests…</div>;
+  if (loading) return <div className="text-[var(--ink-body,_#556272)]">Loading upgrade requests…</div>;
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-[#E7E5E4]">
-      <h2 className="text-2xl font-bold text-[#1C1917] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
-        <ArrowUpRight className="inline mr-2 text-[#B85C38]" />
+    <div className="bg-white p-6 rounded-lg border border-[var(--border,_#ECEFF4)]">
+      <h2 className="text-2xl font-bold text-[var(--ink-head,_#030E1D)] mb-4" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <ArrowUpRight className="inline mr-2 text-[var(--blue-deep,_#1453BD)]" />
         Plan Upgrade Requests
       </h2>
       {rows.length === 0 ? (
-        <div className="py-8 text-center text-[#8B8680]">
+        <div className="py-8 text-center text-[var(--ink-muted,_#626F7E)]">
           No upgrade requests yet. Business owners nearing their plan cap will show up here.
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+              <tr className="border-b border-[var(--border-strong,_#CBD3DC)] text-[var(--ink-body,_#556272)]">
                 <th className="py-2 px-3">Requested</th>
                 <th className="py-2 px-3">Business</th>
                 <th className="py-2 px-3">Current</th>
@@ -600,34 +600,34 @@ const UpgradeRequestsSection = () => {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-[#E7E5E4]">
-                  <td className="py-2 px-3 text-[#57534E]">{new Date(r.created_at).toLocaleString()}</td>
-                  <td className="py-2 px-3 font-medium text-[#1C1917]">{r.tenant_name}</td>
+                <tr key={r.id} className="border-b border-[var(--border-strong,_#CBD3DC)]">
+                  <td className="py-2 px-3 text-[var(--ink-body,_#556272)]">{new Date(r.created_at).toLocaleString()}</td>
+                  <td className="py-2 px-3 font-medium text-[var(--ink-head,_#030E1D)]">{r.tenant_name}</td>
                   <td className="py-2 px-3">{r.current_plan}</td>
-                  <td className="py-2 px-3 font-semibold text-[#B85C38]">{r.requested_plan}</td>
+                  <td className="py-2 px-3 font-semibold text-[var(--blue-deep,_#1453BD)]">{r.requested_plan}</td>
                   <td className="py-2 px-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      r.status === 'pending' ? 'bg-[#F3EFE7] text-[#57534E]' :
-                      r.status === 'approved' ? 'bg-[#4A5D23] text-white' :
-                      r.status === 'declined' ? 'bg-[#B85C38] text-white' :
-                      'bg-[#E7E5E4] text-[#57534E]'
+                      r.status === 'pending' ? 'bg-[var(--surface-2,_#F8F9FC)] text-[var(--ink-body,_#556272)]' :
+                      r.status === 'approved' ? 'bg-[var(--green-deep,_#087A31)] text-white' :
+                      r.status === 'declined' ? 'bg-[var(--blue,_#0F6FDE)] text-white' :
+                      'bg-[var(--surface-2,_#F8F9FC)] text-[var(--ink-body,_#556272)]'
                     }`}>
                       {r.status}
                     </span>
                   </td>
-                  <td className="py-2 px-3 text-[#57534E] text-xs max-w-xs">{r.message || '—'}</td>
+                  <td className="py-2 px-3 text-[var(--ink-body,_#556272)] text-xs max-w-xs">{r.message || '—'}</td>
                   <td className="py-2 px-3 text-right">
                     {r.status === 'pending' && (
                       <div className="flex gap-2 justify-end">
                         <button
                           onClick={() => resolve(r.id, 'approved')}
-                          className="px-2 py-1 text-xs bg-[#4A5D23] text-white rounded hover:bg-[#3B4A1C]"
+                          className="px-2 py-1 text-xs bg-[var(--green-deep,_#087A31)] text-white rounded hover:bg-[var(--green-deep,_#087A31)]"
                         >
                           Approve
                         </button>
                         <button
                           onClick={() => resolve(r.id, 'declined')}
-                          className="px-2 py-1 text-xs bg-[#B85C38] text-white rounded hover:bg-[#9C4E2F]"
+                          className="px-2 py-1 text-xs bg-[var(--blue,_#0F6FDE)] text-white rounded hover:bg-[var(--blue-pressed,_#0D62C4)]"
                         >
                           Decline
                         </button>

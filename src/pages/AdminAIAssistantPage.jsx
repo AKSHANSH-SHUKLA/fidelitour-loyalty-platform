@@ -59,17 +59,17 @@ const AdminAIAssistantPage = () => {
         role="super_admin"
       />
 
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-[#E7E5E4] flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-[var(--border,_#ECEFF4)] flex flex-col overflow-hidden">
         <div className="flex-1 p-6 overflow-y-auto space-y-6">
           {chatLog.map((msg, idx) => (
             <div key={idx} className={`flex gap-4 max-w-3xl ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
               
               {msg.type === 'chat' && (
                   <>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-[#1C1917] text-white' : 'bg-[#F3EFE7] text-[#B85C38]'}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-[var(--blue-deep,_#1453BD)] text-white' : 'bg-[var(--surface-2,_#F8F9FC)] text-[var(--blue-deep,_#1453BD)]'}`}>
                         {msg.role === 'user' ? 'U' : <Bot className="w-5 h-5" />}
                       </div>
-                      <div className={`p-4 rounded-2xl ${msg.role === 'user' ? 'bg-[#1C1917] text-white' : 'bg-[#FDFBF7] border border-[#E7E5E4] text-[#1C1917]'}`}>
+                      <div className={`p-4 rounded-2xl ${msg.role === 'user' ? 'bg-[var(--blue-deep,_#1453BD)] text-white' : 'bg-[var(--surface-1,_#FFFFFF)] border border-[var(--border,_#ECEFF4)] text-[var(--ink-head,_#030E1D)]'}`}>
                         <p className="leading-relaxed">{msg.text}</p>
                       </div>
                   </>
@@ -77,13 +77,13 @@ const AdminAIAssistantPage = () => {
 
               {msg.type === 'draft' && (
                   <div className="ml-14 w-full bg-blue-50 border border-blue-200 p-6 rounded-2xl shadow-sm">
-                      <div className="flex items-center gap-2 mb-4 text-[#1C1917] font-bold">
+                      <div className="flex items-center gap-2 mb-4 text-[var(--ink-head,_#030E1D)] font-bold">
                           <Mail className="w-5 h-5 text-blue-600"/> Auto-Generated Draft for: {msg.target}
                       </div>
                       <input className="w-full mb-3 p-2 rounded border border-blue-200 text-sm font-bold" defaultValue={msg.subject} />
                       <textarea className="w-full h-32 p-3 rounded border border-blue-200 text-sm leading-relaxed" defaultValue={msg.body}></textarea>
                       <div className="mt-4 flex justify-end gap-3">
-                          <button className="px-4 py-2 bg-white border border-blue-200 text-[#57534E] rounded-full text-sm font-semibold hover:bg-gray-50 transition-colors">Discard</button>
+                          <button className="px-4 py-2 bg-white border border-blue-200 text-[var(--ink-body,_#556272)] rounded-full text-sm font-semibold hover:bg-gray-50 transition-colors">Discard</button>
                           <button onClick={deployMail} className="px-5 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">Deploy Email Now</button>
                       </div>
                   </div>
@@ -92,35 +92,35 @@ const AdminAIAssistantPage = () => {
           ))}
           {loading && (
              <div className="flex gap-4">
-               <div className="w-10 h-10 rounded-full bg-[#F3EFE7] text-[#B85C38] flex items-center justify-center shrink-0">
+               <div className="w-10 h-10 rounded-full bg-[var(--surface-2,_#F8F9FC)] text-[var(--blue-deep,_#1453BD)] flex items-center justify-center shrink-0">
                   <Bot className="w-5 h-5 animate-pulse" />
                </div>
-               <div className="p-4 rounded-2xl bg-[#FDFBF7] border border-[#E7E5E4] text-[#A8A29E] animate-pulse">
+               <div className="p-4 rounded-2xl bg-[var(--surface-1,_#FFFFFF)] border border-[var(--border,_#ECEFF4)] text-[var(--ink-muted,_#626F7E)] animate-pulse">
                   Analyzing tensors...
                </div>
              </div>
           )}
         </div>
 
-        <div className="p-4 bg-[#F3EFE7] border-t border-[#E7E5E4]">
+        <div className="p-4 bg-[var(--surface-2,_#F8F9FC)] border-t border-[var(--border-strong,_#CBD3DC)]">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto relative">
             <input 
               type="text" 
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Ask who to upsell today..."
-              className="w-full pl-6 pr-14 py-4 rounded-full border border-[#E7E5E4] focus:ring-2 focus:ring-[#B85C38] focus:border-transparent outline-none shadow-sm"
+              className="w-full pl-6 pr-14 py-4 rounded-full border border-[var(--border-strong,_#CBD3DC)] focus:ring-2 focus:ring-[var(--blue,_#0F6FDE)] focus:border-transparent outline-none shadow-sm"
               disabled={loading}
             />
             <button 
                 type="submit" 
                 disabled={loading || !query.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#B85C38] hover:bg-[#9C4E2F] disabled:bg-[#A8A29E] text-white rounded-full flex items-center justify-center transition-colors shadow-md"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-[var(--blue,_#0F6FDE)] hover:bg-[var(--blue-pressed,_#0D62C4)] disabled:bg-[var(--ink-muted,_#626F7E)] text-white rounded-full flex items-center justify-center transition-colors shadow-md"
             >
               <Send className="w-4 h-4 ml-1" />
             </button>
           </form>
-          <div className="text-center mt-3 text-xs text-[#A8A29E]">AI models can make errors regarding statistics. Use discretion before deploying campaigns.</div>
+          <div className="text-center mt-3 text-xs text-[var(--ink-muted,_#626F7E)]">AI models can make errors regarding statistics. Use discretion before deploying campaigns.</div>
         </div>
       </div>
     </div>

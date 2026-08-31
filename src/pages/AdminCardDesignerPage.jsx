@@ -192,21 +192,21 @@ export default function AdminCardDesignerPage() {
       {/* Loyalty Rules — admin-side mirror of the owner panel. Same fields,
           drives scan + reward logic for whichever business is selected. */}
       {selectedId && (
-        <div className="rounded-xl border-2 border-[#E3A869] bg-[#FEF9E7] p-5 space-y-4">
+        <div className="rounded-xl border-2 border-[#0F6FDE]/35 bg-[var(--tint-blue,_#E5F1FF)] p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Coins size={20} className="text-[#7B3F00]" />
-            <h2 className="text-lg font-bold text-[#7B3F00]">
+            <Coins size={20} className="text-[var(--blue-deep,_#1453BD)]" />
+            <h2 className="text-lg font-bold text-[var(--blue-deep,_#1453BD)]">
               Loyalty Rules — what customers earn at this business
             </h2>
           </div>
-          <p className="text-xs text-[#7B3F00]/80 -mt-2">
+          <p className="text-xs text-[var(--ink-body,_#556272)] -mt-2">
             These numbers control the scan flow and reward unlocks for the selected business.
             The visual stamp count below auto-syncs with the reward threshold.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
+              <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
                 Points awarded per visit
               </label>
               <NumberInput
@@ -215,11 +215,11 @@ export default function AdminCardDesignerPage() {
                 emptyValue={10}
                 value={rules.points_per_visit}
                 onChange={(n) => updateRule('points_per_visit', n)}
-                className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
+                className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
+              <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
                 Visits required per stamp
               </label>
               <NumberInput
@@ -228,11 +228,11 @@ export default function AdminCardDesignerPage() {
                 emptyValue={1}
                 value={rules.visits_per_stamp}
                 onChange={(n) => updateRule('visits_per_stamp', n)}
-                className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
+                className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
+              <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
                 Stamps to unlock the reward
               </label>
               <NumberInput
@@ -241,11 +241,11 @@ export default function AdminCardDesignerPage() {
                 emptyValue={10}
                 value={rules.reward_threshold_stamps}
                 onChange={(n) => updateRule('reward_threshold_stamps', n)}
-                className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
+                className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
+              <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
                 Reward description
               </label>
               <input
@@ -254,15 +254,15 @@ export default function AdminCardDesignerPage() {
                 value={rules.reward_description}
                 onChange={(e) => updateRule('reward_description', e.target.value)}
                 placeholder="e.g. Un café gratuit"
-                className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-semibold text-[#1C1917]"
+                className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-semibold text-[var(--ink-head,_#030E1D)]"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="text-xs font-bold text-[#7B3F00] uppercase tracking-wider mb-1 block">
+              <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
                 🔔 Send "almost there" push when N visits remain
               </label>
-              <p className="text-[11px] text-[#7B3F00]/80 mb-2">
+              <p className="text-[11px] text-[var(--ink-body,_#556272)] mb-2">
                 Auto push fires once when a customer is this many visits away from the reward. Set to <b>0</b> to disable.
               </p>
               <div className="flex items-center gap-3">
@@ -272,9 +272,9 @@ export default function AdminCardDesignerPage() {
                   emptyValue={0}
                   value={rules.notify_before_reward}
                   onChange={(n) => updateRule('notify_before_reward', n)}
-                  className="w-24 px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#1C1917]"
+                  className="w-24 px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
                 />
-                <div className="flex items-center gap-2 text-xs text-[#7B3F00]">
+                <div className="flex items-center gap-2 text-xs text-[var(--blue-deep,_#1453BD)]">
                   {[0, 1, 2, 3].map((preset) => {
                     const active = parseInt(rules.notify_before_reward, 10) === preset;
                     return (
@@ -283,7 +283,7 @@ export default function AdminCardDesignerPage() {
                         type="button"
                         onClick={() => updateRule('notify_before_reward', preset)}
                         className={`px-2.5 py-1 rounded-full text-xs font-bold transition ${
-                          active ? 'bg-[#B85C38] text-white' : 'bg-white border border-[#E3A869]/60 hover:bg-[#FEF9E7]'
+                          active ? 'bg-[var(--blue,_#0F6FDE)] text-white' : 'bg-white border border-[#0F6FDE]/35 hover:bg-[var(--tint-blue,_#E5F1FF)]'
                         }`}
                       >
                         {preset === 0 ? 'Off' : `${preset} visit${preset > 1 ? 's' : ''} away`}
@@ -295,7 +295,7 @@ export default function AdminCardDesignerPage() {
             </div>
           </div>
 
-          <div className="rounded-lg bg-[#7B3F00] text-white p-4 flex items-start gap-3">
+          <div className="rounded-lg bg-[var(--blue-deep,_#1453BD)] text-white p-4 flex items-start gap-3">
             <Award size={18} className="shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-bold">In plain English:</p>

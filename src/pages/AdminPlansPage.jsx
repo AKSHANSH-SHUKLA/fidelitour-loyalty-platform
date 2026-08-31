@@ -42,9 +42,9 @@ const FIELDS = [
 
 // Canonical 3-tier system. Order = the order they render in.
 const PLAN_META = {
-  silver: { label: 'Silver', tone: '#6FA89C', gradient: 'linear-gradient(135deg, #6FA89C 0%, #98C9BB 100%)' },
-  gold:   { label: 'Gold',   tone: '#D4A574', gradient: 'linear-gradient(135deg, #D4A574 0%, #E8C49A 100%)' },
-  vip:    { label: 'VIP',    tone: '#B85C38', gradient: 'linear-gradient(135deg, #B85C38 0%, #E8917C 100%)' },
+  silver: { label: 'Silver', tone: '#0D62C4', gradient: 'linear-gradient(135deg, #0F6FDE 0%, #0D62C4 100%)' },
+  gold:   { label: 'Gold',   tone: '#1453BD', gradient: 'linear-gradient(135deg, #0D62C4 0%, #1453BD 100%)' },
+  vip:    { label: 'VIP',    tone: '#052D5B', gradient: 'linear-gradient(135deg, #1453BD 0%, #052D5B 100%)' },
 };
 
 export default function AdminPlansPage() {
@@ -262,7 +262,7 @@ export default function AdminPlansPage() {
                             min="0"
                             value={draftVal ?? ''}
                             onChange={(e) => setDraftField(row.plan, f.key, e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border-2 outline-none text-sm font-mono tabular-nums focus:border-[#B85C38]"
+                            className="w-full px-3 py-2 rounded-lg border-2 outline-none text-sm font-mono tabular-nums focus:border-[var(--blue,_#0F6FDE)]"
                             style={{ borderColor: C_PS.hairline, background: 'white' }}
                           />
                         ) : (
@@ -271,7 +271,7 @@ export default function AdminPlansPage() {
                               type="checkbox"
                               checked={!!draftVal}
                               onChange={(e) => setDraftField(row.plan, f.key, e.target.checked)}
-                              className="w-4 h-4 accent-[#B85C38]"
+                              className="w-4 h-4 accent-[var(--blue,_#0F6FDE)]"
                             />
                             <span className="text-sm" style={{ color: C_PS.inkSoft }}>
                               {draftVal ? 'Enabled for this plan' : 'Disabled for this plan'}
@@ -288,7 +288,7 @@ export default function AdminPlansPage() {
                             onClick={() => resetField(row.plan, f.key)}
                             disabled={savingPlan === row.plan}
                             title={`Revert to baseline (${baselineVal})`}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium hover:bg-[#FAF8F4] disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium hover:bg-[var(--surface-1,_#FFFFFF)] disabled:opacity-50"
                             style={{ color: C_PS.inkMute, border: `1px solid ${C_PS.hairline}` }}
                           >
                             <RotateCcw size={12} /> Reset
@@ -301,7 +301,7 @@ export default function AdminPlansPage() {
               </div>
 
               {/* Footer — save button */}
-              <footer className="flex items-center justify-between p-4 bg-[#FAF8F4] border-t" style={{ borderColor: C_PS.hairline }}>
+              <footer className="flex items-center justify-between p-4 bg-[var(--surface-1,_#FFFFFF)] border-t" style={{ borderColor: C_PS.hairline }}>
                 <p className="text-xs" style={{ color: C_PS.inkMute }}>
                   Changes apply immediately to every tenant on this plan.
                 </p>
@@ -333,7 +333,7 @@ export default function AdminPlansPage() {
         <div>
           <p className="font-semibold" style={{ color: C_PS.inkDeep }}>Need to change one business's plan?</p>
           <p className="text-xs mt-1">
-            Open <a href="/admin/tenants" className="underline" style={{ color: '#B85C38' }}>Manage Businesses</a>,
+            Open <a href="/admin/tenants" className="underline" style={{ color: 'var(--blue-deep, #1453BD)' }}>Manage Businesses</a>,
             click the ⋯ menu on the tenant row, and pick a new plan.
             That changes the cap that business sees, without affecting every other tenant on the same plan.
           </p>

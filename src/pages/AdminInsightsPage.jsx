@@ -10,12 +10,12 @@ import {
 } from 'lucide-react';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 
-const TIER_COLORS = { bronze: '#8B6914', silver: '#A8A8A8', gold: '#E3A869' };
-const ACCENT = '#B85C38';
+const TIER_COLORS = { bronze: '#CADFF8', silver: '#93BEF0', gold: '#5297E7' };
+const ACCENT = 'var(--blue, #0F6FDE)';
 
 const StatPill = ({ label, value, sublabel, tone = 'default' }) => {
   const toneMap = {
-    default: 'bg-white border-[#E7E5E4] text-[#1C1917]',
+    default: 'bg-white border-[var(--border,_#ECEFF4)] text-[var(--ink-head,_#030E1D)]',
     danger: 'bg-red-50 border-red-200 text-red-900',
     warning: 'bg-amber-50 border-amber-200 text-amber-900',
     success: 'bg-green-50 border-green-200 text-green-900',
@@ -30,12 +30,12 @@ const StatPill = ({ label, value, sublabel, tone = 'default' }) => {
 };
 
 const Card = ({ icon: Icon, title, hint, children }) => (
-  <div className="bg-white p-6 rounded-xl border border-[#E7E5E4]">
+  <div className="bg-white p-6 rounded-xl border border-[var(--border,_#ECEFF4)]">
     <div className="flex items-center gap-2 mb-1">
-      {Icon && <Icon size={18} className="text-[#B85C38]" />}
-      <h2 className="text-xl font-semibold text-[#1C1917]" style={{ fontFamily: 'Cormorant Garamond' }}>{title}</h2>
+      {Icon && <Icon size={18} className="text-[var(--blue-deep,_#1453BD)]" />}
+      <h2 className="text-xl font-semibold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>{title}</h2>
     </div>
-    {hint && <p className="text-xs text-[#8B8680] mb-4">{hint}</p>}
+    {hint && <p className="text-xs text-[var(--ink-muted,_#626F7E)] mb-4">{hint}</p>}
     {children}
   </div>
 );
@@ -64,16 +64,16 @@ const AdminInsightsPage = () => {
 
   useEffect(() => { loadInsights(); }, []);
 
-  if (loading) return <div className="p-8 bg-[#FDFBF7] min-h-screen text-[#57534E]">Loading Insights…</div>;
+  if (loading) return <div className="p-8 bg-[var(--surface-1,_#FFFFFF)] min-h-screen text-[var(--ink-body,_#556272)]">Loading Insights…</div>;
 
   if (loadError || !data) {
     return (
-      <div className="p-8 bg-[#FDFBF7] min-h-screen">
-        <div className="max-w-xl mx-auto bg-white border border-[#E7E5E4] rounded-xl p-8 text-center">
-          <AlertCircle className="mx-auto mb-2 text-[#B85C38]" size={32} />
-          <h2 className="text-2xl font-bold text-[#B85C38] mb-2">Insights failed to load</h2>
-          <p className="text-[#57534E] text-sm mb-4">{loadError || 'No data'}</p>
-          <button onClick={loadInsights} className="px-4 py-2 bg-[#B85C38] text-white rounded-lg font-medium hover:bg-[#9C4E2F]">
+      <div className="p-8 bg-[var(--surface-1,_#FFFFFF)] min-h-screen">
+        <div className="max-w-xl mx-auto bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-8 text-center">
+          <AlertCircle className="mx-auto mb-2 text-[var(--blue-deep,_#1453BD)]" size={32} />
+          <h2 className="text-2xl font-bold text-[var(--blue-deep,_#1453BD)] mb-2">Insights failed to load</h2>
+          <p className="text-[var(--ink-body,_#556272)] text-sm mb-4">{loadError || 'No data'}</p>
+          <button onClick={loadInsights} className="px-4 py-2 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg font-medium hover:bg-[var(--blue-pressed,_#0D62C4)]">
             Retry
           </button>
         </div>
@@ -109,7 +109,7 @@ const AdminInsightsPage = () => {
       {/* Alerts */}
       <Card icon={AlertCircle} title="Platform Alerts" hint="Automatic warnings based on platform-wide behavior.">
         {alerts.length === 0 ? (
-          <p className="text-sm text-[#57534E]">No alerts right now — the platform is healthy.</p>
+          <p className="text-sm text-[var(--ink-body,_#556272)]">No alerts right now — the platform is healthy.</p>
         ) : (
           <div className="space-y-3">
             {alerts.map((a, i) => (
@@ -127,8 +127,8 @@ const AdminInsightsPage = () => {
               >
                 <span className="text-xl">{a.icon}</span>
                 <div>
-                  <p className="font-semibold text-[#1C1917]">{a.title}</p>
-                  <p className="text-sm text-[#57534E]">{a.detail}</p>
+                  <p className="font-semibold text-[var(--ink-head,_#030E1D)]">{a.title}</p>
+                  <p className="text-sm text-[var(--ink-body,_#556272)]">{a.detail}</p>
                 </div>
               </div>
             ))}
@@ -156,9 +156,9 @@ const AdminInsightsPage = () => {
           {(ltv.by_tier || []).length > 0 && (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={ltv.by_tier}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                <XAxis dataKey="tier" stroke="#57534E" />
-                <YAxis stroke="#57534E" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #CBD3DC)" />
+                <XAxis dataKey="tier" stroke="var(--ink-body, #556272)" />
+                <YAxis stroke="var(--ink-body, #556272)" />
                 <Tooltip formatter={(v) => `€${Number(v).toLocaleString()}`} />
                 <Bar dataKey="average_ltv" name="Avg LTV" radius={[8, 8, 0, 0]}>
                   {(ltv.by_tier || []).map((t, i) => (
@@ -176,7 +176,7 @@ const AdminInsightsPage = () => {
         <Card icon={Award} title="Top Performing Businesses" hint="Ranked by total visits.">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+              <tr className="border-b border-[var(--border-strong,_#CBD3DC)] text-[var(--ink-body,_#556272)]">
                 <th className="py-2 px-2">#</th>
                 <th className="py-2 px-2">Business</th>
                 <th className="py-2 px-2">Plan</th>
@@ -187,9 +187,9 @@ const AdminInsightsPage = () => {
             </thead>
             <tbody>
               {top.map((t, i) => (
-                <tr key={t.id} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7]">
-                  <td className="py-2 px-2 text-[#8B8680]">{i + 1}</td>
-                  <td className="py-2 px-2 font-medium text-[#1C1917]">{t.name}</td>
+                <tr key={t.id} className="border-b border-[var(--border-strong,_#CBD3DC)] hover:bg-[var(--surface-2,_#F8F9FC)]">
+                  <td className="py-2 px-2 text-[var(--ink-muted,_#626F7E)]">{i + 1}</td>
+                  <td className="py-2 px-2 font-medium text-[var(--ink-head,_#030E1D)]">{t.name}</td>
                   <td className="py-2 px-2 uppercase text-xs font-bold">{t.plan}</td>
                   <td className="py-2 px-2 text-right">{t.customers}</td>
                   <td className="py-2 px-2 text-right">{t.visits}</td>
@@ -203,7 +203,7 @@ const AdminInsightsPage = () => {
         <Card icon={TrendingDown} title="Businesses at Risk" hint="Lowest visit counts among active tenants.">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#E7E5E4] text-[#57534E]">
+              <tr className="border-b border-[var(--border-strong,_#CBD3DC)] text-[var(--ink-body,_#556272)]">
                 <th className="py-2 px-2">Business</th>
                 <th className="py-2 px-2">Plan</th>
                 <th className="py-2 px-2 text-right">Customers</th>
@@ -212,8 +212,8 @@ const AdminInsightsPage = () => {
             </thead>
             <tbody>
               {atRisk.map((t) => (
-                <tr key={t.id} className="border-b border-[#E7E5E4] hover:bg-[#F3EFE7]">
-                  <td className="py-2 px-2 font-medium text-[#1C1917]">{t.name}</td>
+                <tr key={t.id} className="border-b border-[var(--border-strong,_#CBD3DC)] hover:bg-[var(--surface-2,_#F8F9FC)]">
+                  <td className="py-2 px-2 font-medium text-[var(--ink-head,_#030E1D)]">{t.name}</td>
                   <td className="py-2 px-2 uppercase text-xs font-bold">{t.plan}</td>
                   <td className="py-2 px-2 text-right">{t.customers}</td>
                   <td className="py-2 px-2 text-right">{t.visits}</td>
@@ -228,11 +228,11 @@ const AdminInsightsPage = () => {
       <Card icon={Building2} title="Businesses by Sector" hint="Drives which reactivation template each commerce receives.">
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={sectors} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-            <XAxis type="number" stroke="#57534E" />
-            <YAxis type="category" dataKey="sector" stroke="#57534E" width={120} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong, #CBD3DC)" />
+            <XAxis type="number" stroke="var(--ink-body, #556272)" />
+            <YAxis type="category" dataKey="sector" stroke="var(--ink-body, #556272)" width={120} />
             <Tooltip />
-            <Bar dataKey="count" fill="#4A5D23" radius={[0, 8, 8, 0]} />
+            <Bar dataKey="count" fill="var(--green, #10BC4C)" radius={[0, 8, 8, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </Card>
