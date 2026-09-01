@@ -386,7 +386,7 @@ export default function CardDesignerPage() {
             Loyalty Rules — what your customers earn
           </h2>
         </div>
-        <p className="text-xs text-[#1453BD]/80 -mt-2">
+        <p className="text-xs text-[var(--blue-deep,_#1453BD)] -mt-2">
           These numbers control your scan flow and reward unlocks. Change them and every customer's
           card and progression updates. The visual stamp count below auto-syncs with the reward threshold.
         </p>
@@ -396,7 +396,7 @@ export default function CardDesignerPage() {
             <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Points awarded per visit
             </label>
-            <p className="text-[11px] text-[#1453BD]/80 mb-2">
+            <p className="text-[11px] text-[var(--blue-deep,_#1453BD)] mb-2">
               How many points each customer gets when staff scans their visit. Default: 10.
             </p>
             <NumberInput
@@ -413,7 +413,7 @@ export default function CardDesignerPage() {
             <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Visits required per stamp
             </label>
-            <p className="text-[11px] text-[#1453BD]/80 mb-2">
+            <p className="text-[11px] text-[var(--blue-deep,_#1453BD)] mb-2">
               Usually 1 (every visit = 1 stamp). Set to 2 if you want stamps to feel rarer.
             </p>
             <NumberInput
@@ -430,7 +430,7 @@ export default function CardDesignerPage() {
             <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Stamps to unlock the reward
             </label>
-            <p className="text-[11px] text-[#1453BD]/80 mb-2">
+            <p className="text-[11px] text-[var(--blue-deep,_#1453BD)] mb-2">
               How many stamps to fill the card. Default: 10 (the classic café punch card).
             </p>
             <NumberInput
@@ -447,7 +447,7 @@ export default function CardDesignerPage() {
             <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Reward description
             </label>
-            <p className="text-[11px] text-[#1453BD]/80 mb-2">
+            <p className="text-[11px] text-[var(--blue-deep,_#1453BD)] mb-2">
               What customers see they'll earn. Shown on the card and in the unlock notification.
             </p>
             <input
@@ -464,7 +464,7 @@ export default function CardDesignerPage() {
             <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               🔔 Send "almost there" push when N visits remain
             </label>
-            <p className="text-[11px] text-[#1453BD]/80 mb-2">
+            <p className="text-[11px] text-[var(--blue-deep,_#1453BD)] mb-2">
               When a customer is this many visits away from unlocking the reward, an automatic push
               fires once. Set to <b>1</b> for the classic "one more visit and you get a free coffee!"
               nudge. Set to <b>0</b> to disable.

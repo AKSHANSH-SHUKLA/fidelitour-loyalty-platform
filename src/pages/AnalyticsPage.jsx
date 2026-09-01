@@ -1415,7 +1415,7 @@ const AnalyticsPage = () => {
                 <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Star size={14} /> Rating distribution
                 </p>
-                <p className="text-xs text-[#626F7E] mb-3">
+                <p className="text-xs text-[var(--ink-body,_#556272)] mb-3">
                   How many reviews landed at each score. Bars show share of total.
                 </p>
                 <div className="space-y-1">
@@ -1445,7 +1445,7 @@ const AnalyticsPage = () => {
                 <p className="text-sm font-bold text-[#171412] mb-2 flex items-center gap-2">
                   <Activity size={14} /> Topic / theme breakdown
                 </p>
-                <p className="text-xs text-[#626F7E] mb-3">
+                <p className="text-xs text-[var(--ink-body,_#556272)] mb-3">
                   Which themes customers mention and the average rating per theme. Lets you see
                   <em> why</em> ratings move — not just that they did.
                 </p>
@@ -1584,7 +1584,7 @@ const AnalyticsPage = () => {
               ) : (
                 rankedCustomers.map((c, i) => (
                   <tr key={c.id || i} className="border-b border-[var(--border,_#ECEFF4)] hover:bg-[#F5F4F1]">
-                    <td className="py-2 px-3 text-[#626F7E]">{i + 1}</td>
+                    <td className="py-2 px-3 text-[var(--ink-body,_#556272)]">{i + 1}</td>
                     <td className="py-2 px-3 font-medium text-[#171412]">{c.name || '—'}</td>
                     <td className="py-2 px-3 text-[#57504A] text-xs">{c.email || '—'}</td>
                     <td className="py-2 px-3"><TierBadge tier={c.tier} /></td>
@@ -1662,7 +1662,7 @@ const AnalyticsPage = () => {
       <section
         className="rounded-xl p-4 relative overflow-hidden"
         style={{
-          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-ok, #0F8B58) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
+          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flc-ok, #0F8B58) 6%, transparent) 0%, transparent 55%), radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--flc-ok, #0F8B58) 7%, transparent) 0%, transparent 60%), var(--flc-card, #FFFFFF)`,
           border: '1px solid color-mix(in srgb, var(--flc-ok, #0F8B58) 27%, transparent)',
           boxShadow: '0 6px 18px -10px #6FA89C55',
         }}
@@ -1712,7 +1712,7 @@ const AnalyticsPage = () => {
             <span>
               <span className="text-[var(--blue-deep,_#1453BD)] font-bold">{recovered?.count ?? 0}</span> customers match
               {' '}
-              <span className="text-[#626F7E]">({recovered?.percentage ?? 0}% of base)</span>
+              <span className="text-[var(--ink-body,_#556272)]">({recovered?.percentage ?? 0}% of base)</span>
             </span>
             <button
               type="button"

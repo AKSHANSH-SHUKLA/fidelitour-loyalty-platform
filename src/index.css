@@ -400,7 +400,12 @@ select {
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover,
 textarea:hover,
 select:hover {
-  border-color: #D6D2CB;
+  /* Was #D6D2CB — hue 38, the last warm step in the input sequence, and it
+     reached every form in the product through this (0,5,1) selector.
+     --border-strong is an exact luminance match at 1.51:1 on white, so the
+     hover weight is unchanged and only the hue moves cool. Selector,
+     specificity, hover behaviour and the focus rule below are untouched. */
+  border-color: var(--border-strong, #CBD3DC);
 }
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
 textarea:focus,
@@ -1287,7 +1292,9 @@ textarea::placeholder {
 /* KPI delta pills — darker, saturated colors so they're clearly legible
    on white card backgrounds. Background tint + bold text together. */
 .av2-light-skin .fd-kpi-delta.pos {
-  background: rgb(8 122 49 / .14) !important;
+  /* 14% put --green-deep at 4.47:1 on its own tint; 10% restores 4.76:1
+     while keeping green as the positive semantic. */
+  background: rgb(8 122 49 / .10) !important;
   color: var(--green-deep, #087A31) !important;
   font-weight: 700 !important;
 }
@@ -1374,7 +1381,8 @@ textarea::placeholder {
 .av2-light-skin .fd-ml-val  { color: var(--flc-ink, #030E1D); }
 
 /* LTV */
-.av2-light-skin .fd-lc-lbl { color: var(--flc-ink3, #626F7E); }
+/* --ink-muted measured 4.36:1 on the LTV card tint; --ink-body gives 5.29:1. */
+.av2-light-skin .fd-lc-lbl { color: var(--ink-body, #556272); }
 .av2-light-skin .fd-lc-val { color: var(--flc-ink, #030E1D); }
 .av2-light-skin .fd-ltv-card.high {
   background: rgb(15 111 222 / .12) !important;
@@ -1388,8 +1396,9 @@ textarea::placeholder {
 .av2-light-skin .fd-plan-num       { color: var(--flc-ink, #030E1D); }
 .av2-light-skin .fd-plan-num-total { color: var(--flc-ink3, #626F7E); }
 .av2-light-skin .fd-plan-chip {
+  /* --blue on a 15% --blue tint is 3.92:1; the deep step gives 5.68:1. */
   background: rgb(15 111 222 / .15) !important;
-  color: #0F6FDE !important;
+  color: var(--blue-deep, #1453BD) !important;
   border-color: rgb(15 111 222 / .35) !important;
 }
 .av2-light-skin .fd-plan-pct { color: #076B2B; }  /* 5.52:1 on the #DCEFD6 pill; --ink-muted was 4.24:1 */
@@ -1407,7 +1416,7 @@ textarea::placeholder {
 .av2-light-skin .fd-sp-title   { color: var(--flc-ink2, #556272); }
 .av2-light-skin .fd-sp-count   {
   background: rgb(15 111 222 / .15) !important;
-  color: #0F6FDE !important;
+  color: var(--blue-deep, #1453BD) !important;   /* 3.92 -> 5.68 on its tint */
 }
 .av2-light-skin .fd-sp-cta {
   color: #0F6FDE !important;

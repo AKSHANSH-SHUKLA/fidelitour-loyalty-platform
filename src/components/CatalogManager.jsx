@@ -250,7 +250,7 @@ export default function CatalogManager() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 14px', borderRadius: 8,
-            border: '1px solid #C9B6E2', background: '#F4ECFA',
+            border: '1px solid var(--blue, #0F6FDE)35', background: 'var(--tint-blue, #E5F1FF)',
             cursor: scanning ? 'wait' : 'pointer',
             fontSize: 12.5, fontWeight: 500, color: '#5B3FAB',
             fontFamily: 'inherit',
