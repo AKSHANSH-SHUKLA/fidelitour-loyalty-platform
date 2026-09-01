@@ -108,7 +108,7 @@ const InactiveCustomerPurgeCard = ({ id }) => {
         </div>
         <div
           className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-          style={{ background: '#FEF3C7', color: '#854F0B' }}
+          style={{ background: 'color-mix(in srgb, var(--red, #D93036) 10%, var(--surface-1, #FFFFFF))', color: 'var(--red-deep, #A81E27)' }}
         >
           <AlertTriangle size={12} /> Action sensible — confirmation à 2 étapes
         </div>
@@ -151,8 +151,14 @@ const InactiveCustomerPurgeCard = ({ id }) => {
         <div
           className="rounded-xl p-4"
           style={{
-            background: '#FEF7EE',
-            border: `1px solid ${C.ochre}55`,
+            background: 'color-mix(in srgb, var(--red, #D93036) 6%, var(--surface-1, #FFFFFF))',
+            /* The previous edge was `1px solid ${C.ochre}55` — appending an
+               alpha pair after a var() is invalid CSS, so the shorthand was
+               dropped and no border painted. Measured in-browser before this
+               change: border-style none, border-width 0px. Replaced with a
+               valid restrained destructive edge so the preview reads as part
+               of the same destructive context as its confirmation button. */
+            border: '1px solid color-mix(in srgb, var(--red, #D93036) 35%, var(--surface-1, #FFFFFF))',
           }}
         >
           <p className="text-sm" style={{ color: C.inkDeep }}>
@@ -176,7 +182,7 @@ const InactiveCustomerPurgeCard = ({ id }) => {
               onClick={commitDelete}
               disabled={committing || preview.would_delete === 0}
               className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition"
-              style={{ background: preview.would_delete === 0 ? '#D6D3D1' : C.terracotta }}
+              style={{ background: preview.would_delete === 0 ? 'var(--ink-muted, #626F7E)' : 'var(--red, #D93036)' }}
             >
               {committing ? 'Suppression…' : `Confirmer la suppression (${preview.would_delete})`}
             </button>
@@ -202,7 +208,7 @@ const InactiveCustomerPurgeCard = ({ id }) => {
       {trash.length > 0 && (
         <div
           className="rounded-xl p-4"
-          style={{ background: '#F4F4F0', border: `1px solid ${C.hairline}` }}
+          style={{ background: 'var(--surface-2, #F8F9FC)', border: `1px solid ${C.hairline}` }}
         >
           <p className="text-sm font-bold mb-2" style={{ color: C.inkDeep }}>
             🗑️ Corbeille ({trash.length}) — restorable pendant 30 jours
