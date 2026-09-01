@@ -10,7 +10,7 @@ import { ownerAPI } from '../lib/api';
 import {
   Home, Users, QrCode, LogOut, BarChart3, Settings2, Palette,
   Database, BrainCircuit, Megaphone, MapPin, Sparkles, CreditCard, Shield, History, ChevronDown,
-  Building2, Menu, LifeBuoy
+  Building2, ChevronLeft, ChevronRight, LifeBuoy
 } from 'lucide-react';
 import { C, themeForRole, AmbientBackdrop } from '../components/PageShell';
 import SupportModal from '../components/SupportModal';
@@ -571,9 +571,11 @@ const DashboardLayout = () => {
           alignSelf: 'flex-start',
         }}
       >
-        {/* Collapse toggle — three-line hamburger pinned to the right edge.
-            One symbol for both states; the colour/background flips so the
-            user still gets feedback about open vs collapsed. */}
+        {/* Collapse toggle — a directional chevron pinned to the right edge.
+            The chevron points the way it acts: left to close, right to
+            open. The dark fill is kept in BOTH states so the control stays
+            clearly visible against the white sidebar and the canvas — the
+            direction of the arrow, not the colour, carries the state. */}
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
@@ -582,13 +584,15 @@ const DashboardLayout = () => {
           title={collapsed ? t('nav.expand_sidebar') : t('nav.collapse_sidebar')}
           className="absolute -right-3 top-6 z-20 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
           style={{
-            background: collapsed ? 'var(--flc-card, #FFFFFF)' : 'var(--flc-ink, #030E1D)',
-            border: `1px solid ${collapsed ? C.hairline : 'var(--flc-ink, #030E1D)'}`,
+            background: 'var(--flc-ink, #030E1D)',
+            border: '1px solid var(--flc-ink, #030E1D)',
             boxShadow: '0 2px 6px rgba(28,25,23,0.10)',
-            color: collapsed ? C.inkSoft : 'var(--flc-paper, #FFFFFF)',
+            color: 'var(--flc-paper, #FFFFFF)',
           }}
         >
-          <Menu size={14} strokeWidth={2.25} />
+          {collapsed
+            ? <ChevronRight size={14} strokeWidth={2.5} />
+            : <ChevronLeft size={14} strokeWidth={2.5} />}
         </button>
 
         {/* Brand mark + role badge */}
