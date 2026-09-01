@@ -5811,6 +5811,19 @@ def _serialize_card_payload(cust: dict) -> dict:
             # 3-band wallet-pass layout fields — may have been overridden
             # per-customer by an active card override (filtered offer overlay).
             "layout_style":         tpl.get("layout_style"),
+            # Wallet-anatomy render inputs (layout_style == "wallet"). The
+            # merchant picks brand_color + surface + code_type; every other
+            # colour is derived client-side in cardTheme.js. CardTemplate has
+            # extra="allow", so these persist through the save endpoints
+            # without model changes.
+            "brand_color":          tpl.get("brand_color"),
+            "surface":              tpl.get("surface"),
+            "code_type":            tpl.get("code_type"),
+            "hero_mode":            tpl.get("hero_mode"),
+            "visits_label":         tpl.get("visits_label"),
+            "stamps_label":         tpl.get("stamps_label"),
+            "show_stamps":          tpl.get("show_stamps"),
+            "show_visits":          tpl.get("show_visits"),
             "card_bg_color":        tpl.get("card_bg_color"),
             "card_ink_color":       tpl.get("card_ink_color"),
             "strip_type":           tpl.get("strip_type"),

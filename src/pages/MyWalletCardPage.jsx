@@ -8,6 +8,7 @@ import { ensureSubscribed, unsubscribe as unsubscribePush, isSupported as isPush
 import InstallPwaPrompt from '../components/InstallPwaPrompt';
 import GeoConsentCard from '../components/GeoConsentCard';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
+import WalletCard from '../components/WalletCard';
 import TierBadge from '../components/TierBadge';
 
 // ---------------------------------------------------------------------------
@@ -710,11 +711,15 @@ const MyWalletCardPage = () => {
               literally the same component the customer sees on their phone. */}
           <section>
             <WalletCardErrorBoundary>
-              <PremiumLoyaltyCard
-                customer={customer}
-                tenant={tenant}
-                card={card}
-              />
+              {/* Opt-in wallet-anatomy render (Card Redesign spec). Templates
+                  that never chose it keep the legacy render pixel-for-pixel —
+                  silently restyling a merchant's live card is a support
+                  earthquake, so the switch is the template's, not ours. */}
+              {card?.layout_style === 'wallet' ? (
+                <WalletCard customer={customer} tenant={tenant} card={card} />
+              ) : (
+                <PremiumLoyaltyCard customer={customer} tenant={tenant} card={card} />
+              )}
             </WalletCardErrorBoundary>
 
             {/* Save / share actions — the previous "Add to Apple/Google Wallet"

@@ -4,6 +4,7 @@ import { ownerAPI } from '../lib/api';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
+import WalletCard from '../components/WalletCard';
 
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
 const DEFAULT_RULES = {
@@ -1235,31 +1236,39 @@ export default function CardDesignerPage() {
                 {/* Card surface — sits just below the Wallet top bar */}
                 <div style={{ position: 'absolute', top: 92, left: 10, right: 10, bottom: 26, overflowY: 'auto' }}>
                   <div className="relative">
-                <PremiumLoyaltyCard
-                  customer={{
-                    name: 'Marie Lefèvre',
-                    first_name: 'Marie',
-                    tier: 'Gold',
-                    barcode_id: 'FT-1DFC4E62',
-                    // Sample customer at 60% of one reward cycle so the
-                    // owner sees a half-filled card. Visits are EXPRESSED
-                    // as raw visits (not stamps), so we multiply by
-                    // visits_per_stamp to get the correct underlying count.
-                    visits: Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6) * (Math.max(1, parseInt(rules.visits_per_stamp, 10) || 1)),
-                    reward_threshold: parseInt(rules.reward_threshold_stamps, 10) || 10,
-                    offers_count: 1,
-                    birthday: '12/05',
-                  }}
-                  tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
-                  card={{
-                    ...brand,
-                    // Merge loyalty rules so the points meter on the preview
-                    // reflects the owner's current points-per-visit setting.
-                    points_per_visit: parseInt(rules.points_per_visit, 10) || 10,
-                    visits_per_stamp: parseInt(rules.visits_per_stamp, 10) || 1,
-                  }}
-                  compact
-                />
+                {(() => {
+                  // The preview MUST run through the same switch as the
+                  // customer page: what the owner sees while designing is
+                  // literally what the customer gets.
+                  const CardPreview = brand?.layout_style === 'wallet' ? WalletCard : PremiumLoyaltyCard;
+                  return (
+                    <CardPreview
+                      customer={{
+                        name: 'Marie Lefèvre',
+                        first_name: 'Marie',
+                        tier: 'Gold',
+                        barcode_id: 'FT-1DFC4E62',
+                        // Sample customer at 60% of one reward cycle so the
+                        // owner sees a half-filled card. Visits are EXPRESSED
+                        // as raw visits (not stamps), so we multiply by
+                        // visits_per_stamp to get the correct underlying count.
+                        visits: Math.floor((parseInt(rules.reward_threshold_stamps, 10) || 10) * 0.6) * (Math.max(1, parseInt(rules.visits_per_stamp, 10) || 1)),
+                        reward_threshold: parseInt(rules.reward_threshold_stamps, 10) || 10,
+                        offers_count: 1,
+                        birthday: '12/05',
+                      }}
+                      tenant={{ name: tenant?.name || tenant?.business_name || 'Mon commerce' }}
+                      card={{
+                        ...brand,
+                        // Merge loyalty rules so the points meter on the preview
+                        // reflects the owner's current points-per-visit setting.
+                        points_per_visit: parseInt(rules.points_per_visit, 10) || 10,
+                        visits_per_stamp: parseInt(rules.visits_per_stamp, 10) || 1,
+                      }}
+                      compact
+                    />
+                  );
+                })()}
                 {/* Numbered band tags overlaid on the card so the owner can
                     visually anchor each editor section to a strip. */}
                 {/* Numbered band tags overlaid on the card (legend below) */}
