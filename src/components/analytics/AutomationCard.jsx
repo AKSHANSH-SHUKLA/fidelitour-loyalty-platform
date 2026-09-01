@@ -22,7 +22,9 @@ const ACCENT = {
 };
 
 const STATUS_PILL = {
-  active:  { fg: 'var(--flc-ok, #0F8B58)', bg: 'color-mix(in srgb, var(--flc-ok, #0F8B58) 14%, transparent)', label: 'Actif' },
+  // 14% put the green-deep label at 4.47:1 on its own tint; 10% lifts it
+  // to 4.76:1. Label colour and the active semantic are unchanged.
+  active:  { fg: 'var(--flc-ok, #0F8B58)', bg: 'color-mix(in srgb, var(--flc-ok, #0F8B58) 10%, transparent)', label: 'Actif' },
   paused:  { fg: 'var(--flc-warn, #A8862D)',  bg: 'color-mix(in srgb, var(--flc-warn, #A8862D) 14%, transparent)',  label: 'Pause' },
   draft:   { fg: 'var(--flc-ink3, #524A40)', bg: 'color-mix(in srgb, var(--flc-ink3, #524A40) 20%, transparent)', label: 'Brouillon' },
 };

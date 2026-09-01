@@ -77,7 +77,10 @@ const Sparkline = ({ points = [], stroke = '#8D857D', width = 100, height = 32 }
 // Delta colors are DIRECTION-based, never metric-based: a "+" delta is
 // always green, a "-" delta is always red. A flat delta is muted.
 const DELTA_STYLE = {
-  up:   { bg: 'rgba(56, 130, 80, 0.14)',  fg: '#2F6A3C', dot: '#3F8A52' },
+  // The arrow glyph was #3F8A52 at 3.55:1 on this pill; --green-deep
+  // lifts it to 4.60:1 and matches the positive token used elsewhere.
+  // fg stays #2F6A3C — it already measures 5.43:1 on the same tint.
+  up:   { bg: 'rgba(56, 130, 80, 0.14)',  fg: '#2F6A3C', dot: 'var(--green-deep, #087A31)' },
   down: { bg: 'rgba(184, 60, 50, 0.14)',  fg: '#8A2E24', dot: '#B53D32' },
   flat: { bg: 'rgba(122, 113, 108, 0.12)', fg: '#5C544F', dot: '#8D857D' },
 };
