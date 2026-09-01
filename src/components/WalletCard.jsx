@@ -33,6 +33,7 @@ export default function WalletCard({ customer, tenant, card = {}, compact = fals
   const t = deriveCardTheme({
     brandColor: card.brand_color || card.card_bg_color || card.primary_color,
     surface: card.surface,
+    surfaceColor: card.surface_color,   // duo-tone: the second brand colour
   });
 
   // ---- content -----------------------------------------------------------

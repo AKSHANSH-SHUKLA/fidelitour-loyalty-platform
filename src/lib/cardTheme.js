@@ -99,10 +99,34 @@ const TIER_CHIPS = {
   vip:    { bg: '#17181C', ink: '#E8D9A0', label: 'VIP' },
 };
 
-const SURFACES = {
-  sombre: { bg: '#1C1D22', inkMax: '#F4F3F0', inkMin: '#101014' },
-  clair:  { bg: '#FDFCFA', inkMax: '#17181C', inkMin: '#FFFFFF' },
+/**
+ * Curated surface palette. Real brand identities are DUOS — black+gold,
+ * navy+orange, crème+chocolat — so the surface is the second brand colour,
+ * not a fixed constant. Curated names give safe defaults; `surface_color`
+ * accepts any hex and runs through the same derivation, so even a custom
+ * surface cannot produce unreadable text.
+ */
+export const SURFACE_PRESETS = {
+  noir:       '#141519',
+  anthracite: '#1C1D22',
+  marine:     '#101B2E',
+  foret:      '#12211A',
+  espresso:   '#211711',
+  blanc:      '#FDFCFA',
+  creme:      '#F6EFE3',
+  sable:      '#EFE9DD',
 };
+
+// Ink candidates for ANY surface — the engine picks whichever reads better.
+const INK_LIGHT = '#F4F3F0';
+const INK_DARK = '#17181C';
+
+function resolveSurface(surface, surfaceColor) {
+  const custom = hexToRgb(surfaceColor) ? surfaceColor : null;
+  if (custom) return custom;
+  if (SURFACE_PRESETS[surface]) return SURFACE_PRESETS[surface];
+  return surface === 'clair' ? SURFACE_PRESETS.blanc : SURFACE_PRESETS.anthracite;
+}
 
 /**
  * deriveCardTheme({ brandColor, surface }) → every colour the card needs.
@@ -111,30 +135,30 @@ const SURFACES = {
  * If a new element needs a colour, it gets a new derived token here — never
  * a new merchant-facing picker.
  */
-export function deriveCardTheme({ brandColor, surface } = {}) {
-  const s = SURFACES[surface === 'clair' ? 'clair' : 'sombre'];
+export function deriveCardTheme({ brandColor, surface, surfaceColor } = {}) {
+  const bg = resolveSurface(surface, surfaceColor);
   const brandRaw = hexToRgb(brandColor) ? brandColor : '#C73E2C';
-  const brand = legibleBrand(brandRaw, s.bg);
+  const brand = legibleBrand(brandRaw, bg);
 
-  // Ink: whichever extreme reads better on this surface. By construction the
-  // SURFACES pairs always pass 4.5:1, but compute rather than assume.
-  const ink = contrast(s.inkMax, s.bg) >= contrast(s.inkMin, s.bg) ? s.inkMax : s.inkMin;
+  // Ink: whichever extreme reads better on THIS surface — works for any hex,
+  // curated or custom, so a mid-tone custom surface still gets legible text.
+  const ink = contrast(INK_LIGHT, bg) >= contrast(INK_DARK, bg) ? INK_LIGHT : INK_DARK;
   // Text on a solid brand fill (hero fallback, filled stamps).
   const onBrand = contrast('#FFFFFF', brand) >= contrast('#111111', brand) ? '#FFFFFF' : '#111111';
 
   return {
-    surface: s.bg,
+    surface: bg,
     ink,                              // primary values (names, numbers)
-    inkSoft: tint(ink === s.inkMax ? ink : s.inkMax, 0.62),   // secondary text
-    label: tint(ink === s.inkMax ? ink : s.inkMax, 0.45),     // uppercase micro-labels
-    hairline: tint(ink === s.inkMax ? ink : s.inkMax, 0.14),  // separators
+    inkSoft: tint(ink, 0.62),         // secondary text
+    label: tint(ink, 0.45),           // uppercase micro-labels
+    hairline: tint(ink, 0.14),        // separators
     brand,                            // accent: meter fill, stamp fill, offer border
     brandRaw,                         // untouched merchant colour (hero fallback fill)
     onBrand,                          // text/check marks on brand fills
-    track: tint(ink === s.inkMax ? ink : s.inkMax, 0.12),     // meter track, empty stamps
+    track: tint(ink, 0.12),           // meter track, empty stamps
     codeBg: '#FFFFFF',                // QR/barcode block — always white, scanners first
     codeInk: '#111111',
-    chipBg: tint(ink === s.inkMax ? ink : s.inkMax, 0.08),    // offer chip surface
+    chipBg: tint(ink, 0.08),          // offer chip surface
     tiers: TIER_CHIPS,
   };
 }

@@ -5818,6 +5818,7 @@ def _serialize_card_payload(cust: dict) -> dict:
             # without model changes.
             "brand_color":          tpl.get("brand_color"),
             "surface":              tpl.get("surface"),
+            "surface_color":        tpl.get("surface_color"),
             "code_type":            tpl.get("code_type"),
             "hero_mode":            tpl.get("hero_mode"),
             "visits_label":         tpl.get("visits_label"),
