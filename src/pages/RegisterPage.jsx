@@ -49,9 +49,9 @@ const SECTOR_KEYS = [
 // for them to overlap, regardless of icon size, browser, or zoom level.
 function IconField({ icon: Icon, children }) {
   return (
-    <div className="flex items-stretch border border-[#E7E5E4] rounded-xl bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#B85C38]/20 focus-within:border-[#B85C38] transition">
+    <div className="flex items-stretch border border-[var(--border,_#ECEFF4)] rounded-xl bg-white overflow-hidden focus-within:ring-2 focus-within:ring-[#0F6FDE]/20 focus-within:border-[var(--blue,_#0F6FDE)] transition">
       <div
-        className="flex items-center justify-center px-3 text-[#B85C38] bg-[#FAF5F2] border-r border-[#E7E5E4] shrink-0"
+        className="flex items-center justify-center px-3 text-[var(--blue-deep,_#1453BD)] bg-[var(--tint-blue,_#E5F1FF)] border-r border-[var(--border,_#ECEFF4)] shrink-0"
         style={{ width: 44 }}
         aria-hidden="true"
       >
@@ -66,7 +66,7 @@ function IconField({ icon: Icon, children }) {
 // icon column handles spacing. No border — the parent IconField owns
 // the border and focus ring.
 const INNER_INPUT =
-  'w-full px-3 py-3 text-sm bg-transparent outline-none placeholder:text-[#A8A29E]';
+  'w-full px-3 py-3 text-sm bg-transparent outline-none placeholder:text-[var(--ink-muted,_#626F7E)]';
 
 const RegisterPage = () => {
   const { t } = useTranslation();
@@ -137,17 +137,17 @@ const RegisterPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
-         style={{ background: 'radial-gradient(circle at 30% 0%, #FCE3DC 0%, transparent 50%), radial-gradient(circle at 100% 100%, #FDE7C7 0%, transparent 60%), #FDFBF7' }}>
-      <div className="bg-white p-8 rounded-3xl shadow-xl border border-[#E7E5E4] w-full max-w-2xl">
+         style={{ background: 'radial-gradient(circle at 30% 0%, var(--tint-blue, #E5F1FF) 0%, transparent 50%), radial-gradient(circle at 100% 100%, var(--surface-2, #F8F9FC) 0%, transparent 60%), var(--canvas, #F1F5FA)' }}>
+      <div className="bg-white p-8 rounded-3xl shadow-xl border border-[var(--border,_#ECEFF4)] w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-6">
           <Link to="/" className="font-['Cormorant_Garamond'] text-3xl font-bold ft-gradient-text">
             FidéliTour
           </Link>
-          <h2 className="text-3xl font-bold text-[#1C1917] mt-4" style={{ fontFamily: 'Cormorant Garamond' }}>
+          <h2 className="text-3xl font-bold text-[var(--ink-head,_#030E1D)] mt-4" style={{ fontFamily: 'Cormorant Garamond' }}>
             {t('auth.register_title')}
           </h2>
-          <p className="text-[#57534E] mt-1 text-sm">
+          <p className="text-[var(--ink-body,_#556272)] mt-1 text-sm">
             {t('auth.register_subtitle')}
           </p>
         </div>
@@ -161,7 +161,7 @@ const RegisterPage = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* SECTION 1 — Business identity */}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted,_#626F7E)] mb-2">
               {t('auth.your_company')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -191,7 +191,7 @@ const RegisterPage = () => {
 
           {/* SECTION 2 — Account */}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B8680] mb-2 mt-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted,_#626F7E)] mb-2 mt-2">
               {t('auth.your_account')}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -229,7 +229,7 @@ const RegisterPage = () => {
                       <div className="flex gap-1 mb-1.5">
                         {[0, 1, 2, 3].map((i) => (
                           <div key={i} className="h-1.5 flex-1 rounded-full transition-colors"
-                               style={{ background: i < pwStrength ? STRENGTH_COLORS[pwStrength] : '#EFE9E0' }} />
+                               style={{ background: i < pwStrength ? STRENGTH_COLORS[pwStrength] : 'var(--border-strong, #CBD3DC)' }} />
                         ))}
                       </div>
                       <div key={'pw-str-' + pwStrength}
@@ -239,7 +239,7 @@ const RegisterPage = () => {
                     </>
                   )}
 
-                  <div className="text-[11px] font-semibold mb-1.5" style={{ color: '#57534E' }}>
+                  <div className="text-[11px] font-semibold mb-1.5" style={{ color: 'var(--ink-body, #556272)' }}>
                     Votre mot de passe doit contenir :
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
@@ -248,7 +248,7 @@ const RegisterPage = () => {
                       return (
                         <div key={r.id + (started && r.ok ? '-ok' : '-no')}
                              className="flex items-center gap-1.5 text-[11px] transition-colors"
-                             style={{ color: started && r.ok ? '#2F7A52' : '#8B8680' }}>
+                             style={{ color: started && r.ok ? 'var(--green-deep, #087A31)' : 'var(--ink-muted, #626F7E)' }}>
                           <span className="w-3.5 text-center">{started && r.ok ? '✓' : '○'}</span>
                           {r.label}
                         </div>
@@ -269,7 +269,7 @@ const RegisterPage = () => {
                 {formData.password_confirm.length > 0 && (
                   <div key={passwordsMatch ? 'pw-match' : 'pw-nomatch'}
                        className="mt-1.5 px-1 text-[11px] font-semibold"
-                       style={{ color: passwordsMatch ? '#2F7A52' : '#C0392B' }}>
+                       style={{ color: passwordsMatch ? 'var(--green-deep, #087A31)' : 'var(--red-deep, #A81E27)' }}>
                     {passwordsMatch ? '✓ Les mots de passe correspondent' : '✗ Les mots de passe ne correspondent pas'}
                   </div>
                 )}
@@ -279,14 +279,14 @@ const RegisterPage = () => {
 
           <button type="submit" disabled={loading}
                   className="w-full text-white py-3.5 rounded-full font-semibold text-sm mt-6 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg, #B85C38 0%, #E8917C 100%)', boxShadow: '0 8px 22px -8px rgba(184,92,56,0.55)' }}>
+                  style={{ background: 'linear-gradient(135deg, var(--blue, #0F6FDE) 0%, var(--blue-deep, #1453BD) 100%)', boxShadow: '0 8px 22px -8px rgba(15,111,222,0.45)' }}>
             {loading ? t('auth.creating') : <>{t('auth.create_account')} <ArrowRight size={16} /></>}
           </button>
         </form>
 
-        <p className="text-center mt-6 text-[#57534E] text-sm">
+        <p className="text-center mt-6 text-[var(--ink-body,_#556272)] text-sm">
           {t('auth.have_account')}{' '}
-          <Link to="/login" className="text-[#B85C38] font-semibold hover:underline">{t('auth.sign_in')}</Link>
+          <Link to="/login" className="text-[var(--blue-deep,_#1453BD)] font-semibold hover:underline">{t('auth.sign_in')}</Link>
         </p>
       </div>
     </div>
