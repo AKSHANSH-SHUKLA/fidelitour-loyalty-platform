@@ -89,25 +89,25 @@ const LeafletFranceMap = ({ deptList = [], selectedDept, onSelect }) => {
       const isActive = selectedDept === d.code;
       const marker = L.circleMarker([d.lat, d.lng], {
         radius,
-        color: '#B85C38',
+        color: '#0F6FDE',
         weight: isActive ? 3 : 1.4,
-        fillColor: '#B85C38',
+        fillColor: '#0F6FDE',
         fillOpacity: isActive ? 0.65 : 0.32,
       });
       const popupHtml = `
         <div style="font-family: 'Manrope', sans-serif; min-width: 180px;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <span style="background:#B85C38;color:white;font-weight:700;padding:2px 6px;border-radius:4px;font-size:11px;">${d.code}</span>
-            <strong style="color:#171412;">${d.name || ''}</strong>
+            <span style="background:#0F6FDE;color:white;font-weight:700;padding:2px 6px;border-radius:4px;font-size:11px;">${d.code}</span>
+            <strong style="color:#030E1D;">${d.name || ''}</strong>
           </div>
-          <div style="font-size:12px;color:#57504A;line-height:1.5;">
+          <div style="font-size:12px;color:#556272;line-height:1.5;">
             <div><b>${n}</b> customer${n === 1 ? '' : 's'}</div>
             <div><b>€${Math.round(d.revenue || 0).toLocaleString()}</b> revenue</div>
             <div><b>${d.visits || 0}</b> visits</div>
           </div>
           <div style="margin-top:8px;">
             <button data-dept="${d.code}" class="leaflet-dept-drill"
-              style="background:#B85C38;color:white;border:0;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">
+              style="background:#0F6FDE;color:white;border:0;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">
               Open details →
             </button>
           </div>
@@ -148,7 +148,7 @@ const LeafletFranceMap = ({ deptList = [], selectedDept, onSelect }) => {
 
   if (error) {
     return (
-      <div className="rounded-lg p-4 text-sm" style={{ background: '#FEF3C7', color: '#92400E' }}>
+      <div className="rounded-lg p-4 text-sm" style={{ background: 'color-mix(in srgb, var(--red, #D93036) 10%, var(--surface-1, #FFFFFF))', color: 'var(--red-deep, #A81E27)' }}>
         {error}
       </div>
     );
@@ -157,7 +157,7 @@ const LeafletFranceMap = ({ deptList = [], selectedDept, onSelect }) => {
   return (
     <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border, #ECEFF4)' }}>
       {!ready && (
-        <div className="p-6 text-sm text-center" style={{ color: '#57504A', background: 'color-mix(in srgb, var(--flc-info, #3568B8) 7%, var(--flc-card, #FFFFFF))' }}>
+        <div className="p-6 text-sm text-center" style={{ color: 'var(--ink-body, #556272)', background: 'color-mix(in srgb, var(--flc-info, #3568B8) 7%, var(--flc-card, #FFFFFF))' }}>
           Loading interactive map…
         </div>
       )}

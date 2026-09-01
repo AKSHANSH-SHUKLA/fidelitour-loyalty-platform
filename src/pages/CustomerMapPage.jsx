@@ -56,7 +56,7 @@ function centroid(customers) {
   return n ? { lat: lat / n, lng: lng / n } : null;
 }
 
-const TIER_COLORS = { bronze: '#B85C38', silver: '#A0A0A0', gold: '#D4A574' };
+const TIER_COLORS = { bronze: '#93BEF0', silver: '#5297E7', gold: '#1453BD' };
 
 const SOURCE_BADGES = {
   qr_store: { emoji: '📱', label: 'QR in store' },
@@ -423,13 +423,13 @@ export default function CustomerMapPage() {
       </div>
 
       {/* Filters row */}
-      <div className="bg-white border border-[#E9E5E0] rounded-xl p-4 space-y-3">
+      <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-4 space-y-3">
         {/* Row 1 — branch selector (if multi-branch) + search + send-campaign CTA */}
         <div className="flex flex-wrap items-center gap-3">
           {branches.length > 1 && (
-            <div className="flex items-center gap-2 bg-[#F5F4F1] border border-[#E9E5E0] rounded-lg px-3 py-2">
-              <Building2 size={14} className="text-[#B85C38]" />
-              <label className="text-xs font-bold text-[#57504A] uppercase tracking-wider">Branch</label>
+            <div className="flex items-center gap-2 bg-[#F5F4F1] border border-[var(--border,_#ECEFF4)] rounded-lg px-3 py-2">
+              <Building2 size={14} className="text-[var(--blue-deep,_#1453BD)]" />
+              <label className="text-xs font-bold text-[var(--ink-body,_#556272)] uppercase tracking-wider">Branch</label>
               <select
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
@@ -443,20 +443,20 @@ export default function CustomerMapPage() {
             </div>
           )}
           <div className="flex items-center gap-2 flex-1 min-w-[220px]">
-            <Search size={16} className="text-[#8D857D]" />
+            <Search size={16} className="text-[var(--ink-muted,_#626F7E)]" />
             <input
               type="text"
               placeholder="Search customer name, email or postal code…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 px-3 py-2 border border-[#E9E5E0] rounded text-sm outline-none focus:border-[#B85C38]"
+              className="flex-1 px-3 py-2 border border-[var(--border-strong,_#CBD3DC)] rounded text-sm outline-none focus:border-[var(--blue,_#0F6FDE)]"
             />
           </div>
           <button
             onClick={sendCampaignToFiltered}
             disabled={filteredAll.length === 0}
             className="px-4 py-2 rounded-lg text-sm font-bold text-white flex items-center gap-2 disabled:opacity-40 transition"
-            style={{ backgroundColor: '#B85C38' }}
+            style={{ backgroundColor: 'var(--blue, #0F6FDE)' }}
             title="Send a campaign to the customers currently shown"
           >
             <Megaphone size={16} />
@@ -467,11 +467,11 @@ export default function CustomerMapPage() {
         {/* Row 2 — tier / source / city / region / min visits / min paid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div>
-            <label className="block text-xs mb-1 text-[#57504A]">Tier</label>
+            <label className="block text-xs mb-1 text-[var(--ink-body,_#556272)]">Tier</label>
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[var(--border,_#ECEFF4)] text-sm"
             >
               <option value="all">All tiers</option>
               <option value="bronze">Bronze</option>
@@ -481,11 +481,11 @@ export default function CustomerMapPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57504A]">Source</label>
+            <label className="block text-xs mb-1 text-[var(--ink-body,_#556272)]">Source</label>
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[var(--border,_#ECEFF4)] text-sm"
             >
               <option value="all">All sources</option>
               {Object.entries(SOURCE_BADGES).map(([k, v]) => (
@@ -494,21 +494,21 @@ export default function CustomerMapPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57504A]">City / département</label>
+            <label className="block text-xs mb-1 text-[var(--ink-body,_#556272)]">City / département</label>
             <input
               type="text"
               placeholder="Paris, Lyon, Tours…"
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[var(--border,_#ECEFF4)] text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57504A]">Region (vs. center)</label>
+            <label className="block text-xs mb-1 text-[var(--ink-body,_#556272)]">Region (vs. center)</label>
             <select
               value={regionFilter}
               onChange={(e) => setRegionFilter(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[var(--border,_#ECEFF4)] text-sm"
             >
               <option value="all">All France</option>
               <option value="N">⬆ North</option>
@@ -518,7 +518,7 @@ export default function CustomerMapPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57504A]">Min visits</label>
+            <label className="block text-xs mb-1 text-[var(--ink-body,_#556272)]">Min visits</label>
             <input
               type="number"
               inputMode="numeric"
@@ -526,11 +526,11 @@ export default function CustomerMapPage() {
               placeholder="0"
               value={minVisits}
               onChange={(e) => setMinVisits(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[var(--border,_#ECEFF4)] text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs mb-1 text-[#57504A]">Min amount paid (€)</label>
+            <label className="block text-xs mb-1 text-[var(--ink-body,_#556272)]">Min amount paid (€)</label>
             <input
               type="number"
               inputMode="decimal"
@@ -539,7 +539,7 @@ export default function CustomerMapPage() {
               placeholder="0"
               value={minAmountPaid}
               onChange={(e) => setMinAmountPaid(e.target.value)}
-              className="w-full px-2 py-1.5 rounded border border-[#E9E5E0] text-sm"
+              className="w-full px-2 py-1.5 rounded border border-[var(--border,_#ECEFF4)] text-sm"
             />
           </div>
         </div>
@@ -547,7 +547,7 @@ export default function CustomerMapPage() {
         {/* Row 3 — active filter summary + clear */}
         {(tierFilter !== 'all' || sourceFilter !== 'all' || cityFilter || regionFilter !== 'all' ||
           minVisits || minAmountPaid || search || selectedDept) && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-[#57504A]">
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-[var(--ink-body,_#556272)]">
             <span className="font-semibold">Showing {filteredAll.length} customer{filteredAll.length === 1 ? '' : 's'}:</span>
             {tierFilter !== 'all' && <Chip>Tier: {tierFilter}</Chip>}
             {sourceFilter !== 'all' && <Chip>Source: {SOURCE_BADGES[sourceFilter]?.label || sourceFilter}</Chip>}
@@ -557,7 +557,7 @@ export default function CustomerMapPage() {
             {Number(minAmountPaid) > 0 && <Chip>Min paid: €{minAmountPaid}</Chip>}
             {search && <Chip>"{search}"</Chip>}
             {selectedDept && <Chip>Dept {selectedDept}</Chip>}
-            <button onClick={resetFilters} className="ml-2 px-2 py-1 rounded border border-[#E9E5E0] hover:bg-[#FEF2F0]">
+            <button onClick={resetFilters} className="ml-2 px-2 py-1 rounded border border-[var(--border,_#ECEFF4)] hover:bg-[var(--tint-blue,_#E5F1FF)]">
               <X size={12} className="inline -mt-0.5" /> Clear all
             </button>
           </div>
@@ -591,16 +591,16 @@ export default function CustomerMapPage() {
       {/* Body: two columns. Left = départements list + mini-map. Right = detail panel. */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Départements list (takes 2/5) */}
-        <div className="lg:col-span-2 bg-white border border-[#E9E5E0] rounded-xl p-5 min-h-[500px]">
-          <h2 className="text-xl font-semibold mb-3 text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
-            Départements {activeDept && <span className="text-sm font-normal text-[#8D857D]">({deptList.length})</span>}
+        <div className="lg:col-span-2 bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-5 min-h-[500px]">
+          <h2 className="text-xl font-semibold mb-3 text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            Départements {activeDept && <span className="text-sm font-normal text-[var(--ink-muted,_#626F7E)]">({deptList.length})</span>}
           </h2>
-          <p className="text-xs text-[#8D857D] mb-4">
+          <p className="text-xs text-[var(--ink-muted,_#626F7E)] mb-4">
             Click a département to drill into customers by postal code.
           </p>
           <div className="space-y-1 max-h-[560px] overflow-y-auto pr-1">
             {deptList.length === 0 && (
-              <p className="text-sm text-[#8D857D] italic">No customers match the current filters.</p>
+              <p className="text-sm text-[var(--ink-muted,_#626F7E)] italic">No customers match the current filters.</p>
             )}
             {deptList.map((d) => {
               const isActive = selectedDept === d.code;
@@ -616,8 +616,8 @@ export default function CustomerMapPage() {
                   }}
                   className={`w-full text-left rounded-lg px-3 py-2.5 transition flex items-center justify-between ${
                     isActive
-                      ? 'bg-[#B85C38] text-white'
-                      : 'bg-[#F5F4F1] text-[#171412] hover:bg-[#E9E5E0]'
+                      ? 'bg-[var(--blue,_#0F6FDE)] text-white'
+                      : 'bg-[#F5F4F1] text-[var(--ink-head,_#030E1D)] hover:bg-[var(--surface-2,_#F8F9FC)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -628,16 +628,16 @@ export default function CustomerMapPage() {
                     </span>
                     <div>
                       <div className="font-semibold text-sm">{d.name}</div>
-                      <div className={`text-xs ${isActive ? 'text-white/80' : 'text-[#8D857D]'}`}>
+                      <div className={`text-xs ${isActive ? 'text-white/80' : 'text-[var(--ink-muted,_#626F7E)]'}`}>
                         {d.customers.length} customers · €{Math.round(d.revenue).toLocaleString()}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57504A]'}`}>
+                    <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[var(--ink-body,_#556272)]'}`}>
                       {pct}%
                     </span>
-                    <ChevronRight size={16} className={isActive ? 'text-white' : 'text-[#8D857D]'} />
+                    <ChevronRight size={16} className={isActive ? 'text-white' : 'text-[var(--ink-muted,_#626F7E)]'} />
                   </div>
                 </button>
               );
@@ -662,11 +662,11 @@ export default function CustomerMapPage() {
           ) : (
             <>
               {/* Mini France map (decorative) */}
-              <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
-                <h3 className="text-xl font-semibold mb-2 text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-5">
+                <h3 className="text-xl font-semibold mb-2 text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
                   At a glance
                 </h3>
-                <p className="text-xs text-[#8D857D] mb-4">
+                <p className="text-xs text-[var(--ink-muted,_#626F7E)] mb-4">
                   Bubble size = customer count in that département. Click a département on the left list to drill in.
                 </p>
                 <LeafletFranceMap deptList={deptList} selectedDept={selectedDept} onSelect={setSelectedDept} />
@@ -695,20 +695,20 @@ export default function CustomerMapPage() {
 
 function StatPill({ icon: Icon, label, value }) {
   return (
-    <div className="bg-white border border-[#E9E5E0] rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-1 text-[#57504A]">
+    <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-1 text-[var(--ink-body,_#556272)]">
         <Icon size={14} />
         <span className="text-xs uppercase tracking-wide font-semibold">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-[#171412]">{value}</p>
+      <p className="text-2xl font-bold text-[var(--ink-head,_#030E1D)]">{value}</p>
     </div>
   );
 }
 
 function SignalCard({ tone, icon: Icon, title, detail, action }) {
   const styles = tone === 'success'
-    ? 'bg-green-50 border-green-200 text-green-900'
-    : 'bg-amber-50 border-amber-200 text-amber-900';
+    ? 'bg-[#10BC4C]/10 border-[#10BC4C]/35 text-[var(--green-deep,_#087A31)]'
+    : 'bg-[#D93036]/10 border-[#D93036]/35 text-[var(--red-deep,_#A81E27)]';
   return (
     <div className={`p-4 rounded-xl border ${styles}`}>
       <div className="flex items-start gap-3">
@@ -747,13 +747,13 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
   return (
     <div className="space-y-6">
       {/* Summary header */}
-      <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
+      <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-5">
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <div className="flex items-center gap-3">
-            <span className="px-2 py-1 rounded bg-[#B85C38] text-white font-bold text-sm">
+            <span className="px-2 py-1 rounded bg-[var(--blue,_#0F6FDE)] text-white font-bold text-sm">
               {dept.code}
             </span>
-            <h2 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <h2 className="text-2xl font-bold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
               {dept.name}
             </h2>
           </div>
@@ -762,13 +762,13 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
             onClick={() => sendCampaign(dept.customers)}
             disabled={dept.customers.length === 0}
             className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 disabled:opacity-40"
-            style={{ backgroundColor: '#B85C38' }}
+            style={{ backgroundColor: 'var(--blue, #0F6FDE)' }}
             title={`Send a campaign to all ${dept.customers.length} customer(s) in ${dept.name}`}
           >
             <Megaphone size={14} /> Send to these {dept.customers.length}
           </button>
         </div>
-        <p className="text-sm text-[#8D857D] mb-4">
+        <p className="text-sm text-[var(--ink-muted,_#626F7E)] mb-4">
           {dept.customers.length} customer{dept.customers.length !== 1 ? 's' : ''}
           {' · '}
           {Object.keys(dept.postalGroups).length} postal code{Object.keys(dept.postalGroups).length !== 1 ? 's' : ''}
@@ -782,7 +782,7 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
 
         {/* Tier mix */}
         <div className="mt-4">
-          <p className="text-xs uppercase tracking-wide font-semibold text-[#57504A] mb-2">Tier mix</p>
+          <p className="text-xs uppercase tracking-wide font-semibold text-[var(--ink-body,_#556272)] mb-2">Tier mix</p>
           <div className="flex gap-2">
             {['gold', 'silver', 'bronze'].map((t) => {
               const n = dept.tierDist[t] || 0;
@@ -793,8 +793,8 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                   className="flex-1 p-2 rounded text-center"
                   style={{ backgroundColor: TIER_COLORS[t] + '25' }}
                 >
-                  <div className="text-sm font-bold text-[#171412]">{n}</div>
-                  <div className="text-xs text-[#57504A] capitalize">{t} ({pct}%)</div>
+                  <div className="text-sm font-bold text-[var(--ink-head,_#030E1D)]">{n}</div>
+                  <div className="text-xs text-[var(--ink-body,_#556272)] capitalize">{t} ({pct}%)</div>
                 </div>
               );
             })}
@@ -803,12 +803,12 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
       </div>
 
       {/* Compass breakdown — where the département's customers are, geographically */}
-      <div className="bg-white border border-[#E9E5E0] rounded-xl">
+      <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl">
         <div className="p-5 pb-0">
-          <h3 className="text-xl font-semibold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+          <h3 className="text-xl font-semibold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
             Customer regions within {dept.name}
           </h3>
-          <p className="text-xs text-[#8D857D]">
+          <p className="text-xs text-[var(--ink-muted,_#626F7E)]">
             Quickly see whether most of your {dept.code} customers live to the north, south, east or west of the département's center.
           </p>
         </div>
@@ -817,10 +817,10 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
 
       {/* Top spenders in department */}
       {topSpenders.length > 0 && (
-        <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
+        <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Award size={18} className="text-[#B85C38]" />
-            <h3 className="text-xl font-semibold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+            <Award size={18} className="text-[var(--blue-deep,_#1453BD)]" />
+            <h3 className="text-xl font-semibold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
               Top spenders in {dept.name}
             </h3>
           </div>
@@ -830,24 +830,24 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                 key={c.id}
                 type="button"
                 onClick={() => selectCustomer(c)}
-                className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F5F4F1] hover:bg-[#E9E5E0] transition text-left"
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F5F4F1] hover:bg-[var(--surface-2,_#F8F9FC)] transition text-left"
                 title="Click to view full customer details"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
+                  <span className="text-lg font-bold text-[var(--blue-deep,_#1453BD)] w-6">#{i + 1}</span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[#171412]">{c.name}</span>
+                      <span className="font-semibold text-[var(--ink-head,_#030E1D)]">{c.name}</span>
                       <TierBadge tier={c.tier} size="xs" />
                     </div>
-                    <p className="text-xs text-[#8D857D]">
+                    <p className="text-xs text-[var(--ink-muted,_#626F7E)]">
                       {c.postal_code} · {c.total_visits} visits
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-                  <p className="text-xs text-[#8D857D]">spent</p>
+                  <p className="font-bold text-[var(--ink-head,_#030E1D)]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                  <p className="text-xs text-[var(--ink-muted,_#626F7E)]">spent</p>
                 </div>
               </button>
             ))}
@@ -856,11 +856,11 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
       )}
 
       {/* Postal-code segmentation */}
-      <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
-        <h3 className="text-xl font-semibold mb-1 text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+      <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-5">
+        <h3 className="text-xl font-semibold mb-1 text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
           Customers by postal code
         </h3>
-        <p className="text-xs text-[#8D857D] mb-4">
+        <p className="text-xs text-[var(--ink-muted,_#626F7E)] mb-4">
           Each postal code (code postal) is one block or neighbourhood. Click to see the full list.
         </p>
         <div className="space-y-2">
@@ -870,15 +870,15 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
               ? Math.round((p.customers.length / dept.customers.length) * 100)
               : 0;
             return (
-              <div key={p.code} className="border border-[#E9E5E0] rounded-lg overflow-hidden">
+              <div key={p.code} className="border border-[var(--border,_#ECEFF4)] rounded-lg overflow-hidden">
                 <button
                   onClick={() => togglePostal(p.code)}
-                  className="w-full flex items-center justify-between p-3 bg-[#FAFAF8] hover:bg-[#F5F4F1] transition"
+                  className="w-full flex items-center justify-between p-3 bg-[var(--surface-2,_#F8F9FC)] hover:bg-[#F5F4F1] transition"
                 >
                   <div className="flex items-center gap-3">
                     {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    <span className="font-bold text-[#171412]">{p.code}</span>
-                    <span className="text-sm text-[#57504A]">
+                    <span className="font-bold text-[var(--ink-head,_#030E1D)]">{p.code}</span>
+                    <span className="text-sm text-[var(--ink-body,_#556272)]">
                       {p.customers.length} customer{p.customers.length !== 1 ? 's' : ''}
                       {' · '}
                       €{Math.round(p.revenue).toLocaleString()}
@@ -886,26 +886,26 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                       {p.visits} visit{p.visits !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-[#B85C38]">{pct}%</span>
+                  <span className="text-xs font-semibold text-[var(--blue-deep,_#1453BD)]">{pct}%</span>
                 </button>
                 {expanded && (
                   <>
-                    <div className="px-3 py-2 bg-[#FAFAF8] border-t border-[#E9E5E0] flex items-center justify-between">
-                      <p className="text-xs text-[#8D857D]">
+                    <div className="px-3 py-2 bg-[var(--surface-2,_#F8F9FC)] border-t border-[var(--border-strong,_#CBD3DC)] flex items-center justify-between">
+                      <p className="text-xs text-[var(--ink-muted,_#626F7E)]">
                         Click any customer for full details, or message this postal-code cohort.
                       </p>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); sendCampaign(p.customers); }}
                         className="px-2.5 py-1 rounded text-xs font-bold text-white flex items-center gap-1.5"
-                        style={{ backgroundColor: '#B85C38' }}
+                        style={{ backgroundColor: 'var(--blue, #0F6FDE)' }}
                         title={`Send a campaign to all customers in ${p.code}`}
                       >
                         <Megaphone size={12} /> Send to {p.customers.length}
                       </button>
                     </div>
                     <QuadrantBreakdown customers={p.customers} label={p.code} onSelectCustomer={selectCustomer} />
-                    <div className="divide-y divide-[#E9E5E0]">
+                    <div className="divide-y divide-[var(--border,_#ECEFF4)]">
                       {p.customers
                         .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
                         .map((c) => {
@@ -921,21 +921,21 @@ function DepartmentDetail({ dept, postalList, expandedPostals, togglePostal, onS
                               <div className="flex items-center gap-3">
                                 <TierBadge tier={c.tier} size="xs" />
                                 <div>
-                                  <p className="font-medium text-[#171412]">{c.name}</p>
-                                  <p className="text-xs text-[#8D857D]">{c.email}</p>
+                                  <p className="font-medium text-[var(--ink-head,_#030E1D)]">{c.name}</p>
+                                  <p className="text-xs text-[var(--ink-muted,_#626F7E)]">{c.email}</p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-4">
                                 {src && (
-                                  <span className="text-xs text-[#57504A]" title={src.label}>
+                                  <span className="text-xs text-[var(--ink-body,_#556272)]" title={src.label}>
                                     {src.emoji}
                                   </span>
                                 )}
                                 <div className="text-right">
-                                  <p className="font-semibold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-                                  <p className="text-xs text-[#8D857D]">{c.total_visits} visits</p>
+                                  <p className="font-semibold text-[var(--ink-head,_#030E1D)]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                                  <p className="text-xs text-[var(--ink-muted,_#626F7E)]">{c.total_visits} visits</p>
                                 </div>
-                                <ChevronRight size={14} className="text-[#B85C38]" />
+                                <ChevronRight size={14} className="text-[var(--blue-deep,_#1453BD)]" />
                               </div>
                             </button>
                           );
@@ -965,7 +965,7 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
 
   if (!center) {
     return (
-      <div className="p-3 text-xs text-[#8D857D] italic">
+      <div className="p-3 text-xs text-[var(--ink-muted,_#626F7E)] italic">
         We don't have enough geolocation data to map compass directions for {label}.
       </div>
     );
@@ -982,14 +982,14 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
   // Now we surface a clear explanation instead.
   if (total === 0 && centerCount > 0) {
     return (
-      <div className="p-3 border-t border-[#E9E5E0] bg-[#FAFAF8]">
+      <div className="p-3 border-t border-[var(--border-strong,_#CBD3DC)] bg-[var(--surface-2,_#F8F9FC)]">
         <div className="flex items-center gap-2 mb-2">
-          <Compass size={14} className="text-[#B85C38]" />
-          <p className="text-xs uppercase tracking-wide font-semibold text-[#57504A]">
+          <Compass size={14} className="text-[var(--blue-deep,_#1453BD)]" />
+          <p className="text-xs uppercase tracking-wide font-semibold text-[var(--ink-body,_#556272)]">
             Where customers live (from {label}'s center)
           </p>
         </div>
-        <div className="rounded-lg border border-[#E3A869]/40 bg-[#F6E9E2] p-3 text-xs leading-relaxed text-[#96431F]">
+        <div className="rounded-lg border border-[#0F6FDE]/25 bg-[var(--tint-blue,_#E5F1FF)] p-3 text-xs leading-relaxed text-[var(--blue-deep,_#1453BD)]">
           <p className="font-semibold mb-1">
             {centerCount === 1 ? 'Your single customer' : `All ${centerCount} customers`} in {label} share the same postal code.
           </p>
@@ -1004,19 +1004,19 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
   }
 
   const tiles = [
-    { key: 'N', label: 'North', icon: ArrowUp, color: '#4A5D23' },
-    { key: 'E', label: 'East',  icon: ArrowRight, color: '#5B8DEF' },
-    { key: 'S', label: 'South', icon: ArrowDown, color: '#B85C38' },
-    { key: 'W', label: 'West',  icon: ArrowLeft, color: '#96431F' },
+    { key: 'N', label: 'North', icon: ArrowUp, color: 'var(--green-deep, #087A31)' },
+    { key: 'E', label: 'East',  icon: ArrowRight, color: 'var(--blue, #0F6FDE)' },
+    { key: 'S', label: 'South', icon: ArrowDown, color: 'var(--blue, #0F6FDE)' },
+    { key: 'W', label: 'West',  icon: ArrowLeft, color: 'var(--blue-deep, #1453BD)' },
   ];
 
   const activeList = active ? quads[active] : [];
 
   return (
-    <div className="p-3 border-t border-[#E9E5E0] bg-[#FAFAF8]">
+    <div className="p-3 border-t border-[var(--border-strong,_#CBD3DC)] bg-[var(--surface-2,_#F8F9FC)]">
       <div className="flex items-center gap-2 mb-2">
-        <Compass size={14} className="text-[#B85C38]" />
-        <p className="text-xs uppercase tracking-wide font-semibold text-[#57504A]">
+        <Compass size={14} className="text-[var(--blue-deep,_#1453BD)]" />
+        <p className="text-xs uppercase tracking-wide font-semibold text-[var(--ink-body,_#556272)]">
           Where customers live (from {label}'s center)
         </p>
       </div>
@@ -1032,27 +1032,27 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
               onClick={() => setActive(isActive ? null : t.key)}
               className={`p-3 rounded-lg border text-left transition ${
                 isActive
-                  ? 'bg-[#B85C38] text-white border-[#B85C38]'
-                  : 'bg-white border-[#E9E5E0] hover:border-[#B85C38]'
+                  ? 'bg-[var(--blue,_#0F6FDE)] text-white border-[var(--blue,_#0F6FDE)]'
+                  : 'bg-white border-[var(--border,_#ECEFF4)] hover:border-[var(--blue,_#0F6FDE)]'
               }`}
               style={isActive ? {} : { borderLeft: `4px solid ${t.color}` }}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[#57504A]'}`}>{t.label}</span>
+                <span className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-[var(--ink-body,_#556272)]'}`}>{t.label}</span>
                 <Icon size={14} className={isActive ? 'text-white' : ''} style={isActive ? {} : { color: t.color }} />
               </div>
-              <div className={`text-2xl font-bold mt-1 ${isActive ? 'text-white' : 'text-[#171412]'}`}>{count}</div>
-              <div className={`text-[11px] ${isActive ? 'text-white/80' : 'text-[#8D857D]'}`}>{pct}%</div>
+              <div className={`text-2xl font-bold mt-1 ${isActive ? 'text-white' : 'text-[var(--ink-head,_#030E1D)]'}`}>{count}</div>
+              <div className={`text-[11px] ${isActive ? 'text-white/80' : 'text-[var(--ink-muted,_#626F7E)]'}`}>{pct}%</div>
             </button>
           );
         })}
       </div>
       {active && activeList.length > 0 && (
         <div className="mt-3 space-y-1">
-          <p className="text-[11px] text-[#8D857D] mb-1">
+          <p className="text-[11px] text-[var(--ink-muted,_#626F7E)] mb-1">
             {activeList.length} customer{activeList.length !== 1 ? 's' : ''} in the {active === 'N' ? 'north' : active === 'S' ? 'south' : active === 'E' ? 'east' : 'west'} of {label}
           </p>
-          <div className="max-h-56 overflow-y-auto divide-y divide-[#E9E5E0] border border-[#E9E5E0] rounded-lg bg-white">
+          <div className="max-h-56 overflow-y-auto divide-y divide-[var(--border,_#ECEFF4)] border border-[var(--border,_#ECEFF4)] rounded-lg bg-white">
             {activeList
               .sort((a, b) => (b.total_amount_paid || 0) - (a.total_amount_paid || 0))
               .slice(0, 50)
@@ -1067,13 +1067,13 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
                   <div className="flex items-center gap-2">
                     <TierBadge tier={c.tier} size="xs" />
                     <div>
-                      <p className="font-medium text-[#171412]">{c.name}</p>
-                      <p className="text-[11px] text-[#8D857D]">{c.email}</p>
+                      <p className="font-medium text-[var(--ink-head,_#030E1D)]">{c.name}</p>
+                      <p className="text-[11px] text-[var(--ink-muted,_#626F7E)]">{c.email}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-                    <p className="text-[11px] text-[#8D857D]">{c.total_visits} visits</p>
+                    <p className="font-semibold text-[var(--ink-head,_#030E1D)]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+                    <p className="text-[11px] text-[var(--ink-muted,_#626F7E)]">{c.total_visits} visits</p>
                   </div>
                 </button>
               ))}
@@ -1086,9 +1086,9 @@ function QuadrantBreakdown({ customers, label, onSelectCustomer }) {
 
 function MiniStat({ label, value }) {
   return (
-    <div className="p-3 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
-      <p className="text-[10px] uppercase tracking-wide text-[#57504A] font-semibold">{label}</p>
-      <p className="text-lg font-bold text-[#171412]">{value}</p>
+    <div className="p-3 rounded-lg bg-[#F5F4F1] border border-[var(--border,_#ECEFF4)]">
+      <p className="text-[10px] uppercase tracking-wide text-[var(--ink-body,_#556272)] font-semibold">{label}</p>
+      <p className="text-lg font-bold text-[var(--ink-head,_#030E1D)]">{value}</p>
     </div>
   );
 }
@@ -1099,10 +1099,10 @@ function TopCustomersCard({ customers, onSelect }) {
     .slice(0, 5);
   if (top.length === 0) return null;
   return (
-    <div className="bg-white border border-[#E9E5E0] rounded-xl p-5">
+    <div className="bg-white border border-[var(--border,_#ECEFF4)] rounded-xl p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Award size={18} className="text-[#B85C38]" />
-        <h3 className="text-xl font-semibold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+        <Award size={18} className="text-[var(--blue-deep,_#1453BD)]" />
+        <h3 className="text-xl font-semibold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
           Your top 5 customers
         </h3>
       </div>
@@ -1112,24 +1112,24 @@ function TopCustomersCard({ customers, onSelect }) {
             key={c.id}
             type="button"
             onClick={() => onSelect && onSelect(c)}
-            className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F5F4F1] hover:bg-[#E9E5E0] transition text-left"
+            className="w-full flex items-center justify-between p-3 rounded-lg bg-[#F5F4F1] hover:bg-[var(--surface-2,_#F8F9FC)] transition text-left"
             title="Click to view full customer details"
           >
             <div className="flex items-center gap-3">
-              <span className="text-lg font-bold text-[#B85C38] w-6">#{i + 1}</span>
+              <span className="text-lg font-bold text-[var(--blue-deep,_#1453BD)] w-6">#{i + 1}</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-[#171412]">{c.name}</span>
+                  <span className="font-semibold text-[var(--ink-head,_#030E1D)]">{c.name}</span>
                   <TierBadge tier={c.tier} size="xs" />
                 </div>
-                <p className="text-xs text-[#8D857D]">
+                <p className="text-xs text-[var(--ink-muted,_#626F7E)]">
                   {c.postal_code} · {c.department_name} · {c.total_visits} visits
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="font-bold text-[#171412]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
-              <p className="text-xs text-[#8D857D]">spent</p>
+              <p className="font-bold text-[var(--ink-head,_#030E1D)]">€{(c.total_amount_paid || 0).toFixed(0)}</p>
+              <p className="text-xs text-[var(--ink-muted,_#626F7E)]">spent</p>
             </div>
           </button>
         ))}
@@ -1190,15 +1190,15 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
       onClick={onBackdrop}
     >
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-5 border-b border-[#E9E5E0] flex items-start justify-between gap-3 sticky top-0 bg-white rounded-t-2xl">
+        <div className="p-5 border-b border-[var(--border-strong,_#CBD3DC)] flex items-start justify-between gap-3 sticky top-0 bg-white rounded-t-2xl">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-[#171412]" style={{ fontFamily: 'Cormorant Garamond' }}>
+              <h2 className="text-2xl font-bold text-[var(--ink-head,_#030E1D)]" style={{ fontFamily: 'Cormorant Garamond' }}>
                 {c.name || 'Customer'}
               </h2>
               <TierBadge tier={c.tier} />
             </div>
-            <p className="text-xs text-[#8D857D] mt-1">{c.email}{c.phone ? ` · ${c.phone}` : ''}</p>
+            <p className="text-xs text-[var(--ink-muted,_#626F7E)] mt-1">{c.email}{c.phone ? ` · ${c.phone}` : ''}</p>
           </div>
           <div className="flex items-center gap-2">
             {onSendCampaign && (
@@ -1206,7 +1206,7 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
                 type="button"
                 onClick={() => onSendCampaign(c)}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 transition"
-                style={{ backgroundColor: '#B85C38' }}
+                style={{ backgroundColor: 'var(--blue, #0F6FDE)' }}
                 title="Send a personalised campaign to just this customer"
               >
                 <Megaphone size={14} />
@@ -1218,14 +1218,14 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
               className="p-2 rounded-lg hover:bg-[#F5F4F1] transition"
               aria-label="Close"
             >
-              <X size={20} className="text-[#57504A]" />
+              <X size={20} className="text-[var(--ink-body,_#556272)]" />
             </button>
           </div>
         </div>
 
         <div className="p-5 space-y-5">
           {/* Tabs */}
-          <div className="flex gap-2 border-b border-[#E9E5E0] -mt-2">
+          <div className="flex gap-2 border-b border-[var(--border-strong,_#CBD3DC)] -mt-2">
             {[
               { key: 'details', label: 'Details' },
               { key: 'history', label: `Visit history${historyData?.visits ? ` (${historyData.visits.length})` : ''}` },
@@ -1236,8 +1236,8 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
                 onClick={() => setActiveTab(t.key)}
                 className={`px-3 py-2 text-sm font-semibold -mb-px border-b-2 ${
                   activeTab === t.key
-                    ? 'border-[#B85C38] text-[#B85C38]'
-                    : 'border-transparent text-[#57504A] hover:text-[#171412]'
+                    ? 'border-[var(--blue,_#0F6FDE)] text-[var(--blue-deep,_#1453BD)]'
+                    : 'border-transparent text-[var(--ink-body,_#556272)] hover:text-[var(--ink-head,_#030E1D)]'
                 }`}
               >
                 {t.label}
@@ -1248,7 +1248,7 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
           {activeTab === 'history' && (
             <div>
               {historyLoading && (
-                <p className="text-sm text-[#8D857D]">Loading visits…</p>
+                <p className="text-sm text-[var(--ink-muted,_#626F7E)]">Loading visits…</p>
               )}
               {historyError && (
                 <p className="text-sm text-red-600">Error: {historyError}</p>
@@ -1261,41 +1261,41 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
                     <MiniStat label="Redemptions" value={historyData.redemptions?.length ?? 0} />
                   </div>
                   {(historyData.redemptions || []).length > 0 && (
-                    <div className="p-3 rounded-lg bg-[#F6E9E2] border border-[#E3A869]/40">
-                      <p className="text-xs font-semibold text-[#96431F] mb-2">🎁 Rewards redeemed</p>
+                    <div className="p-3 rounded-lg bg-[var(--tint-blue,_#E5F1FF)] border border-[#0F6FDE]/25">
+                      <p className="text-xs font-semibold text-[var(--blue-deep,_#1453BD)] mb-2">🎁 Rewards redeemed</p>
                       <ul className="space-y-1 text-sm">
                         {historyData.redemptions.map((r, i) => (
                           <li key={r.id || i} className="flex justify-between">
                             <span>{r.reward_name || 'Reward'}{r.branch_id ? ` · ${r.branch_id}` : ''}</span>
-                            <span className="text-[#8D857D]">{r.redeemed_at ? new Date(r.redeemed_at).toLocaleDateString() : '—'}</span>
+                            <span className="text-[var(--ink-muted,_#626F7E)]">{r.redeemed_at ? new Date(r.redeemed_at).toLocaleDateString() : '—'}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  <div className="border border-[#E9E5E0] rounded-lg overflow-hidden">
-                    <div className="bg-[#FAFAF8] px-3 py-2 text-[10px] uppercase tracking-wider font-semibold text-[#8D857D] grid grid-cols-4 gap-2">
+                  <div className="border border-[var(--border,_#ECEFF4)] rounded-lg overflow-hidden">
+                    <div className="bg-[var(--surface-2,_#F8F9FC)] px-3 py-2 text-[10px] uppercase tracking-wider font-semibold text-[var(--ink-muted,_#626F7E)] grid grid-cols-4 gap-2">
                       <span>Date & time</span>
                       <span className="text-right">Amount</span>
                       <span className="text-right">Points</span>
                       <span className="text-right">Branch</span>
                     </div>
-                    <div className="divide-y divide-[#E9E5E0] max-h-80 overflow-y-auto">
+                    <div className="divide-y divide-[var(--border,_#ECEFF4)] max-h-80 overflow-y-auto">
                       {(historyData.visits || []).length === 0 ? (
-                        <p className="p-3 text-sm text-[#8D857D] italic">No visits recorded yet.</p>
+                        <p className="p-3 text-sm text-[var(--ink-muted,_#626F7E)] italic">No visits recorded yet.</p>
                       ) : (
                         historyData.visits.map((v, i) => (
                           <div key={v.id || i} className="px-3 py-2 text-sm grid grid-cols-4 gap-2 items-center">
-                            <span className="text-[#171412]">
+                            <span className="text-[var(--ink-head,_#030E1D)]">
                               {v.visit_time ? new Date(v.visit_time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
                             </span>
-                            <span className="text-right text-[#171412]">
+                            <span className="text-right text-[var(--ink-head,_#030E1D)]">
                               €{(v.amount_paid || 0).toFixed(2)}
                             </span>
-                            <span className="text-right text-[#4A5D23] font-semibold">
+                            <span className="text-right text-[var(--green-deep,_#087A31)] font-semibold">
                               +{v.points_awarded || 0}
                             </span>
-                            <span className="text-right text-[#8D857D] text-xs">
+                            <span className="text-right text-[var(--ink-muted,_#626F7E)] text-xs">
                               {v.branch_id || '—'}
                             </span>
                           </div>
@@ -1321,31 +1321,31 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
-              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Contact</p>
+            <div className="p-4 rounded-lg bg-[var(--surface-2,_#F8F9FC)] border border-[var(--border,_#ECEFF4)]">
+              <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] uppercase tracking-wider font-semibold mb-2">Contact</p>
               <Row label="Name" value={c.name || '—'} />
               <Row label="Email" value={c.email || '—'} />
               <Row label="Phone" value={c.phone || '—'} />
               <Row label="Birthday" value={fmtDate(c.birthday)} />
             </div>
-            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
-              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Location</p>
+            <div className="p-4 rounded-lg bg-[var(--surface-2,_#F8F9FC)] border border-[var(--border,_#ECEFF4)]">
+              <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] uppercase tracking-wider font-semibold mb-2">Location</p>
               <Row label="Address" value={c.address || '—'} />
               <Row label="City" value={c.city || c.department_name || '—'} />
               <Row label="Postal code" value={c.postal_code || '—'} />
               <Row label="Département" value={c.department_code ? `${c.department_code} — ${c.department_name}` : (c.department_name || '—')} />
               <Row label="GPS" value={(c.lat != null && c.lng != null) ? `${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}${c.has_real_gps ? '' : ' (approx.)'}` : '—'} />
             </div>
-            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
-              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Loyalty</p>
+            <div className="p-4 rounded-lg bg-[var(--surface-2,_#F8F9FC)] border border-[var(--border,_#ECEFF4)]">
+              <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] uppercase tracking-wider font-semibold mb-2">Loyalty</p>
               <Row label="Tier" value={c.tier || '—'} />
               <Row label="Visits" value={c.total_visits ?? 0} />
               <Row label="Total paid" value={`€${(c.total_amount_paid || 0).toFixed(2)}`} />
               <Row label="Points" value={c.points ?? 0} />
               <Row label="Avg ticket" value={c.total_visits > 0 ? `€${((c.total_amount_paid || 0) / c.total_visits).toFixed(2)}` : '—'} />
             </div>
-            <div className="p-4 rounded-lg bg-[#FAFAF8] border border-[#E9E5E0]">
-              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-2">Journey</p>
+            <div className="p-4 rounded-lg bg-[var(--surface-2,_#F8F9FC)] border border-[var(--border,_#ECEFF4)]">
+              <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] uppercase tracking-wider font-semibold mb-2">Journey</p>
               <Row
                 label="Acquired via"
                 value={src ? `${src.emoji} ${src.label}` : (c.acquisition_source || '—')}
@@ -1361,9 +1361,9 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
           </div>
 
           {c.notes && (
-            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
-              <p className="text-[10px] text-[#8D857D] uppercase tracking-wider font-semibold mb-1">Notes</p>
-              <p className="text-sm text-[#171412] whitespace-pre-wrap">{c.notes}</p>
+            <div className="p-4 rounded-lg bg-[#F5F4F1] border border-[var(--border,_#ECEFF4)]">
+              <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] uppercase tracking-wider font-semibold mb-1">Notes</p>
+              <p className="text-sm text-[var(--ink-head,_#030E1D)] whitespace-pre-wrap">{c.notes}</p>
             </div>
           )}
           </>
@@ -1377,8 +1377,8 @@ function CustomerDetailsModal({ customer, onClose, onSendCampaign }) {
 function Row({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-3 py-1">
-      <span className="text-xs text-[#8D857D] min-w-[90px]">{label}</span>
-      <span className="text-sm text-[#171412] text-right break-all">{value}</span>
+      <span className="text-xs text-[var(--ink-muted,_#626F7E)] min-w-[90px]">{label}</span>
+      <span className="text-sm text-[var(--ink-head,_#030E1D)] text-right break-all">{value}</span>
     </div>
   );
 }
@@ -1386,7 +1386,7 @@ function Row({ label, value }) {
 // Small filter-chip used in the active-filters bar above the map.
 function Chip({ children }) {
   return (
-    <span className="px-2 py-0.5 rounded-full bg-[#F5F4F1] border border-[#E9E5E0] text-[11px]">
+    <span className="px-2 py-0.5 rounded-full bg-[#F5F4F1] border border-[var(--border,_#ECEFF4)] text-[11px]">
       {children}
     </span>
   );
@@ -1405,14 +1405,14 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
           → Strasbourg → back). Reads as a recognisable Hexagone. */}
       <defs>
         <linearGradient id="france-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#FEF3E4" />
-          <stop offset="100%" stopColor="#F3DCB7" />
+          <stop offset="0%"  stopColor="#E5F1FF" />
+          <stop offset="100%" stopColor="#CADFF8" />
         </linearGradient>
       </defs>
       <path
         d={FRANCE_PATH_D}
         fill="url(#france-fill)"
-        stroke="#B85C38"
+        stroke="#0F6FDE"
         strokeOpacity="0.55"
         strokeWidth="1.5"
         strokeLinejoin="round"
@@ -1421,7 +1421,7 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
       <path
         d={CORSICA_PATH_D}
         fill="url(#france-fill)"
-        stroke="#B85C38"
+        stroke="#0F6FDE"
         strokeOpacity="0.55"
         strokeWidth="1.2"
         strokeLinejoin="round"
@@ -1431,8 +1431,8 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
         const p = projectToSVG(48.86, 2.35);
         return (
           <g opacity="0.4">
-            <circle cx={p.x} cy={p.y} r="2" fill="#171412" />
-            <text x={p.x + 5} y={p.y + 3} fontSize="9" fill="#57504A">Paris</text>
+            <circle cx={p.x} cy={p.y} r="2" fill="#030E1D" />
+            <text x={p.x + 5} y={p.y + 3} fontSize="9" fill="#556272">Paris</text>
           </g>
         );
       })()}
@@ -1453,9 +1453,9 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
               cx={x}
               cy={y}
               r={r}
-              fill="#B85C38"
+              fill="#0F6FDE"
               fillOpacity={isActive ? 0.7 : 0.28}
-              stroke="#B85C38"
+              stroke="#0F6FDE"
               strokeWidth={isActive ? 2 : 1.2}
             />
             <text
@@ -1463,7 +1463,7 @@ function FranceMiniMap({ deptList, selectedDept, onSelect }) {
               y={y + 3}
               fontSize="9"
               textAnchor="middle"
-              fill="#171412"
+              fill="#030E1D"
               fontWeight="700"
               style={{ pointerEvents: 'none' }}
             >

@@ -89,10 +89,11 @@ const HistoryPage = () => {
 
   const TypeBadge = ({ type }) => {
     const styles = {
-      tier_up:  { bg: '#FEF3C7', fg: '#92400E', label: 'Tier-up' },
-      campaign: { bg: '#EDE9FE', fg: '#5B21B6', label: 'Campaign' },
-      birthday: { bg: '#FCE7F3', fg: '#9D174D', label: 'Birthday' },
-    }[type] || { bg: '#F3F4F6', fg: '#374151', label: type || '—' };
+      tier_up:  { bg: 'color-mix(in srgb, var(--green, #10BC4C) 12%, var(--surface-1, #FFFFFF))',
+                  fg: 'var(--green-deep, #087A31)', label: 'Tier-up' },
+      campaign: { bg: 'var(--tint-blue, #E5F1FF)', fg: 'var(--blue-deep, #1453BD)', label: 'Campaign' },
+      birthday: { bg: '#93BEF0', fg: 'var(--ink-head, #030E1D)', label: 'Birthday' },
+    }[type] || { bg: 'var(--surface-2, #F8F9FC)', fg: 'var(--ink-body, #556272)', label: type || '—' };
     return (
       <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
         style={{ background: styles.bg, color: styles.fg }}>{styles.label}</span>
@@ -174,7 +175,7 @@ const HistoryPage = () => {
         <button
           onClick={() => setActiveTab('campaigns')}
           className={`pb-3 px-4 text-sm font-semibold border-b-2 transition ${
-            activeTab === 'campaigns' ? 'text-[#B85C38] border-[#B85C38]' : 'text-[#57504A] border-transparent hover:text-[#171412]'
+            activeTab === 'campaigns' ? 'text-[var(--blue-deep,_#1453BD)] border-[var(--blue,_#0F6FDE)]' : 'text-[var(--ink-body,_#556272)] border-transparent hover:text-[var(--ink-head,_#030E1D)]'
           }`}
         >
           <Mail size={14} className="inline mr-2" />
@@ -183,7 +184,7 @@ const HistoryPage = () => {
         <button
           onClick={() => setActiveTab('pushes')}
           className={`pb-3 px-4 text-sm font-semibold border-b-2 transition ${
-            activeTab === 'pushes' ? 'text-[#B85C38] border-[#B85C38]' : 'text-[#57504A] border-transparent hover:text-[#171412]'
+            activeTab === 'pushes' ? 'text-[var(--blue-deep,_#1453BD)] border-[var(--blue,_#0F6FDE)]' : 'text-[var(--ink-body,_#556272)] border-transparent hover:text-[var(--ink-head,_#030E1D)]'
           }`}
         >
           <Bell size={14} className="inline mr-2" />
@@ -193,13 +194,13 @@ const HistoryPage = () => {
 
       {/* Content */}
       {loading ? (
-        <div className="bg-white rounded-xl p-12 text-center text-[#57504A]" style={{ border: `1px solid ${C_PS.hairline}` }}>
+        <div className="bg-white rounded-xl p-12 text-center text-[var(--ink-body,_#556272)]" style={{ border: `1px solid ${C_PS.hairline}` }}>
           Loading…
         </div>
       ) : activeTab === 'campaigns' ? (
         <div className="space-y-3">
           {campaigns.length === 0 && (
-            <div className="bg-white rounded-xl p-12 text-center text-[#57504A]" style={{ border: `1px solid ${C_PS.hairline}` }}>
+            <div className="bg-white rounded-xl p-12 text-center text-[var(--ink-body,_#556272)]" style={{ border: `1px solid ${C_PS.hairline}` }}>
               No campaigns found for this period.
             </div>
           )}
@@ -240,7 +241,7 @@ const HistoryPage = () => {
       ) : (
         <div className="space-y-3">
           {pushes.length === 0 && (
-            <div className="bg-white rounded-xl p-12 text-center text-[#57504A]" style={{ border: `1px solid ${C_PS.hairline}` }}>
+            <div className="bg-white rounded-xl p-12 text-center text-[var(--ink-body,_#556272)]" style={{ border: `1px solid ${C_PS.hairline}` }}>
               No push notifications found for this period.
             </div>
           )}
@@ -276,10 +277,10 @@ const HistoryPage = () => {
 
 const Stat = ({ label, value, icon: Icon }) => (
   <div className="flex items-center gap-2">
-    <Icon size={14} className="text-[#B85C38] shrink-0" />
+    <Icon size={14} className="text-[var(--blue-deep,_#1453BD)] shrink-0" />
     <div className="min-w-0">
-      <p className="text-[10px] uppercase font-bold tracking-widest text-[#57504A]">{label}</p>
-      <p className="text-sm font-bold text-[#171412]">{value ?? 0}</p>
+      <p className="text-[10px] uppercase font-bold tracking-widest text-[var(--ink-body,_#556272)]">{label}</p>
+      <p className="text-sm font-bold text-[var(--ink-head,_#030E1D)]">{value ?? 0}</p>
     </div>
   </div>
 );

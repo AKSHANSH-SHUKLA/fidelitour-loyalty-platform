@@ -32,7 +32,7 @@ function NotificationEnablePrompt({ customerName, barcodeId }) {
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, hsl(42 78% 52% / .10), rgb(184 92 56 / .06))',
+        background: 'linear-gradient(135deg, hsl(42 78% 52% / .10), rgb(15 111 222 / .06))',
         border: '1px solid hsl(42 78% 52% / .35)',
         borderRadius: 12,
         padding: '14px 16px',
@@ -48,10 +48,10 @@ function NotificationEnablePrompt({ customerName, barcodeId }) {
           <BellRing size={18} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: '#171412' }}>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--ink-head, #030E1D)' }}>
             {firstName} ne reçoit pas vos offres
           </p>
-          <p style={{ margin: '2px 0 8px', fontSize: 12, color: '#57504A', lineHeight: 1.45 }}>
+          <p style={{ margin: '2px 0 8px', fontSize: 12, color: 'var(--ink-body, #556272)', lineHeight: 1.45 }}>
             Voulez-vous lui proposer d'activer les notifications ? 10 secondes, et il/elle ne ratera plus aucune campagne.
           </p>
           {!showQR ? (
@@ -74,17 +74,17 @@ function NotificationEnablePrompt({ customerName, barcodeId }) {
       {showQR && (
         <div style={{
           marginTop: 12, padding: 14, background: 'var(--flc-card, #FFFFFF)',
-          borderRadius: 10, border: '1px solid #E9E5E0',
+          borderRadius: 10, border: '1px solid var(--border, #ECEFF4)',
           display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
         }}>
           <div style={{ flexShrink: 0, padding: 8, background: 'var(--flc-card, #FFFFFF)', borderRadius: 6 }}>
             <QRCodeSVG value={cardUrl} size={120} level="M" />
           </div>
           <div style={{ flex: 1, minWidth: 180 }}>
-            <p style={{ margin: 0, fontSize: 12.5, color: '#171412', fontWeight: 600, marginBottom: 4 }}>
+            <p style={{ margin: 0, fontSize: 12.5, color: 'var(--ink-head, #030E1D)', fontWeight: 600, marginBottom: 4 }}>
               📱 {firstName}, scannez ce QR
             </p>
-            <p style={{ margin: 0, fontSize: 11.5, color: '#57504A', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: 11.5, color: 'var(--ink-body, #556272)', lineHeight: 1.5 }}>
               Votre carte s'ouvrira et vous demandera d'activer les notifications. Cliquez « Autoriser ».
             </p>
             <button
@@ -92,7 +92,7 @@ function NotificationEnablePrompt({ customerName, barcodeId }) {
               onClick={() => setShowQR(false)}
               style={{
                 marginTop: 8, background: 'transparent', border: 'none',
-                color: '#8D857D', fontSize: 11, cursor: 'pointer', font: 'inherit',
+                color: 'var(--ink-muted, #626F7E)', fontSize: 11, cursor: 'pointer', font: 'inherit',
                 display: 'inline-flex', alignItems: 'center', gap: 4,
               }}
             >
@@ -569,7 +569,9 @@ const ScanPage = () => {
           className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-4"
           style={{
             background: `linear-gradient(135deg, ${C_SCAN.sky}1A, ${C_SCAN.lavender}1A)`,
-            color: C_SCAN.sky,
+            /* --blue measures 4.41:1 on the canvas behind this tinted chip;
+               the deep step clears AA at 6.39:1 without changing the chip. */
+            color: 'var(--blue-deep, #1453BD)',
             border: `1px solid ${C_SCAN.sky}33`,
           }}
         >
@@ -601,7 +603,7 @@ const ScanPage = () => {
         {/* Build fingerprint — verifies which JS bundle is running so we can
             tell if the page is stale-cached. If you see "build 2026-05-07b"
             on screen, the latest scan-error fix is live. */}
-        <div className="text-[10px] mt-2 opacity-50" style={{ color: '#8D857D' }}>
+        <div className="text-[10px] mt-2 opacity-50" style={{ color: 'var(--ink-muted, #626F7E)' }}>
           build 2026-05-07d · jsQR camera
         </div>
       </div>
@@ -691,29 +693,29 @@ const ScanPage = () => {
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full rounded-xl border-2 border-[#E9E5E0] bg-[#171412]"
+              className="w-full rounded-xl border-2 border-[var(--border,_#ECEFF4)] bg-[#171412]"
               style={{ maxHeight: '400px', objectFit: 'cover' }}
             />
 
             {/* Inline amount field — fill BEFORE scanning so we capture the visit value */}
             <div className="rounded-xl border-2 p-4 space-y-3"
-                 style={{ borderColor: '#E3A86955', background: 'linear-gradient(135deg, #F6E9E2 0%, #FFFFFF 100%)' }}>
+                 style={{ borderColor: 'var(--blue, #0F6FDE)55', background: 'linear-gradient(135deg, var(--tint-blue, #E5F1FF) 0%, #FFFFFF 100%)' }}>
               <div className="flex items-start gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                     style={{ background: '#E3A869', color: 'white' }}>
+                     style={{ background: 'var(--blue, #0F6FDE)', color: 'white' }}>
                   <Euro size={16} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#96431F' }}>
+                  <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--blue-deep, #1453BD)' }}>
                     {t('scan.amount_in_advance')}
                   </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: '#57504A' }}>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-body, #556272)' }}>
                     {t('scan.amount_in_advance_hint')}
                   </p>
                 </div>
               </div>
               <div className="relative">
-                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
+                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted,_#626F7E)] pointer-events-none" />
                 <input
                   type="number"
                   step="0.01"
@@ -724,12 +726,12 @@ const ScanPage = () => {
                   placeholder="0,00"
                   className="w-full pl-14 pr-4 py-3 rounded-lg border-2 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
                   style={{ borderColor: 'var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FFFFFF)' }}
-                  onFocus={(e) => (e.target.style.borderColor = '#B85C38')}
-                  onBlur={(e) => (e.target.style.borderColor = '#E9E5E0')}
+                  onFocus={(e) => (e.target.style.borderColor = 'var(--blue, #0F6FDE)')}
+                  onBlur={(e) => (e.target.style.borderColor = 'var(--border, #ECEFF4)')}
                 />
               </div>
               {amountPaid && parseFloat(amountPaid) > 0 && (
-                <p className="text-[11px] font-semibold" style={{ color: '#4A5D23' }}>
+                <p className="text-[11px] font-semibold" style={{ color: 'var(--green-deep, #087A31)' }}>
                   ✓ {t('scan.points_will_credit', { count: computeAutoPoints(amountPaid) })}
                 </p>
               )}
@@ -738,7 +740,7 @@ const ScanPage = () => {
             {cameraActive && (
               <button
                 onClick={stopCamera}
-                className="w-full py-3 rounded-xl text-white font-bold bg-[#B85C38] hover:bg-[#9C4E2F] transition-all"
+                className="w-full py-3 rounded-xl text-white font-bold bg-[var(--blue,_#0F6FDE)] hover:bg-[var(--blue-pressed,_#0D62C4)] transition-all"
               >
                 {t('scan.stop_camera')}
               </button>
@@ -752,11 +754,11 @@ const ScanPage = () => {
                 safety net that means scanning always works. */}
             <div className="rounded-xl border-2 border-dashed p-3"
                  style={{ borderColor: 'var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FAFAF8)' }}>
-              <p className="text-[11px] font-semibold mb-2 text-[#57504A] uppercase tracking-wider">
+              <p className="text-[11px] font-semibold mb-2 text-[var(--ink-body,_#556272)] uppercase tracking-wider">
                 {t('scan.camera_blocked')}
               </p>
               <label className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg cursor-pointer text-sm font-semibold border-2 transition-colors"
-                     style={{ borderColor: '#4A90E2', color: '#4A90E2', background: 'var(--flc-card, #FFFFFF)' }}>
+                     style={{ borderColor: 'var(--blue, #0F6FDE)', color: 'var(--blue, #0F6FDE)', background: 'var(--flc-card, #FFFFFF)' }}>
                 <Camera size={16} />
                 {t('scan.import_photo')}
                 <input
@@ -771,7 +773,7 @@ const ScanPage = () => {
                   }}
                 />
               </label>
-              <p className="text-[10px] text-[#8D857D] mt-2 text-center">
+              <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] mt-2 text-center">
                 {t('scan.import_photo_compat')}
               </p>
             </div>
@@ -782,23 +784,23 @@ const ScanPage = () => {
         {mode === 'manual' && (
           <form onSubmit={handleScan} className="space-y-6 relative z-10">
             <div>
-              <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide">{t('scan.barcode_label')}</label>
+              <label className="block text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide">{t('scan.barcode_label')}</label>
               <div className="relative">
                 {/* 20px icon (w-5) at left-4 (16px) → icon occupies 16-36px.
                     pl-14 (56px) leaves a clean ~20px gap before the
                     placeholder text begins. pointer-events-none so the
                     icon doesn't eat clicks on the first few pixels. */}
-                <ScanLine className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
+                <ScanLine className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted,_#626F7E)] pointer-events-none" />
                 <input
                   type="text"
                   value={barcode}
                   onChange={e => setBarcode(e.target.value.toUpperCase())}
                   placeholder={t('scan.barcode_placeholder')}
-                  className="w-full pl-14 pr-4 py-4 rounded-xl border-2 border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-mono tracking-widest transition-colors uppercase"
+                  className="w-full pl-14 pr-4 py-4 rounded-xl border-2 border-[var(--border-strong,_#CBD3DC)] focus:border-[var(--blue,_#0F6FDE)] focus:ring-0 outline-none text-lg font-mono tracking-widest transition-colors uppercase"
                   disabled={loading}
                 />
               </div>
-              <p className="text-xs text-[#57504A] mt-2">{t('scan.barcode_hint')}</p>
+              <p className="text-xs text-[var(--ink-body,_#556272)] mt-2">{t('scan.barcode_hint')}</p>
             </div>
 
             {/* ──────────────────────────────────────────────────────────
@@ -811,20 +813,20 @@ const ScanPage = () => {
                 ────────────────────────────────────────────────────── */}
             {catalog.length > 0 && (
               <div>
-                <label className="flex items-center justify-between text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide">
+                <label className="flex items-center justify-between text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide">
                   <span>{t('scan.catalog_label')}</span>
                   {pickedItems.length > 0 && (
                     <button
                       type="button"
                       onClick={clearPicker}
-                      className="text-xs font-normal normal-case tracking-normal text-[#B85C38] underline"
+                      className="text-xs font-normal normal-case tracking-normal text-[var(--blue-deep,_#1453BD)] underline"
                     >
                       {t('scan.catalog_clear')}
                     </button>
                   )}
                 </label>
                 <div
-                  className="rounded-xl border-2 border-[#E9E5E0]"
+                  className="rounded-xl border-2 border-[var(--border,_#ECEFF4)]"
                   style={{ background: 'var(--flc-card, #FFFFFF)' }}
                 >
                   <button
@@ -833,15 +835,15 @@ const ScanPage = () => {
                     className="w-full flex items-center justify-between px-4 py-3 text-left"
                     style={{ font: 'inherit', background: 'transparent', border: 'none', cursor: 'pointer' }}
                   >
-                    <span className="text-sm text-[#171412]">
+                    <span className="text-sm text-[var(--ink-head,_#030E1D)]">
                       {pickedItems.length === 0
                         ? t('scan.catalog_no_selection_summary', { count: catalog.length })
                         : t('scan.catalog_total_selected', { count: pickedItems.reduce((s, r) => s + r.qty, 0), total: pickerTotal.toFixed(2) })}
                     </span>
-                    <span className="text-xs text-[#8D857D]">{pickerOpen ? t('scan.catalog_close') : t('scan.catalog_open')}</span>
+                    <span className="text-xs text-[var(--ink-muted,_#626F7E)]">{pickerOpen ? t('scan.catalog_close') : t('scan.catalog_open')}</span>
                   </button>
                   {pickerOpen && (
-                    <div className="border-t border-[#E9E5E0] max-h-80 overflow-y-auto">
+                    <div className="border-t border-[var(--border-strong,_#CBD3DC)] max-h-80 overflow-y-auto">
                       {catalog.map((it) => {
                         const qty = Number(pickerQty[it.id]) || 0;
                         return (
@@ -850,12 +852,12 @@ const ScanPage = () => {
                             className="flex items-center gap-3 px-4 py-2.5 border-b border-[#F5F4F1] last:border-b-0"
                           >
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm text-[#171412] truncate">{it.name}</div>
+                              <div className="text-sm text-[var(--ink-head,_#030E1D)] truncate">{it.name}</div>
                               {it.category && (
-                                <div className="text-[10.5px] uppercase tracking-wider text-[#8D857D]">{it.category}</div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-[var(--ink-muted,_#626F7E)]">{it.category}</div>
                               )}
                             </div>
-                            <div className="text-sm font-mono text-[#57504A] w-16 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            <div className="text-sm font-mono text-[var(--ink-body,_#556272)] w-16 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
                               {Number(it.price).toFixed(2)} €
                             </div>
                             <div className="flex items-center gap-1">
@@ -863,7 +865,7 @@ const ScanPage = () => {
                                 type="button"
                                 onClick={() => bumpQty(it.id, -1)}
                                 aria-label={t('scan.qty_minus')}
-                                className="w-8 h-8 rounded-lg border border-[#E9E5E0] text-[#B85C38] font-bold"
+                                className="w-8 h-8 rounded-lg border border-[var(--border,_#ECEFF4)] text-[var(--blue-deep,_#1453BD)] font-bold"
                                 style={{ background: 'var(--flc-card, #FFFFFF)', font: 'inherit', cursor: 'pointer' }}
                               >
                                 −
@@ -875,7 +877,7 @@ const ScanPage = () => {
                                 type="button"
                                 onClick={() => bumpQty(it.id, +1)}
                                 aria-label={t('scan.qty_plus')}
-                                className="w-8 h-8 rounded-lg border border-[#E9E5E0] text-[#4F7A36] font-bold"
+                                className="w-8 h-8 rounded-lg border border-[var(--border,_#ECEFF4)] text-[var(--green-deep,_#087A31)] font-bold"
                                 style={{ background: 'var(--flc-card, #FFFFFF)', font: 'inherit', cursor: 'pointer' }}
                               >
                                 +
@@ -887,23 +889,23 @@ const ScanPage = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-[#57504A] mt-2">
+                <p className="text-xs text-[var(--ink-body,_#556272)] mt-2">
                   {t('scan.catalog_no_items_hint')}
                 </p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide">
+              <label className="block text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide">
                 {t('scan.amount_label')}
                 {pickedItems.length > 0 && (
-                  <span className="ml-2 normal-case text-xs font-normal text-[#4F7A36]">
+                  <span className="ml-2 normal-case text-xs font-normal text-[var(--green-deep,_#087A31)]">
                     {t('scan.catalog_auto_filled')}
                   </span>
                 )}
               </label>
               <div className="relative">
-                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#A8A29E] pointer-events-none" />
+                <Euro className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted,_#626F7E)] pointer-events-none" />
                 <input
                   type="number"
                   step="0.01"
@@ -913,14 +915,14 @@ const ScanPage = () => {
                   placeholder="0.00"
                   className={`w-full pl-14 pr-4 py-4 rounded-xl border-2 focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors ${
                     pickedItems.length > 0
-                      ? 'border-[#E3A869] bg-[#FDF8EF] focus:border-[#E3A869]'
-                      : 'border-[#E9E5E0] focus:border-[#B85C38]'
+                      ? 'border-[#0F6FDE]/35 bg-[var(--tint-blue,_#E5F1FF)] focus:border-[#0F6FDE]/35'
+                      : 'border-[var(--border-strong,_#CBD3DC)] focus:border-[var(--blue,_#0F6FDE)]'
                   }`}
                   disabled={loading || pickedItems.length > 0}
                   readOnly={pickedItems.length > 0}
                 />
               </div>
-              <p className="text-xs text-[#57504A] mt-2">{
+              <p className="text-xs text-[var(--ink-body,_#556272)] mt-2">{
                 pickedItems.length > 0
                   ? t('scan.amount_hint_picker')
                   : pointsMode === 'per_euro'
@@ -930,17 +932,17 @@ const ScanPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide">{t('scan.points_label')}</label>
+              <label className="block text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide">{t('scan.points_label')}</label>
               <input
                 type="number"
                 min="0"
                 value={points}
                 onChange={handlePointsChange}
                 placeholder={t('scan.points_placeholder')}
-                className="w-full px-4 py-4 rounded-xl border-2 border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
+                className="w-full px-4 py-4 rounded-xl border-2 border-[var(--border-strong,_#CBD3DC)] focus:border-[var(--blue,_#0F6FDE)] focus:ring-0 outline-none text-lg font-bold font-['Cormorant_Garamond'] transition-colors"
                 disabled={loading}
               />
-              <p className="text-xs text-[#57504A] mt-2">{
+              <p className="text-xs text-[var(--ink-body,_#556272)] mt-2">{
                 pointsMode === 'per_euro'
                   ? (points && amountPaid
                       ? t('scan.points_hint_per_euro_filled', { points: computeAutoPoints(amountPaid), rate: pointsPerEuro })
@@ -952,7 +954,7 @@ const ScanPage = () => {
             <button
               type="submit"
               disabled={loading || !barcode.trim()}
-              className="w-full py-4 rounded-xl text-white font-bold text-lg bg-[#B85C38] hover:bg-[#9C4E2F] disabled:opacity-50 transition-all shadow-md mt-4"
+              className="w-full py-4 rounded-xl text-white font-bold text-lg bg-[var(--blue,_#0F6FDE)] hover:bg-[var(--blue-pressed,_#0D62C4)] disabled:opacity-50 transition-all shadow-md mt-4"
             >
               {loading ? t('scan.submitting') : t('scan.submit')}
             </button>
@@ -960,12 +962,12 @@ const ScanPage = () => {
         )}
 
         {status && (
-          <div className={`mt-8 rounded-2xl border animation-fadeIn ${status.type === 'success' ? 'bg-[#FAFAF8] border-[#E3A869]/50 p-8' : status.type === 'error' ? 'bg-red-50 border-red-200 p-6' : 'bg-[#F5F4F1] border-[#E9E5E0] p-6'}`}>
+          <div className={`mt-8 rounded-2xl border animation-fadeIn ${status.type === 'success' ? 'bg-[var(--surface-2,_#F8F9FC)] border-[#0F6FDE]/35/50 p-8' : status.type === 'error' ? 'bg-red-50 border-red-200 p-6' : 'bg-[#F5F4F1] border-[var(--border-strong,_#CBD3DC)] p-6'}`}>
             {status.type === 'success' && scanResult ? (
               <>
                 <div className="flex items-center justify-center gap-3 mb-6">
-                  <CheckCircle2 className="w-10 h-10 text-[#E3A869]" />
-                  <h3 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#171412]">
+                  <CheckCircle2 className="w-10 h-10 text-[var(--blue,_#0F6FDE)]" />
+                  <h3 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[var(--ink-head,_#030E1D)]">
                     {t('scan.visit_recorded_for', { name: scanResult.customer_name || t('scan.customer_fallback') })}
                   </h3>
                 </div>
@@ -973,12 +975,12 @@ const ScanPage = () => {
                 {/* Points & Stamps Summary */}
                 <div className="grid grid-cols-2 gap-4 mb-6 text-center">
                   <div className="bg-white p-4 rounded-lg">
-                    <p className="text-3xl font-bold text-[#B85C38]">+{scanResult.points_earned || 0}</p>
-                    <p className="text-sm text-[#57504A]">{t('scan.label_points')}</p>
+                    <p className="text-3xl font-bold text-[var(--blue-deep,_#1453BD)]">+{scanResult.points_earned || 0}</p>
+                    <p className="text-sm text-[var(--ink-body,_#556272)]">{t('scan.label_points')}</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg">
-                    <p className="text-3xl font-bold text-[#4A5D23]">+1</p>
-                    <p className="text-sm text-[#57504A]">{t('scan.label_stamp')}</p>
+                    <p className="text-3xl font-bold text-[var(--green-deep,_#087A31)]">+1</p>
+                    <p className="text-sm text-[var(--ink-body,_#556272)]">{t('scan.label_stamp')}</p>
                   </div>
                 </div>
 
@@ -986,16 +988,16 @@ const ScanPage = () => {
                 {scanResult.stamps_current !== undefined && scanResult.stamps_required !== undefined && (
                   <div className="mb-6">
                     <div className="flex justify-between items-center mb-2">
-                      <p className="text-sm font-semibold text-[#171412]">{t('scan.progress_to_reward')}</p>
-                      <p className="text-sm font-bold text-[#B85C38]">{scanResult.stamps_current} / {scanResult.stamps_required}</p>
+                      <p className="text-sm font-semibold text-[var(--ink-head,_#030E1D)]">{t('scan.progress_to_reward')}</p>
+                      <p className="text-sm font-bold text-[var(--blue-deep,_#1453BD)]">{scanResult.stamps_current} / {scanResult.stamps_required}</p>
                     </div>
-                    <div className="w-full h-3 bg-[#E9E5E0] rounded-full overflow-hidden">
+                    <div className="w-full h-3 bg-[var(--surface-2,_#F8F9FC)] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#B85C38] rounded-full transition-all"
+                        className="h-full bg-[var(--blue,_#0F6FDE)] rounded-full transition-all"
                         style={{ width: `${Math.min((scanResult.stamps_current / scanResult.stamps_required) * 100, 100)}%` }}
                       />
                     </div>
-                    <p className="text-xs text-[#8D857D] mt-2">
+                    <p className="text-xs text-[var(--ink-muted,_#626F7E)] mt-2">
                       {t('scan.stamps_until_reward', { count: scanResult.stamps_required - scanResult.stamps_current })}
                     </p>
                   </div>
@@ -1003,7 +1005,7 @@ const ScanPage = () => {
 
                 {/* Reward Unlocked Banner — now with a live "Mark as redeemed" action */}
                 {scanResult.reward_unlocked && (
-                  <div className="bg-[#4A5D23] text-white p-6 rounded-lg mb-6">
+                  <div className="bg-[var(--green-deep,_#087A31)] text-white p-6 rounded-lg mb-6">
                     <div className="text-center mb-4">
                       <p className="text-2xl font-bold mb-1">{t('scan.reward_unlocked')}</p>
                       <p className="text-sm opacity-90">
@@ -1036,7 +1038,7 @@ const ScanPage = () => {
                           }
                         }}
                         disabled={redeemLoading}
-                        className="w-full py-3 rounded-lg bg-white text-[#4A5D23] font-bold hover:bg-[#F5F4F1] transition flex items-center justify-center gap-2 disabled:opacity-60"
+                        className="w-full py-3 rounded-lg bg-white text-[var(--green-deep,_#087A31)] font-bold hover:bg-[#F5F4F1] transition flex items-center justify-center gap-2 disabled:opacity-60"
                       >
                         <Gift size={18} />
                         {redeemLoading ? t('scan.redeeming') : t('scan.give_reward')}
@@ -1055,7 +1057,7 @@ const ScanPage = () => {
                     style={{
                       background: `linear-gradient(135deg, ${C_SCAN.ochre} 0%, ${C_SCAN.amber} 60%, ${C_SCAN.terracotta} 100%)`,
                       color: 'white',
-                      boxShadow: '0 8px 24px rgba(212,165,116,0.35)',
+                      boxShadow: '0 8px 24px rgba(15,111,222,0.28)',
                     }}
                   >
                     <div aria-hidden="true" className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50"
@@ -1088,7 +1090,7 @@ const ScanPage = () => {
                     setRedeemDone(false);
                     setRedeemLoading(false);
                   }}
-                  className="w-full py-4 rounded-lg bg-[#B85C38] text-white font-bold hover:bg-[#9C4E2F] transition"
+                  className="w-full py-4 rounded-lg bg-[var(--blue,_#0F6FDE)] text-white font-bold hover:bg-[var(--blue-pressed,_#0D62C4)] transition"
                 >
                   {t('scan.scan_next')}
                 </button>
@@ -1096,10 +1098,10 @@ const ScanPage = () => {
             ) : status.type === 'error' ? (
               <>
                 <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                <p className="text-[#57504A] font-medium">{status.message}</p>
+                <p className="text-[var(--ink-body,_#556272)] font-medium">{status.message}</p>
               </>
             ) : (
-              <p className="text-[#57504A] font-medium">{status.message}</p>
+              <p className="text-[var(--ink-body,_#556272)] font-medium">{status.message}</p>
             )}
           </div>
         )}

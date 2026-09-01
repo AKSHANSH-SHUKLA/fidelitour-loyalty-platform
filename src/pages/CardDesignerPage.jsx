@@ -379,24 +379,24 @@ export default function CardDesignerPage() {
           separate from the visual design so owners can change "10 visits = 1
           free coffee" → "8 visits = 1 free pastry" in seconds without touching
           the layout. The visual stamps_target auto-syncs with reward_threshold_stamps. */}
-      <div className="rounded-xl border-2 border-[#E3A869] bg-[#F6E9E2] p-5 space-y-4">
+      <div className="rounded-xl border-2 border-[#0F6FDE]/35 bg-[var(--tint-blue,_#E5F1FF)] p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <Coins size={20} className="text-[#96431F]" />
-          <h2 className="text-lg font-bold text-[#96431F]">
+          <Coins size={20} className="text-[var(--blue-deep,_#1453BD)]" />
+          <h2 className="text-lg font-bold text-[var(--blue-deep,_#1453BD)]">
             Loyalty Rules — what your customers earn
           </h2>
         </div>
-        <p className="text-xs text-[#96431F]/80 -mt-2">
+        <p className="text-xs text-[#1453BD]/80 -mt-2">
           These numbers control your scan flow and reward unlocks. Change them and every customer's
           card and progression updates. The visual stamp count below auto-syncs with the reward threshold.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-bold text-[#96431F] uppercase tracking-wider mb-1 block">
+            <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Points awarded per visit
             </label>
-            <p className="text-[11px] text-[#96431F]/80 mb-2">
+            <p className="text-[11px] text-[#1453BD]/80 mb-2">
               How many points each customer gets when staff scans their visit. Default: 10.
             </p>
             <NumberInput
@@ -405,15 +405,15 @@ export default function CardDesignerPage() {
               emptyValue={10}
               value={rules.points_per_visit}
               onChange={(n) => updateRule('points_per_visit', n)}
-              className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#171412]"
+              className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-[#96431F] uppercase tracking-wider mb-1 block">
+            <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Visits required per stamp
             </label>
-            <p className="text-[11px] text-[#96431F]/80 mb-2">
+            <p className="text-[11px] text-[#1453BD]/80 mb-2">
               Usually 1 (every visit = 1 stamp). Set to 2 if you want stamps to feel rarer.
             </p>
             <NumberInput
@@ -422,15 +422,15 @@ export default function CardDesignerPage() {
               emptyValue={1}
               value={rules.visits_per_stamp}
               onChange={(n) => updateRule('visits_per_stamp', n)}
-              className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#171412]"
+              className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-[#96431F] uppercase tracking-wider mb-1 block">
+            <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Stamps to unlock the reward
             </label>
-            <p className="text-[11px] text-[#96431F]/80 mb-2">
+            <p className="text-[11px] text-[#1453BD]/80 mb-2">
               How many stamps to fill the card. Default: 10 (the classic café punch card).
             </p>
             <NumberInput
@@ -439,15 +439,15 @@ export default function CardDesignerPage() {
               emptyValue={10}
               value={rules.reward_threshold_stamps}
               onChange={(n) => updateRule('reward_threshold_stamps', n)}
-              className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#171412]"
+              className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-[#96431F] uppercase tracking-wider mb-1 block">
+            <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               Reward description
             </label>
-            <p className="text-[11px] text-[#96431F]/80 mb-2">
+            <p className="text-[11px] text-[#1453BD]/80 mb-2">
               What customers see they'll earn. Shown on the card and in the unlock notification.
             </p>
             <input
@@ -456,15 +456,15 @@ export default function CardDesignerPage() {
               value={rules.reward_description}
               onChange={(e) => updateRule('reward_description', e.target.value)}
               placeholder="e.g. Un café gratuit"
-              className="w-full px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-semibold text-[#171412]"
+              className="w-full px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-semibold text-[var(--ink-head,_#030E1D)]"
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="text-xs font-bold text-[#96431F] uppercase tracking-wider mb-1 block">
+            <label className="text-xs font-bold text-[var(--blue-deep,_#1453BD)] uppercase tracking-wider mb-1 block">
               🔔 Send "almost there" push when N visits remain
             </label>
-            <p className="text-[11px] text-[#96431F]/80 mb-2">
+            <p className="text-[11px] text-[#1453BD]/80 mb-2">
               When a customer is this many visits away from unlocking the reward, an automatic push
               fires once. Set to <b>1</b> for the classic "one more visit and you get a free coffee!"
               nudge. Set to <b>0</b> to disable.
@@ -476,9 +476,9 @@ export default function CardDesignerPage() {
                 emptyValue={0}
                 value={rules.notify_before_reward}
                 onChange={(n) => updateRule('notify_before_reward', n)}
-                className="w-24 px-3 py-2 rounded-lg border border-[#E3A869]/60 bg-white text-lg font-bold text-[#171412]"
+                className="w-24 px-3 py-2 rounded-lg border border-[#0F6FDE]/35 bg-white text-lg font-bold text-[var(--ink-head,_#030E1D)]"
               />
-              <div className="flex items-center gap-2 text-xs text-[#96431F]">
+              <div className="flex items-center gap-2 text-xs text-[var(--blue-deep,_#1453BD)]">
                 {[0, 1, 2, 3].map((preset) => {
                   const active = parseInt(rules.notify_before_reward, 10) === preset;
                   return (
@@ -488,8 +488,8 @@ export default function CardDesignerPage() {
                       onClick={() => updateRule('notify_before_reward', preset)}
                       className={`px-2.5 py-1 rounded-full text-xs font-bold transition ${
                         active
-                          ? 'bg-[#B85C38] text-white'
-                          : 'bg-white border border-[#E3A869]/60 hover:bg-[#F6E9E2]'
+                          ? 'bg-[var(--blue,_#0F6FDE)] text-white'
+                          : 'bg-white border border-[#0F6FDE]/35 hover:bg-[var(--tint-blue,_#E5F1FF)]'
                       }`}
                     >
                       {preset === 0 ? 'Off' : `${preset} visit${preset > 1 ? 's' : ''} away`}
@@ -502,7 +502,7 @@ export default function CardDesignerPage() {
         </div>
 
         {/* Live, plain-English summary */}
-        <div className="rounded-lg bg-[#96431F] text-white p-4 flex items-start gap-3">
+        <div className="rounded-lg bg-[var(--blue-deep,_#1453BD)] text-white p-4 flex items-start gap-3">
           <Award size={18} className="shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-bold">In plain English:</p>
@@ -526,14 +526,14 @@ export default function CardDesignerPage() {
       {/* Premium brand block — drives the new wallet card surface
           (logo, hero image, brand colours, title + points labels). The Auchan
           editor below is for fine-tuning the back-of-card / legacy layout. */}
-      <div className="rounded-xl border border-[#E9E5E0] bg-white p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--border,_#ECEFF4)] bg-white p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <Palette size={20} className="text-[#B85C38]" />
-          <h2 className="text-lg font-bold text-[#171412]">
+          <Palette size={20} className="text-[var(--blue-deep,_#1453BD)]" />
+          <h2 className="text-lg font-bold text-[var(--ink-head,_#030E1D)]">
             Design premium — logo, image, couleurs
           </h2>
         </div>
-        <p className="text-xs text-[#57504A] -mt-2">
+        <p className="text-xs text-[var(--ink-body,_#556272)] -mt-2">
           Ces éléments forment la première impression du client quand il ouvre sa carte.
           Un logo net + une belle photo de votre produit + la bonne couleur de marque suffisent à
           faire passer la carte de "site web" à "Apple Wallet".
@@ -544,30 +544,30 @@ export default function CardDesignerPage() {
           <div className="space-y-5">
             {/* Logo */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#57504A] mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)] mb-1">
                 Logo (carré, 200×200 idéal)
               </label>
               <div className="flex items-center gap-3">
                 {brand.logo_url ? (
                   <div className="relative">
-                    <div className="w-36 h-36 rounded-xl border border-[#E9E5E0] bg-white p-2 flex items-center justify-center overflow-hidden">
+                    <div className="w-36 h-36 rounded-xl border border-[var(--border,_#ECEFF4)] bg-white p-2 flex items-center justify-center overflow-hidden">
                       <img src={brand.logo_url} alt="" className="max-w-full max-h-full object-contain" />
                     </div>
                     <button
                       type="button"
                       onClick={() => setBrand((b) => ({ ...b, logo_url: '' }))}
-                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#171412] text-white flex items-center justify-center shadow-md"
+                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[var(--red,_#D93036)] text-white flex items-center justify-center shadow-md"
                       aria-label="Supprimer le logo"
                     >
                       <X size={14} />
                     </button>
                   </div>
                 ) : (
-                  <div className="w-36 h-36 rounded-xl bg-[#FAFAF8] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8D857D]">
+                  <div className="w-36 h-36 rounded-xl bg-[var(--surface-2,_#F8F9FC)] border border-dashed border-[var(--border-strong,_#CBD3DC)] flex items-center justify-center text-[var(--ink-muted,_#626F7E)]">
                     <ImagePlus size={36} />
                   </div>
                 )}
-                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm font-medium text-[#171412] cursor-pointer hover:bg-[#FAFAF8]">
+                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm font-medium text-[var(--ink-head,_#030E1D)] cursor-pointer hover:bg-[var(--surface-2,_#F8F9FC)]">
                   <ImagePlus size={14} />
                   {brand.logo_url ? 'Changer le logo' : 'Téléverser un logo'}
                   <input
@@ -590,31 +590,31 @@ export default function CardDesignerPage() {
 
             {/* Hero image */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#57504A] mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)] mb-1">
                 Image héros (photo produit, paysage 16:9 idéal)
               </label>
-              <p className="text-[11px] text-[#8D857D] mb-2">
+              <p className="text-[11px] text-[var(--ink-muted,_#626F7E)] mb-2">
                 Affichée en filigrane derrière le titre de la carte — donne instantanément un côté premium type KFC, Starbucks, etc.
               </p>
               <div className="flex items-center gap-3">
                 {brand.hero_image_url ? (
                   <div className="relative">
-                    <img src={brand.hero_image_url} alt="" className="w-28 h-16 rounded-lg object-cover border border-[#E9E5E0]" />
+                    <img src={brand.hero_image_url} alt="" className="w-28 h-16 rounded-lg object-cover border border-[var(--border,_#ECEFF4)]" />
                     <button
                       type="button"
                       onClick={() => setBrand((b) => ({ ...b, hero_image_url: '' }))}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#171412] text-white flex items-center justify-center"
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--red,_#D93036)] text-white flex items-center justify-center"
                       aria-label="Supprimer l'image"
                     >
                       <X size={11} />
                     </button>
                   </div>
                 ) : (
-                  <div className="w-28 h-16 rounded-lg bg-[#FAFAF8] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8D857D]">
+                  <div className="w-28 h-16 rounded-lg bg-[var(--surface-2,_#F8F9FC)] border border-dashed border-[var(--border-strong,_#CBD3DC)] flex items-center justify-center text-[var(--ink-muted,_#626F7E)]">
                     <ImagePlus size={22} />
                   </div>
                 )}
-                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm font-medium text-[#171412] cursor-pointer hover:bg-[#FAFAF8]">
+                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm font-medium text-[var(--ink-head,_#030E1D)] cursor-pointer hover:bg-[var(--surface-2,_#F8F9FC)]">
                   <ImagePlus size={14} />
                   {brand.hero_image_url ? 'Changer l\'image' : 'Téléverser une image'}
                   <input
@@ -637,7 +637,7 @@ export default function CardDesignerPage() {
 
             {/* 5 Colour pickers — primary, secondary, accent, text-on-brand, back-link */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Palette de marque</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)] mb-2">Palette de marque</p>
               <div className="grid grid-cols-5 gap-2">
                 {[
                   { key: 'primary_color',   label: 'Principale' },
@@ -647,19 +647,19 @@ export default function CardDesignerPage() {
                   { key: 'back_link_color', label: 'Lien "Au dos"' },
                 ].map(({ key, label }) => (
                   <div key={key}>
-                    <label className="block text-[9px] font-bold uppercase tracking-wider text-[#8D857D] mb-1">{label}</label>
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-1">{label}</label>
                     <div className="flex items-center gap-1">
                       <input
                         type="color"
                         value={brand[key]}
                         onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
-                        className="w-9 h-9 rounded-md border border-[#E9E5E0] cursor-pointer shrink-0"
+                        className="w-9 h-9 rounded-md border border-[var(--border,_#ECEFF4)] cursor-pointer shrink-0"
                       />
                       <input
                         type="text"
                         value={brand[key]}
                         onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
-                        className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E9E5E0] font-mono text-[10px]"
+                        className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[var(--border,_#ECEFF4)] font-mono text-[10px]"
                       />
                     </div>
                   </div>
@@ -675,12 +675,12 @@ export default function CardDesignerPage() {
 
             {/* Typography — font + italic + bold + underline */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Typographie du titre</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)] mb-2">Typographie du titre</p>
               <div className="grid grid-cols-1 gap-3">
                 <select
                   value={brand.title_font}
                   onChange={(e) => setBrand((b) => ({ ...b, title_font: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm"
                   style={{ fontFamily: brand.title_font }}
                 >
                   {TITLE_FONTS.map((f) => (
@@ -688,7 +688,7 @@ export default function CardDesignerPage() {
                   ))}
                 </select>
                 <div className="flex items-center gap-4 flex-wrap">
-                <label className="inline-flex items-center gap-2 text-sm text-[#171412] select-none cursor-pointer">
+                <label className="inline-flex items-center gap-2 text-sm text-[var(--ink-head,_#030E1D)] select-none cursor-pointer">
                   <input
                     type="checkbox"
                     checked={brand.title_italic}
@@ -696,7 +696,7 @@ export default function CardDesignerPage() {
                   />
                   <span style={{ fontStyle: 'italic' }}>Italique</span>
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-[#171412] select-none cursor-pointer">
+                <label className="inline-flex items-center gap-2 text-sm text-[var(--ink-head,_#030E1D)] select-none cursor-pointer">
                   <input
                     type="checkbox"
                     checked={brand.title_bold !== false}
@@ -704,7 +704,7 @@ export default function CardDesignerPage() {
                   />
                   <span style={{ fontWeight: 700 }}>Gras</span>
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-[#171412] select-none cursor-pointer">
+                <label className="inline-flex items-center gap-2 text-sm text-[var(--ink-head,_#030E1D)] select-none cursor-pointer">
                   <input
                     type="checkbox"
                     checked={!!brand.title_underline}
@@ -714,14 +714,14 @@ export default function CardDesignerPage() {
                 </label>
                 </div>
               </div>
-              <p className="text-[10px] text-[#8D857D] mt-1.5">
+              <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] mt-1.5">
                 Choisissez la police qui correspond à l'identité de votre marque. Cormorant Garamond = boutique chic. Inter = SaaS moderne. Bebas Neue = sport / urbain.
               </p>
             </div>
 
             {/* Visibility toggles — show or hide each element */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Éléments visibles</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)] mb-2">Éléments visibles</p>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: 'show_tier',        label: 'Palier (Membre Gold)' },
@@ -732,7 +732,7 @@ export default function CardDesignerPage() {
                   { key: 'show_card_number', label: 'N° de carte (footer)' },
                   { key: 'show_barcode',     label: 'Code-barres Code 128' },
                 ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 text-[12px] text-[#171412] cursor-pointer py-1 px-2 rounded hover:bg-[#FAFAF8]">
+                  <label key={key} className="flex items-center gap-2 text-[12px] text-[var(--ink-head,_#030E1D)] cursor-pointer py-1 px-2 rounded hover:bg-[var(--surface-2,_#F8F9FC)]">
                     <input
                       type="checkbox"
                       checked={brand[key]}
@@ -755,33 +755,33 @@ export default function CardDesignerPage() {
                 layout is selected. They're additive: every existing
                 control above still works in this mode.
                 ──────────────────────────────────────────────────────── */}
-            <div className="pt-4 mt-2 space-y-4" style={{ borderTop: '1px solid #EFEDE9' }}>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A]">3 bandes — Top, Milieu, Bas</p>
+            <div className="pt-4 mt-2 space-y-4" style={{ borderTop: '1px solid var(--border, #ECEFF4)' }}>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)]">3 bandes — Top, Milieu, Bas</p>
 
                 {/* Card surface colours (top + bottom strips) */}
                 <div>
-                  <p className="text-[10px] text-[#8D857D] mb-1">Couleur des bandes haut + bas (mêmes)</p>
+                  <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1">Couleur des bandes haut + bas (mêmes)</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[9px] font-bold uppercase tracking-wider text-[#8D857D] mb-1">Fond bandes</label>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-1">Fond bandes</label>
                       <div className="flex items-center gap-1">
                         <input type="color" value={brand.card_bg_color}
                                onChange={(e) => setBrand((b) => ({ ...b, card_bg_color: e.target.value }))}
-                               className="w-9 h-9 rounded-md border border-[#E9E5E0] cursor-pointer shrink-0" />
+                               className="w-9 h-9 rounded-md border border-[var(--border,_#ECEFF4)] cursor-pointer shrink-0" />
                         <input type="text" value={brand.card_bg_color}
                                onChange={(e) => setBrand((b) => ({ ...b, card_bg_color: e.target.value }))}
-                               className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E9E5E0] font-mono text-[10px]" />
+                               className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[var(--border,_#ECEFF4)] font-mono text-[10px]" />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold uppercase tracking-wider text-[#8D857D] mb-1">Texte sur bandes</label>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-1">Texte sur bandes</label>
                       <div className="flex items-center gap-1">
                         <input type="color" value={brand.card_ink_color}
                                onChange={(e) => setBrand((b) => ({ ...b, card_ink_color: e.target.value }))}
-                               className="w-9 h-9 rounded-md border border-[#E9E5E0] cursor-pointer shrink-0" />
+                               className="w-9 h-9 rounded-md border border-[var(--border,_#ECEFF4)] cursor-pointer shrink-0" />
                         <input type="text" value={brand.card_ink_color}
                                onChange={(e) => setBrand((b) => ({ ...b, card_ink_color: e.target.value }))}
-                               className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E9E5E0] font-mono text-[10px]" />
+                               className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[var(--border,_#ECEFF4)] font-mono text-[10px]" />
                       </div>
                     </div>
                   </div>
@@ -789,8 +789,8 @@ export default function CardDesignerPage() {
 
                 {/* Middle band — type + content */}
                 <div>
-                  <p className="text-[10px] text-[#8D857D] mb-1">Bande promotionnelle (milieu)</p>
-                  <p className="text-[10.5px] text-[#8D857D] mb-2 leading-snug">
+                  <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1">Bande promotionnelle (milieu)</p>
+                  <p className="text-[10.5px] text-[var(--ink-muted,_#626F7E)] mb-2 leading-snug">
                     <b>Couleur unie</b> = la bande du milieu est un aplat de couleur (style GÉMO vert, Maison 123 brun) avec votre titre + sous-titre en surimpression.
                     <br />
                     <b>Image</b> = vous téléversez une photo promotionnelle qui remplit la bande (style FNAC Black Friday).
@@ -814,47 +814,47 @@ export default function CardDesignerPage() {
                   {brand.strip_type === 'color' && (
                     <div className="grid grid-cols-2 gap-3 mb-2">
                       <div>
-                        <label className="block text-[9px] font-bold uppercase tracking-wider text-[#8D857D] mb-1">Couleur bande</label>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-1">Couleur bande</label>
                         <div className="flex items-center gap-1">
                           <input type="color" value={brand.strip_color}
                                  onChange={(e) => setBrand((b) => ({ ...b, strip_color: e.target.value }))}
-                                 className="w-9 h-9 rounded-md border border-[#E9E5E0] cursor-pointer shrink-0" />
+                                 className="w-9 h-9 rounded-md border border-[var(--border,_#ECEFF4)] cursor-pointer shrink-0" />
                           <input type="text" value={brand.strip_color}
                                  onChange={(e) => setBrand((b) => ({ ...b, strip_color: e.target.value }))}
-                                 className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E9E5E0] font-mono text-[10px]" />
+                                 className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[var(--border,_#ECEFF4)] font-mono text-[10px]" />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-[9px] font-bold uppercase tracking-wider text-[#8D857D] mb-1">Texte sur bande</label>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-1">Texte sur bande</label>
                         <div className="flex items-center gap-1">
                           <input type="color" value={brand.strip_text_color}
                                  onChange={(e) => setBrand((b) => ({ ...b, strip_text_color: e.target.value }))}
-                                 className="w-9 h-9 rounded-md border border-[#E9E5E0] cursor-pointer shrink-0" />
+                                 className="w-9 h-9 rounded-md border border-[var(--border,_#ECEFF4)] cursor-pointer shrink-0" />
                           <input type="text" value={brand.strip_text_color}
                                  onChange={(e) => setBrand((b) => ({ ...b, strip_text_color: e.target.value }))}
-                                 className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[#E9E5E0] font-mono text-[10px]" />
+                                 className="flex-1 min-w-0 px-1.5 py-1 rounded-md border border-[var(--border,_#ECEFF4)] font-mono text-[10px]" />
                         </div>
                       </div>
                     </div>
                   )}
                   {brand.strip_type === 'image' && (
-                    <p className="text-[10px] text-[#8D857D] mb-2">Téléversez l'image héros plus haut — elle remplit la bande quand ce mode est actif.</p>
+                    <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] mb-2">Téléversez l'image héros plus haut — elle remplit la bande quand ce mode est actif.</p>
                   )}
                   <div className="grid grid-cols-1 gap-2">
                     <input type="text" value={brand.strip_title}
                            onChange={(e) => setBrand((b) => ({ ...b, strip_title: e.target.value }))}
                            placeholder="Titre principal de la bande (ex: HÔTEL MAGIQUE)"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                           className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                     <input type="text" value={brand.strip_subtitle}
                            onChange={(e) => setBrand((b) => ({ ...b, strip_subtitle: e.target.value }))}
                            placeholder="Sous-titre (optionnel)"
-                           className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                           className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                   </div>
                 </div>
 
                 {/* Offer callout box */}
                 <div>
-                  <label className="flex items-center gap-2 text-[12px] text-[#171412] cursor-pointer mb-2">
+                  <label className="flex items-center gap-2 text-[12px] text-[var(--ink-head,_#030E1D)] cursor-pointer mb-2">
                     <input type="checkbox" checked={brand.show_offer_box}
                            onChange={(e) => setBrand((b) => ({ ...b, show_offer_box: e.target.checked }))} />
                     Afficher l'encart d'offre (façon « 10€ cagnottés » de GÉMO)
@@ -864,23 +864,23 @@ export default function CardDesignerPage() {
                       <input type="text" value={brand.offer_box_text}
                              onChange={(e) => setBrand((b) => ({ ...b, offer_box_text: e.target.value }))}
                              placeholder="Texte principal (ex: 10€ cagnottés*)"
-                             className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                             className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                       <input type="text" value={brand.offer_box_subtext}
                              onChange={(e) => setBrand((b) => ({ ...b, offer_box_subtext: e.target.value }))}
                              placeholder="Sous-texte (ex: Dès 3 articles achetés)"
-                             className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                             className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[9px] font-bold uppercase tracking-wider text-[#8D857D] mb-1">Fond encart</label>
+                          <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-1">Fond encart</label>
                           <input type="color" value={brand.offer_box_color}
                                  onChange={(e) => setBrand((b) => ({ ...b, offer_box_color: e.target.value }))}
-                                 className="w-full h-8 rounded-md border border-[#E9E5E0] cursor-pointer" />
+                                 className="w-full h-8 rounded-md border border-[var(--border,_#ECEFF4)] cursor-pointer" />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase tracking-wider text-[#8D857D] mb-1">Texte encart</label>
+                          <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-1">Texte encart</label>
                           <input type="color" value={brand.offer_box_ink_color}
                                  onChange={(e) => setBrand((b) => ({ ...b, offer_box_ink_color: e.target.value }))}
-                                 className="w-full h-8 rounded-md border border-[#E9E5E0] cursor-pointer" />
+                                 className="w-full h-8 rounded-md border border-[var(--border,_#ECEFF4)] cursor-pointer" />
                         </div>
                       </div>
                     </div>
@@ -895,18 +895,18 @@ export default function CardDesignerPage() {
               </div>
 
             {/* ─── Disposition Apple Wallet — logo, top-right, action prompt, QR, anniversaire, tiers ─── */}
-            <div className="rounded-xl border border-[#E9E5E0] bg-white p-4 space-y-4 mt-3">
+            <div className="rounded-xl border border-[var(--border,_#ECEFF4)] bg-white p-4 space-y-4 mt-3">
               <div className="flex items-center gap-2">
-                <Palette size={16} className="text-[#B85C38]" />
-                <h3 className="text-[14px] font-bold text-[#171412]">Disposition Apple Wallet</h3>
+                <Palette size={16} className="text-[var(--blue-deep,_#1453BD)]" />
+                <h3 className="text-[14px] font-bold text-[var(--ink-head,_#030E1D)]">Disposition Apple Wallet</h3>
               </div>
-              <p className="text-[11.5px] text-[#8D857D] -mt-2">
+              <p className="text-[11.5px] text-[var(--ink-muted,_#626F7E)] -mt-2">
                 Réglez où va le logo, ce qui s'affiche en haut à droite, l'invite d'action en bas, la taille du QR, l'anniversaire et les badges de palier.
               </p>
 
               {/* Logo position */}
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-[#8D857D] mb-2 font-bold">Position du logo</p>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-2 font-bold">Position du logo</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { key: 'top_left',       label: 'Haut gauche' },
@@ -917,7 +917,7 @@ export default function CardDesignerPage() {
                     return (
                       <button key={key} type="button"
                         onClick={() => setBrand((b) => ({ ...b, logo_position: key }))}
-                        className={`p-2 rounded-lg border text-[11px] text-center transition ${active ? 'border-[#B85C38] bg-[#FEF6F0] text-[#B85C38] font-semibold' : 'border-[#E9E5E0] bg-white hover:bg-[#FAFAF8] text-[#171412]'}`}>
+                        className={`p-2 rounded-lg border text-[11px] text-center transition ${active ? 'border-[var(--blue,_#0F6FDE)] bg-[var(--tint-blue,_#E5F1FF)] text-[var(--blue-deep,_#1453BD)] font-semibold' : 'border-[var(--border,_#ECEFF4)] bg-white hover:bg-[var(--surface-2,_#F8F9FC)] text-[var(--ink-head,_#030E1D)]'}`}>
                         {label}
                       </button>
                     );
@@ -927,7 +927,7 @@ export default function CardDesignerPage() {
 
               {/* Top-right pts label */}
               <div>
-                <label className="flex items-center gap-2 text-[12px] font-bold text-[#171412] mb-2 cursor-pointer">
+                <label className="flex items-center gap-2 text-[12px] font-bold text-[var(--ink-head,_#030E1D)] mb-2 cursor-pointer">
                   <input type="checkbox" checked={brand.show_points_top_right !== false}
                          onChange={(e) => setBrand((b) => ({ ...b, show_points_top_right: e.target.checked }))} />
                   Afficher les points en haut à droite ("+ D'INFOS / N pts")
@@ -936,7 +936,7 @@ export default function CardDesignerPage() {
                   <input type="text" value={brand.points_top_right_label}
                          onChange={(e) => setBrand((b) => ({ ...b, points_top_right_label: e.target.value }))}
                          placeholder="+ D'INFOS"
-                         className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                         className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                 )}
               </div>
 
@@ -947,26 +947,26 @@ export default function CardDesignerPage() {
 
               {/* Greeting label */}
               <div>
-                <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Étiquette d'accueil</label>
+                <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Étiquette d'accueil</label>
                 <input type="text" value={brand.bottom_greeting_label}
                        onChange={(e) => setBrand((b) => ({ ...b, bottom_greeting_label: e.target.value }))}
                        placeholder="Bienvenue / Membre / Bonjour"
-                       className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                       className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
               </div>
 
               {/* QR / barcode / birthday toggles */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <label className="flex items-center gap-2 text-[12px] text-[#171412] cursor-pointer">
+                <label className="flex items-center gap-2 text-[12px] text-[var(--ink-head,_#030E1D)] cursor-pointer">
                   <input type="checkbox" checked={brand.show_qr !== false}
                          onChange={(e) => setBrand((b) => ({ ...b, show_qr: e.target.checked }))} />
                   QR code
                 </label>
-                <label className="flex items-center gap-2 text-[12px] text-[#171412] cursor-pointer">
+                <label className="flex items-center gap-2 text-[12px] text-[var(--ink-head,_#030E1D)] cursor-pointer">
                   <input type="checkbox" checked={brand.show_barcode !== false}
                          onChange={(e) => setBrand((b) => ({ ...b, show_barcode: e.target.checked }))} />
                   Code-barres
                 </label>
-                <label className="flex items-center gap-2 text-[12px] text-[#171412] cursor-pointer">
+                <label className="flex items-center gap-2 text-[12px] text-[var(--ink-head,_#030E1D)] cursor-pointer">
                   <input type="checkbox" checked={!!brand.show_birthday}
                          onChange={(e) => setBrand((b) => ({ ...b, show_birthday: e.target.checked }))} />
                   Anniversaire
@@ -976,24 +976,24 @@ export default function CardDesignerPage() {
               {/* QR size + birthday label */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Taille du QR (px)</label>
+                  <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Taille du QR (px)</label>
                   <input type="range" min="48" max="140" value={brand.qr_size}
                          onChange={(e) => setBrand((b) => ({ ...b, qr_size: parseInt(e.target.value, 10) }))}
                          className="w-full" />
-                  <p className="text-[11px] text-[#171412] mt-1">{brand.qr_size}px</p>
+                  <p className="text-[11px] text-[var(--ink-head,_#030E1D)] mt-1">{brand.qr_size}px</p>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Étiquette anniversaire</label>
+                  <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Étiquette anniversaire</label>
                   <input type="text" value={brand.birthday_label}
                          onChange={(e) => setBrand((b) => ({ ...b, birthday_label: e.target.value }))}
                          placeholder="Anniversaire"
-                         className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                         className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                 </div>
               </div>
 
               {/* Tier badge colours */}
               <div>
-                <label className="flex items-center gap-2 text-[12px] font-bold text-[#171412] mb-2 cursor-pointer">
+                <label className="flex items-center gap-2 text-[12px] font-bold text-[var(--ink-head,_#030E1D)] mb-2 cursor-pointer">
                   <input type="checkbox" checked={brand.show_tier_badge !== false}
                          onChange={(e) => setBrand((b) => ({ ...b, show_tier_badge: e.target.checked }))} />
                   Afficher le badge de palier sur la carte
@@ -1007,10 +1007,10 @@ export default function CardDesignerPage() {
                       { key: 'tier_badge_vip',    label: 'VIP' },
                     ].map(({ key, label }) => (
                       <div key={key}>
-                        <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">{label}</label>
+                        <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">{label}</label>
                         <input type="color" value={brand[key]}
                                onChange={(e) => setBrand((b) => ({ ...b, [key]: e.target.value }))}
-                               className="w-full h-8 rounded border border-[#E9E5E0]" />
+                               className="w-full h-8 rounded border border-[var(--border,_#ECEFF4)]" />
                       </div>
                     ))}
                   </div>
@@ -1019,26 +1019,26 @@ export default function CardDesignerPage() {
             </div>
 
             {/* ─── Tampons & progression — punch-card stamps + meter ─── */}
-            <div className="rounded-xl border border-[#E9E5E0] bg-white p-4 space-y-4 mt-3">
+            <div className="rounded-xl border border-[var(--border,_#ECEFF4)] bg-white p-4 space-y-4 mt-3">
               <div className="flex items-center gap-2">
-                <Award size={16} className="text-[#B85C38]" />
-                <h3 className="text-[14px] font-bold text-[#171412]">Tampons & progression</h3>
+                <Award size={16} className="text-[var(--blue-deep,_#1453BD)]" />
+                <h3 className="text-[14px] font-bold text-[var(--ink-head,_#030E1D)]">Tampons & progression</h3>
               </div>
-              <p className="text-[11.5px] text-[#8D857D] -mt-2">
+              <p className="text-[11.5px] text-[var(--ink-muted,_#626F7E)] -mt-2">
                 Personnalisez le design des tampons et de la jauge affichés en bas de la carte.
                 Le nombre de tampons se synchronise automatiquement avec la règle "Stamps to unlock the reward".
               </p>
 
               {/* Stamp shape picker */}
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-[#8D857D] mb-2 font-bold">Forme du tampon</p>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-2 font-bold">Forme du tampon</p>
                 <div className="grid grid-cols-5 gap-2">
                   {[
                     { key: 'circle',  label: 'Cercle',  preview: { borderRadius: '50%' } },
                     { key: 'hexagon', label: 'Hexagone', preview: { clipPath: 'polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%)' } },
                     { key: 'octagon', label: 'Octogone', preview: { clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' } },
                     { key: 'square',  label: 'Carré',   preview: { borderRadius: 4 } },
-                    { key: 'custom',  label: 'Personnalisé', preview: { borderRadius: 4, border: '2px dashed #B85C38', background: '#FFF' } },
+                    { key: 'custom',  label: 'Personnalisé', preview: { borderRadius: 4, border: '2px dashed var(--blue, #0F6FDE)', background: '#FFF' } },
                   ].map(({ key, label, preview }) => {
                     const active = brand.stamp_shape === key;
                     return (
@@ -1046,10 +1046,10 @@ export default function CardDesignerPage() {
                         key={key}
                         type="button"
                         onClick={() => setBrand((b) => ({ ...b, stamp_shape: key }))}
-                        className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border transition ${active ? 'border-[#B85C38] bg-[#FEF6F0]' : 'border-[#E9E5E0] bg-white hover:bg-[#FAFAF8]'}`}
+                        className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border transition ${active ? 'border-[var(--blue,_#0F6FDE)] bg-[var(--tint-blue,_#E5F1FF)]' : 'border-[var(--border,_#ECEFF4)] bg-white hover:bg-[var(--surface-2,_#F8F9FC)]'}`}
                       >
                         <div style={{ width: 26, height: 26, background: active ? brand.stamp_fill_color : '#D6CFC1', ...preview }} />
-                        <span className="text-[10px] text-[#171412] font-medium">{label}</span>
+                        <span className="text-[10px] text-[var(--ink-head,_#030E1D)] font-medium">{label}</span>
                       </button>
                     );
                   })}
@@ -1059,23 +1059,23 @@ export default function CardDesignerPage() {
               {/* Custom stamp image upload (only when shape === 'custom') */}
               {brand.stamp_shape === 'custom' && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-[#8D857D] mb-2 font-bold">Image de tampon personnalisée</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--ink-muted,_#626F7E)] mb-2 font-bold">Image de tampon personnalisée</p>
                   <div className="flex items-center gap-3">
                     {brand.stamp_custom_url ? (
                       <div className="relative">
-                        <img src={brand.stamp_custom_url} alt="" className="w-12 h-12 rounded object-cover border border-[#E9E5E0]" />
+                        <img src={brand.stamp_custom_url} alt="" className="w-12 h-12 rounded object-cover border border-[var(--border,_#ECEFF4)]" />
                         <button type="button" onClick={() => setBrand((b) => ({ ...b, stamp_custom_url: '' }))}
-                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#171412] text-white flex items-center justify-center"
+                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--red,_#D93036)] text-white flex items-center justify-center"
                                 aria-label="Supprimer">
                           <X size={11} />
                         </button>
                       </div>
                     ) : (
-                      <div className="w-12 h-12 rounded border-2 border-dashed border-[#E9E5E0] flex items-center justify-center text-[#8D857D]">
+                      <div className="w-12 h-12 rounded border-2 border-dashed border-[var(--border,_#ECEFF4)] flex items-center justify-center text-[var(--ink-muted,_#626F7E)]">
                         <ImagePlus size={18} />
                       </div>
                     )}
-                    <label className="cursor-pointer text-[12px] text-[#B85C38] font-semibold hover:underline">
+                    <label className="cursor-pointer text-[12px] text-[var(--blue-deep,_#1453BD)] font-semibold hover:underline">
                       Choisir une image…
                       <input
                         type="file"
@@ -1098,46 +1098,46 @@ export default function CardDesignerPage() {
               {/* Colour pickers — stamp fill, empty, ink */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Tampon rempli</label>
+                  <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Tampon rempli</label>
                   <input type="color" value={brand.stamp_fill_color}
                          onChange={(e) => setBrand((b) => ({ ...b, stamp_fill_color: e.target.value }))}
-                         className="w-full h-9 rounded border border-[#E9E5E0]" />
+                         className="w-full h-9 rounded border border-[var(--border,_#ECEFF4)]" />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Tampon vide</label>
+                  <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Tampon vide</label>
                   <input type="color" value={brand.stamp_empty_color}
                          onChange={(e) => setBrand((b) => ({ ...b, stamp_empty_color: e.target.value }))}
-                         className="w-full h-9 rounded border border-[#E9E5E0]" />
+                         className="w-full h-9 rounded border border-[var(--border,_#ECEFF4)]" />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Icône (✓)</label>
+                  <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Icône (✓)</label>
                   <input type="color" value={brand.stamp_ink_color}
                          onChange={(e) => setBrand((b) => ({ ...b, stamp_ink_color: e.target.value }))}
-                         className="w-full h-9 rounded border border-[#E9E5E0]" />
+                         className="w-full h-9 rounded border border-[var(--border,_#ECEFF4)]" />
                 </div>
               </div>
 
               {/* Size + label */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Taille (px)</label>
+                  <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Taille (px)</label>
                   <input type="range" min="18" max="40" value={brand.stamp_size}
                          onChange={(e) => setBrand((b) => ({ ...b, stamp_size: parseInt(e.target.value, 10) }))}
                          className="w-full" />
-                  <p className="text-[11px] text-[#171412] mt-1">{brand.stamp_size}px</p>
+                  <p className="text-[11px] text-[var(--ink-head,_#030E1D)] mt-1">{brand.stamp_size}px</p>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Étiquette</label>
+                  <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Étiquette</label>
                   <input type="text" value={brand.stamps_label}
                          onChange={(e) => setBrand((b) => ({ ...b, stamps_label: e.target.value }))}
                          placeholder="Vos tampons"
-                         className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                         className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                 </div>
               </div>
 
               {/* Meter (progress bar) settings */}
-              <div className="border-t border-[#F0EAE0] pt-4">
-                <label className="flex items-center gap-2 text-[12px] font-bold text-[#171412] cursor-pointer mb-2">
+              <div className="border-t border-[var(--border,_#ECEFF4)] pt-4">
+                <label className="flex items-center gap-2 text-[12px] font-bold text-[var(--ink-head,_#030E1D)] cursor-pointer mb-2">
                   <input type="checkbox" checked={brand.show_meter !== false}
                          onChange={(e) => setBrand((b) => ({ ...b, show_meter: e.target.checked }))} />
                   Afficher la jauge de points
@@ -1145,30 +1145,30 @@ export default function CardDesignerPage() {
                 {brand.show_meter !== false && (
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Couleur de remplissage</label>
+                      <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Couleur de remplissage</label>
                       <input type="color" value={brand.meter_fill_color}
                              onChange={(e) => setBrand((b) => ({ ...b, meter_fill_color: e.target.value }))}
-                             className="w-full h-9 rounded border border-[#E9E5E0]" />
+                             className="w-full h-9 rounded border border-[var(--border,_#ECEFF4)]" />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Couleur de fond</label>
+                      <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Couleur de fond</label>
                       <input type="color" value={brand.meter_track_color}
                              onChange={(e) => setBrand((b) => ({ ...b, meter_track_color: e.target.value }))}
-                             className="w-full h-9 rounded border border-[#E9E5E0]" />
+                             className="w-full h-9 rounded border border-[var(--border,_#ECEFF4)]" />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-[#8D857D] mb-1 font-bold uppercase tracking-wider">Étiquette jauge points</label>
+                      <label className="block text-[10px] text-[var(--ink-muted,_#626F7E)] mb-1 font-bold uppercase tracking-wider">Étiquette jauge points</label>
                       <input type="text" value={brand.meter_label}
                              onChange={(e) => setBrand((b) => ({ ...b, meter_label: e.target.value }))}
                              placeholder="Progression"
-                             className="w-full px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm" />
+                             className="w-full px-3 py-2 rounded-lg border border-[var(--border,_#ECEFF4)] text-sm" />
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Toggle: show stamps grid */}
-              <label className="flex items-center gap-2 text-[12px] font-bold text-[#171412] cursor-pointer">
+              <label className="flex items-center gap-2 text-[12px] font-bold text-[var(--ink-head,_#030E1D)] cursor-pointer">
                 <input type="checkbox" checked={brand.show_stamps_grid !== false}
                        onChange={(e) => setBrand((b) => ({ ...b, show_stamps_grid: e.target.checked }))} />
                 Afficher la grille de tampons sur la carte
@@ -1276,27 +1276,27 @@ export default function CardDesignerPage() {
             {/* Map text — pictorial legend that shows what each band contains
                 and which editor section controls it. */}
             <div className="mt-3 rounded-xl border bg-white p-3" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
-              <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-[#8D857D] mb-2">Carte — légende</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-[var(--ink-muted,_#626F7E)] mb-2">Carte — légende</p>
               <ul className="space-y-2 text-[11.5px]">
                 <li className="flex items-start gap-2">
                   <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#3FA9D9', color: '#FFFFFF' }}>1</span>
                   <div>
-                    <div className="font-semibold text-[#171412]">Bande HAUT</div>
-                    <div className="text-[#8D857D] leading-snug">Logo · nom du commerce · badge palier · "+ D'INFOS / N pts". Couleur = <span className="font-mono text-[10.5px] text-[#171412]">card_bg_color</span> (partagée avec la bande bas).</div>
+                    <div className="font-semibold text-[var(--ink-head,_#030E1D)]">Bande HAUT</div>
+                    <div className="text-[var(--ink-muted,_#626F7E)] leading-snug">Logo · nom du commerce · badge palier · "+ D'INFOS / N pts". Couleur = <span className="font-mono text-[10.5px] text-[var(--ink-head,_#030E1D)]">card_bg_color</span> (partagée avec la bande bas).</div>
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#E8A53B', color: '#FFFFFF' }}>2</span>
                   <div>
-                    <div className="font-semibold text-[#171412]">Bande MILIEU</div>
-                    <div className="text-[#8D857D] leading-snug">Image ou couleur · titre · sous-titre · encart offre. Couleur indépendante via <span className="font-mono text-[10.5px] text-[#171412]">strip_color</span> ou l'image téléversée.</div>
+                    <div className="font-semibold text-[var(--ink-head,_#030E1D)]">Bande MILIEU</div>
+                    <div className="text-[var(--ink-muted,_#626F7E)] leading-snug">Image ou couleur · titre · sous-titre · encart offre. Couleur indépendante via <span className="font-mono text-[10.5px] text-[var(--ink-head,_#030E1D)]">strip_color</span> ou l'image téléversée.</div>
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#20714C', color: '#FFFFFF' }}>3</span>
                   <div>
-                    <div className="font-semibold text-[#171412]">Bande BAS</div>
-                    <div className="text-[#8D857D] leading-snug">Salutation · prénom · total visites · grille de tampons · jauge de points · QR code · code-barres · anniversaire. Même couleur que la bande haut.</div>
+                    <div className="font-semibold text-[var(--ink-head,_#030E1D)]">Bande BAS</div>
+                    <div className="text-[var(--ink-muted,_#626F7E)] leading-snug">Salutation · prénom · total visites · grille de tampons · jauge de points · QR code · code-barres · anniversaire. Même couleur que la bande haut.</div>
                   </div>
                 </li>
               </ul>

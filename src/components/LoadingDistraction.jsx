@@ -25,7 +25,7 @@ const TIPS_FR = [
   "Une carte mobile ne se perd jamais — contrairement aux cartes papier.",
 ];
 
-const COLORS = ['#B85C38', '#E3A869', '#D77FA0', '#B85C38', '#6FA89C', '#6BA4D9'];
+const COLORS = ['#0F6FDE', '#5297E7', '#93BEF0', '#0D62C4', '#CADFF8', '#1453BD'];
 
 const LoadingDistraction = ({
   title = 'Chargement de votre tableau de bord',
@@ -94,10 +94,10 @@ const LoadingDistraction = ({
     <div className="relative w-full max-w-2xl mx-auto rounded-3xl overflow-hidden border"
          style={{
            height,
-           background: `radial-gradient(circle at 20% 20%, #FCE3DC 0%, transparent 50%),
-                        radial-gradient(circle at 80% 80%, #DDEBF6 0%, transparent 60%),
-                        linear-gradient(135deg, #FAFAF8 0%, #F5EFE5 100%)`,
-           borderColor: '#EFE9E0',
+           background: `radial-gradient(circle at 20% 20%, var(--tint-blue, #E5F1FF) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, var(--tint-blue, #E5F1FF) 0%, transparent 60%),
+                        linear-gradient(135deg, var(--surface-2, #F8F9FC) 0%, var(--surface-1, #FFFFFF) 100%)`,
+           borderColor: 'var(--border, #ECEFF4)',
          }}
          ref={containerRef}
     >
@@ -126,20 +126,20 @@ const LoadingDistraction = ({
 
       {/* Header bar */}
       <div className="absolute top-3 left-4 right-4 flex items-center justify-between text-xs font-bold uppercase tracking-widest pointer-events-none">
-        <span style={{ color: '#171412' }}>{title}</span>
+        <span style={{ color: 'var(--ink-head, #030E1D)' }}>{title}</span>
         <span className="px-2 py-0.5 rounded-full text-white"
-              style={{ background: 'linear-gradient(135deg, #B85C38, #D77FA0)' }}>
+              style={{ background: 'linear-gradient(135deg, var(--blue, #0F6FDE), var(--blue-deep, #1453BD))' }}>
           ☕ {score}
         </span>
       </div>
 
       {/* Bottom message + tip */}
       <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
-        <p className="text-xs font-medium" style={{ color: '#3D2820' }}>{message}</p>
-        <p className="text-[11px] italic mt-1" style={{ color: '#57504A' }}>
+        <p className="text-xs font-medium" style={{ color: 'var(--ink-body, #556272)' }}>{message}</p>
+        <p className="text-[11px] italic mt-1" style={{ color: 'var(--ink-body, #556272)' }}>
           💡 {TIPS_FR[tipIdx]}
         </p>
-        <p className="text-[10px] mt-1" style={{ color: '#8D857D' }}>
+        <p className="text-[10px] mt-1" style={{ color: 'var(--ink-muted, #626F7E)' }}>
           (En attendant — attrapez les grains de café !)
         </p>
       </div>

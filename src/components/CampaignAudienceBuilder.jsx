@@ -184,8 +184,8 @@ const CampaignAudienceBuilder = ({
   return (
     <div className="border-t pt-6 space-y-5" style={{ borderColor: 'var(--border, #ECEFF4)' }}>
       <div className="flex items-center gap-2">
-        <Users size={18} className="text-[#B85C38]" />
-        <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: '#171412' }}>
+        <Users size={18} className="text-[var(--blue-deep,_#1453BD)]" />
+        <h3 className="text-xl font-bold" style={{ fontFamily: 'Cormorant Garamond', color: 'var(--ink-head, #030E1D)' }}>
           Audience
         </h3>
         <span className="text-xs ml-auto" style={{ color: C_PS.inkMute }}>
@@ -200,7 +200,7 @@ const CampaignAudienceBuilder = ({
         </label>
         <div className="relative">
           <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2" style={{ border: `1px solid ${C_PS.hairline}` }}>
-            <Search size={16} className="text-[#B85C38] shrink-0" />
+            <Search size={16} className="text-[var(--blue-deep,_#1453BD)] shrink-0" />
             <input
               type="text"
               value={search}
@@ -212,7 +212,7 @@ const CampaignAudienceBuilder = ({
             />
             {picked.length > 0 && (
               <button type="button" onClick={clearPicks}
-                className="text-xs font-semibold text-[#991B1B] hover:underline shrink-0">
+                className="text-xs font-semibold text-[var(--red-deep,_#A81E27)] hover:underline shrink-0">
                 Clear all
               </button>
             )}
@@ -250,7 +250,7 @@ const CampaignAudienceBuilder = ({
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold"
                 style={{ background: 'white', color: C_PS.inkDeep, border: `1px solid ${C_PS.terracotta}55` }}>
                 {p.name}
-                <button type="button" onClick={() => removePick(p.id)} aria-label="Remove" className="text-[#991B1B] hover:scale-110">
+                <button type="button" onClick={() => removePick(p.id)} aria-label="Remove" className="text-[var(--red-deep,_#A81E27)] hover:scale-110">
                   <X size={12} />
                 </button>
               </span>
@@ -270,7 +270,7 @@ const CampaignAudienceBuilder = ({
       <div className={`rounded-lg p-4 space-y-4 ${picked.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}
         style={{ border: `1px solid ${C_PS.hairline}` }}>
         <div className="flex items-center gap-2">
-          <Filter size={14} className="text-[#B85C38]" />
+          <Filter size={14} className="text-[var(--blue-deep,_#1453BD)]" />
           <span className="text-xs font-bold uppercase tracking-widest" style={{ color: C_PS.inkMute }}>
             Filters {picked.length > 0 && '(disabled — clear specific picks to use filters)'}
           </span>
@@ -285,9 +285,9 @@ const CampaignAudienceBuilder = ({
                 <button key={t} type="button" onClick={() => toggleTier(t)}
                   className="px-3 py-1.5 rounded-full text-xs font-semibold transition border"
                   style={{
-                    background: on ? '#B85C38' : 'white',
-                    color: on ? 'white' : '#57504A',
-                    borderColor: on ? '#B85C38' : 'var(--border, #ECEFF4)',
+                    background: on ? 'var(--blue, #0F6FDE)' : 'white',
+                    color: on ? 'white' : 'var(--ink-body, #556272)',
+                    borderColor: on ? 'var(--blue, #0F6FDE)' : 'var(--border, #ECEFF4)',
                   }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
@@ -379,9 +379,9 @@ const CampaignAudienceBuilder = ({
                     <button key={m} type="button" onClick={() => toggleBirthMonth(monthNum)}
                       className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition border"
                       style={{
-                        background: on ? '#B85C38' : 'white',
-                        color: on ? 'white' : '#57504A',
-                        borderColor: on ? '#B85C38' : 'var(--border, #ECEFF4)',
+                        background: on ? 'var(--blue, #0F6FDE)' : 'white',
+                        color: on ? 'white' : 'var(--ink-body, #556272)',
+                        borderColor: on ? 'var(--blue, #0F6FDE)' : 'var(--border, #ECEFF4)',
                       }}>
                       {m.slice(0, 3)}
                     </button>
@@ -396,7 +396,7 @@ const CampaignAudienceBuilder = ({
       {/* ---- Live preview ---- */}
       <div className="rounded-lg p-4 flex items-center gap-3"
         style={{ background: `${C_PS.terracotta}0D`, border: `1px solid ${C_PS.terracotta}33` }}>
-        <Eye size={18} className="text-[#B85C38] shrink-0" />
+        <Eye size={18} className="text-[var(--blue-deep,_#1453BD)] shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-semibold" style={{ color: C_PS.inkDeep }}>
             {previewLoading ? 'Counting…'
