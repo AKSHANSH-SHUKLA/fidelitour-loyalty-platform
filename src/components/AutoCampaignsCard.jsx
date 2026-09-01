@@ -303,7 +303,7 @@ const Section = ({ title, enabled, onToggle, icon: Icon, children }) => (
   <div className="mb-5 pb-5 last:mb-0 last:pb-0 last:border-b-0 border-b" style={{ borderColor: C_PS.hairline }}>
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-2">
-        <Icon size={16} className="text-[#B85C38]" />
+        <Icon size={16} className="text-[var(--blue-deep,_#1453BD)]" />
         <h3 className="font-bold" style={{ color: C_PS.inkDeep }}>{title}</h3>
       </div>
       <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold">
@@ -371,7 +371,7 @@ const TwilioTestBench = () => {
   return (
     <div className="mt-5 pt-5 border-t" style={{ borderColor: C_PS.hairline }}>
       <div className="flex items-start gap-2 mb-3">
-        <Smartphone size={16} className="text-[#B85C38] mt-0.5" />
+        <Smartphone size={16} className="text-[var(--blue-deep,_#1453BD)] mt-0.5" />
         <div className="flex-1">
           <p className="text-sm font-bold" style={{ color: C_PS.inkDeep }}>Test SMS delivery</p>
           <p className="text-xs" style={{ color: C_PS.inkMute }}>
@@ -401,8 +401,10 @@ const TwilioTestBench = () => {
       {last && (
         <div className="mt-3 rounded-lg p-3 text-xs"
           style={{
-            background: last.sent ? '#ECFDF5' : '#FEF3C7',
-            color: last.sent ? '#065F46' : '#92400E',
+            background: last.sent
+              ? 'color-mix(in srgb, var(--green, #10BC4C) 10%, var(--surface-1, #FFFFFF))'
+              : 'var(--surface-2, #F8F9FC)',
+            color: last.sent ? 'var(--green-deep, #087A31)' : 'var(--ink-body, #556272)',
           }}>
           {last.sent
             ? <>✓ Sent — Twilio SID <code>{last.sid}</code> to <code>{last.to}</code> · status {last.status}</>

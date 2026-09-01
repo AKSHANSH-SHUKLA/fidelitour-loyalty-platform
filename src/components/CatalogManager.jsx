@@ -128,7 +128,7 @@ export default function CatalogManager() {
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: '#8D857D' }}>
+      <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-muted, #626F7E)' }}>
         Chargement du catalogue…
       </div>
     );
@@ -137,7 +137,7 @@ export default function CatalogManager() {
   return (
     <div style={{ background: 'var(--flc-card, #FFFFFF)', borderRadius: 12, border: '1px solid var(--flc-line, #E9E5E0)', padding: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#171412' }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--ink-head, #030E1D)' }}>
           🧾 Catalogue produits &amp; services
         </h3>
         {savedAt && (
@@ -146,7 +146,7 @@ export default function CatalogManager() {
           </span>
         )}
       </div>
-      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#57504A', lineHeight: 1.5 }}>
+      <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'var(--ink-body, #556272)', lineHeight: 1.5 }}>
         Listez ici tout ce que vous vendez avec son prix. Lors du scan,
         votre équipe sélectionnera les articles du panier dans cette
         liste — pas de saisie manuelle de montant, et les rapports
@@ -160,7 +160,7 @@ export default function CatalogManager() {
         gridTemplateColumns: '2fr 1fr 1.2fr 36px',
         gap: 8, alignItems: 'center', marginBottom: 6,
         fontSize: 10.5, letterSpacing: '0.08em', textTransform: 'uppercase',
-        color: '#8D857D', fontWeight: 600,
+        color: 'var(--ink-muted, #626F7E)', fontWeight: 600,
       }}>
         <span>Nom du produit / service</span>
         <span>Prix (€)</span>
@@ -206,7 +206,7 @@ export default function CatalogManager() {
               style={{
                 width: 36, height: 36, borderRadius: 8,
                 border: '1px solid var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FFFFFF)', cursor: 'pointer',
-                display: 'grid', placeItems: 'center', color: '#B85C38',
+                display: 'grid', placeItems: 'center', color: 'var(--blue-deep, #1453BD)',
               }}
             >
               <Trash2 size={14} />
@@ -223,7 +223,7 @@ export default function CatalogManager() {
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 14px', borderRadius: 8,
             border: '1px solid var(--flc-line, #E9E5E0)', background: 'var(--flc-card, #FFFFFF)',
-            cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: '#171412',
+            cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: 'var(--ink-head, #030E1D)',
             fontFamily: 'inherit',
           }}
         >
@@ -266,7 +266,7 @@ export default function CatalogManager() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 14px', borderRadius: 8,
-            border: 'none', background: saving ? '#B85C3855' : '#B85C38',
+            border: 'none', background: saving ? 'var(--blue, #0F6FDE)55' : 'var(--blue, #0F6FDE)',
             color: 'white', cursor: saving ? 'wait' : 'pointer',
             fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit',
             marginLeft: 'auto',

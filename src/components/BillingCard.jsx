@@ -62,7 +62,7 @@ export default function BillingCard() {
   if (loading) {
     return (
       <div className="bg-white rounded-2xl border border-[var(--border, #ECEFF4)] p-5">
-        <div className="text-sm text-[#57504A]">Chargement de l'abonnement…</div>
+        <div className="text-sm text-[var(--ink-body,_#556272)]">Chargement de l'abonnement…</div>
       </div>
     );
   }
@@ -71,12 +71,12 @@ export default function BillingCard() {
     return (
       <div className="bg-white rounded-2xl border border-[var(--border, #ECEFF4)] p-5">
         <div className="flex items-start gap-3">
-          <CreditCard className="text-[#8D857D] flex-shrink-0 mt-0.5" size={20} />
+          <CreditCard className="text-[var(--ink-muted,_#626F7E)] flex-shrink-0 mt-0.5" size={20} />
           <div>
-            <h3 className="text-base font-semibold text-[#171412] mb-1">Abonnement</h3>
-            <p className="text-sm text-[#57504A]">
+            <h3 className="text-base font-semibold text-[var(--ink-head,_#030E1D)] mb-1">Abonnement</h3>
+            <p className="text-sm text-[var(--ink-body,_#556272)]">
               La facturation n'est pas configurée. L'administrateur de la plateforme
-              doit définir <code className="text-xs bg-[#F2F2F2] px-1 py-0.5 rounded">STRIPE_SECRET_KEY</code> dans les
+              doit définir <code className="text-xs bg-[var(--surface-2,_#F8F9FC)] px-1 py-0.5 rounded">STRIPE_SECRET_KEY</code> dans les
               variables d'environnement Vercel.
             </p>
           </div>
@@ -99,14 +99,14 @@ export default function BillingCard() {
     <div className="bg-white rounded-2xl border border-[var(--border, #ECEFF4)] overflow-hidden">
       <div className="p-5 border-b border-[var(--border, #ECEFF4)] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CreditCard size={18} className="text-[#B85C38]" />
-          <h3 className="text-base font-semibold text-[#171412]">Abonnement</h3>
+          <CreditCard size={18} className="text-[var(--blue-deep,_#1453BD)]" />
+          <h3 className="text-base font-semibold text-[var(--ink-head,_#030E1D)]">Abonnement</h3>
         </div>
         <span className={
           'text-xs font-medium px-2 py-1 rounded-full ' + (
-            isPastDue ? 'bg-[#FCEBEB] text-[#791F1F]' :
-            isCanceled ? 'bg-[#F2F2F2] text-[#57504A]' :
-            isActive ? 'bg-[#E6EFE0] text-[#3F5E2A]' : 'bg-[#F2F2F2] text-[#57504A]'
+            isPastDue ? 'bg-[#D93036]/10 text-[var(--red-deep,_#A81E27)]' :
+            isCanceled ? 'bg-[var(--surface-2,_#F8F9FC)] text-[var(--ink-body,_#556272)]' :
+            isActive ? 'bg-[#10BC4C]/10 text-[var(--green-deep,_#087A31)]' : 'bg-[var(--surface-2,_#F8F9FC)] text-[var(--ink-body,_#556272)]'
           )
         }>
           {isPastDue ? 'Paiement en retard' :
@@ -117,9 +117,9 @@ export default function BillingCard() {
       </div>
 
       {isPastDue && (
-        <div className="px-5 py-3 bg-[#FCEBEB] border-b border-[#F0997B] flex items-start gap-2">
-          <AlertCircle size={18} className="text-[#791F1F] flex-shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm text-[#791F1F]">
+        <div className="px-5 py-3 bg-[#D93036]/10 border-b border-[#0F6FDE]/35 flex items-start gap-2">
+          <AlertCircle size={18} className="text-[var(--red-deep,_#A81E27)] flex-shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm text-[var(--red-deep,_#A81E27)]">
             <p className="font-semibold">Le dernier paiement a échoué.</p>
             <p className="text-xs mt-1">
               Mettez à jour votre moyen de paiement avant la fin de la période — sinon
@@ -128,7 +128,7 @@ export default function BillingCard() {
             <button
               onClick={openPortal}
               disabled={busy === 'portal'}
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#791F1F] underline"
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--red-deep,_#A81E27)] underline"
             >
               Mettre à jour le paiement
               <ExternalLink size={12} />
@@ -139,27 +139,27 @@ export default function BillingCard() {
 
       <div className="p-5 space-y-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-[#57504A]">Formule actuelle</span>
-          <span className="text-base font-semibold text-[#171412]">{planName}</span>
+          <span className="text-sm text-[var(--ink-body,_#556272)]">Formule actuelle</span>
+          <span className="text-base font-semibold text-[var(--ink-head,_#030E1D)]">{planName}</span>
         </div>
         {status.current_period_end && isActive && (
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-[#57504A]">Prochaine facture</span>
-            <span className="text-sm text-[#171412]">
+            <span className="text-sm text-[var(--ink-body,_#556272)]">Prochaine facture</span>
+            <span className="text-sm text-[var(--ink-head,_#030E1D)]">
               {new Date(status.current_period_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
           </div>
         )}
         {isTrialing && status.trial_end && (
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-[#57504A]">Fin de l'essai</span>
-            <span className="text-sm text-[#171412]">
+            <span className="text-sm text-[var(--ink-body,_#556272)]">Fin de l'essai</span>
+            <span className="text-sm text-[var(--ink-head,_#030E1D)]">
               {new Date(status.trial_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
             </span>
           </div>
         )}
         {status.cancel_at_period_end && (
-          <p className="text-xs text-[#9C4427] bg-[#FCE3DC] rounded-lg p-2 mt-2">
+          <p className="text-xs text-[var(--blue-deep,_#1453BD)] bg-[#D93036]/10 rounded-lg p-2 mt-2">
             L'abonnement sera annulé en fin de période. Vous pouvez le réactiver depuis le portail.
           </p>
         )}
@@ -170,14 +170,14 @@ export default function BillingCard() {
           <button
             onClick={openPortal}
             disabled={busy === 'portal'}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#171412] text-white text-sm font-semibold hover:bg-[#3D3431] transition-colors disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--blue,_#0F6FDE)] text-white text-sm font-semibold hover:bg-[var(--blue-pressed,_#0D62C4)] transition-colors disabled:opacity-50"
           >
             <ExternalLink size={14} />
             {busy === 'portal' ? 'Ouverture…' : 'Gérer mon abonnement'}
           </button>
         ) : (
           <>
-            <p className="text-xs uppercase tracking-wide text-[#8D857D] mb-3 font-semibold">
+            <p className="text-xs uppercase tracking-wide text-[var(--ink-muted,_#626F7E)] mb-3 font-semibold">
               Choisir une formule
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -192,22 +192,22 @@ export default function BillingCard() {
                     className={
                       'relative px-3 py-3 rounded-lg border-2 text-sm font-semibold transition-all ' + (
                         isCurrent
-                          ? 'border-[#7FA269] bg-[#E6EFE0] text-[#3F5E2A]'
-                          : 'border-[var(--border, #ECEFF4)] hover:border-[#B85C38] hover:bg-[#F8E8E2] text-[#171412] disabled:opacity-50'
+                          ? 'border-[#10BC4C]/35 bg-[#10BC4C]/10 text-[var(--green-deep,_#087A31)]'
+                          : 'border-[var(--border, #ECEFF4)] hover:border-[var(--blue,_#0F6FDE)] hover:bg-[var(--tint-blue,_#E5F1FF)] text-[var(--ink-head,_#030E1D)] disabled:opacity-50'
                       )
                     }
                   >
-                    {isCurrent && <Check size={14} className="absolute top-2 right-2 text-[#7FA269]" />}
+                    {isCurrent && <Check size={14} className="absolute top-2 right-2 text-[var(--green-deep,_#087A31)]" />}
                     <div>{p.name}</div>
                     {!p.price_id_set && (
-                      <div className="text-[10px] font-normal text-[#B85C38] mt-1">Non configuré</div>
+                      <div className="text-[10px] font-normal text-[var(--blue-deep,_#1453BD)] mt-1">Non configuré</div>
                     )}
                   </button>
                 );
               })}
             </div>
-            <p className="text-xs text-[#8D857D] mt-3 flex items-center gap-1">
-              <Sparkles size={12} className="text-[#B85C38]" />
+            <p className="text-xs text-[var(--ink-muted,_#626F7E)] mt-3 flex items-center gap-1">
+              <Sparkles size={12} className="text-[var(--blue-deep,_#1453BD)]" />
               14 jours d'essai gratuit, sans engagement.
             </p>
           </>

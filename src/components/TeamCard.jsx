@@ -32,22 +32,22 @@ const CredentialsCard = ({ creds, onDismiss }) => {
       </p>
       <div className="space-y-1.5 font-mono text-sm">
         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
-          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8D857D' }}>URL</span>
-          <span className="flex-1 truncate" style={{ color: '#171412' }}>{loginUrl}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: 'var(--ink-muted, #626F7E)' }}>URL</span>
+          <span className="flex-1 truncate" style={{ color: 'var(--ink-head, #030E1D)' }}>{loginUrl}</span>
           <button onClick={() => copy(loginUrl)} className="text-xs px-2 py-1 rounded" style={{ background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))', color: 'var(--flc-accent-deep, #9C4427)' }}>
             <Copy size={11} className="inline -mt-0.5" /> Copier
           </button>
         </div>
         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
-          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8D857D' }}>Email</span>
-          <span className="flex-1 truncate" style={{ color: '#171412' }}>{creds.email}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: 'var(--ink-muted, #626F7E)' }}>Email</span>
+          <span className="flex-1 truncate" style={{ color: 'var(--ink-head, #030E1D)' }}>{creds.email}</span>
           <button onClick={() => copy(creds.email)} className="text-xs px-2 py-1 rounded" style={{ background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))', color: 'var(--flc-accent-deep, #9C4427)' }}>
             <Copy size={11} className="inline -mt-0.5" /> Copier
           </button>
         </div>
         <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg">
-          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: '#8D857D' }}>Mot de passe</span>
-          <span className="flex-1 truncate font-bold" style={{ color: '#171412' }}>{creds.password}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider w-20 shrink-0" style={{ color: 'var(--ink-muted, #626F7E)' }}>Mot de passe</span>
+          <span className="flex-1 truncate font-bold" style={{ color: 'var(--ink-head, #030E1D)' }}>{creds.password}</span>
           <button onClick={() => copy(creds.password)} className="text-xs px-2 py-1 rounded" style={{ background: 'color-mix(in srgb, var(--flc-accent, #C73E2C) 12%, var(--flc-card, #FFFFFF))', color: 'var(--flc-accent-deep, #9C4427)' }}>
             <Copy size={11} className="inline -mt-0.5" /> Copier
           </button>
@@ -56,7 +56,7 @@ const CredentialsCard = ({ creds, onDismiss }) => {
       <button
         onClick={() => copy(`Connexion FidéliTour\n${loginUrl}\nEmail : ${creds.email}\nMot de passe : ${creds.password}`)}
         className="mt-3 w-full text-sm font-semibold text-white py-2 rounded-lg"
-        style={{ background: '#B85C38' }}
+        style={{ background: 'var(--blue, #0F6FDE)' }}
       >
         📋 Tout copier — pour WhatsApp / SMS
       </button>
@@ -267,7 +267,7 @@ const TeamCard = ({ id }) => {
                     onClick={() => resetPassword(m.email)}
                     disabled={resettingFor === m.email}
                     className="text-xs px-2.5 py-1 rounded-md transition disabled:opacity-50"
-                    style={{ background: '#FEF3C7', color: '#854F0B' }}
+                    style={{ background: 'var(--surface-2, #F8F9FC)', color: 'var(--ink-body, #556272)' }}
                     title="Générer un nouveau mot de passe (l'ancien sera révoqué)"
                   >
                     <KeyRound size={11} className="inline -mt-0.5" />{' '}
@@ -276,7 +276,7 @@ const TeamCard = ({ id }) => {
                   <button
                     onClick={() => remove(m.email)}
                     className="text-xs px-2.5 py-1 rounded-md transition"
-                    style={{ background: '#FCEBEB', color: '#791F1F' }}
+                    style={{ background: 'color-mix(in srgb, var(--red, #D93036) 10%, var(--surface-1, #FFFFFF))', color: 'var(--red-deep, #A81E27)' }}
                   >
                     <Trash2 size={11} className="inline -mt-0.5" /> Retirer
                   </button>

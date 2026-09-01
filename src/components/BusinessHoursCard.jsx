@@ -168,9 +168,11 @@ const BusinessHoursCard = () => {
                 onClick={() => updateDay(i, { closed: !d.closed })}
                 className="col-span-3 text-xs font-bold py-1.5 rounded-full transition"
                 style={{
-                  background: d.closed ? '#B85C38' : '#E5F0DC',
-                  color: d.closed ? 'white' : '#2d5016',
-                  border: `1px solid ${d.closed ? '#B85C38' : '#6FA89C55'}`,
+                  background: d.closed
+                    ? 'var(--red, #D93036)'
+                    : 'color-mix(in srgb, var(--green, #10BC4C) 10%, var(--surface-1, #FFFFFF))',
+                  color: d.closed ? 'white' : 'var(--green-deep, #087A31)',
+                  border: `1px solid ${d.closed ? 'var(--red, #D93036)' : 'var(--green, #10BC4C)55'}`,
                 }}
               >
                 {d.closed ? 'FERMÉ' : '✓ OUVERT'}
@@ -213,8 +215,10 @@ const BusinessHoursCard = () => {
                 onClick={() => toggleHoliday(h)}
                 className="text-left p-3 rounded-lg border transition"
                 style={{
-                  background: h.closed ? '#F6E9E2' : 'white',
-                  borderColor: h.closed ? '#E3A86988' : C_PS.hairline,
+                  background: h.closed
+                    ? 'color-mix(in srgb, var(--blue, #0F6FDE) 8%, var(--surface-1, #FFFFFF))'
+                    : 'white',
+                  borderColor: h.closed ? 'var(--blue, #0F6FDE)88' : C_PS.hairline,
                 }}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -227,8 +231,8 @@ const BusinessHoursCard = () => {
                   <span
                     className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
                     style={{
-                      background: h.closed ? '#E3A869' : 'white',
-                      border: `1.5px solid ${h.closed ? '#E3A869' : '#C0BAB0'}`,
+                      background: h.closed ? 'var(--blue, #0F6FDE)' : 'white',
+                      border: `1.5px solid ${h.closed ? 'var(--blue, #0F6FDE)' : 'var(--border-strong, #CBD3DC)'}`,
                     }}
                   >
                     {h.closed && <Check size={12} strokeWidth={3} color="white" />}
@@ -326,7 +330,7 @@ const BusinessHoursCard = () => {
       </section>
 
       {savedAt && (
-        <p className="text-xs" style={{ color: '#4A5D23' }}>
+        <p className="text-xs" style={{ color: 'var(--green-deep, #087A31)' }}>
           ✓ Enregistré à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
         </p>
       )}

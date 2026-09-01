@@ -141,11 +141,11 @@ const TierDefinitionCard = () => {
             Recompute result
           </p>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-            <ResultTile label="Bronze" value={recomputeResult.distribution?.bronze ?? 0} bg="#F3F4F6" fg="#374151" />
-            <ResultTile label="Silver" value={recomputeResult.distribution?.silver ?? 0} bg="#E5E7EB" fg="#1F2937" />
-            <ResultTile label="Gold" value={recomputeResult.distribution?.gold ?? 0} bg="#FEF3C7" fg="#92400E" />
-            <ResultTile label="VIP" value={recomputeResult.distribution?.vip ?? 0} bg="#EDE9FE" fg="#5B21B6" />
-            <ResultTile label="Big spenders" value={recomputeResult.big_spenders ?? 0} bg="#FEE2E2" fg="#991B1B" icon={TrendingUp} />
+            <ResultTile label="Bronze" value={recomputeResult.distribution?.bronze ?? 0} bg="#CADFF8" fg="#030E1D" />
+            <ResultTile label="Silver" value={recomputeResult.distribution?.silver ?? 0} bg="#93BEF0" fg="#030E1D" />
+            <ResultTile label="Gold" value={recomputeResult.distribution?.gold ?? 0} bg="#5297E7" fg="#030E1D" />
+            <ResultTile label="VIP" value={recomputeResult.distribution?.vip ?? 0} bg="#1453BD" fg="#FFFFFF" />
+            <ResultTile label="Big spenders" value={recomputeResult.big_spenders ?? 0} bg="color-mix(in srgb, var(--green, #10BC4C) 12%, var(--surface-1, #FFFFFF))" fg="var(--green-deep, #087A31)" icon={TrendingUp} />
           </div>
           <p className="text-xs mt-2" style={{ color: C_PS.inkMute }}>
             {recomputeResult.customers_updated ?? 0} customer record{(recomputeResult.customers_updated ?? 0) === 1 ? '' : 's'} updated.
@@ -158,8 +158,9 @@ const TierDefinitionCard = () => {
 
 const Threshold = ({ label, suffix, value, onChange, step, hint, tone }) => {
   const accent = {
-    silver: '#9CA3AF', gold: '#D97706', vip: '#7C3AED', terracotta: '#B85C38',
-  }[tone] || '#B85C38';
+    silver: 'var(--blue, #0F6FDE)', gold: 'var(--blue-pressed, #0D62C4)',
+    vip: 'var(--blue-deep, #1453BD)', terracotta: 'var(--blue-deep, #1453BD)',
+  }[tone] || 'var(--blue-deep, #1453BD)';
   return (
     <div>
       <label className="text-xs font-bold uppercase tracking-widest mb-1 block" style={{ color: accent }}>{label}</label>

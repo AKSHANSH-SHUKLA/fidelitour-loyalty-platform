@@ -145,7 +145,7 @@ const SettingsPage = () => {
             <SettingsNavigator />
 
             {message && (
-                <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-[#e8f3e5] border-[#E9E5E0] text-[#2d5016]' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                <div className={`p-4 rounded-lg border ${message.type === 'success' ? 'bg-[#10BC4C]/10 border-[var(--border-strong,_#CBD3DC)] text-[var(--green-deep,_#087A31)]' : 'bg-red-50 border-red-200 text-red-700'}`}>
                     {message.text}
                 </div>
             )}
@@ -153,30 +153,30 @@ const SettingsPage = () => {
             <form onSubmit={handleSave} className="space-y-8">
 
                 {/* Business Profile Section */}
-                <div id="settings-profile" className="bg-white p-8 rounded-2xl border border-[#E9E5E0] shadow-sm relative overflow-hidden scroll-mt-24">
-                    <div className="absolute right-0 top-0 w-32 h-32 bg-[#E3A869]/10 rounded-bl-full pointer-events-none"></div>
+                <div id="settings-profile" className="bg-white p-8 rounded-2xl border border-[var(--border,_#ECEFF4)] shadow-sm relative overflow-hidden scroll-mt-24">
+                    <div className="absolute right-0 top-0 w-32 h-32 bg-[#0F6FDE]/10 rounded-bl-full pointer-events-none"></div>
 
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-[#171412] flex items-center justify-center text-[#E3A869]">
+                        <div className="w-10 h-10 rounded-full bg-[var(--tint-blue,_#E5F1FF)] flex items-center justify-center text-[var(--blue-deep,_#1453BD)]">
                             <MapPin className="w-5 h-5" />
                         </div>
-                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#171412]">Business Profile</h2>
+                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[var(--ink-head,_#030E1D)]">Business Profile</h2>
                     </div>
 
                     <div className="space-y-6 max-w-2xl">
                         <div>
-                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide">Business Name</label>
+                            <label className="block text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide">Business Name</label>
                             <input
                                 type="text"
                                 value={settings.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
                                 placeholder="Your business name"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[var(--border-strong,_#CBD3DC)] focus:border-[var(--blue,_#0F6FDE)] focus:ring-0 outline-none text-[var(--ink-head,_#030E1D)] placeholder-[var(--ink-muted,_#626F7E)]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <label className="block text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide flex items-center gap-2">
                                 <Phone className="w-4 h-4" />
                                 Phone Number
                             </label>
@@ -185,12 +185,12 @@ const SettingsPage = () => {
                                 value={settings.phone}
                                 onChange={(e) => handleChange('phone', e.target.value)}
                                 placeholder="+33 1 23 45 67 89"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[var(--border-strong,_#CBD3DC)] focus:border-[var(--blue,_#0F6FDE)] focus:ring-0 outline-none text-[var(--ink-head,_#030E1D)] placeholder-[var(--ink-muted,_#626F7E)]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <label className="block text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide flex items-center gap-2">
                                 <MapPin className="w-4 h-4" />
                                 Physical Address
                             </label>
@@ -199,12 +199,12 @@ const SettingsPage = () => {
                                 value={settings.address}
                                 onChange={(e) => handleChange('address', e.target.value)}
                                 placeholder="Street address, city, postal code"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[var(--border-strong,_#CBD3DC)] focus:border-[var(--blue,_#0F6FDE)] focus:ring-0 outline-none text-[var(--ink-head,_#030E1D)] placeholder-[var(--ink-muted,_#626F7E)]"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-[#171412] mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <label className="block text-sm font-bold text-[var(--ink-head,_#030E1D)] mb-2 uppercase tracking-wide flex items-center gap-2">
                                 <Globe className="w-4 h-4" />
                                 Website URL
                             </label>
@@ -213,47 +213,47 @@ const SettingsPage = () => {
                                 value={settings.website}
                                 onChange={(e) => handleChange('website', e.target.value)}
                                 placeholder="https://www.yourwebsite.com"
-                                className="w-full px-4 py-3 rounded-lg border border-[#E9E5E0] focus:border-[#B85C38] focus:ring-0 outline-none text-[#171412] placeholder-[#A8A29E]"
+                                className="w-full px-4 py-3 rounded-lg border border-[var(--border-strong,_#CBD3DC)] focus:border-[var(--blue,_#0F6FDE)] focus:ring-0 outline-none text-[var(--ink-head,_#030E1D)] placeholder-[var(--ink-muted,_#626F7E)]"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Join URL Section */}
-                <div id="settings-join" className="bg-white p-8 rounded-2xl border border-[#E9E5E0] shadow-sm relative overflow-hidden scroll-mt-24">
-                    <div className="absolute right-0 top-0 w-32 h-32 bg-[#E3A869]/10 rounded-bl-full pointer-events-none"></div>
+                <div id="settings-join" className="bg-white p-8 rounded-2xl border border-[var(--border,_#ECEFF4)] shadow-sm relative overflow-hidden scroll-mt-24">
+                    <div className="absolute right-0 top-0 w-32 h-32 bg-[#0F6FDE]/10 rounded-bl-full pointer-events-none"></div>
 
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-[#171412] flex items-center justify-center text-[#E3A869]">
+                        <div className="w-10 h-10 rounded-full bg-[var(--tint-blue,_#E5F1FF)] flex items-center justify-center text-[var(--blue-deep,_#1453BD)]">
                             <Share2 className="w-5 h-5" />
                         </div>
-                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#171412]">Customer Join Link</h2>
+                        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[var(--ink-head,_#030E1D)]">Customer Join Link</h2>
                     </div>
 
                     <div className="space-y-4 max-w-2xl">
-                        <p className="text-sm text-[#57504A]">Share this link with customers to join your loyalty program:</p>
+                        <p className="text-sm text-[var(--ink-body,_#556272)]">Share this link with customers to join your loyalty program:</p>
                         <div className="flex items-center gap-3">
-                            <div className="flex-1 px-4 py-3 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0] text-sm font-mono text-[#171412] break-all">
+                            <div className="flex-1 px-4 py-3 rounded-lg bg-[#F5F4F1] border border-[var(--border,_#ECEFF4)] text-sm font-mono text-[var(--ink-head,_#030E1D)] break-all">
                                 {joinUrl}
                             </div>
                             <button
                                 type="button"
                                 onClick={handleCopyUrl}
-                                className="px-4 py-3 bg-[#B85C38] text-white rounded-lg hover:bg-[#9C4E2F] font-bold transition-colors"
+                                className="px-4 py-3 bg-[var(--blue,_#0F6FDE)] text-white rounded-lg hover:bg-[var(--blue-pressed,_#0D62C4)] font-bold transition-colors"
                             >
                                 Copy
                             </button>
                         </div>
-                        <p className="text-xs text-[#57504A]">Customers can scan the QR code or click this link to join your program.</p>
+                        <p className="text-xs text-[var(--ink-body,_#556272)]">Customers can scan the QR code or click this link to join your program.</p>
 
                         {/* Print-ready join poster — owner downloads / prints, places on counter, customer scans. */}
                         <JoinQRPoster joinUrl={joinUrl} businessName={settings.name || 'Notre boutique'} />
                     </div>
 
                     {/* Per-channel pre-tagged links */}
-                    <div className="mt-8 pt-6 border-t border-[#E9E5E0]">
-                        <h3 className="text-lg font-bold font-['Cormorant_Garamond'] text-[#171412] mb-2">Per-channel links (auto-tagged)</h3>
-                        <p className="text-sm text-[#57504A] mb-4">
+                    <div className="mt-8 pt-6 border-t border-[var(--border-strong,_#CBD3DC)]">
+                        <h3 className="text-lg font-bold font-['Cormorant_Garamond'] text-[var(--ink-head,_#030E1D)] mb-2">Per-channel links (auto-tagged)</h3>
+                        <p className="text-sm text-[var(--ink-body,_#556272)] mb-4">
                             Use these channel-specific URLs so every signup is attributed automatically — no need for the customer to pick a source.
                             Your analytics (Customer Map, Acquisition breakdown, Campaign targeting) will update in real time.
                         </p>
@@ -261,20 +261,20 @@ const SettingsPage = () => {
                             {channelLinks.map(({ key, label, emoji, desc }) => {
                                 const url = `${joinUrl}?src=${key}`;
                                 return (
-                                    <div key={key} className="p-3 rounded-lg bg-[#F5F4F1] border border-[#E9E5E0]">
+                                    <div key={key} className="p-3 rounded-lg bg-[#F5F4F1] border border-[var(--border,_#ECEFF4)]">
                                         <div className="flex items-start gap-3">
                                             <div className="text-2xl leading-none pt-1">{emoji}</div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="font-bold text-[#171412]">{label}</div>
-                                                <div className="text-xs text-[#57504A] mb-2">{desc}</div>
+                                                <div className="font-bold text-[var(--ink-head,_#030E1D)]">{label}</div>
+                                                <div className="text-xs text-[var(--ink-body,_#556272)] mb-2">{desc}</div>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex-1 px-3 py-2 rounded bg-white border border-[#E9E5E0] text-xs font-mono text-[#171412] break-all">
+                                                    <div className="flex-1 px-3 py-2 rounded bg-white border border-[var(--border,_#ECEFF4)] text-xs font-mono text-[var(--ink-head,_#030E1D)] break-all">
                                                         {url}
                                                     </div>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCopyChannel(key)}
-                                                        className="px-3 py-2 bg-[#B85C38] text-white rounded font-bold text-xs hover:bg-[#9C4E2F] transition-colors whitespace-nowrap"
+                                                        className="px-3 py-2 bg-[var(--blue,_#0F6FDE)] text-white rounded font-bold text-xs hover:bg-[var(--blue-pressed,_#0D62C4)] transition-colors whitespace-nowrap"
                                                     >
                                                         Copy
                                                     </button>
@@ -292,7 +292,7 @@ const SettingsPage = () => {
                 <button
                     type="submit"
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-4 rounded-xl text-white font-bold bg-[#B85C38] hover:bg-[#9C4E2F] disabled:opacity-50 transition-all shadow-md"
+                    className="flex items-center gap-2 px-6 py-4 rounded-xl text-white font-bold bg-[var(--blue,_#0F6FDE)] hover:bg-[var(--blue-pressed,_#0D62C4)] disabled:opacity-50 transition-all shadow-md"
                 >
                     <Save className="w-5 h-5" />
                     {saving ? 'Saving...' : 'Save Settings'}
@@ -378,9 +378,9 @@ function SettingsNavigator() {
 
   return (
     <div className="sticky top-2 z-30 bg-white/90 backdrop-blur rounded-2xl border shadow-sm p-3"
-         style={{ borderColor: '#EFE9E0' }}>
+         style={{ borderColor: 'var(--border, #ECEFF4)' }}>
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#8D857D' }}>
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--ink-muted, #626F7E)' }}>
           Aller à :
         </span>
         {/* Dropdown for mobile / quick jump */}
@@ -402,8 +402,8 @@ function SettingsNavigator() {
               key={s.id}
               type="button"
               onClick={() => jumpTo(s.id)}
-              className="px-2.5 py-1 text-[11px] font-semibold rounded-full border transition hover:bg-[#FAFAF8]"
-              style={{ borderColor: 'var(--flc-line, #E9E5E0)', color: '#3D2820' }}
+              className="px-2.5 py-1 text-[11px] font-semibold rounded-full border transition hover:bg-[var(--surface-2,_#F8F9FC)]"
+              style={{ borderColor: 'var(--flc-line, #E9E5E0)', color: 'var(--ink-body, #556272)' }}
             >
               {s.label}
             </button>
@@ -451,14 +451,14 @@ function OwnerGeoCard({ initial }) {
   };
 
   return (
-    <div className="bg-white p-8 rounded-2xl border border-[#E9E5E0] shadow-sm relative overflow-hidden">
+    <div className="bg-white p-8 rounded-2xl border border-[var(--border,_#ECEFF4)] shadow-sm relative overflow-hidden">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-[#171412] flex items-center justify-center text-[#E3A869]">
+        <div className="w-10 h-10 rounded-full bg-[var(--tint-blue,_#E5F1FF)] flex items-center justify-center text-[var(--blue-deep,_#1453BD)]">
           <MapPin className="w-5 h-5" />
         </div>
-        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[#171412]">Geolocalisation</h2>
+        <h2 className="text-2xl font-bold font-['Cormorant_Garamond'] text-[var(--ink-head,_#030E1D)]">Geolocalisation</h2>
       </div>
-      <p className="text-sm text-[#57504A] max-w-2xl mb-6">
+      <p className="text-sm text-[var(--ink-body,_#556272)] max-w-2xl mb-6">
         Quand un client équipé de votre carte de fidélité passe dans votre rayon, <b>il</b> reçoit
         une notification push avec une offre personnalisée. Configurez le rayon et la fréquence
         ci-dessous pour adapter la stratégie à votre commerce.
@@ -466,10 +466,10 @@ function OwnerGeoCard({ initial }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mb-6">
         {/* Enable / Disable */}
-        <label className="p-4 rounded-lg border border-[#E9E5E0] flex items-center justify-between cursor-pointer hover:bg-[#FAFAF8]">
+        <label className="p-4 rounded-lg border border-[var(--border,_#ECEFF4)] flex items-center justify-between cursor-pointer hover:bg-[var(--surface-2,_#F8F9FC)]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#57504A]">Statut</p>
-            <p className="text-base font-bold" style={{ color: cfg.geo_enabled ? '#2d5016' : '#8D857D' }}>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[var(--ink-body,_#556272)]">Statut</p>
+            <p className="text-base font-bold" style={{ color: cfg.geo_enabled ? 'var(--green-deep, #087A31)' : 'var(--ink-muted, #626F7E)' }}>
               {cfg.geo_enabled ? '✓ Activé' : '— Désactivé'}
             </p>
           </div>
@@ -482,21 +482,21 @@ function OwnerGeoCard({ initial }) {
         </label>
 
         {/* Audience — read-only (admin-only) */}
-        <div className="p-4 rounded-lg border border-[#E9E5E0] bg-[#F5F4F1]">
-          <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[#96431F]">Audience</p>
-          <p className="text-base font-bold text-[#96431F]">
+        <div className="p-4 rounded-lg border border-[var(--border,_#ECEFF4)] bg-[#F5F4F1]">
+          <p className="text-xs font-bold uppercase tracking-wider mb-1 text-[var(--blue-deep,_#1453BD)]">Audience</p>
+          <p className="text-base font-bold text-[var(--blue-deep,_#1453BD)]">
             {cfg.vip_geo_only ? '🎯 VIP uniquement' : (cfg.geo_enabled ? 'Tous les clients' : '—')}
           </p>
-          <p className="text-[10px] text-[#8D857D] mt-1">
+          <p className="text-[10px] text-[var(--ink-muted,_#626F7E)] mt-1">
             Réglage géré par notre équipe — contactez-nous pour ajuster.
           </p>
         </div>
 
         {/* Radius slider */}
-        <div className="p-4 rounded-lg border border-[#E9E5E0] md:col-span-2">
+        <div className="p-4 rounded-lg border border-[var(--border,_#ECEFF4)] md:col-span-2">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#57504A]">Rayon de notification</p>
-            <span className="text-base font-bold text-[#B85C38]">{cfg.geo_radius_meters || 500} m</span>
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)]">Rayon de notification</p>
+            <span className="text-base font-bold text-[var(--blue-deep,_#1453BD)]">{cfg.geo_radius_meters || 500} m</span>
           </div>
           <input
             type="range"
@@ -506,21 +506,21 @@ function OwnerGeoCard({ initial }) {
             value={cfg.geo_radius_meters || 500}
             disabled={!cfg.geo_enabled}
             onChange={(e) => setCfg({ ...cfg, geo_radius_meters: parseInt(e.target.value, 10) })}
-            className="w-full accent-[#B85C38]"
+            className="w-full accent-[var(--blue,_#0F6FDE)]"
           />
-          <div className="flex justify-between text-[10px] text-[#8D857D] mt-1">
+          <div className="flex justify-between text-[10px] text-[var(--ink-muted,_#626F7E)] mt-1">
             <span>50 m (très proche)</span>
             <span>2 km (large quartier)</span>
           </div>
         </div>
 
         {/* Cooldown slider */}
-        <div className="p-4 rounded-lg border border-[#E9E5E0] md:col-span-2">
+        <div className="p-4 rounded-lg border border-[var(--border,_#ECEFF4)] md:col-span-2">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#57504A]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--ink-body,_#556272)]">
               Délai entre deux notifications (par client)
             </p>
-            <span className="text-base font-bold text-[#B85C38]">
+            <span className="text-base font-bold text-[var(--blue-deep,_#1453BD)]">
               {cfg.geo_cooldown_days || 1} jour{(cfg.geo_cooldown_days || 1) > 1 ? 's' : ''}
             </span>
           </div>
@@ -532,9 +532,9 @@ function OwnerGeoCard({ initial }) {
             value={cfg.geo_cooldown_days || 1}
             disabled={!cfg.geo_enabled}
             onChange={(e) => setCfg({ ...cfg, geo_cooldown_days: parseInt(e.target.value, 10) })}
-            className="w-full accent-[#B85C38]"
+            className="w-full accent-[var(--blue,_#0F6FDE)]"
           />
-          <div className="flex justify-between text-[10px] text-[#8D857D] mt-1">
+          <div className="flex justify-between text-[10px] text-[var(--ink-muted,_#626F7E)] mt-1">
             <span>1 jour (intensif)</span>
             <span>30 jours (parcimonieux)</span>
           </div>
@@ -543,7 +543,7 @@ function OwnerGeoCard({ initial }) {
 
       {/* Live phone preview — what a customer entering the geofence sees on their lock screen. */}
       <div className="max-w-2xl mb-6 rounded-xl border p-4 flex flex-col md:flex-row gap-5 items-center"
-           style={{ background: 'color-mix(in srgb, var(--flc-warn, #A8862D) 8%, var(--flc-card, #FFFFFF))', borderColor: '#E3A86955' }}>
+           style={{ background: 'color-mix(in srgb, var(--flc-warn, #A8862D) 8%, var(--flc-card, #FFFFFF))', borderColor: 'var(--blue, #0F6FDE)55' }}>
         <PhonePushPreview
           businessName="Your shop"
           title="📍 You're just nearby!"
@@ -553,7 +553,7 @@ function OwnerGeoCard({ initial }) {
           variant="geo"
           caption="Preview — proximity notification"
         />
-        <div className="flex-1 text-sm space-y-2" style={{ color: '#96431F' }}>
+        <div className="flex-1 text-sm space-y-2" style={{ color: 'var(--blue-deep, #1453BD)' }}>
           <p className="font-bold">How does it work?</p>
           <p>
             When a customer with your loyalty card (and location permission granted)
@@ -572,13 +572,13 @@ function OwnerGeoCard({ initial }) {
           type="button"
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-3 rounded-xl text-white font-bold bg-[#B85C38] hover:bg-[#9C4E2F] disabled:opacity-50 transition-all shadow-md"
+          className="flex items-center gap-2 px-5 py-3 rounded-xl text-white font-bold bg-[var(--blue,_#0F6FDE)] hover:bg-[var(--blue-pressed,_#0D62C4)] disabled:opacity-50 transition-all shadow-md"
         >
           <Save className="w-4 h-4" />
           {saving ? 'Enregistrement…' : 'Enregistrer la géolocalisation'}
         </button>
         {savedAt && (
-          <span className="text-xs text-[#4A5D23]">
+          <span className="text-xs text-[var(--green-deep,_#087A31)]">
             ✓ Enregistré à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}

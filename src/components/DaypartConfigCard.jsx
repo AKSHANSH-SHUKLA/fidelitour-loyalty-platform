@@ -158,7 +158,7 @@ const DaypartConfigCard = () => {
           {saving ? 'Enregistrement…' : 'Enregistrer mes périodes'}
         </button>
         {savedAt && (
-          <span className="text-xs" style={{ color: '#4A5D23' }}>
+          <span className="text-xs" style={{ color: 'var(--green-deep, #087A31)' }}>
             ✓ Enregistré à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
