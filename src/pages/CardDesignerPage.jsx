@@ -1421,14 +1421,31 @@ export default function CardDesignerPage() {
                 </div>
                 {/* Dynamic Island */}
                 <div style={{ position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)', width: 96, height: 28, borderRadius: 999, background: '#000000', border: '1px solid #1A1A1A' }} />
-                {/* Apple Wallet detail-view top bar */}
-                <div style={{ position: 'absolute', top: 50, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', color: light ? '#007AFF' : '#FFFFFF', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                  <span style={{ fontSize: 16, fontWeight: 400 }}>OK</span>
-                  <div style={{ width: 28, height: 28, borderRadius: 14, background: light ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)', display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 700, color: light ? '#3C3C43' : '#FFFFFF', letterSpacing: 1 }}>⋯</div>
+                {/* Apple Wallet detail-view top bar — two translucent circular
+                    controls, back-chevron left + more right, like the real
+                    pass detail screen (not a bare "OK / …" text row). */}
+                <div style={{ position: 'absolute', top: 52, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
+                  {[('back'), ('more')].map((k) => (
+                    <div key={k} style={{ width: 30, height: 30, borderRadius: 15,
+                      background: light ? 'rgba(120,120,128,0.16)' : 'rgba(255,255,255,0.18)',
+                      backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center' }}>
+                      {k === 'back' ? (
+                        <svg width="9" height="15" viewBox="0 0 9 15" aria-hidden="true">
+                          <path d="M7.5 1L1.5 7.5L7.5 14" fill="none" stroke={light ? '#007AFF' : '#FFFFFF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="4" viewBox="0 0 16 4" aria-hidden="true">
+                          {[2, 8, 14].map((cx) => <circle key={cx} cx={cx} cy="2" r="1.6" fill={light ? '#007AFF' : '#FFFFFF'} />)}
+                        </svg>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                {/* Card surface — sits just below the Wallet top bar */}
-                <div style={{ position: 'absolute', top: 92, left: 10, right: 10, bottom: 26, overflowY: 'auto' }}>
-                  <div className="relative">
+                {/* Card surface — full pass width, centred, so the strip runs
+                    edge-to-edge INSIDE the phone (a real pass never bleeds
+                    past the screen). Width is computed to fit the screen. */}
+                <div style={{ position: 'absolute', top: 96, left: 0, right: 0, bottom: 26, overflowY: 'auto', display: 'flex', justifyContent: 'center', padding: '0 14px' }}>
+                  <div className="relative" style={{ width: '100%', maxWidth: 268 }}>
                 {(() => {
                   // Wallet mode previews the pkpass-FAITHFUL render — the
                   // merchant launches with real Apple Wallet passes, so the
@@ -1460,6 +1477,7 @@ export default function CardDesignerPage() {
                         points_per_visit: parseInt(rules.points_per_visit, 10) || 10,
                         visits_per_stamp: parseInt(rules.visits_per_stamp, 10) || 1,
                       }}
+                      width={268}
                       compact
                     />
                   );
