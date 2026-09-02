@@ -117,24 +117,27 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         )}
       </div>
 
-      {/* ── strip: edge-to-edge 375×144. Three fills:
-             image  → merchant photo (cover)
-             logo   → the merchant's own logo centred on the brand field,
-                      the most native look for logo-forward brands (barbers,
-                      salons) whose identity IS the mark
+      {/* ── strip: edge-to-edge 375×144. Two image fills + flat colour:
+             image  → merchant photo, shown WHOLE (contain) on the brand
+                      field — any size/shape fits, scaled down, and the card's
+                      own colour fills the margins so it reads as intentional,
+                      never a cropped-off band or a black letterbox
+             logo   → the merchant's mark centred on the brand field
              brand  → flat brand colour
              Stamps live INSIDE it in a single frosted-glass bar, never a
              floating row. This is exactly the strip.png the real pass carries. ── */}
       {heroMode !== 'none' && (
         <div style={{
           position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
-          background: heroMode === 'image' && card.hero_image_url
-            ? `url(${card.hero_image_url}) center/cover`
-            : t.brandRaw,
-          display: heroMode === 'logo' ? 'flex' : undefined,
-          alignItems: heroMode === 'logo' ? 'center' : undefined,
-          justifyContent: heroMode === 'logo' ? 'center' : undefined,
+          background: t.brandRaw,
+          display: (heroMode === 'logo' || heroMode === 'image') ? 'flex' : undefined,
+          alignItems: 'center', justifyContent: 'center',
         }}>
+          {heroMode === 'image' && card.hero_image_url && (
+            <img src={card.hero_image_url} alt=""
+              style={{ maxHeight: '100%', maxWidth: '100%', width: '100%', height: '100%',
+                       objectFit: 'contain', objectPosition: 'center' }} />
+          )}
           {heroMode === 'logo' && card.logo_url && (
             <img src={card.logo_url} alt=""
               style={{ maxHeight: '68%', maxWidth: '72%', objectFit: 'contain',

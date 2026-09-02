@@ -683,9 +683,9 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  <b>Logo</b> : votre logo centré sur la couleur de la carte — le rendu le plus
-                  chic pour un salon ou un barbier. <b>Photo</b> : votre cliché produit.
-                  Conseil Apple : pas de texte important dans la photo.
+                  <b>Photo</b> : votre image s'affiche en entier, redimensionnée pour tenir —
+                  quelle que soit sa taille, les bords sont comblés par la couleur de la carte.
+                  <b> Logo</b> : votre logo centré, idéal salon ou barbier.
                 </p>
               </div>
               <div>
