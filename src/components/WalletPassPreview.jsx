@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Code128Barcode from './Code128Barcode';
 import { deriveCardTheme } from '../lib/cardTheme';
@@ -37,6 +37,43 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
 
   const s = width / 375; // 1pt at design scale → px
   const px = (v) => Math.round(v * s * 10) / 10;
+
+  // ---- front-photo blend: merge the subject INTO the bg photo -------------
+  // A front upload usually carries its own solid background (the Royal Trim
+  // artwork ships on solid navy), which pastes as a hard rectangle over the
+  // bg photo. Sampling its corners tells us which blend dissolves that
+  // background: dark ground → 'screen' (dark vanishes, the light artwork
+  // stays), light ground → 'multiply' (white vanishes). Transparent PNGs
+  // need neither. Result: the reference's seamless, continuous merge.
+  const frontSrc = card.hero_front_url || '';
+  const [frontBlend, setFrontBlend] = useState('normal');
+  useEffect(() => {
+    if (!frontSrc) { setFrontBlend('normal'); return; }
+    let alive = true;
+    const img = new Image();
+    img.onload = () => {
+      if (!alive) return;
+      try {
+        const c = document.createElement('canvas');
+        c.width = 16; c.height = 16;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, 16, 16);
+        const d = ctx.getImageData(0, 0, 16, 16).data;
+        // 4 corners = the image's own background
+        let lum = 0, alpha = 0;
+        [0, 15, 240, 255].forEach((p) => {
+          const i = p * 4;
+          lum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+          alpha += d[i + 3];
+        });
+        lum /= 4; alpha /= 4;
+        if (alpha < 40) setFrontBlend('normal');            // real transparency
+        else setFrontBlend(lum < 110 ? 'screen' : 'multiply');
+      } catch (_e) { setFrontBlend('normal'); }
+    };
+    img.src = frontSrc;
+    return () => { alive = false; };
+  }, [frontSrc]);
 
   // ---- data (same derived-from-visits maths as everywhere else) ----------
   const firstName = (customer?.first_name || customer?.name || '').split(' ')[0] || 'Client';
@@ -158,8 +195,11 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
             )}
             {heroMode !== 'logo' && focusSrc && (
               <img src={focusSrc} alt=""
-                style={{ position: 'relative', maxWidth: '68%',
-                         maxHeight: '80%', objectFit: 'contain' }} />
+                style={{ position: 'relative', maxWidth: '72%',
+                         maxHeight: '84%', objectFit: 'contain',
+                         // dissolve the subject's own background into the
+                         // photo — the seamless merge, not a pasted rectangle
+                         mixBlendMode: focusSrc === frontSrc ? frontBlend : 'normal' }} />
             )}
             {heroMode === 'logo' && card.logo_url && (
               <img src={card.logo_url} alt=""
