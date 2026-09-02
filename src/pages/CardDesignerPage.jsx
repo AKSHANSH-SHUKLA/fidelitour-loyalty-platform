@@ -683,9 +683,11 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  <b>Photo</b> : votre image en entier, telle quelle, jamais recadrée.
-                  <b> Photo + logo</b> : vos deux images — la photo en fond, votre logo
-                  centré par-dessus. <b>Logo</b> : votre logo seul sur la couleur de la carte.
+                  <b>Photo + logo</b> : vos deux images — la photo remplit le bandeau en
+                  ambiance, votre logo (image « avant ») centré par-dessus, net.
+                  <b> Photo</b> : la photo seule remplit le bandeau.
+                  <b> Logo</b> : votre logo seul sur la couleur de la carte.
+                  Le bandeau garde toujours la même taille, comme sur une vraie carte.
                 </p>
               </div>
               <div>

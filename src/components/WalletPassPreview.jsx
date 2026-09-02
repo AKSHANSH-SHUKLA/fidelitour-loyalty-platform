@@ -126,31 +126,35 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
              brand  → flat brand colour
              Stamps live INSIDE it in a single frosted-glass bar, never a
              floating row. This is exactly the strip.png the real pass carries. ── */}
-      {(heroMode === 'image' || heroMode === 'composite') && card.hero_image_url ? (
-        /* Photo strip: the image IS the strip. Full width, natural height —
-           the whole photo, edge to edge. No crop, no fill bars, no fixed
-           ratio forcing either. Composite mode layers the merchant's logo
-           centred on top, exactly as uploaded — their two images, their
-           look. */
-        <div style={{ position: 'relative' }}>
-          <img src={card.hero_image_url} alt=""
-            style={{ display: 'block', width: '100%', height: 'auto' }} />
-          {heroMode === 'composite' && card.logo_url && (
-            <img src={card.logo_url} alt=""
-              style={{ position: 'absolute', inset: 0, margin: 'auto',
-                       maxWidth: '62%', maxHeight: '68%', objectFit: 'contain' }} />
-          )}
-        </div>
-      ) : heroMode !== 'none' && (
+      {/* Strip — ALWAYS the fixed 375×144 band, whatever is uploaded, so the
+           card never grows or shrinks with the image (a real pass can't).
+           composite = the reference look: the bg photo fills the band as
+           ambiance (softly dimmed, "non-focused"), the front image sits
+           centred on top as the focus. */}
+      {heroMode !== 'none' && (
         <div style={{
           position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
           background: t.brandRaw,
-          display: heroMode === 'logo' ? 'flex' : undefined,
-          alignItems: 'center', justifyContent: 'center',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
+          {(heroMode === 'image' || heroMode === 'composite') && card.hero_image_url && (
+            <img src={card.hero_image_url} alt=""
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%',
+                       objectFit: 'cover', objectPosition: 'center' }} />
+          )}
+          {heroMode === 'composite' && card.hero_image_url && (
+            /* soft veil: keeps the bg "ambiance", pushes the front forward */
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)' }} />
+          )}
+          {heroMode === 'composite' && card.logo_url && (
+            <img src={card.logo_url} alt=""
+              style={{ position: 'relative', maxHeight: '72%', maxWidth: '68%',
+                       objectFit: 'contain' }} />
+          )}
           {heroMode === 'logo' && card.logo_url && (
             <img src={card.logo_url} alt=""
-              style={{ maxHeight: '78%', maxWidth: '78%', objectFit: 'contain' }} />
+              style={{ position: 'relative', maxHeight: '78%', maxWidth: '78%',
+                       objectFit: 'contain' }} />
           )}
         </div>
       )}
