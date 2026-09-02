@@ -8,7 +8,7 @@ import { ensureSubscribed, unsubscribe as unsubscribePush, isSupported as isPush
 import InstallPwaPrompt from '../components/InstallPwaPrompt';
 import GeoConsentCard from '../components/GeoConsentCard';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
-import WalletCard from '../components/WalletCard';
+import WalletPassPreview from '../components/WalletPassPreview';
 import TierBadge from '../components/TierBadge';
 
 // ---------------------------------------------------------------------------
@@ -711,12 +711,16 @@ const MyWalletCardPage = () => {
               literally the same component the customer sees on their phone. */}
           <section>
             <WalletCardErrorBoundary>
-              {/* Opt-in wallet-anatomy render (Card Redesign spec). Templates
-                  that never chose it keep the legacy render pixel-for-pixel —
-                  silently restyling a merchant's live card is a support
-                  earthquake, so the switch is the template's, not ours. */}
+              {/* Wallet templates render the pkpass-FAITHFUL card — the same
+                  component the designer previews, real Apple Wallet geometry.
+                  The interim PWA-styled render (WalletCard) is gone at the
+                  owner's request: the merchant launches with real passes, and
+                  this page must show exactly that. Legacy templates keep the
+                  old render until they opt in. */}
               {card?.layout_style === 'wallet' ? (
-                <WalletCard customer={customer} tenant={tenant} card={card} />
+                <div style={{ maxWidth: 375, width: '100%' }}>
+                  <WalletPassPreview customer={customer} tenant={tenant} card={card} width={375} />
+                </div>
               ) : (
                 <PremiumLoyaltyCard customer={customer} tenant={tenant} card={card} />
               )}

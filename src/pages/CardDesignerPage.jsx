@@ -4,7 +4,6 @@ import { ownerAPI } from '../lib/api';
 import NumberInput from '../components/NumberInput';
 import { PageHeader, C as C_PS } from '../components/PageShell';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
-import WalletCard from '../components/WalletCard';
 import WalletPassPreview from '../components/WalletPassPreview';
 
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
