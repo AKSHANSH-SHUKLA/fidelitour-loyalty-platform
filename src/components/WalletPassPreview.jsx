@@ -140,46 +140,46 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
           )}
           {heroMode === 'logo' && card.logo_url && (
             <img src={card.logo_url} alt=""
-              style={{ maxHeight: '68%', maxWidth: '72%', objectFit: 'contain',
-                       // a hair of padding so the mark never kisses the stamp bar
-                       marginBottom: showStamps ? px(18) : 0 }} />
-          )}
-          {showStamps && (
-            <div style={{
-              position: 'absolute', left: px(10), right: px(10), bottom: px(10),
-              padding: `${px(7)}px ${px(10)}px`, borderRadius: px(10),
-              background: 'rgba(20,22,28,0.42)',
-              backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              display: 'flex', flexDirection: 'column', gap: px(5),
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={stripLabel}>{(card.stamps_label || 'Tampons').toUpperCase()}</span>
-                <span style={{ fontSize: px(10.5), fontWeight: 700, color: '#FFFFFF' }}>
-                  {stamps}<span style={{ opacity: 0.6 }}> / {threshold}</span>
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: px(4.5), alignItems: 'center' }}>
-                {Array.from({ length: threshold }).map((_, i) => (
-                  <span key={i} style={{
-                    flex: 1, height: px(9), borderRadius: px(5),
-                    background: i < stamps ? t.brand : 'rgba(255,255,255,0.20)',
-                    boxShadow: i < stamps ? '0 0 0 0.5px rgba(0,0,0,0.2)' : 'none',
-                  }} />
-                ))}
-              </div>
-            </div>
+              style={{ maxHeight: '78%', maxWidth: '78%', objectFit: 'contain' }} />
           )}
         </div>
       )}
 
-      {/* ── PRIMARY field: the one number the customer glances for. Big. ── */}
+      {/* ── stamps row: its OWN slim band flush under the strip — in flow, not
+             an overlay, so the hero image is NEVER covered. Themed to the
+             surface so it adapts to light and dark cards alike. ── */}
+      {showStamps && (
+        <div style={{
+          padding: `${px(8)}px ${px(14)}px`, background: t.chipBg,
+          borderBottom: `1px solid ${t.hairline}`,
+          display: 'flex', flexDirection: 'column', gap: px(5),
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={label}>{(card.stamps_label || 'Tampons').toUpperCase()}</span>
+            <span style={{ fontSize: px(10.5), fontWeight: 700, color: t.ink }}>
+              {stamps}<span style={{ opacity: 0.55 }}> / {threshold}</span>
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: px(4.5), alignItems: 'center' }}>
+            {Array.from({ length: threshold }).map((_, i) => (
+              <span key={i} style={{
+                flex: 1, height: px(9), borderRadius: px(5),
+                background: i < stamps ? t.brand : t.track,
+              }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── PRIMARY field: the one number the customer glances for. Big.
+             The stamps row above already carries the visual count, so the
+             primary shows points — no duplicated 6/10. ── */}
       <div style={{ padding: `${px(12)}px ${px(14)}px 0` }}>
-        <div style={label}>{showStamps ? (card.stamps_label || 'Tampons').toUpperCase()
-                                        : pointsLabel}</div>
+        <div style={label}>{showStamps || showPoints ? pointsLabel
+                                                      : (card.stamps_label || 'Tampons').toUpperCase()}</div>
         <div style={{ fontSize: px(30), fontWeight: 700, color: t.ink, lineHeight: 1.05,
                       letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-          {showStamps ? `${stamps} / ${threshold}` : earned}
+          {showStamps || showPoints ? earned : `${stamps} / ${threshold}`}
         </div>
       </div>
 
