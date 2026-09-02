@@ -78,8 +78,11 @@ export default function WalletCard({ customer, tenant, card = {}, compact = fals
   const stamps = Math.min(threshold, Math.floor(visits / visitsPerStamp));
   const remaining = threshold - stamps;
 
-  const earnedPoints = visits * pointsPerVisit;
   const meterMax = threshold * visitsPerStamp * pointsPerVisit;
+  // Cap the DISPLAYED figure at the cycle max: a customer past the reward
+  // threshold was rendering "180 / 100", which reads as a broken counter
+  // rather than an overflowing one (caught on the live Café Lumière card).
+  const earnedPoints = Math.min(visits * pointsPerVisit, meterMax);
   const meterPct = meterMax > 0 ? Math.max(0, Math.min(100, (earnedPoints / meterMax) * 100)) : 0;
 
   // ---- offer chip (the per-segment overlay's new, calmer home) -----------
