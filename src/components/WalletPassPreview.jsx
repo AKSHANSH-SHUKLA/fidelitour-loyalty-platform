@@ -126,18 +126,19 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
              brand  → flat brand colour
              Stamps live INSIDE it in a single frosted-glass bar, never a
              floating row. This is exactly the strip.png the real pass carries. ── */}
-      {heroMode !== 'none' && (
+      {heroMode === 'image' && card.hero_image_url ? (
+        /* Photo strip: the image IS the strip. Full width, natural height —
+           the whole photo, edge to edge. No crop, no fill bars, no fixed
+           ratio forcing either. */
+        <img src={card.hero_image_url} alt=""
+          style={{ display: 'block', width: '100%', height: 'auto' }} />
+      ) : heroMode !== 'none' && (
         <div style={{
           position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
           background: t.brandRaw,
-          display: (heroMode === 'logo' || heroMode === 'image') ? 'flex' : undefined,
+          display: heroMode === 'logo' ? 'flex' : undefined,
           alignItems: 'center', justifyContent: 'center',
         }}>
-          {heroMode === 'image' && card.hero_image_url && (
-            <img src={card.hero_image_url} alt=""
-              style={{ maxHeight: '100%', maxWidth: '100%', width: '100%', height: '100%',
-                       objectFit: 'contain', objectPosition: 'center' }} />
-          )}
           {heroMode === 'logo' && card.logo_url && (
             <img src={card.logo_url} alt=""
               style={{ maxHeight: '78%', maxWidth: '78%', objectFit: 'contain' }} />
