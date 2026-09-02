@@ -52,6 +52,20 @@ const DEFAULT_BRAND = {
   show_card_number: true,   // "N° CARTE 4E62" footer
   show_barcode:     true,   // Code 128 strip
 
+  // ── Wallet-anatomy design (layout_style: 'wallet') ───────────────
+  // The redesigned card (FidClic-Card-Redesign-Spec). Duo-tone contract:
+  // the merchant picks a surface (card body) + a brand colour (accent);
+  // cardTheme.js derives every other colour with contrast arithmetic.
+  // These keys ride brand_fields into the customer payload automatically.
+  layout_style:     '',          // '' = legacy render · 'wallet' = new anatomy
+  surface:          'anthracite',// curated: noir|anthracite|marine|foret|espresso|blanc|creme|sable
+  surface_color:    '',          // optional custom hex — overrides `surface`
+  brand_color:      '#B85C38',   // THE accent (stamps, meter, offer chip, tier ring)
+  code_type:        'qr',        // 'qr' | 'barcode' | 'both' — QR default: Apple
+                                 // notes Code128 is unsupported on watchOS and
+                                 // square codes scan better on small screens
+  hero_mode:        'image',     // 'image' | 'brand' | 'none'
+
   // ── Layout selector + Wallet-pass-specific fields ────────────────
   // Two ways to render the card:
   //   - 'hero': full brand-coloured hero with logo + name + image
@@ -230,6 +244,16 @@ export default function CardDesignerPage() {
           hero_image_url: tplData.hero_image_url || '',
           title_label: tplData.title_label || DEFAULT_BRAND.title_label,
           points_label: tplData.points_label || DEFAULT_BRAND.points_label,
+          // Wallet-anatomy keys may exist only at top level (set via API
+          // before this UI existed — the demo tenant, for one). Seed them
+          // from there so opening the designer and hitting Save doesn't
+          // silently flip a live wallet card back to the legacy render.
+          layout_style: tplData.layout_style ?? tplData.brand_fields?.layout_style ?? '',
+          surface: tplData.surface ?? tplData.brand_fields?.surface ?? DEFAULT_BRAND.surface,
+          surface_color: tplData.surface_color ?? tplData.brand_fields?.surface_color ?? '',
+          brand_color: tplData.brand_color ?? tplData.brand_fields?.brand_color ?? DEFAULT_BRAND.brand_color,
+          code_type: tplData.code_type ?? tplData.brand_fields?.code_type ?? DEFAULT_BRAND.code_type,
+          hero_mode: tplData.hero_mode ?? tplData.brand_fields?.hero_mode ?? DEFAULT_BRAND.hero_mode,
         });
         // Legacy auchan_layout is preserved on save but no longer edited.
       } catch (e) {
@@ -288,6 +312,15 @@ export default function CardDesignerPage() {
         hero_image_url: brand.hero_image_url || '',
         title_label: (brand.title_label || '').trim() || DEFAULT_BRAND.title_label,
         points_label: (brand.points_label || '').trim() || DEFAULT_BRAND.points_label,
+        // Wallet-anatomy keys mirrored at top level: the customer payload
+        // reads these via tpl.get(...), which would override the brand_fields
+        // spread with None if they only lived inside brand_fields.
+        layout_style: brand.layout_style || '',
+        surface: brand.surface || 'anthracite',
+        surface_color: brand.surface_color || '',
+        brand_color: brand.brand_color || DEFAULT_BRAND.brand_color,
+        code_type: brand.code_type || 'qr',
+        hero_mode: brand.hero_mode || 'image',
       };
       delete payload._id; // mongo internal field — never round-trip
       const payloadSize = JSON.stringify(payload).length;
@@ -522,6 +555,149 @@ export default function CardDesignerPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* ── Nouveau design Wallet — the wallet-anatomy card ──────────────
+          Duo-tone contract: surface + brand colour, everything else derived.
+          Four curated presets follow the PassKit research: template-led with
+          premium constraints, never a freeform canvas. */}
+      <div className="rounded-xl border border-[#E9E5E0] bg-white p-5 space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="text-lg font-bold text-[#171412]">
+            Nouveau design Wallet
+            <span className="ml-2 text-[10px] font-bold uppercase tracking-wider align-middle px-2 py-0.5 rounded-full"
+              style={{ background: brand.layout_style === 'wallet' ? '#DCF0E4' : '#F2F2F2',
+                       color: brand.layout_style === 'wallet' ? '#0F6B45' : '#8D857D' }}>
+              {brand.layout_style === 'wallet' ? 'Actif' : 'Inactif'}
+            </span>
+          </h2>
+          <button
+            type="button"
+            onClick={() => setBrand((b) => ({ ...b, layout_style: b.layout_style === 'wallet' ? '' : 'wallet' }))}
+            className="text-xs font-bold px-3 py-1.5 rounded-lg border"
+            style={brand.layout_style === 'wallet'
+              ? { borderColor: '#E9E5E0', color: '#57504A', background: '#FAFAF8' }
+              : { borderColor: '#171412', color: '#FFFFFF', background: '#171412' }}
+          >
+            {brand.layout_style === 'wallet' ? 'Revenir à l’ancien design' : 'Activer le nouveau design'}
+          </button>
+        </div>
+        <p className="text-xs text-[#57504A] -mt-2 max-w-xl">
+          Style « carte Apple Wallet » : vous choisissez la couleur de la carte, la couleur
+          d’accent, le logo et la photo — la lisibilité (contrastes, tailles, typographie)
+          est garantie automatiquement. Vos anciennes cartes ne changent pas tant que vous
+          n’activez pas ce design.
+        </p>
+
+        {brand.layout_style === 'wallet' && (
+          <div className="space-y-5">
+            {/* Presets */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Départs rapides</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { key: 'signature', label: 'Signature', surface: 'noir',   brand_color: '#C9A34E', hero_mode: 'image', hint: 'Noir + or, photo' },
+                  { key: 'lumiere',   label: 'Lumière',   surface: 'creme',  brand_color: '#5C3A21', hero_mode: 'image', hint: 'Crème + chocolat' },
+                  { key: 'marine',    label: 'Marine',    surface: 'marine', brand_color: '#E8703A', hero_mode: 'brand', hint: 'Marine + orange' },
+                  { key: 'minimal',   label: 'Minimal',   surface: 'anthracite', brand_color: '#9BA3AD', hero_mode: 'none', hint: 'Sobre, sans photo' },
+                ].map((p) => (
+                  <button key={p.key} type="button"
+                    onClick={() => setBrand((b) => ({ ...b, surface: p.surface, surface_color: '', brand_color: p.brand_color, hero_mode: p.hero_mode }))}
+                    className="rounded-lg border border-[#E9E5E0] p-2 text-left hover:border-[#171412] transition-colors">
+                    <span className="flex gap-1 mb-1.5" aria-hidden="true">
+                      <span className="w-5 h-5 rounded" style={{ background: { noir:'#141519', anthracite:'#1C1D22', marine:'#101B2E', creme:'#F6EFE3' }[p.surface] || '#1C1D22', border: '1px solid #E9E5E0' }} />
+                      <span className="w-5 h-5 rounded" style={{ background: p.brand_color }} />
+                    </span>
+                    <span className="block text-xs font-bold text-[#171412]">{p.label}</span>
+                    <span className="block text-[10px] text-[#8D857D]">{p.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Duo-tone pickers */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Couleur de la carte (fond)</p>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {[['noir','#141519'],['anthracite','#1C1D22'],['marine','#101B2E'],['foret','#12211A'],
+                    ['espresso','#211711'],['blanc','#FDFCFA'],['creme','#F6EFE3'],['sable','#EFE9DD']].map(([k, hex]) => (
+                    <button key={k} type="button" title={k}
+                      onClick={() => setBrand((b) => ({ ...b, surface: k, surface_color: '' }))}
+                      className="w-8 h-8 rounded-lg border-2"
+                      style={{ background: hex,
+                               borderColor: (brand.surface === k && !brand.surface_color) ? '#171412' : '#E9E5E0' }} />
+                  ))}
+                  <label className="w-8 h-8 rounded-lg border-2 overflow-hidden cursor-pointer grid place-items-center text-[10px] font-bold"
+                    style={{ borderColor: brand.surface_color ? '#171412' : '#E9E5E0',
+                             background: brand.surface_color || '#FFFFFF', color: '#8D857D' }}
+                    title="Couleur personnalisée">
+                    {!brand.surface_color && '+'}
+                    <input type="color" className="sr-only"
+                      value={brand.surface_color || '#1C1D22'}
+                      onChange={(e) => setBrand((b) => ({ ...b, surface_color: e.target.value }))} />
+                  </label>
+                </div>
+                <p className="text-[10px] text-[#8D857D]">Le texte s’adapte automatiquement — même une couleur personnalisée reste lisible.</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Couleur d’accent (marque)</p>
+                <div className="flex items-center gap-2">
+                  <input type="color"
+                    value={brand.brand_color || '#B85C38'}
+                    onChange={(e) => setBrand((b) => ({ ...b, brand_color: e.target.value }))}
+                    className="w-10 h-10 rounded-lg border border-[#E9E5E0] cursor-pointer" />
+                  <div className="text-[11px] text-[#57504A]">
+                    Tampons, jauge, offre, accents.<br />
+                    <span className="text-[#8D857D]">Duo gagnant : noir + or, marine + orange…</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Hero + code */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Bandeau (haut de carte)</p>
+                <div className="flex gap-1.5">
+                  {[['image','Photo'],['brand','Couleur'],['none','Aucun']].map(([v, lbl]) => (
+                    <button key={v} type="button"
+                      onClick={() => setBrand((b) => ({ ...b, hero_mode: v }))}
+                      className="text-xs px-3 py-1.5 rounded-lg border font-medium"
+                      style={brand.hero_mode === v
+                        ? { background: '#171412', color: '#FFF', borderColor: '#171412' }
+                        : { background: '#FFF', color: '#57504A', borderColor: '#E9E5E0' }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-[#8D857D] mt-1.5">
+                  La photo vient du champ « Image hero » ci-dessous. Conseil Apple : pas de
+                  texte important dans la photo — les infos vont dans les champs de la carte.
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Code scanné en caisse</p>
+                <div className="flex gap-1.5">
+                  {[['qr','QR'],['barcode','Code-barres'],['both','Les deux']].map(([v, lbl]) => (
+                    <button key={v} type="button"
+                      onClick={() => setBrand((b) => ({ ...b, code_type: v }))}
+                      className="text-xs px-3 py-1.5 rounded-lg border font-medium"
+                      style={brand.code_type === v
+                        ? { background: '#171412', color: '#FFF', borderColor: '#171412' }
+                        : { background: '#FFF', color: '#57504A', borderColor: '#E9E5E0' }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-[#8D857D] mt-1.5">
+                  QR recommandé : lisible sur petit écran, et le Code128 n’est pas supporté
+                  sur Apple Watch.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Premium brand block — drives the new wallet card surface

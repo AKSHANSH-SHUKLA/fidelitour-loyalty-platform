@@ -57,12 +57,12 @@ export default function WalletCard({ customer, tenant, card = {}, compact = fals
   const showStamps = card.show_stamps !== false && (card.reward_threshold_stamps ?? 10) > 0;
   const showMeter = card.show_meter !== false;
 
-  // QR / barcode: explicit code_type wins; otherwise honour the legacy
-  // show_qr / show_barcode toggles so old templates opt into "wallet" cleanly.
+  // QR / barcode: explicit code_type wins. Absent that, QR is the default —
+  // Apple documents Code128 as unsupported on watchOS and square codes scan
+  // better on small screens — with the legacy toggles honoured only when the
+  // merchant explicitly turned QR off.
   const codeType = card.code_type
-    || (card.show_qr !== false && card.show_barcode !== false ? 'both'
-      : card.show_barcode !== false ? 'barcode'
-      : 'qr');
+    || (card.show_qr === false && card.show_barcode !== false ? 'barcode' : 'qr');
   const showQr = codeType === 'qr' || codeType === 'both';
   const showBarcode = codeType === 'barcode' || codeType === 'both';
 
@@ -256,7 +256,10 @@ function styles(t, compact) {
       padding: '3px 9px', borderRadius: 999, flexShrink: 0,
     },
     hero: {
-      height: compact ? 64 : 88, borderRadius: 10,
+      // Apple's store-card strip is 375×144pt — the same ratio here means a
+      // merchant's strip artwork works unchanged if we later emit real
+      // .pkpass files, and the PWA card previews exactly what Wallet shows.
+      aspectRatio: '375 / 144', borderRadius: 10,
       backgroundSize: 'cover', backgroundPosition: 'center',
     },
     fields: { display: 'flex', gap: compact ? 18 : 26 },
