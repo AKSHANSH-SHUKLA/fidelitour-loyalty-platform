@@ -39,16 +39,18 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
   const px = (v) => Math.round(v * s * 10) / 10;
 
   // ---- front-photo blend: merge the subject INTO the bg photo -------------
-  // A front upload usually carries its own solid background (the Royal Trim
-  // artwork ships on solid navy), which pastes as a hard rectangle over the
-  // bg photo. Sampling its corners tells us which blend dissolves that
-  // background: dark ground → 'screen' (dark vanishes, the light artwork
-  // stays), light ground → 'multiply' (white vanishes). Transparent PNGs
-  // need neither. Result: the reference's seamless, continuous merge.
+  // Blend-mode "dissolving" of the front photo's plate was tried and failed:
+  // luminance keying only works when logo and photo tones are opposite, and
+  // real merchant combos (dark logo on a light photo, light on light) turned
+  // to mush. The robust rule instead:
+  //   transparent PNG → drawn as-is, seamless on the photo (the reference)
+  //   solid ground    → styled as a clean rounded BADGE with a shadow, which
+  //                     reads as intentional on ANY photo, any colours
+  // Corner-sampling detects which case we're in.
   const frontSrc = card.hero_front_url || '';
-  const [frontBlend, setFrontBlend] = useState('normal');
+  const [frontHasPlate, setFrontHasPlate] = useState(true);
   useEffect(() => {
-    if (!frontSrc) { setFrontBlend('normal'); return; }
+    if (!frontSrc) return;
     let alive = true;
     const img = new Image();
     img.onload = () => {
@@ -59,17 +61,10 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         const ctx = c.getContext('2d');
         ctx.drawImage(img, 0, 0, 16, 16);
         const d = ctx.getImageData(0, 0, 16, 16).data;
-        // 4 corners = the image's own background
-        let lum = 0, alpha = 0;
-        [0, 15, 240, 255].forEach((p) => {
-          const i = p * 4;
-          lum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
-          alpha += d[i + 3];
-        });
-        lum /= 4; alpha /= 4;
-        if (alpha < 40) setFrontBlend('normal');            // real transparency
-        else setFrontBlend(lum < 110 ? 'screen' : 'multiply');
-      } catch (_e) { setFrontBlend('normal'); }
+        let alpha = 0;
+        [0, 15, 240, 255].forEach((p) => { alpha += d[p * 4 + 3]; });
+        setFrontHasPlate(alpha / 4 >= 40); // opaque corners = solid ground
+      } catch (_e) { setFrontHasPlate(true); }
     };
     img.src = frontSrc;
     return () => { alive = false; };
@@ -196,11 +191,16 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
             )}
             {heroMode !== 'logo' && focusSrc && (
               <img src={focusSrc} alt=""
-                style={{ position: 'relative', maxWidth: '72%',
-                         maxHeight: '84%', objectFit: 'contain',
-                         // dissolve the subject's own background into the
-                         // photo — the seamless merge, not a pasted rectangle
-                         mixBlendMode: focusSrc === frontSrc ? frontBlend : 'normal' }} />
+                style={frontHasPlate || focusSrc !== frontSrc
+                  ? { // solid-ground artwork → a deliberate rounded badge:
+                      // reads as designed on any photo, any colour combo
+                      position: 'relative', maxWidth: '52%', maxHeight: '68%',
+                      objectFit: 'contain', borderRadius: px(12),
+                      boxShadow: '0 8px 26px rgba(0,0,0,0.45)' }
+                  : { // transparent PNG → seamless, straight on the photo
+                      position: 'relative', maxWidth: '72%', maxHeight: '84%',
+                      objectFit: 'contain',
+                      filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.45))' }} />
             )}
             {heroMode === 'logo' && card.logo_url && (
               <img src={card.logo_url} alt=""
