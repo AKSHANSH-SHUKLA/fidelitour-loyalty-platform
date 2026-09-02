@@ -174,9 +174,10 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         //   bg    (hero_image_url) — the ambiance filling the band
         const front = card.hero_front_url || '';
         const bg = card.hero_image_url || '';
-        // Composite whenever the merchant gave us a front photo (the mode
-        // button also selects it, but uploading the subject IS the intent).
-        const composite = heroMode === 'composite' || (heroMode === 'image' && !!front && !!bg);
+        // Photo mode is strictly the single bg photo — even if a front photo
+        // exists, it only appears in Photo + logo mode. The two modes are
+        // clean, distinct choices.
+        const composite = heroMode === 'composite';
         const fillSrc = bg || (!composite ? front : '');
         const focusSrc = composite ? (front || card.logo_url) : '';
         return (

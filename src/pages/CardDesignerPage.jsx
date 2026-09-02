@@ -686,10 +686,10 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  <b>Photo + logo</b> : la photo arrière-plan remplit le bandeau, la photo
-                  avant passe devant, entière et nette — comme un logo sur la photo du salon.
-                  (Téléverser une photo avant sélectionne ce mode automatiquement.)
-                  <b> Photo</b> : la photo arrière-plan seule remplit le bandeau, nette.
+                  <b>Photo</b> : une seule photo (l'arrière-plan) remplit le bandeau, nette.
+                  <b> Photo + logo</b> : deux photos — l'arrière-plan en ambiance, la photo
+                  avant devant, entière et fondue dans l'image. (Téléverser une photo avant
+                  sélectionne ce mode automatiquement.)
                   <b> Logo</b> : votre logo seul sur la couleur de la carte.
                   Le bandeau garde toujours la même taille. Astuce : une photo paysage
                   (large) remplit le bandeau sans surprise.
