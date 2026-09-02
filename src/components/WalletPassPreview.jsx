@@ -137,12 +137,11 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         //   bg    (hero_image_url) — the ambiance filling the band
         const front = card.hero_front_url || '';
         const bg = card.hero_image_url || '';
-        const composite = heroMode === 'composite';
-        // Photo mode shows the WHOLE photo inside the fixed band: the same
-        // image, blurred + dimmed, fills the letterbox margins — never a
-        // colour bar, never a crop of the subject.
-        const fillSrc = composite ? bg : bg || front;
-        const focusSrc = composite ? (front || card.logo_url) : bg;
+        // Composite whenever the merchant gave us a front photo (the mode
+        // button also selects it, but uploading the subject IS the intent).
+        const composite = heroMode === 'composite' || (heroMode === 'image' && !!front && !!bg);
+        const fillSrc = bg || (!composite ? front : '');
+        const focusSrc = composite ? (front || card.logo_url) : '';
         return (
           <div style={{
             position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
@@ -150,16 +149,17 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {fillSrc && (
+              /* bg fills the band SHARP — no blur, ever. Dimmed only when a
+                 front subject sits on top, so it reads as ambiance. */
               <img src={fillSrc} alt="" aria-hidden="true"
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%',
                          objectFit: 'cover', objectPosition: 'center',
-                         filter: composite ? 'brightness(0.72)' : 'blur(18px) brightness(0.7)',
-                         transform: composite ? 'none' : 'scale(1.1)' }} />
+                         filter: composite && focusSrc ? 'brightness(0.72)' : 'none' }} />
             )}
             {heroMode !== 'logo' && focusSrc && (
               <img src={focusSrc} alt=""
-                style={{ position: 'relative', maxWidth: composite ? '68%' : '100%',
-                         maxHeight: composite ? '80%' : '100%', objectFit: 'contain' }} />
+                style={{ position: 'relative', maxWidth: '68%',
+                         maxHeight: '80%', objectFit: 'contain' }} />
             )}
             {heroMode === 'logo' && card.logo_url && (
               <img src={card.logo_url} alt=""

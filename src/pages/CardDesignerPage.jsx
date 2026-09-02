@@ -686,12 +686,13 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  <b>Photo + logo</b> : la photo arrière-plan remplit le bandeau en ambiance,
-                  la photo avant passe devant, entière et nette — comme un logo sur la photo
-                  du salon. <b>Photo</b> : la photo arrière-plan seule, entière (les marges
-                  sont comblées par son propre flou, jamais recadrée).
+                  <b>Photo + logo</b> : la photo arrière-plan remplit le bandeau, la photo
+                  avant passe devant, entière et nette — comme un logo sur la photo du salon.
+                  (Téléverser une photo avant sélectionne ce mode automatiquement.)
+                  <b> Photo</b> : la photo arrière-plan seule remplit le bandeau, nette.
                   <b> Logo</b> : votre logo seul sur la couleur de la carte.
-                  Le bandeau garde toujours la même taille, comme sur une vraie carte.
+                  Le bandeau garde toujours la même taille. Astuce : une photo paysage
+                  (large) remplit le bandeau sans surprise.
                 </p>
               </div>
               <div>
@@ -822,7 +823,9 @@ export default function CardDesignerPage() {
                       if (!f) return;
                       try {
                         const dataUrl = await compressImage(f, 900, 0.88);
-                        setBrand((b) => ({ ...b, hero_front_url: dataUrl }));
+                        // Uploading a subject IS choosing the composite look —
+                        // flip the mode so it shows up immediately.
+                        setBrand((b) => ({ ...b, hero_front_url: dataUrl, hero_mode: 'composite' }));
                       } catch (_e) { flash('err', 'Impossible de lire l\'image.'); }
                       e.target.value = '';
                     }}
