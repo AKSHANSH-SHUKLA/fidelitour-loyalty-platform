@@ -5833,6 +5833,7 @@ def _serialize_card_payload(cust: dict) -> dict:
             "strip_title":          tpl.get("strip_title"),
             "strip_subtitle":       tpl.get("strip_subtitle"),
             "hero_image_url":       tpl.get("hero_image_url"),
+            "hero_front_url":       tpl.get("hero_front_url"),
             "show_offer_box":       tpl.get("show_offer_box"),
             "offer_box_text":       tpl.get("offer_box_text"),
             "offer_box_subtext":    tpl.get("offer_box_subtext"),

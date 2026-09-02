@@ -28,6 +28,7 @@ const DEFAULT_BRAND = {
   // Images
   logo_url:         '',
   hero_image_url:   '',
+  hero_front_url:   '',
   // Where the logo sits on the card. 'top_left' is the Apple-Wallet default
   // (matches Maison 123, FNAC, GÉMO). 'middle_overlay' puts it centred over
   // the middle band, 'top_center' centres it on the top strip.
@@ -242,6 +243,7 @@ export default function CardDesignerPage() {
           accent_color: tplData.accent_color || DEFAULT_BRAND.accent_color,
           logo_url: tplData.logo_url || '',
           hero_image_url: tplData.hero_image_url || '',
+          hero_front_url: tplData.hero_front_url || '',
           title_label: tplData.title_label || DEFAULT_BRAND.title_label,
           points_label: tplData.points_label || DEFAULT_BRAND.points_label,
           // Wallet-anatomy keys may exist only at top level (set via API
@@ -310,6 +312,7 @@ export default function CardDesignerPage() {
         accent_color: brand.accent_color || DEFAULT_BRAND.accent_color,
         logo_url: brand.logo_url || '',
         hero_image_url: brand.hero_image_url || '',
+        hero_front_url: brand.hero_front_url || '',
         title_label: (brand.title_label || '').trim() || DEFAULT_BRAND.title_label,
         points_label: (brand.points_label || '').trim() || DEFAULT_BRAND.points_label,
         // Wallet-anatomy keys mirrored at top level: the customer payload
@@ -683,9 +686,10 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  <b>Photo + logo</b> : vos deux images — la photo remplit le bandeau en
-                  ambiance, votre logo (image « avant ») centré par-dessus, net.
-                  <b> Photo</b> : la photo seule remplit le bandeau.
+                  <b>Photo + logo</b> : la photo arrière-plan remplit le bandeau en ambiance,
+                  la photo avant passe devant, entière et nette — comme un logo sur la photo
+                  du salon. <b>Photo</b> : la photo arrière-plan seule, entière (les marges
+                  sont comblées par son propre flou, jamais recadrée).
                   <b> Logo</b> : votre logo seul sur la couleur de la carte.
                   Le bandeau garde toujours la même taille, comme sur une vraie carte.
                 </p>
@@ -779,13 +783,62 @@ export default function CardDesignerPage() {
               </div>
             </div>
 
-            {/* Hero image */}
+            {/* Hero front image — the FOCUS of the composite band */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-[#57504A] mb-1">
-                Image héros (photo produit, paysage 16:9 idéal)
+                Photo avant (le sujet — logo de marque, produit vedette)
               </label>
               <p className="text-[11px] text-[#8D857D] mb-2">
-                Affichée en filigrane derrière le titre de la carte — donne instantanément un côté premium type KFC, Starbucks, etc.
+                Affichée entière, nette, centrée sur le bandeau. En mode « Photo + logo »,
+                elle passe devant la photo d'arrière-plan — comme un logo sur la photo du salon.
+              </p>
+              <div className="flex items-center gap-3">
+                {brand.hero_front_url ? (
+                  <div className="relative">
+                    <img src={brand.hero_front_url} alt="" className="w-28 h-16 rounded-lg object-contain bg-[#FAFAF8] border border-[#E9E5E0]" />
+                    <button
+                      type="button"
+                      onClick={() => setBrand((b) => ({ ...b, hero_front_url: '' }))}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#171412] text-white flex items-center justify-center"
+                      aria-label="Supprimer la photo avant"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-28 h-16 rounded-lg bg-[#FAFAF8] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8D857D]">
+                    <ImagePlus size={22} />
+                  </div>
+                )}
+                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm font-medium text-[#171412] cursor-pointer hover:bg-[#FAFAF8]">
+                  <ImagePlus size={14} />
+                  {brand.hero_front_url ? 'Changer la photo avant' : 'Téléverser la photo avant'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      try {
+                        const dataUrl = await compressImage(f, 900, 0.88);
+                        setBrand((b) => ({ ...b, hero_front_url: dataUrl }));
+                      } catch (_e) { flash('err', 'Impossible de lire l\'image.'); }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Hero background image — the ambiance behind the front photo */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#57504A] mb-1">
+                Photo arrière-plan (ambiance — votre salon, boutique, produit)
+              </label>
+              <p className="text-[11px] text-[#8D857D] mb-2">
+                Remplit le bandeau derrière la photo avant, légèrement assombrie pour la
+                laisser ressortir. Seule, elle sert au mode « Photo ».
               </p>
               <div className="flex items-center gap-3">
                 {brand.hero_image_url ? (

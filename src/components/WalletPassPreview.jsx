@@ -131,33 +131,44 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
            composite = the reference look: the bg photo fills the band as
            ambiance (softly dimmed, "non-focused"), the front image sits
            centred on top as the focus. */}
-      {heroMode !== 'none' && (
-        <div style={{
-          position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
-          background: t.brandRaw,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {(heroMode === 'image' || heroMode === 'composite') && card.hero_image_url && (
-            <img src={card.hero_image_url} alt=""
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%',
-                       objectFit: 'cover', objectPosition: 'center' }} />
-          )}
-          {heroMode === 'composite' && card.hero_image_url && (
-            /* soft veil: keeps the bg "ambiance", pushes the front forward */
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.28)' }} />
-          )}
-          {heroMode === 'composite' && card.logo_url && (
-            <img src={card.logo_url} alt=""
-              style={{ position: 'relative', maxHeight: '72%', maxWidth: '68%',
-                       objectFit: 'contain' }} />
-          )}
-          {heroMode === 'logo' && card.logo_url && (
-            <img src={card.logo_url} alt=""
-              style={{ position: 'relative', maxHeight: '78%', maxWidth: '78%',
-                       objectFit: 'contain' }} />
-          )}
-        </div>
-      )}
+      {heroMode !== 'none' && (() => {
+        // Two hero slots, independent of the header logo:
+        //   front (hero_front_url) — the subject, always shown WHOLE
+        //   bg    (hero_image_url) — the ambiance filling the band
+        const front = card.hero_front_url || '';
+        const bg = card.hero_image_url || '';
+        const composite = heroMode === 'composite';
+        // Photo mode shows the WHOLE photo inside the fixed band: the same
+        // image, blurred + dimmed, fills the letterbox margins — never a
+        // colour bar, never a crop of the subject.
+        const fillSrc = composite ? bg : bg || front;
+        const focusSrc = composite ? (front || card.logo_url) : bg;
+        return (
+          <div style={{
+            position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
+            background: t.brandRaw,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {fillSrc && (
+              <img src={fillSrc} alt="" aria-hidden="true"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%',
+                         objectFit: 'cover', objectPosition: 'center',
+                         filter: composite ? 'brightness(0.72)' : 'blur(18px) brightness(0.7)',
+                         transform: composite ? 'none' : 'scale(1.1)' }} />
+            )}
+            {heroMode !== 'logo' && focusSrc && (
+              <img src={focusSrc} alt=""
+                style={{ position: 'relative', maxWidth: composite ? '68%' : '100%',
+                         maxHeight: composite ? '80%' : '100%', objectFit: 'contain' }} />
+            )}
+            {heroMode === 'logo' && card.logo_url && (
+              <img src={card.logo_url} alt=""
+                style={{ position: 'relative', maxHeight: '78%', maxWidth: '78%',
+                         objectFit: 'contain' }} />
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── stamps row: its OWN slim band flush under the strip — in flow, not
              an overlay, so the hero image is NEVER covered. Themed to the
