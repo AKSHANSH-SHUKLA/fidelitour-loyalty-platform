@@ -117,17 +117,30 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         )}
       </div>
 
-      {/* ── strip: edge-to-edge 375×144. Stamps live INSIDE it, in a single
-             frosted-glass bar (glassmorphism) so they read as one integrated
-             element, never a floating row. This is exactly the strip.png the
-             real pass will carry, generated per customer state. ── */}
+      {/* ── strip: edge-to-edge 375×144. Three fills:
+             image  → merchant photo (cover)
+             logo   → the merchant's own logo centred on the brand field,
+                      the most native look for logo-forward brands (barbers,
+                      salons) whose identity IS the mark
+             brand  → flat brand colour
+             Stamps live INSIDE it in a single frosted-glass bar, never a
+             floating row. This is exactly the strip.png the real pass carries. ── */}
       {heroMode !== 'none' && (
         <div style={{
           position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
           background: heroMode === 'image' && card.hero_image_url
             ? `url(${card.hero_image_url}) center/cover`
             : t.brandRaw,
+          display: heroMode === 'logo' ? 'flex' : undefined,
+          alignItems: heroMode === 'logo' ? 'center' : undefined,
+          justifyContent: heroMode === 'logo' ? 'center' : undefined,
         }}>
+          {heroMode === 'logo' && card.logo_url && (
+            <img src={card.logo_url} alt=""
+              style={{ maxHeight: '68%', maxWidth: '72%', objectFit: 'contain',
+                       // a hair of padding so the mark never kisses the stamp bar
+                       marginBottom: showStamps ? px(18) : 0 }} />
+          )}
           {showStamps && (
             <div style={{
               position: 'absolute', left: px(10), right: px(10), bottom: px(10),

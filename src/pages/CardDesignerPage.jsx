@@ -605,6 +605,7 @@ export default function CardDesignerPage() {
                   { key: 'signature', label: 'Signature',  surface: 'noir',       brand_color: '#C9A34E', hero_mode: 'image', hint: 'Noir + or' },
                   { key: 'lumiere',   label: 'Lumière',    surface: 'creme',      brand_color: '#5C3A21', hero_mode: 'image', hint: 'Crème + chocolat' },
                   { key: 'marine',    label: 'Marine',     surface: 'marine',     brand_color: '#E8703A', hero_mode: 'brand', hint: 'Marine + orange' },
+                  { key: 'royal',     label: 'Royal',      surface: 'marine',     brand_color: '#C6A15B', hero_mode: 'logo',  hint: 'Bleu nuit + or, logo' },
                   { key: 'solaire',   label: 'Solaire',    surface: 'noir',       brand_color: '#F2C230', hero_mode: 'brand', hint: 'Noir + jaune' },
                   { key: 'foret',     label: 'Forêt',      surface: 'foret',      brand_color: '#C9A34E', hero_mode: 'image', hint: 'Vert + or' },
                   { key: 'espresso',  label: 'Espresso',   surface: 'espresso',   brand_color: '#E8A53B', hero_mode: 'image', hint: 'Café + caramel' },
@@ -670,7 +671,7 @@ export default function CardDesignerPage() {
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Bandeau (haut de carte)</p>
                 <div className="flex gap-1.5">
-                  {[['image','Photo'],['brand','Couleur'],['none','Aucun']].map(([v, lbl]) => (
+                  {[['image','Photo'],['logo','Logo'],['brand','Couleur'],['none','Aucun']].map(([v, lbl]) => (
                     <button key={v} type="button"
                       onClick={() => setBrand((b) => ({ ...b, hero_mode: v }))}
                       className="text-xs px-3 py-1.5 rounded-lg border font-medium"
@@ -682,8 +683,9 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  La photo vient du champ « Image hero » ci-dessous. Conseil Apple : pas de
-                  texte important dans la photo — les infos vont dans les champs de la carte.
+                  <b>Logo</b> : votre logo centré sur la couleur de la carte — le rendu le plus
+                  chic pour un salon ou un barbier. <b>Photo</b> : votre cliché produit.
+                  Conseil Apple : pas de texte important dans la photo.
                 </p>
               </div>
               <div>
