@@ -71,11 +71,16 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
     || (!card.code_type && card.show_qr === false && card.show_barcode !== false);
   const heroMode = card.hero_mode || (card.hero_image_url ? 'image' : 'brand');
 
+  // Native PassKit typographic rhythm: labels are quiet, values shout.
   const label = {
-    fontSize: px(10), fontWeight: 600, letterSpacing: '0.06em',
+    fontSize: px(9), fontWeight: 600, letterSpacing: '0.07em',
     color: t.label, textTransform: 'uppercase', lineHeight: 1.3,
   };
-  const value = { fontSize: px(15), fontWeight: 500, color: t.ink, lineHeight: 1.25 };
+  // The strip's "on brand" text (over the hero) needs its own contrast.
+  const stripLabel = { ...label, color: 'rgba(255,255,255,0.72)' };
+
+  // Cleaner short code for the human-readable line: FT-RT0184 → RT0184.
+  const shortCode = barcodeId.replace(/^FT-?/i, '') || barcodeId;
 
   return (
     <div
@@ -86,15 +91,18 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
       }}
     >
-      {/* ── logo row: logo (≤160×50pt box) + org name · header field ── */}
+      {/* ── header row: logo + org name (left) · ONE header field (right).
+             Native stack: quiet label above, bold value below. This is the
+             ONLY thing visible when the pass is collapsed in the stack, so it
+             carries the single most glanceable status — the tier. ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: `${px(10)}px ${px(14)}px`, gap: px(10) }}>
+                    padding: `${px(11)}px ${px(14)}px ${px(9)}px`, gap: px(10) }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: px(8), minWidth: 0 }}>
           {card.logo_url ? (
             <img src={card.logo_url} alt=""
-              style={{ maxHeight: px(30), maxWidth: px(96), borderRadius: px(4), objectFit: 'contain' }} />
+              style={{ maxHeight: px(28), maxWidth: px(88), borderRadius: px(4), objectFit: 'contain' }} />
           ) : null}
-          <span style={{ fontSize: px(14), fontWeight: 600, color: t.ink,
+          <span style={{ fontSize: px(13.5), fontWeight: 600, color: t.ink,
                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {tenant?.name || 'Votre commerce'}
           </span>
@@ -102,105 +110,112 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         {showTier && (
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={label}>Statut</div>
-            <div style={{ ...value, fontSize: px(14) }}>{tierLabels[tierKey] || 'Bronze'}</div>
+            <div style={{ fontSize: px(15), fontWeight: 700, color: t.brand, lineHeight: 1.15 }}>
+              {tierLabels[tierKey] || 'Bronze'}
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── strip: edge-to-edge 375×144, stamps composited in (this IS the
-             server-generated strip the real pass will carry) ── */}
+      {/* ── strip: edge-to-edge 375×144. Stamps live INSIDE it, in a single
+             frosted-glass bar (glassmorphism) so they read as one integrated
+             element, never a floating row. This is exactly the strip.png the
+             real pass will carry, generated per customer state. ── */}
       {heroMode !== 'none' && (
         <div style={{
-          position: 'relative', width: '100%', aspectRatio: '375 / 144',
+          position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
           background: heroMode === 'image' && card.hero_image_url
             ? `url(${card.hero_image_url}) center/cover`
             : t.brandRaw,
         }}>
           {showStamps && (
             <div style={{
-              position: 'absolute', left: 0, right: 0, bottom: 0,
-              padding: `${px(14)}px ${px(14)}px ${px(8)}px`,
-              background: 'linear-gradient(transparent, rgba(0,0,0,0.45))',
-              display: 'flex', gap: px(5), alignItems: 'center',
+              position: 'absolute', left: px(10), right: px(10), bottom: px(10),
+              padding: `${px(7)}px ${px(10)}px`, borderRadius: px(10),
+              background: 'rgba(20,22,28,0.42)',
+              backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.14)',
+              display: 'flex', flexDirection: 'column', gap: px(5),
             }}>
-              {Array.from({ length: threshold }).map((_, i) => (
-                <span key={i} style={{
-                  width: px(11), height: px(11), borderRadius: '50%',
-                  background: i < stamps ? t.brand : 'transparent',
-                  border: i < stamps ? 'none' : `${Math.max(1, px(1.4))}px solid rgba(255,255,255,0.75)`,
-                  boxSizing: 'border-box',
-                  boxShadow: i < stamps ? '0 0 0 1px rgba(0,0,0,0.25)' : 'none',
-                }} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── secondary fields row (≤4) ── */}
-      <div style={{ display: 'flex', gap: px(20), padding: `${px(10)}px ${px(14)}px 0` }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={label}>{memberLabel}</div>
-          <div style={value}>{displayName}</div>
-        </div>
-        {showPoints && (
-          <div>
-            <div style={label}>{pointsLabel}</div>
-            <div style={value}>{earned}</div>
-          </div>
-        )}
-        {showVisits && (
-          <div>
-            <div style={label}>{visitsLabel}</div>
-            <div style={value}>{visits}</div>
-          </div>
-        )}
-      </div>
-
-      {/* ── auxiliary row: progress as TEXT (no bars on a real pass) ── */}
-      {(showMeter || showOffer) && (
-        <div style={{ display: 'flex', gap: px(20), padding: `${px(8)}px ${px(14)}px 0` }}>
-          {showMeter && (
-            <div>
-              <div style={label}>{(card.meter_label || 'Prochaine récompense').toUpperCase()}</div>
-              <div style={{ ...value, fontSize: px(13) }}>
-                {remaining > 0
-                  ? `${remaining} tampon${remaining > 1 ? 's' : ''} restant${remaining > 1 ? 's' : ''}`
-                  : (card.reward_description || 'Récompense débloquée !')}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={stripLabel}>{(card.stamps_label || 'Tampons').toUpperCase()}</span>
+                <span style={{ fontSize: px(10.5), fontWeight: 700, color: '#FFFFFF' }}>
+                  {stamps}<span style={{ opacity: 0.6 }}> / {threshold}</span>
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: px(4.5), alignItems: 'center' }}>
+                {Array.from({ length: threshold }).map((_, i) => (
+                  <span key={i} style={{
+                    flex: 1, height: px(9), borderRadius: px(5),
+                    background: i < stamps ? t.brand : 'rgba(255,255,255,0.20)',
+                    boxShadow: i < stamps ? '0 0 0 0.5px rgba(0,0,0,0.2)' : 'none',
+                  }} />
+                ))}
               </div>
             </div>
           )}
-          {showOffer && (
-            <div style={{ minWidth: 0 }}>
-              <div style={label}>Offre</div>
-              <div style={{ ...value, fontSize: px(13), whiteSpace: 'nowrap',
-                            overflow: 'hidden', textOverflow: 'ellipsis' }}>{offerText}</div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* ── barcode block: ONE code, white rounded rect, altText ── */}
+      {/* ── PRIMARY field: the one number the customer glances for. Big. ── */}
+      <div style={{ padding: `${px(12)}px ${px(14)}px 0` }}>
+        <div style={label}>{showStamps ? (card.stamps_label || 'Tampons').toUpperCase()
+                                        : pointsLabel}</div>
+        <div style={{ fontSize: px(30), fontWeight: 700, color: t.ink, lineHeight: 1.05,
+                      letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+          {showStamps ? `${stamps} / ${threshold}` : earned}
+        </div>
+      </div>
+
+      {/* ── AUXILIARY field: next reward, in plain words. One line. ── */}
+      <div style={{ padding: `${px(10)}px ${px(14)}px 0` }}>
+        <div style={label}>{(card.meter_label || 'Prochaine récompense').toUpperCase()}</div>
+        <div style={{ fontSize: px(13.5), fontWeight: 500, color: t.ink, lineHeight: 1.3 }}>
+          {remaining > 0
+            ? `Encore ${remaining} ${showStamps ? (remaining > 1 ? 'tampons' : 'tampon')
+                                                 : (remaining > 1 ? 'visites' : 'visite')} · ${card.reward_description || 'récompense'}`
+            : (card.reward_description || 'Récompense débloquée !')}
+        </div>
+      </div>
+
+      {/* ── barcode block: ONE code, white block, tight altText. Everything
+             else — member name, visits, offer terms, address — lives on the
+             back (the "…" flip in real Wallet), off the glanceable face. ── */}
       {barcodeId && (
         <div style={{ display: 'flex', justifyContent: 'center',
-                      padding: `${px(18)}px 0 ${px(16)}px` }}>
-          <div style={{ background: '#FFFFFF', borderRadius: px(8),
-                        padding: `${px(8)}px ${px(10)}px`,
+                      padding: `${px(16)}px 0 ${px(16)}px` }}>
+          <div style={{ background: '#FFFFFF', borderRadius: px(10),
+                        padding: `${px(9)}px ${px(11)}px ${px(7)}px`,
                         display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', gap: px(4) }}>
+                        alignItems: 'center', gap: px(5) }}>
             {wantsBarcode ? (
               <Code128Barcode value={barcodeId} height={px(40)} />
             ) : (
-              <QRCodeSVG value={barcodeId} size={px(92)} bgColor="#FFFFFF"
+              <QRCodeSVG value={barcodeId} size={px(88)} bgColor="#FFFFFF"
                          fgColor="#111111" level="M" />
             )}
-            <div style={{ fontSize: px(9), letterSpacing: '0.1em', color: '#63666B',
-                          fontVariantNumeric: 'tabular-nums' }}>
-              {barcodeId}
+            <div style={{ fontSize: px(8.5), letterSpacing: '0.14em', color: '#8A8D92',
+                          fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+              {shortCode}
             </div>
           </div>
         </div>
       )}
+
+      {/* ── back-of-card strip: a thin footer note standing in for the real
+             pass back (member, visits, offer, terms). Keeps the FACE clean
+             while signalling where the rest of the info lives. ── */}
+      <div style={{ borderTop: `1px solid ${t.hairline}`,
+                    padding: `${px(8)}px ${px(14)}px ${px(10)}px`,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: px(8) }}>
+        <span style={{ fontSize: px(10), color: t.inkSoft, whiteSpace: 'nowrap',
+                       overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {displayName}{showVisits ? ` · ${visits} ${visitsLabel.toLowerCase()}` : ''}
+        </span>
+        <span style={{ fontSize: px(9.5), color: t.label, whiteSpace: 'nowrap' }}>
+          Détails au dos ›
+        </span>
+      </div>
     </div>
   );
 }
