@@ -1110,34 +1110,9 @@ export default function CardDesignerPage() {
               })()}
             </div>
 
-            {/* Map text — pictorial legend that shows what each band contains
-                and which editor section controls it. */}
-            <div className="mt-3 rounded-xl border bg-white p-3" style={{ borderColor: 'var(--flc-line, #E9E5E0)' }}>
-              <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-[#8D857D] mb-2">Carte — légende</p>
-              <ul className="space-y-2 text-[11.5px]">
-                <li className="flex items-start gap-2">
-                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#3FA9D9', color: '#FFFFFF' }}>1</span>
-                  <div>
-                    <div className="font-semibold text-[#171412]">Bande HAUT</div>
-                    <div className="text-[#8D857D] leading-snug">Logo · nom du commerce · badge palier · "+ D'INFOS / N pts". Couleur = <span className="font-mono text-[10.5px] text-[#171412]">card_bg_color</span> (partagée avec la bande bas).</div>
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#E8A53B', color: '#FFFFFF' }}>2</span>
-                  <div>
-                    <div className="font-semibold text-[#171412]">Bande MILIEU</div>
-                    <div className="text-[#8D857D] leading-snug">Image ou couleur · titre · sous-titre · encart offre. Couleur indépendante via <span className="font-mono text-[10.5px] text-[#171412]">strip_color</span> ou l'image téléversée.</div>
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-[0.12em]" style={{ background: '#20714C', color: '#FFFFFF' }}>3</span>
-                  <div>
-                    <div className="font-semibold text-[#171412]">Bande BAS</div>
-                    <div className="text-[#8D857D] leading-snug">Salutation · prénom · total visites · grille de tampons · jauge de points · QR code · code-barres · anniversaire. Même couleur que la bande haut.</div>
-                  </div>
-                </li>
-              </ul>
-            </div>
+            {/* (Legacy 3-band legend removed — it described the retired card
+                anatomy and its dead knobs, pure noise next to the wallet
+                preview.) */}
           </div>
         </div>
       </div>
