@@ -6,6 +6,10 @@ import { PageHeader, C as C_PS } from '../components/PageShell';
 import PremiumLoyaltyCard from '../components/PremiumLoyaltyCard';
 import WalletPassPreview from '../components/WalletPassPreview';
 
+// Crop viewport for the band photo — exactly the strip's 375:144 ratio.
+const CROP_W = 500;
+const CROP_H = 192;
+
 // Defaults for the loyalty rules — kept in sync with the backend CardTemplate model.
 const DEFAULT_RULES = {
   points_per_visit: 10,
@@ -216,6 +220,35 @@ export default function CardDesignerPage() {
   const [pushing, setPushing] = useState(false);
   const [ok, setOk] = useState('');
   const [err, setErr] = useState('');
+  // Crop step for the band photo: {src, imgW, imgH, scale, minScale, x, y}.
+  // The merchant frames their photo in the band's exact 375:144 ratio, so the
+  // strip is ALWAYS full — no empty space — and THEY choose what's in frame.
+  const [cropper, setCropper] = useState(null);
+  const cropDrag = React.useRef(null);
+
+  const clampCrop = (c) => ({
+    ...c,
+    x: Math.min(0, Math.max(CROP_W - c.imgW * c.scale, c.x)),
+    y: Math.min(0, Math.max(CROP_H - c.imgH * c.scale, c.y)),
+  });
+
+  const confirmCrop = () => {
+    if (!cropper) return;
+    const img = new Image();
+    img.onload = () => {
+      const cv = document.createElement('canvas');
+      cv.width = 1125; cv.height = 432;                 // Apple @3x strip
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img,
+        -cropper.x / cropper.scale, -cropper.y / cropper.scale,
+        CROP_W / cropper.scale, CROP_H / cropper.scale,
+        0, 0, 1125, 432);
+      setBrand((b) => ({ ...b, hero_image_url: cv.toDataURL('image/jpeg', 0.85),
+                          hero_mode: 'image' }));
+      setCropper(null);
+    };
+    img.src = cropper.src;
+  };
 
   useEffect(() => {
     (async () => {
@@ -412,6 +445,69 @@ export default function CardDesignerPage() {
       >
         <Save size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
       </button>
+
+      {/* ── Crop step: frame the photo in the band's exact ratio ── */}
+      {cropper && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+             style={{ background: 'rgba(15,14,12,0.72)' }}>
+          <div className="bg-white rounded-2xl p-5 shadow-2xl" style={{ maxWidth: CROP_W + 40 }}>
+            <p className="text-sm font-bold text-[#171412] mb-1">Cadrez votre photo</p>
+            <p className="text-[11px] text-[#8D857D] mb-3">
+              Glissez pour déplacer, zoomez avec le curseur. Ce que vous voyez ici est
+              exactement ce qui remplira le bandeau — aucun espace vide, aucun recadrage surprise.
+            </p>
+            <div
+              style={{ width: CROP_W, height: CROP_H, overflow: 'hidden', borderRadius: 10,
+                       position: 'relative', cursor: 'grab', touchAction: 'none',
+                       background: '#111', maxWidth: '100%' }}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                cropDrag.current = { sx: e.clientX, sy: e.clientY, x: cropper.x, y: cropper.y };
+              }}
+              onPointerMove={(e) => {
+                if (!cropDrag.current) return;
+                const d = cropDrag.current;
+                setCropper((c) => c && clampCrop({ ...c,
+                  x: d.x + (e.clientX - d.sx), y: d.y + (e.clientY - d.sy) }));
+              }}
+              onPointerUp={() => { cropDrag.current = null; }}
+            >
+              <img src={cropper.src} alt="" draggable={false}
+                style={{ position: 'absolute', left: cropper.x, top: cropper.y,
+                         width: cropper.imgW * cropper.scale,
+                         height: cropper.imgH * cropper.scale,
+                         maxWidth: 'none', userSelect: 'none', pointerEvents: 'none' }} />
+            </div>
+            <input
+              type="range" className="w-full mt-3"
+              min={cropper.minScale} max={cropper.minScale * 3} step={0.001}
+              value={cropper.scale}
+              onChange={(e) => {
+                const ns = parseFloat(e.target.value);
+                setCropper((c) => {
+                  if (!c) return c;
+                  // zoom about the viewport centre
+                  const cx = (CROP_W / 2 - c.x) / c.scale;
+                  const cy = (CROP_H / 2 - c.y) / c.scale;
+                  return clampCrop({ ...c, scale: ns,
+                    x: CROP_W / 2 - cx * ns, y: CROP_H / 2 - cy * ns });
+                });
+              }}
+            />
+            <div className="flex justify-end gap-2 mt-3">
+              <button onClick={() => setCropper(null)}
+                className="px-4 py-2 rounded-full text-sm font-medium border border-[#E9E5E0] text-[#57504A]">
+                Annuler
+              </button>
+              <button onClick={confirmCrop}
+                className="px-5 py-2 rounded-full text-sm font-bold text-white"
+                style={{ background: `linear-gradient(135deg, ${C_PS.ochre}, ${C_PS.terracotta})` }}>
+                Valider le cadrage
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {ok && (
         <div className="rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-2 text-sm flex items-center gap-2">
@@ -796,8 +892,8 @@ export default function CardDesignerPage() {
                 Photo de la carte (votre salon, boutique, produit)
               </label>
               <p className="text-[11px] text-[#8D857D] mb-2">
-                Remplit tout le bandeau, sans espace vide. Idéal : une photo paysage (large),
-                type 1600×600 — elle s'affiche alors quasi entière.
+                À l'envoi, un cadreur s'ouvre : glissez et zoomez votre photo dans le format
+                exact du bandeau. Résultat : bandeau toujours plein, cadrage choisi par vous.
               </p>
               <div className="flex items-center gap-3">
                 {brand.hero_image_url ? (
@@ -828,8 +924,19 @@ export default function CardDesignerPage() {
                       const f = e.target.files?.[0];
                       if (!f) return;
                       try {
-                        const dataUrl = await compressImage(f, 1200, 0.82);
-                        setBrand((b) => ({ ...b, hero_image_url: dataUrl }));
+                        // Open the crop step instead of setting directly: the
+                        // merchant frames their photo in the band's exact
+                        // ratio, so the strip is always FULL with THEIR crop.
+                        const dataUrl = await compressImage(f, 2000, 0.9);
+                        const img = new Image();
+                        img.onload = () => {
+                          const minScale = Math.max(CROP_W / img.width, CROP_H / img.height);
+                          setCropper({ src: dataUrl, imgW: img.width, imgH: img.height,
+                                       scale: minScale, minScale,
+                                       x: (CROP_W - img.width * minScale) / 2,
+                                       y: (CROP_H - img.height * minScale) / 2 });
+                        };
+                        img.src = dataUrl;
                       } catch (_e) { flash('err', 'Impossible de lire l\'image.'); }
                       e.target.value = '';
                     }}
