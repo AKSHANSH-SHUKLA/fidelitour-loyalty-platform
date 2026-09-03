@@ -287,7 +287,8 @@ export default function CardDesignerPage() {
           surface: tplData.surface ?? tplData.brand_fields?.surface ?? DEFAULT_BRAND.surface,
           surface_color: tplData.surface_color ?? tplData.brand_fields?.surface_color ?? '',
           brand_color: tplData.brand_color ?? tplData.brand_fields?.brand_color ?? DEFAULT_BRAND.brand_color,
-          code_type: tplData.code_type ?? tplData.brand_fields?.code_type ?? DEFAULT_BRAND.code_type,
+          code_type: (() => { const v = tplData.code_type ?? tplData.brand_fields?.code_type ?? DEFAULT_BRAND.code_type;
+            return v === 'both' ? 'qr' : v; })(),
           hero_mode: tplData.hero_mode ?? tplData.brand_fields?.hero_mode ?? DEFAULT_BRAND.hero_mode,
         });
         // Legacy auchan_layout is preserved on save but no longer edited.
@@ -800,7 +801,9 @@ export default function CardDesignerPage() {
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Code scanné en caisse</p>
                 <div className="flex gap-1.5">
-                  {[['qr','QR'],['barcode','Code-barres'],['both','Les deux']].map(([v, lbl]) => (
+                  {/* ONE code only — a real Apple Wallet pass can't carry two,
+                      so offering "Les deux" was a lie. Legacy 'both' → QR. */}
+                  {[['qr','QR'],['barcode','Code-barres']].map(([v, lbl]) => (
                     <button key={v} type="button"
                       onClick={() => setBrand((b) => ({ ...b, code_type: v }))}
                       className="text-xs px-3 py-1.5 rounded-lg border font-medium"
