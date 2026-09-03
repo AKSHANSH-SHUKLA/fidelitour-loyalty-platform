@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Code128Barcode from './Code128Barcode';
 import { deriveCardTheme } from '../lib/cardTheme';
@@ -39,37 +39,6 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
   const px = (v) => Math.round(v * s * 10) / 10;
 
   // ---- front-photo blend: merge the subject INTO the bg photo -------------
-  // Blend-mode "dissolving" of the front photo's plate was tried and failed:
-  // luminance keying only works when logo and photo tones are opposite, and
-  // real merchant combos (dark logo on a light photo, light on light) turned
-  // to mush. The robust rule instead:
-  //   transparent PNG → drawn as-is, seamless on the photo (the reference)
-  //   solid ground    → styled as a clean rounded BADGE with a shadow, which
-  //                     reads as intentional on ANY photo, any colours
-  // Corner-sampling detects which case we're in.
-  const frontSrc = card.hero_front_url || '';
-  const [frontHasPlate, setFrontHasPlate] = useState(true);
-  useEffect(() => {
-    if (!frontSrc) return;
-    let alive = true;
-    const img = new Image();
-    img.onload = () => {
-      if (!alive) return;
-      try {
-        const c = document.createElement('canvas');
-        c.width = 16; c.height = 16;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0, 16, 16);
-        const d = ctx.getImageData(0, 0, 16, 16).data;
-        let alpha = 0;
-        [0, 15, 240, 255].forEach((p) => { alpha += d[p * 4 + 3]; });
-        setFrontHasPlate(alpha / 4 >= 40); // opaque corners = solid ground
-      } catch (_e) { setFrontHasPlate(true); }
-    };
-    img.src = frontSrc;
-    return () => { alive = false; };
-  }, [frontSrc]);
-
   // ---- data (same derived-from-visits maths as everywhere else) ----------
   const firstName = (customer?.first_name || customer?.name || '').split(' ')[0] || 'Client';
   const displayName = card.use_full_name ? (customer?.name || firstName) : firstName;
@@ -149,67 +118,32 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
         )}
       </div>
 
-      {/* ── strip: edge-to-edge 375×144. Two image fills + flat colour:
-             image  → merchant photo, shown WHOLE (contain) on the brand
-                      field — any size/shape fits, scaled down, and the card's
-                      own colour fills the margins so it reads as intentional,
-                      never a cropped-off band or a black letterbox
-             logo   → the merchant's mark centred on the brand field
-             brand  → flat brand colour
-             Stamps live INSIDE it in a single frosted-glass bar, never a
-             floating row. This is exactly the strip.png the real pass carries. ── */}
-      {/* Strip — ALWAYS the fixed 375×144 band, whatever is uploaded, so the
-           card never grows or shrinks with the image (a real pass can't).
-           composite = the reference look: the bg photo fills the band as
-           ambiance (softly dimmed, "non-focused"), the front image sits
-           centred on top as the focus. */}
-      {heroMode !== 'none' && (() => {
-        // Two hero slots, independent of the header logo:
-        //   front (hero_front_url) — the subject, always shown WHOLE
-        //   bg    (hero_image_url) — the ambiance filling the band
-        const front = card.hero_front_url || '';
-        const bg = card.hero_image_url || '';
-        // Photo mode is strictly the single bg photo — even if a front photo
-        // exists, it only appears in Photo + logo mode. The two modes are
-        // clean, distinct choices.
-        const composite = heroMode === 'composite';
-        const fillSrc = bg || (!composite ? front : '');
-        const focusSrc = composite ? (front || card.logo_url) : '';
-        return (
-          <div style={{
-            position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
-            background: t.brandRaw,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {fillSrc && (
-              /* bg fills the band SHARP — no blur, ever. Dimmed only when a
-                 front subject sits on top, so it reads as ambiance. */
-              <img src={fillSrc} alt="" aria-hidden="true"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%',
-                         objectFit: 'cover', objectPosition: 'center',
-                         filter: composite && focusSrc ? 'brightness(0.72)' : 'none' }} />
-            )}
-            {heroMode !== 'logo' && focusSrc && (
-              <img src={focusSrc} alt=""
-                style={frontHasPlate || focusSrc !== frontSrc
-                  ? { // solid-ground artwork → a deliberate rounded badge:
-                      // reads as designed on any photo, any colour combo
-                      position: 'relative', maxWidth: '52%', maxHeight: '68%',
-                      objectFit: 'contain', borderRadius: px(12),
-                      boxShadow: '0 8px 26px rgba(0,0,0,0.45)' }
-                  : { // transparent PNG → seamless, straight on the photo
-                      position: 'relative', maxWidth: '72%', maxHeight: '84%',
-                      objectFit: 'contain',
-                      filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.45))' }} />
-            )}
-            {heroMode === 'logo' && card.logo_url && (
-              <img src={card.logo_url} alt=""
-                style={{ position: 'relative', maxHeight: '78%', maxWidth: '78%',
-                         objectFit: 'contain' }} />
-            )}
-          </div>
-        );
-      })()}
+      {/* ── strip: ALWAYS the fixed 375×144 band (a real pass can't resize).
+             image → ONE photo, shown WHOLE (contain) — never cropped. The
+             margins are filled with the CARD'S OWN surface colour, so they
+             read as the card continuing, not as bars.
+             logo  → the merchant's mark centred on the brand field
+             brand → flat brand colour ── */}
+      {heroMode !== 'none' && (
+        <div style={{
+          position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
+          background: (heroMode === 'image' || heroMode === 'composite') && card.hero_image_url
+            ? t.surface          // photo margins = card colour → invisible join
+            : t.brandRaw,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {(heroMode === 'image' || heroMode === 'composite') && card.hero_image_url && (
+            <img src={card.hero_image_url} alt=""
+              style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
+                       objectFit: 'contain' }} />
+          )}
+          {heroMode === 'logo' && card.logo_url && (
+            <img src={card.logo_url} alt=""
+              style={{ position: 'relative', maxHeight: '78%', maxWidth: '78%',
+                       objectFit: 'contain' }} />
+          )}
+        </div>
+      )}
 
       {/* ── stamps row: its OWN slim band flush under the strip — in flow, not
              an overlay, so the hero image is NEVER covered. Themed to the

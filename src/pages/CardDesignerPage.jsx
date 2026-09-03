@@ -686,7 +686,7 @@ export default function CardDesignerPage() {
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-2">Bandeau (haut de carte)</p>
                 <div className="flex gap-1.5">
-                  {[['image','Photo'],['composite','Photo + logo'],['logo','Logo'],['brand','Couleur'],['none','Aucun']].map(([v, lbl]) => (
+                  {[['image','Photo'],['logo','Logo'],['brand','Couleur'],['none','Aucun']].map(([v, lbl]) => (
                     <button key={v} type="button"
                       onClick={() => setBrand((b) => ({ ...b, hero_mode: v }))}
                       className="text-xs px-3 py-1.5 rounded-lg border font-medium"
@@ -698,13 +698,7 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  <b>Photo</b> : une seule photo (l'arrière-plan) remplit le bandeau, nette.
-                  <b> Photo + logo</b> : deux photos — l'arrière-plan en ambiance, la photo
-                  avant devant, entière et fondue dans l'image. (Téléverser une photo avant
-                  sélectionne ce mode automatiquement.)
-                  <b> Logo</b> : votre logo seul sur la couleur de la carte.
-                  Le bandeau garde toujours la même taille. Astuce : une photo paysage
-                  (large) remplit le bandeau sans surprise.
+                  <b>Photo</b> : votre photo affichée entière sur le bandeau — jamais recadrée, jamais déformée ; les marges prennent la couleur de la carte. <b>Logo</b> : votre logo seul sur la couleur de la carte. Le bandeau garde toujours la même taille.
                 </p>
               </div>
               <div>
@@ -796,64 +790,14 @@ export default function CardDesignerPage() {
               </div>
             </div>
 
-            {/* Hero front image — the FOCUS of the composite band */}
+            {/* Hero image — the single photo shown on the card's band */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-[#57504A] mb-1">
-                Photo avant (le sujet — logo de marque, produit vedette)
+                Photo de la carte (votre salon, boutique, produit)
               </label>
               <p className="text-[11px] text-[#8D857D] mb-2">
-                Affichée entière, nette, centrée sur le bandeau. En mode « Photo + logo »,
-                elle passe devant la photo d'arrière-plan — comme un logo sur la photo du salon.
-              </p>
-              <div className="flex items-center gap-3">
-                {brand.hero_front_url ? (
-                  <div className="relative">
-                    <img src={brand.hero_front_url} alt="" className="w-28 h-16 rounded-lg object-contain bg-[#FAFAF8] border border-[#E9E5E0]" />
-                    <button
-                      type="button"
-                      onClick={() => setBrand((b) => ({ ...b, hero_front_url: '' }))}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#171412] text-white flex items-center justify-center"
-                      aria-label="Supprimer la photo avant"
-                    >
-                      <X size={11} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-28 h-16 rounded-lg bg-[#FAFAF8] border border-dashed border-[#D6D3D1] flex items-center justify-center text-[#8D857D]">
-                    <ImagePlus size={22} />
-                  </div>
-                )}
-                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E9E5E0] text-sm font-medium text-[#171412] cursor-pointer hover:bg-[#FAFAF8]">
-                  <ImagePlus size={14} />
-                  {brand.hero_front_url ? 'Changer la photo avant' : 'Téléverser la photo avant'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const f = e.target.files?.[0];
-                      if (!f) return;
-                      try {
-                        const dataUrl = await compressImage(f, 900, 0.88);
-                        // Uploading a subject IS choosing the composite look —
-                        // flip the mode so it shows up immediately.
-                        setBrand((b) => ({ ...b, hero_front_url: dataUrl, hero_mode: 'composite' }));
-                      } catch (_e) { flash('err', 'Impossible de lire l\'image.'); }
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Hero background image — the ambiance behind the front photo */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#57504A] mb-1">
-                Photo arrière-plan (ambiance — votre salon, boutique, produit)
-              </label>
-              <p className="text-[11px] text-[#8D857D] mb-2">
-                Remplit le bandeau derrière la photo avant, légèrement assombrie pour la
-                laisser ressortir. Seule, elle sert au mode « Photo ».
+                Affichée entière sur le bandeau, jamais recadrée — les marges prennent la
+                couleur de la carte, donc tout se fond naturellement.
               </p>
               <div className="flex items-center gap-3">
                 {brand.hero_image_url ? (
