@@ -703,41 +703,6 @@ export default function CardDesignerPage() {
 
         {brand.layout_style === 'wallet' && (
           <div className="space-y-5">
-            {/* Presets — STARTING POINTS, never limits. Every business ends up
-                with its own combination: pick the closest, then adjust the two
-                colours below to your exact brand. */}
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#57504A] mb-1">Départs rapides</p>
-              <p className="text-[10px] text-[#8D857D] mb-2">
-                Un point de départ, pas une limite — choisissez le plus proche puis ajustez
-                les deux couleurs ci-dessous à votre marque exacte.
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { key: 'signature', label: 'Signature',  surface: 'noir',       brand_color: '#C9A34E', hero_mode: 'image', hint: 'Noir + or' },
-                  { key: 'lumiere',   label: 'Lumière',    surface: 'creme',      brand_color: '#5C3A21', hero_mode: 'image', hint: 'Crème + chocolat' },
-                  { key: 'marine',    label: 'Marine',     surface: 'marine',     brand_color: '#E8703A', hero_mode: 'brand', hint: 'Marine + orange' },
-                  { key: 'royal',     label: 'Royal',      surface: 'marine',     brand_color: '#C6A15B', hero_mode: 'logo',  hint: 'Bleu nuit + or, logo' },
-                  { key: 'solaire',   label: 'Solaire',    surface: 'noir',       brand_color: '#F2C230', hero_mode: 'brand', hint: 'Noir + jaune' },
-                  { key: 'foret',     label: 'Forêt',      surface: 'foret',      brand_color: '#C9A34E', hero_mode: 'image', hint: 'Vert + or' },
-                  { key: 'espresso',  label: 'Espresso',   surface: 'espresso',   brand_color: '#E8A53B', hero_mode: 'image', hint: 'Café + caramel' },
-                  { key: 'rosee',     label: 'Rosée',      surface: 'blanc',      brand_color: '#A82843', hero_mode: 'image', hint: 'Blanc + framboise' },
-                  { key: 'minimal',   label: 'Minimal',    surface: 'anthracite', brand_color: '#9BA3AD', hero_mode: 'none', hint: 'Sobre, sans photo' },
-                ].map((p) => (
-                  <button key={p.key} type="button"
-                    onClick={() => setBrand((b) => ({ ...b, surface: p.surface, surface_color: '', brand_color: p.brand_color, hero_mode: p.hero_mode }))}
-                    className="rounded-lg border border-[#E9E5E0] p-2 text-left hover:border-[#171412] transition-colors">
-                    <span className="flex gap-1 mb-1.5" aria-hidden="true">
-                      <span className="w-5 h-5 rounded" style={{ background: { noir:'#141519', anthracite:'#1C1D22', marine:'#101B2E', foret:'#12211A', espresso:'#211711', blanc:'#FDFCFA', creme:'#F6EFE3', sable:'#EFE9DD' }[p.surface] || '#1C1D22', border: '1px solid #E9E5E0' }} />
-                      <span className="w-5 h-5 rounded" style={{ background: p.brand_color, border: '1px solid #E9E5E0' }} />
-                    </span>
-                    <span className="block text-xs font-bold text-[#171412]">{p.label}</span>
-                    <span className="block text-[10px] text-[#8D857D]">{p.hint}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Duo-tone pickers */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
