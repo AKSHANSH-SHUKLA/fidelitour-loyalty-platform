@@ -119,23 +119,22 @@ export default function WalletPassPreview({ customer, tenant, card = {}, width =
       </div>
 
       {/* ── strip: ALWAYS the fixed 375×144 band (a real pass can't resize).
-             image → ONE photo, shown WHOLE (contain) — never cropped. The
-             margins are filled with the CARD'S OWN surface colour, so they
-             read as the card continuing, not as bars.
+             image → ONE photo FILLING the band completely (cover), exactly
+             like a real Apple Wallet strip — no empty space, ever. A
+             landscape photo fits whole; a taller photo loses a little top
+             and bottom, which is how every real pass behaves.
              logo  → the merchant's mark centred on the brand field
              brand → flat brand colour ── */}
       {heroMode !== 'none' && (
         <div style={{
           position: 'relative', width: '100%', aspectRatio: '375 / 144', overflow: 'hidden',
-          background: (heroMode === 'image' || heroMode === 'composite') && card.hero_image_url
-            ? t.surface          // photo margins = card colour → invisible join
-            : t.brandRaw,
+          background: t.brandRaw,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           {(heroMode === 'image' || heroMode === 'composite') && card.hero_image_url && (
             <img src={card.hero_image_url} alt=""
-              style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto',
-                       objectFit: 'contain' }} />
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%',
+                       objectFit: 'cover', objectPosition: 'center' }} />
           )}
           {heroMode === 'logo' && card.logo_url && (
             <img src={card.logo_url} alt=""

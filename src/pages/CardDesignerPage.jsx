@@ -698,7 +698,7 @@ export default function CardDesignerPage() {
                   ))}
                 </div>
                 <p className="text-[10px] text-[#8D857D] mt-1.5">
-                  <b>Photo</b> : votre photo affichée entière sur le bandeau — jamais recadrée, jamais déformée ; les marges prennent la couleur de la carte. <b>Logo</b> : votre logo seul sur la couleur de la carte. Le bandeau garde toujours la même taille.
+                  <b>Photo</b> : votre photo remplit tout le bandeau, sans espace vide — comme sur une vraie carte Apple Wallet. Une photo paysage (large) s'affiche en entier ; une photo carrée ou verticale est légèrement rognée en haut et en bas. <b>Logo</b> : votre logo seul sur la couleur de la carte. Le bandeau garde toujours la même taille.
                 </p>
               </div>
               <div>
@@ -796,8 +796,8 @@ export default function CardDesignerPage() {
                 Photo de la carte (votre salon, boutique, produit)
               </label>
               <p className="text-[11px] text-[#8D857D] mb-2">
-                Affichée entière sur le bandeau, jamais recadrée — les marges prennent la
-                couleur de la carte, donc tout se fond naturellement.
+                Remplit tout le bandeau, sans espace vide. Idéal : une photo paysage (large),
+                type 1600×600 — elle s'affiche alors quasi entière.
               </p>
               <div className="flex items-center gap-3">
                 {brand.hero_image_url ? (
