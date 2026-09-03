@@ -401,6 +401,18 @@ export default function CardDesignerPage() {
         }
       />
 
+      {/* Floating save — the header button scrolls away and the phone preview
+          hides it on small screens; this one is ALWAYS on screen. */}
+      <button
+        onClick={save}
+        disabled={saving}
+        className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-white shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-50"
+        style={{ background: `linear-gradient(135deg, ${C_PS.ochre}, ${C_PS.terracotta})`,
+                 boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}
+      >
+        <Save size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+      </button>
+
       {ok && (
         <div className="rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-2 text-sm flex items-center gap-2">
           <CheckCircle size={15} /> {ok}
