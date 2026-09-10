@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1024">
+<title>FidClic — Tarifs</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#191830; --ink-soft:#5B5A75; --ink-faint:#8B8AA3;
+    --primary:#4B44E4; --primary-soft:#EEEDFB; --primary-mid:#C7C4F4;
+    --paper:#F7F6FC; --card:#FFFFFF; --line:#E7E5F3;
+    --ok:#4B44E4; --gold:#C6A15B; --navy:#101B2E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);background:#fff;width:1024px}
+  .hand{font-family:'Caveat',cursive;font-size:21px;color:var(--ink);line-height:1.1}
+
+  /* ── nav ── */
+  nav{display:flex;align-items:center;gap:28px;padding:16px 36px;border-bottom:1px solid var(--line)}
+  .logo{font-size:22px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .logo .mark{width:30px;height:30px;border-radius:9px;background:var(--primary);display:grid;place-items:center;color:#fff;font-size:15px}
+  .logo b{color:var(--primary)}
+  nav .links{display:flex;gap:22px;font-size:13.5px;color:var(--ink-soft);margin-left:24px}
+  nav .links .on{color:var(--ink);font-weight:600;border-bottom:2px solid var(--primary);padding-bottom:3px}
+  nav .cta{margin-left:auto;background:var(--primary);color:#fff;font-weight:600;font-size:13.5px;padding:10px 22px;border-radius:999px}
+
+  /* ── hero ── */
+  .hero{position:relative;background:linear-gradient(160deg,#F4F3FB 0%,#FBFAFF 70%);padding:44px 36px 40px;overflow:hidden}
+  .eyebrow{color:var(--primary);font-weight:700;font-size:12px;letter-spacing:.12em;margin-bottom:10px}
+  h1{font-size:44px;font-weight:800;letter-spacing:-.02em;line-height:1.06;max-width:560px}
+  h1 .a{color:var(--primary)}
+  .sub{color:var(--ink-soft);font-size:15.5px;margin:14px 0 10px;max-width:520px}
+  .compliance{display:inline-flex;align-items:center;gap:8px;background:#191830;color:#fff;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:999px;margin:6px 0 16px}
+  .compliance .dot{width:7px;height:7px;border-radius:50%;background:#7EF2B3}
+  .chips{display:flex;gap:22px;font-size:13px;color:var(--ink-soft)}
+  .chips span{display:flex;align-items:center;gap:7px}
+  .chips i{width:19px;height:19px;border-radius:50%;background:var(--primary);color:#fff;font-style:normal;font-size:11px;display:grid;place-items:center}
+
+  /* toggle */
+  .toggle{display:inline-flex;align-items:center;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px;margin-top:20px;font-size:12.5px;font-weight:600}
+  .toggle span{padding:7px 16px;border-radius:999px;color:var(--ink-soft)}
+  .toggle .on{background:var(--primary);color:#fff}
+  .toggle em{font-style:normal;font-size:11px;color:var(--primary);margin:0 10px 0 2px;font-weight:700}
+
+  /* ── phone: the REAL FidClic wallet pass ── */
+  .phone-wrap{position:absolute;top:34px;right:120px;transform:rotate(7deg)}
+  .phone{width:225px;height:430px;border-radius:36px;background:linear-gradient(155deg,#4a4845,#191715 55%,#2c2a28);padding:5px;box-shadow:0 30px 60px -22px rgba(25,24,48,.45)}
+  .screen{position:relative;width:100%;height:100%;border-radius:31px;background:#F2F2F7;overflow:hidden}
+  .island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:64px;height:18px;border-radius:999px;background:#000}
+  .sbar{display:flex;justify-content:space-between;padding:9px 18px 0;font-size:9.5px;font-weight:700;color:#111}
+  .wtop{display:flex;justify-content:space-between;padding:12px 12px 8px}
+  .wbtn{width:20px;height:20px;border-radius:50%;background:rgba(120,120,128,.18);display:grid;place-items:center;font-size:10px;color:#007AFF}
+  .pass{margin:0 10px;border-radius:11px;background:var(--navy);overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+  .pass .row1{display:flex;justify-content:space-between;align-items:center;padding:8px 10px 6px}
+  .pass .biz{display:flex;align-items:center;gap:5px;color:#F4F1EC;font-size:9.5px;font-weight:700}
+  .pass .biz .lg{width:15px;height:15px;border-radius:4px;background:#1A2C44;display:grid;place-items:center;color:var(--gold);font-size:8px}
+  .pass .tier{text-align:right}
+  .pass .tier .l{font-size:6px;letter-spacing:.08em;color:#8C8478;font-weight:700}
+  .pass .tier .v{font-size:9.5px;font-weight:800;color:var(--gold)}
+  .strip{height:58px;background:
+      radial-gradient(60px 30px at 75% 20%, rgba(198,161,91,.5), transparent 70%),
+      radial-gradient(80px 40px at 20% 80%, rgba(198,161,91,.28), transparent 70%),
+      linear-gradient(150deg,#0A1624,#15263C 60%,#0A1624);position:relative}
+  .strip .word{position:absolute;inset:0;display:grid;place-items:center;color:var(--gold);font-size:10px;letter-spacing:.35em;font-weight:600}
+  .stamps{display:flex;flex-direction:column;gap:3px;padding:6px 10px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08)}
+  .stamps .cap{display:flex;justify-content:space-between;font-size:6px;letter-spacing:.1em;color:#8C8478;font-weight:700}
+  .stamps .cap b{color:#fff;font-size:7.5px}
+  .segs{display:flex;gap:3px}
+  .segs i{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.16)}
+  .segs i.f{background:var(--gold)}
+  .pts{padding:7px 10px 0}
+  .pts .l{font-size:6px;letter-spacing:.1em;color:#8C8478;font-weight:700}
+  .pts .v{font-size:17px;font-weight:800;color:#F4F1EC;line-height:1}
+  .nxt{padding:5px 10px 0;font-size:7.5px;color:#F4F1EC}
+  .nxt .l{font-size:6px;letter-spacing:.1em;color:#8C8478;font-weight:700;display:block}
+  .qr{display:flex;justify-content:center;padding:8px 0 10px}
+  .qr .box{width:52px;height:52px;background:#fff;border-radius:6px;display:grid;place-items:center}
+  .qr svg{width:40px;height:40px}
+  .note1{position:absolute;top:16px;right:24px;transform:rotate(-4deg);text-align:right}
+  .note1 .arrow{font-size:26px;display:block;transform:rotate(70deg) translateX(6px)}
+  .badge2026{position:absolute;top:308px;right:44px;transform:rotate(-5deg);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 30px -12px rgba(25,24,48,.25);padding:10px 16px;display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700}
+  .badge2026 .ic{width:26px;height:26px;border-radius:50%;background:#0E8A4F;color:#fff;display:grid;place-items:center;font-size:12px}
+  .badge2026 small{display:block;font-weight:500;color:var(--ink-soft);font-size:10.5px}
+
+  /* ── pricing cards ── */
+  .plans{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding:34px 36px 8px}
+  .plan{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 22px;position:relative;box-shadow:0 10px 26px -18px rgba(25,24,48,.18)}
+  .plan.mid{border:2px solid var(--primary);box-shadow:0 18px 40px -18px rgba(75,68,228,.35)}
+  .flag{position:absolute;top:-13px;right:16px;background:var(--primary);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px}
+  .plan h3{font-size:20px;font-weight:800}
+  .plan .for{color:var(--ink-soft);font-size:12.5px;margin:4px 0 14px;min-height:32px}
+  .price{display:flex;align-items:baseline;gap:6px}
+  .price b{font-size:38px;font-weight:800;letter-spacing:-.02em}
+  .price span{color:var(--ink-faint);font-size:12px;font-weight:600}
+  .lim{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 14px}
+  .lim span{background:var(--primary-soft);color:var(--primary);font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px}
+  .try{display:block;text-align:center;font-size:13px;font-weight:700;padding:11px 0;border-radius:11px;border:1.5px solid var(--primary);color:var(--primary);margin-bottom:5px}
+  .plan.mid .try{background:var(--primary);color:#fff}
+  .nocb{text-align:center;font-size:10.5px;color:var(--ink-faint);margin-bottom:13px}
+  .feat{list-style:none;display:grid;gap:8px;font-size:12.5px;color:var(--ink-soft)}
+  .feat li{display:flex;gap:8px;align-items:flex-start;line-height:1.35}
+  .feat i{width:16px;height:16px;flex:none;border-radius:50%;background:var(--primary);color:#fff;font-style:normal;font-size:9px;display:grid;place-items:center;margin-top:1px}
+  .feat li.hl{color:var(--ink);font-weight:700}
+  .feat li.hl i{background:#0E8A4F}
+
+  /* ── objection strip ── */
+  .objs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:26px 36px 0;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .objs div{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--ink-soft);line-height:1.3}
+  .objs b{display:block;color:var(--ink);font-size:12.5px}
+  .objs .ic{width:34px;height:34px;flex:none;border-radius:10px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:15px}
+
+  /* ── table ── */
+  .cmp{padding:34px 36px 6px}
+  .cmp h2{font-size:26px;font-weight:800;letter-spacing:-.01em;margin-bottom:16px}
+  table{width:100%;border-collapse:separate;border-spacing:0;background:var(--paper);border-radius:14px;overflow:hidden;font-size:12.5px}
+  th{text-align:center;padding:12px 8px;font-weight:800;font-size:12.5px}
+  th small{display:block;font-weight:600;color:var(--ink-soft);font-size:11px}
+  th:first-child{text-align:left;padding-left:18px}
+  td{padding:9px 8px;text-align:center;border-top:1px solid #fff;color:var(--ink-soft)}
+  td:first-child{text-align:left;padding-left:18px;color:var(--ink);font-weight:500}
+  td .y{color:var(--primary);font-weight:800}
+  td .n{color:#C9C7DA}
+  tr.sec td{background:#EFEDF9;font-weight:800;color:var(--ink);font-size:11px;letter-spacing:.08em;padding:7px 18px}
+
+  /* ── CTA banner ── */
+  .cta2{margin:30px 36px 0;background:var(--paper);border-radius:18px;padding:26px 30px;display:flex;align-items:center;justify-content:space-between}
+  .cta2 h2{font-size:24px;font-weight:800;margin-bottom:6px}
+  .cta2 p{color:var(--ink-soft);font-size:13.5px;max-width:420px}
+  .cta2 .btn{background:var(--primary);color:#fff;font-weight:700;font-size:13.5px;padding:12px 24px;border-radius:999px;white-space:nowrap}
+
+  /* ── FAQ ── */
+  .faq{display:grid;grid-template-columns:300px 1fr;gap:36px;padding:38px 36px}
+  .faq h2{font-size:26px;font-weight:800;line-height:1.1}
+  .faq h2 .a{color:var(--primary)}
+  .faq .lead{color:var(--ink-soft);font-size:13px;margin-top:10px}
+  .qa{border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin-bottom:10px;background:#fff}
+  .qa b{font-size:13.5px;display:block;margin-bottom:4px}
+  .qa p{font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+
+  /* ── footer ── */
+  footer{border-top:1px solid var(--line);padding:30px 36px 20px;display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:18px;font-size:12px;color:var(--ink-soft)}
+  footer .logo{font-size:18px}
+  footer .logo b{color:#E8A53B}
+  footer h4{font-size:12.5px;color:var(--ink);margin-bottom:9px}
+  footer a{display:block;margin-bottom:6px;color:var(--ink-soft);text-decoration:none}
+  .legal{grid-column:1/-1;display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px;margin-top:8px;font-size:11.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><span class="mark">▣</span>Fid<b>Clic</b></div>
+  <div class="links">
+    <span>Fonctionnalités</span><span>Solutions</span><span class="on">Tarifs</span><span>Ressources</span><span>À propos</span>
+  </div>
+  <div class="cta">Se connecter</div>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow">TARIFS</div>
+  <h1>Des formules claires<br>pour <span class="a">votre commerce.</span></h1>
+  <p class="sub">Carte de fidélité Apple Wallet &amp; Google Wallet, campagnes ciblées — et la conformité facturation électronique 2026, incluse.</p>
+  <div class="compliance"><span class="dot"></span>Obligation légale sept. 2026 : FidClic vous rend conforme, sans logiciel en plus</div>
+  <div class="chips">
+    <span><i>✓</i>Sans engagement</span>
+    <span><i>✓</i>Essai 14 jours — sans CB</span>
+    <span><i>✓</i>Données hébergées en UE · RGPD</span>
+  </div>
+  <br>
+  <div class="toggle"><span class="on">Mensuel</span><span>Annuel</span><em>−2 mois offerts</em></div>
+
+  <!-- redesigned phone: the real FidClic wallet pass -->
+  <div class="phone-wrap">
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="sbar"><span>9:41</span><span>▪▪▪ ⌁ ▐</span></div>
+      <div class="wtop"><span class="wbtn">‹</span><span class="wbtn">⋯</span></div>
+      <div class="pass">
+        <div class="row1">
+          <span class="biz"><span class="lg">♛</span>Café Lumière</span>
+          <span class="tier"><span class="l">STATUT</span><br><span class="v">Or</span></span>
+        </div>
+        <div class="strip"><span class="word">LUMIÈRE</span></div>
+        <div class="stamps">
+          <div class="cap"><span>TAMPONS</span><b>6 / 10</b></div>
+          <div class="segs"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="pts"><span class="l">POINTS</span><div class="v">600</div></div>
+        <div class="nxt"><span class="l">PROCHAINE RÉCOMPENSE</span>Encore 4 tampons · dessert offert</div>
+        <div class="qr"><div class="box">
+          <svg viewBox="0 0 25 25"><g fill="#111"><rect x="0" y="0" width="7" height="7"/><rect x="18" y="0" width="7" height="7"/><rect x="0" y="18" width="7" height="7"/><rect x="2" y="2" width="3" height="3" fill="#fff"/><rect x="20" y="2" width="3" height="3" fill="#fff"/><rect x="2" y="20" width="3" height="3" fill="#fff"/><rect x="10" y="2" width="2" height="2"/><rect x="13" y="5" width="2" height="2"/><rect x="10" y="9" width="2" height="2"/><rect x="16" y="10" width="2" height="2"/><rect x="20" y="12" width="2" height="2"/><rect x="10" y="14" width="2" height="2"/><rect x="13" y="17" width="2" height="2"/><rect x="17" y="19" width="2" height="2"/><rect x="10" y="21" width="2" height="2"/><rect x="21" y="16" width="2" height="2"/></g></svg>
+        </div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="note1"><span class="hand">Des clients plus fidèles,<br>chaque jour !</span><span class="arrow">↷</span></div>
+  <div class="badge2026"><span class="ic">✓</span><span>Conforme 2026<small>Facturation électronique</small></span></div>
+</section>
+
+<section class="plans">
+  <div class="plan">
+    <h3>Essentiel</h3>
+    <p class="for">La fidélité digitale, pour bien démarrer.</p>
+    <div class="price"><b>29€</b><span>/ mois HT</span></div>
+    <div class="lim"><span>500 clients</span><span>2 campagnes / mois</span><span>1 établissement</span></div>
+    <a class="try">Essayer 14 jours gratuits</a>
+    <div class="nocb">Sans carte bancaire</div>
+    <ul class="feat">
+      <li><i>✓</i>Carte Apple Wallet &amp; Google Wallet</li>
+      <li><i>✓</i>Tampons + points, règles sur mesure</li>
+      <li><i>✓</i>Notifications push clients</li>
+      <li><i>✓</i>Statistiques de visites</li>
+      <li><i>✓</i>Support par email</li>
+    </ul>
+  </div>
+
+  <div class="plan mid">
+    <span class="flag">Le plus choisi</span>
+    <h3>Croissance</h3>
+    <p class="for">Fidélité + conformité 2026, dans un seul outil.</p>
+    <div class="price"><b>59€</b><span>/ mois HT</span></div>
+    <div class="lim"><span>2 000 clients</span><span>Campagnes illimitées</span><span>1 établissement</span></div>
+    <a class="try">Essayer 14 jours gratuits</a>
+    <div class="nocb">Sans carte bancaire</div>
+    <ul class="feat">
+      <li><i>✓</i>Tout l'Essentiel, plus :</li>
+      <li class="hl"><i>✓</i>Facturation électronique 2026 (émission + réception)</li>
+      <li><i>✓</i>Poussée d'offres sur les cartes clients</li>
+      <li><i>✓</i>Segmentation par palier (Or, VIP…)</li>
+      <li><i>✓</i>Relance automatique des clients inactifs</li>
+      <li><i>✓</i>Carte des clients &amp; assistant IA</li>
+      <li><i>✓</i>Support prioritaire</li>
+    </ul>
+  </div>
+
+  <div class="plan">
+    <h3>Performance</h3>
+    <p class="for">Pour les commerces multi-sites.</p>
+    <div class="price"><b>119€</b><span>/ mois HT</span></div>
+    <div class="lim"><span>Clients illimités</span><span>Multi-établissements</span></div>
+    <a class="try">Essayer 14 jours gratuits</a>
+    <div class="nocb">Sans carte bancaire</div>
+    <ul class="feat">
+      <li><i>✓</i>Tout Croissance, plus :</li>
+      <li><i>✓</i>Jusqu'à 5 établissements</li>
+      <li><i>✓</i>E-reporting multi-sites consolidé</li>
+      <li><i>✓</i>Accompagnement dédié à la mise en route</li>
+      <li><i>✓</i>Migration de vos clients existants incluse</li>
+      <li><i>✓</i>Support téléphonique</li>
+    </ul>
+  </div>
+</section>
+
+<section class="objs">
+  <div><span class="ic">📱</span><span><b>Aucun matériel requis</b>Votre téléphone scanne, c'est tout.</span></div>
+  <div><span class="ic">⚡</span><span><b>Client inscrit en 30 s</b>Un QR à scanner, pas d'appli à installer.</span></div>
+  <div><span class="ic">🇪🇺</span><span><b>Données en UE · RGPD</b>Vos clients restent vos clients.</span></div>
+  <div><span class="ic">🔁</span><span><b>Migration offerte</b>Vos tampons papier, importés gratuitement.</span></div>
+</section>
+
+<section class="cmp">
+  <h2>Comparez l'essentiel</h2>
+  <table>
+    <tr><th>Fonctionnalités</th><th>Essentiel<small>29€/mois HT</small></th><th>Croissance<small>59€/mois HT</small></th><th>Performance<small>119€/mois HT</small></th></tr>
+    <tr class="sec"><td colspan="4">FIDÉLITÉ</td></tr>
+    <tr><td>Carte Apple Wallet &amp; Google Wallet</td><td><span class="y">✓</span></td><td><span class="y">✓</span></td><td><span class="y">✓</span></td></tr>
+    <tr><td>Clients inclus</td><td>500</td><td>2 000</td><td>Illimités</td></tr>
+    <tr><td>Campagnes &amp; push / mois</td><td>2</td><td>Illimités</td><td>Illimités</td></tr>
+    <tr><td>Poussée d'offres sur cartes</td><td><span class="n">—</span></td><td><span class="y">✓</span></td><td><span class="y">✓</span></td></tr>
+    <tr><td>Segmentation par palier · relances inactifs</td><td><span class="n">—</span></td><td><span class="y">✓</span></td><td><span class="y">✓</span></td></tr>
+    <tr><td>Carte des clients · assistant IA</td><td><span class="n">—</span></td><td><span class="y">✓</span></td><td><span class="y">✓</span></td></tr>
+    <tr class="sec"><td colspan="4">CONFORMITÉ 2026</td></tr>
+    <tr><td>Facturation électronique (émission + réception)</td><td><span class="n">—</span></td><td><span class="y">✓</span></td><td><span class="y">✓</span></td></tr>
+    <tr><td>E-reporting des ventes B2C</td><td><span class="n">—</span></td><td><span class="y">✓</span></td><td><span class="y">✓</span></td></tr>
+    <tr><td>Multi-établissements consolidé</td><td><span class="n">—</span></td><td><span class="n">—</span></td><td><span class="y">✓</span></td></tr>
+    <tr class="sec"><td colspan="4">SUPPORT</td></tr>
+    <tr><td>Email · Prioritaire · Téléphone</td><td>Email</td><td>Prioritaire</td><td>Téléphone</td></tr>
+    <tr><td>Accompagnement à la mise en route</td><td><span class="n">—</span></td><td><span class="n">—</span></td><td><span class="y">✓</span></td></tr>
+  </table>
+</section>
+
+<section class="cta2">
+  <div>
+    <h2>Un projet spécifique ?</h2>
+    <p>Franchise, réseau, besoin particulier de conformité — notre équipe construit la formule avec vous.</p>
+  </div>
+  <div class="btn">Nous contacter →</div>
+</section>
+
+<section class="faq">
+  <div>
+    <h2>Vos questions,<br><span class="a">nos réponses.</span></h2>
+    <p class="lead">Les quatre réponses qu'on nous demande le plus — sans détour.</p>
+  </div>
+  <div>
+    <div class="qa"><b>Y a-t-il un engagement ?</b><p>Non. Toutes les formules sont sans engagement, résiliables en un clic depuis votre espace. L'annuel est simplement remisé (−2 mois), jamais imposé.</p></div>
+    <div class="qa"><b>Comment fonctionne l'essai gratuit ?</b><p>14 jours, toutes fonctionnalités, sans carte bancaire. À la fin, vous choisissez une formule — ou vous partez, vos données sont exportables et supprimées sur demande (RGPD).</p></div>
+    <div class="qa"><b>Les prix sont-ils HT ou TTC ?</b><p>Tous les prix affichés sont HT. La TVA (20 %) s'ajoute sur la facture — que vous recevrez, évidemment, au format électronique conforme.</p></div>
+    <div class="qa"><b>Que change l'obligation de septembre 2026 ?</b><p>Toute entreprise française devra pouvoir recevoir des factures électroniques dès septembre 2026, puis en émettre. Avec Croissance et Performance, FidClic s'en charge : émission, réception et e-reporting, sans logiciel supplémentaire.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <div class="logo"><span class="mark">▣</span>Fid<b>Clic</b></div>
+    <p style="margin-top:8px">Les commerces d'aujourd'hui<br>font la fidélité de demain.</p>
+    <p class="hand" style="margin-top:14px">Plus qu'un logiciel,<br>un partenaire de croissance.</p>
+  </div>
+  <div><h4>Produit</h4><a>Fonctionnalités</a><a>Tarifs</a><a>Ressources</a></div>
+  <div><h4>Conformité</h4><a>Facturation 2026</a><a>E-reporting</a><a>RGPD</a></div>
+  <div><h4>Entreprise</h4><a>À propos</a><a>Contact</a><a>Presse</a></div>
+  <div><h4>Légal</h4><a>Mentions légales</a><a>Confidentialité</a><a>Cookies</a></div>
+  <div class="legal"><span>© 2026 FidClic. Tous droits réservés.</span><span>Français ▾</span></div>
+</footer>
+
+</body>
+</html>
