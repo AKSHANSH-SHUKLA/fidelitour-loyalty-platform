@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Fidclic IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#23223A; --soft:#5F5E7C; --faint:#9C9BB5;
+    --primary:#5A54E8; --violet:#8B5CF6; --cyan:#22C7E6;
+    --pl:#EFEEFC; --bg:#F7F8FC; --card:#FFF; --line:#E9E8F4;
+    --mint:#E7F6EE; --mintk:#1E8A5A; --rose:#FDEDEB; --rosek:#C2453A; --amber:#FFF4E2; --amberk:#B7791F;
+    --amberlogo:#F0A32B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{background:#ECEBF5}
+  body{font-family:'Poppins',sans-serif;color:var(--ink);width:1024px;margin:0 auto;background:#fff;box-shadow:0 0 0 1px var(--line)}
+
+  /* logo — ONE unit */
+  .logo{display:flex;align-items:center;gap:9px;font-size:21px;font-weight:800;letter-spacing:-.01em}
+  .logo .mk{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff;display:grid;place-items:center;font-size:16px;box-shadow:0 6px 14px -6px rgba(90,84,232,.5)}
+  .logo span{color:var(--ink)}
+  .logo b{color:var(--amberlogo);font-weight:800}
+
+  nav{display:flex;justify-content:space-between;align-items:center;padding:16px 44px;border-bottom:1px solid var(--line)}
+  .navcta{background:var(--primary);color:#fff;font-size:14px;font-weight:700;padding:11px 22px;border-radius:999px;box-shadow:0 10px 20px -10px rgba(90,84,232,.55)}
+
+  /* ───── hero : text + AI visual ───── */
+  .hero{position:relative;overflow:hidden;padding:52px 44px 44px;
+    background:
+      radial-gradient(420px 300px at 88% 8%, rgba(139,92,246,.14), transparent 65%),
+      radial-gradient(380px 300px at 72% 90%, rgba(34,199,230,.12), transparent 65%),
+      radial-gradient(500px 380px at 8% 20%, rgba(90,84,232,.10), transparent 65%),
+      linear-gradient(170deg,#F6F6FE,#FDFDFF)}
+  .hgrid{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:center}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);color:var(--primary);font-size:12.5px;font-weight:700;letter-spacing:.1em;padding:8px 16px;border-radius:999px;margin-bottom:18px;box-shadow:0 6px 16px -10px rgba(35,34,58,.2)}
+  .pill i{font-style:normal}
+  h1{font-size:47px;font-weight:800;line-height:1.08;letter-spacing:-.025em}
+  h1 .a{background:linear-gradient(100deg,var(--primary),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--soft);font-size:17px;margin:18px 0 22px;line-height:1.6;max-width:440px}
+  .sub b{color:var(--ink)}
+  .heroctas{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  .btn{display:inline-block;background:linear-gradient(120deg,var(--primary),var(--violet));color:#fff;font-weight:700;font-size:15.5px;padding:15px 30px;border-radius:999px;box-shadow:0 16px 32px -12px rgba(90,84,232,.55)}
+  .ghost{color:var(--primary);font-weight:700;font-size:14.5px}
+  .nocb{font-size:12.5px;color:var(--faint)}
+  .chips{display:flex;gap:18px;font-size:13px;color:var(--soft);font-weight:500;margin-top:6px}
+  .chips span{display:flex;align-items:center;gap:7px}
+  .chips i{width:19px;height:19px;border-radius:50%;background:var(--primary);color:#fff;font-style:normal;font-size:10.5px;display:grid;place-items:center}
+
+  /* hero visual — the AI copilot window */
+  .vis{position:relative}
+  .win{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 60px -30px rgba(35,34,58,.4);overflow:hidden;transform:rotate(1.5deg)}
+  .win .bar{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--line);background:linear-gradient(120deg,#FBFBFF,#F4F3FD)}
+  .win .bar .ai{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--primary),var(--cyan));color:#fff;display:grid;place-items:center;font-size:13px}
+  .win .bar b{font-size:13.5px}
+  .win .bar .dot{margin-left:auto;font-size:11px;color:var(--mintk);background:var(--mint);padding:4px 11px;border-radius:999px;font-weight:600}
+  .win .body{padding:16px}
+  .an{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--faint);margin-bottom:9px}
+  .bars{display:flex;align-items:flex-end;gap:7px;height:74px;margin-bottom:6px}
+  .bars i{flex:1;border-radius:6px 6px 2px 2px;background:var(--pl)}
+  .bars i.hi{background:linear-gradient(180deg,var(--violet),var(--primary))}
+  .bars i.cy{background:linear-gradient(180deg,#7FE0F2,var(--cyan))}
+  .blabels{display:flex;gap:7px;font-size:9.5px;color:var(--faint);text-align:center;margin-bottom:14px}
+  .blabels span{flex:1}
+  .sugg{background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--primary);border-radius:12px;padding:12px 14px;font-size:12.5px;line-height:1.55}
+  .sugg .t{font-size:10.5px;font-weight:700;color:var(--primary);letter-spacing:.07em;margin-bottom:4px}
+  .sugg .send{display:inline-flex;align-items:center;gap:6px;margin-top:9px;background:var(--primary);color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:999px}
+  .fl{position:absolute;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 15px;font-size:12.5px;font-weight:700;box-shadow:0 16px 32px -16px rgba(35,34,58,.35);display:flex;align-items:center;gap:9px}
+  .fl .ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:13px}
+  .fl small{display:block;font-weight:500;color:var(--soft);font-size:10.5px}
+  .fl1{top:-14px;left:-18px;transform:rotate(-3deg)}
+  .fl1 .ic{background:var(--mint);color:var(--mintk)}
+  .fl1 b{color:var(--mintk)}
+  .fl2{bottom:-16px;right:-12px;transform:rotate(2.5deg)}
+  .fl2 .ic{background:var(--rose);color:var(--rosek)}
+  .fl2 b{color:var(--rosek)}
+  .spark{position:absolute;color:var(--violet);opacity:.8}
+
+  /* stats band */
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:26px 44px 0}
+  .st{border-radius:16px;padding:18px 20px}
+  .st b{font-size:30px;line-height:1}
+  .st span{font-size:13.5px;font-weight:500;display:block;margin-top:3px}
+  .st .act{margin-top:11px;font-size:12.5px;font-weight:700;display:block}
+  .st.rose{background:var(--rose)} .st.rose b,.st.rose .act{color:var(--rosek)} .st.rose span{color:#9A5A54}
+  .st.amber{background:var(--amber)} .st.amber b,.st.amber .act{color:var(--amberk)} .st.amber span{color:#94794D}
+  .st.mint{background:var(--mint)} .st.mint b,.st.mint .act{color:var(--mintk)} .st.mint span{color:#57806C}
+
+  .sec{padding:46px 44px 0}
+  h2{font-size:31px;font-weight:800;text-align:center;letter-spacing:-.02em;line-height:1.15}
+  h2 .a{background:linear-gradient(100deg,var(--primary),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{text-align:center;color:var(--soft);font-size:15px;margin:10px auto 28px;max-width:600px;line-height:1.55}
+
+  /* week */
+  .week{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .day{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;gap:18px;align-items:flex-start}
+  .day .g{width:118px;flex:none;height:118px;border-radius:14px;display:grid;place-items:center;position:relative;overflow:hidden}
+  .day .tag{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--primary);background:var(--pl);display:inline-block;padding:5px 12px;border-radius:999px;margin-bottom:9px}
+  .day h3{font-size:17.5px;font-weight:700;margin-bottom:5px}
+  .day p{font-size:13.5px;color:var(--soft);line-height:1.6}
+  .g1{background:linear-gradient(150deg,#EFEEFC,#F9F9FF)}
+  .mini{display:flex;align-items:flex-end;gap:5px;height:58px}
+  .mini i{width:11px;border-radius:4px;background:#CFCCF6}
+  .mini i.hi{background:linear-gradient(180deg,var(--violet),var(--primary))}
+  .g2{background:linear-gradient(150deg,#EFEEFC,#FDF6EC)}
+  .bub{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 9px;font-size:9px;line-height:1.45;width:96px;box-shadow:0 8px 16px -10px rgba(35,34,58,.3)}
+  .bub .f{color:var(--primary);font-weight:700;font-size:8px;letter-spacing:.05em}
+  .g3{background:linear-gradient(150deg,#EFEEFC,#EDFBF3)}
+  .bigok{background:var(--primary);color:#fff;font-size:11px;font-weight:700;padding:11px 16px;border-radius:999px;box-shadow:0 12px 22px -10px rgba(90,84,232,.6)}
+  .g4{background:linear-gradient(150deg,#EFEEFC,#E9FAF6)}
+  .rep{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:96px;box-shadow:0 8px 16px -10px rgba(35,34,58,.3)}
+  .rep .r1{font-size:8.5px;color:var(--faint);font-weight:700;letter-spacing:.06em}
+  .rep .r2{font-size:15px;font-weight:800;color:var(--mintk)}
+  .rep .r3{font-size:8.5px;color:var(--soft)}
+
+  /* chat */
+  .chatbox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:0 22px 48px -30px rgba(35,34,58,.3);position:relative;overflow:hidden}
+  .chatbox:before{content:'';position:absolute;inset:0;background:radial-gradient(300px 180px at 95% 0%, rgba(139,92,246,.07), transparent 70%)}
+  .brow{display:flex;margin-bottom:14px;position:relative}
+  .bq{margin-left:auto;background:linear-gradient(120deg,var(--primary),var(--violet));color:#fff;border-radius:16px 16px 4px 16px;padding:13px 20px;font-size:15px;font-weight:600;max-width:60%}
+  .ba{background:var(--bg);border:1px solid var(--line);border-radius:16px 16px 16px 4px;padding:18px 20px;font-size:14px;max-width:82%;line-height:1.65}
+  .ba .from{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px}
+  .ba .from i{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--primary),var(--cyan));color:#fff;display:grid;place-items:center;font-style:normal;font-size:11px}
+  .ba ul{list-style:none;margin:8px 0}
+  .ba li{padding:7px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;gap:12px}
+  .ba li:last-child{border:none}
+  .ba li b{font-weight:600}
+  .ba li span{color:var(--primary);font-weight:600;font-size:13px}
+  .ba .cta{display:inline-block;margin-top:6px;color:var(--primary);font-weight:700;font-size:13.5px}
+  .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:18px;position:relative}
+  .q{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 17px;font-size:14px;font-weight:500;display:flex;justify-content:space-between;align-items:center}
+  .q span{color:var(--primary);font-weight:700}
+
+  /* testimonial */
+  .testi{margin:46px 44px 0;border-radius:22px;overflow:hidden;display:grid;grid-template-columns:1fr 1.2fr;background:#191830}
+  .testi .ph{min-height:250px;background:url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1200&q=80') center/cover}
+  .testi .tx{padding:34px 36px;color:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;
+    background:radial-gradient(300px 200px at 90% 10%, rgba(139,92,246,.25), transparent 70%),#191830}
+  .testi .qq{font-size:19px;font-weight:600;line-height:1.5}
+  .testi .qq .hl{color:#B9B4FF}
+  .testi .who{margin-top:16px;font-size:13.5px;color:#B6B4CF}
+  .testi .who b{color:#fff}
+  .testi .stars{color:#F0A32B;font-size:15px;margin-bottom:12px;letter-spacing:2px}
+
+  /* plain language */
+  .know{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .kn{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;gap:14px;align-items:flex-start}
+  .kn .ic{width:42px;height:42px;flex:none;border-radius:12px;background:var(--pl);display:grid;place-items:center;font-size:19px}
+  .kn b{font-size:15px;display:block;margin-bottom:3px}
+  .kn p{font-size:12.5px;color:var(--soft);line-height:1.55}
+
+  /* trust */
+  .trust{margin:40px 44px 0;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:24px 28px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .tr{display:flex;gap:13px;align-items:flex-start}
+  .tr .ic{width:40px;height:40px;flex:none;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;font-size:17px}
+  .tr b{font-size:14.5px;display:block;margin-bottom:2px}
+  .tr p{font-size:12.5px;color:var(--soft);line-height:1.5}
+
+  /* final CTA */
+  .cta2{margin:44px 44px 46px;border-radius:24px;padding:46px;text-align:center;color:#fff;position:relative;overflow:hidden;
+    background:
+      radial-gradient(360px 240px at 15% 15%, rgba(139,92,246,.5), transparent 65%),
+      radial-gradient(320px 220px at 88% 80%, rgba(34,199,230,.35), transparent 65%),
+      #24224A}
+  .cta2 h2{color:#fff}
+  .cta2 .a2{color:#B9B4FF}
+  .cta2 p{color:#C9C7E2;font-size:15px;margin:10px 0 22px}
+  .btn2{display:inline-block;background:#fff;color:var(--primary);font-weight:800;font-size:16px;padding:16px 34px;border-radius:999px;box-shadow:0 18px 36px -14px rgba(0,0,0,.4)}
+  .cta2 small{display:block;margin-top:12px;color:#A6A3C8;font-size:12.5px}
+
+
+  /* v4 : Splio-inspired additions */
+  .spill{display:block;width:fit-content;margin:0 auto 14px;background:var(--pl);color:var(--primary);font-size:11.5px;font-weight:700;letter-spacing:.1em;padding:7px 16px;border-radius:999px}
+  .sectors{margin:26px 44px 0;background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:18px 24px;text-align:center}
+  .sectors .t{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--faint);margin-bottom:12px}
+  .sectors .row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+  .sectors .s{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600}
+  .uses{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .uc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .uc .ic{width:34px;height:34px;border-radius:10px;background:var(--pl);display:grid;place-items:center;font-size:15px;margin-bottom:9px}
+  .uc b{font-size:13px;display:block;margin-bottom:3px;line-height:1.3}
+  .uc p{font-size:11px;color:var(--soft);line-height:1.5}
+  .engine{display:grid;grid-template-columns:1fr 54px 1fr;gap:0;align-items:stretch}
+  .eng{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+  .eng .et{font-size:11px;font-weight:700;letter-spacing:.1em;padding:5px 12px;border-radius:999px;display:inline-block;margin-bottom:12px}
+  .eng.left .et{background:var(--pl);color:var(--primary)}
+  .eng.right .et{background:var(--mint);color:var(--mintk)}
+  .eng h3{font-size:16.5px;font-weight:700;margin-bottom:10px}
+  .eng ul{list-style:none}
+  .eng li{font-size:13px;color:var(--soft);padding:6px 0;border-bottom:1px dashed var(--line);display:flex;gap:9px;line-height:1.5}
+  .eng li:last-child{border:none}
+  .eng li i{font-style:normal;flex:none}
+  .engarrow{display:grid;place-items:center;font-size:22px;color:var(--primary)}
+  .engnote{text-align:center;font-size:12px;color:var(--faint);margin-top:12px}
+  .avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff;display:grid;place-items:center;font-size:18px;font-weight:800;flex:none;border:2px solid rgba(255,255,255,.4)}
+  .whorow{display:flex;align-items:center;gap:14px;margin-top:18px}
+
+  footer{border-top:1px solid var(--line);padding:26px 44px 18px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:18px;font-size:12.5px;color:var(--soft)}
+  footer h4{font-size:12px;color:var(--ink);margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  footer a{display:block;margin-bottom:6px;color:var(--soft);text-decoration:none}
+  .legal{grid-column:1/-1;display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;margin-top:6px;font-size:11px;color:var(--faint)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><span class="mk">F</span><span>Fid<b>Clic</b></span></div>
+  <span class="navcta">Essai gratuit</span>
+</nav>
+
+<section class="hero">
+  <div class="hgrid">
+    <div>
+      <span class="pill"><i>✦</i> FIDCLIC IA</span>
+      <h1>L'IA analyse.<br><span class="a">Vous agissez.</span></h1>
+      <p class="sub">Chaque semaine, des campagnes <b>prêtes à envoyer</b>, rédigées pour vos clients.
+      Vous validez en un clic — <b>ils reviennent</b>.</p>
+      <div class="heroctas">
+        <span class="btn">Essayer gratuitement →</span>
+        <span class="nocb">14 jours · Sans CB</span>
+      </div>
+      <div class="chips">
+        <span><i>✓</i>Rien ne part sans vous</span>
+        <span><i>✓</i>5 min / semaine</span>
+        <span><i>✓</i>RGPD · UE</span>
+      </div>
+    </div>
+    <div class="vis">
+      <svg class="spark" style="top:-8px;right:36%" width="22" height="22" viewBox="0 0 24 24"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z" fill="currentColor"/></svg>
+      <svg class="spark" style="bottom:24px;left:-26px;opacity:.5" width="15" height="15" viewBox="0 0 24 24"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z" fill="currentColor"/></svg>
+      <div class="win">
+        <div class="bar"><span class="ai">✦</span><b>Fidclic IA — votre copilote</b><span class="dot">● Analyse en cours</span></div>
+        <div class="body">
+          <div class="an">VISITES · 6 DERNIÈRES SEMAINES</div>
+          <div class="bars"><i style="height:38%"></i><i style="height:52%"></i><i class="cy" style="height:44%"></i><i style="height:60%"></i><i class="hi" style="height:82%"></i><i class="hi" style="height:100%"></i></div>
+          <div class="blabels"><span>S-5</span><span>S-4</span><span>S-3</span><span>S-2</span><span>S-1</span><span>Cette sem.</span></div>
+          <div class="sugg">
+            <div class="t">CAMPAGNE PRÊTE · 34 CLIENTS À RISQUE</div>
+            « Camille, ça fait un moment ! Votre café offert vous attend jusqu'à dimanche ☕ »
+            <br><span class="send">✓ Valider &amp; envoyer</span>
+          </div>
+        </div>
+      </div>
+      <div class="fl fl1"><span class="ic">↗</span><span><b>+480 €</b><small>générés cette semaine</small></span></div>
+      <div class="fl fl2"><span class="ic">⚠</span><span><b>34 clients</b><small>à risque — détectés</small></span></div>
+    </div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="st rose"><b>34</b><span>clients à risque de partir</span><span class="act">Campagne prête · Valider →</span></div>
+  <div class="st amber"><b>127</b><span>clients dormants (+60 j)</span><span class="act">Campagne prête · Valider →</span></div>
+  <div class="st mint"><b>86</b><span>clients prêts à revenir</span><span class="act">Campagne prête · Valider →</span></div>
+</div>
+
+<div class="sectors">
+  <div class="t">PENSÉ POUR LES COMMERCES DE PROXIMITÉ</div>
+  <div class="row">
+    <span class="s">💈 Barbiers</span><span class="s">☕ Cafés</span>
+    <span class="s">🥐 Boulangeries</span><span class="s">💅 Instituts</span>
+    <span class="s">🍽️ Restaurants</span><span class="s">🛍️ Boutiques</span>
+  </div>
+</div>
+
+<section class="sec">
+  <span class="spill">COMMENT ÇA MARCHE</span>
+  <h2>Une semaine avec <span class="a">Fidclic IA</span></h2>
+  <p class="lead">Le travail d'un responsable marketing, sans en embaucher un. Vous gardez la décision.</p>
+  <div class="week">
+    <div class="day">
+      <div class="g g1"><div class="mini"><i style="height:40%"></i><i style="height:62%"></i><i style="height:48%"></i><i class="hi" style="height:85%"></i><i class="hi" style="height:100%"></i></div></div>
+      <div><span class="tag">LUNDI</span><h3>Elle analyse</h3><p>Visites, paniers, habitudes, clients qui s'éloignent — toute votre activité, passée au crible.</p></div>
+    </div>
+    <div class="day">
+      <div class="g g2"><div class="bub"><div class="f">POUR 34 CLIENTS</div>« Camille, votre café offert vous attend ☕ »</div></div>
+      <div><span class="tag">MARDI 9H</span><h3>Vos campagnes sont prêtes</h3><p>Rédigées dans votre ton, ciblées sur les bons clients. À lire en 2 minutes.</p></div>
+    </div>
+    <div class="day">
+      <div class="g g3"><span class="bigok">✓ Envoyer</span></div>
+      <div><span class="tag">VOUS</span><h3>Vous validez</h3><p>Un clic pour envoyer, modifier ou ignorer. L'IA n'envoie <b>jamais</b> rien toute seule.</p></div>
+    </div>
+    <div class="day">
+      <div class="g g4"><div class="rep"><div class="r1">CETTE SEMAINE</div><div class="r2">+480 €</div><div class="r3">21 clients revenus</div></div></div>
+      <div><span class="tag">DIMANCHE</span><h3>Le rapport tombe</h3><p>Ce qui a marché, ce qu'on tente ensuite — en 10 lignes, en euros.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <span class="spill">VOTRE ASSISTANT</span>
+  <h2>Posez vos questions, <span class="a">obtenez des réponses</span></h2>
+  <p class="lead">Comme à un collègue qui connaît chaque client par son prénom.</p>
+  <div class="chatbox">
+    <div class="brow"><div class="bq">Qui dois-je relancer cette semaine ?</div></div>
+    <div class="brow"><div class="ba">
+      <div class="from"><i>✦</i>FIDCLIC IA</div>
+      3 clients méritent votre attention en priorité :
+      <ul>
+        <li><b>Camille R.</b> — 12 visites, absente depuis 6 semaines<span>→ café offert</span></li>
+        <li><b>Marc D.</b> — panier moyen 28 €, absent depuis 5 semaines<span>→ offre −10 %</span></li>
+        <li><b>Léa T.</b> — anniversaire vendredi 🎂<span>→ dessert offert</span></li>
+      </ul>
+      J'ai préparé les 3 messages — voulez-vous les voir ?
+      <span class="cta">Voir les campagnes proposées →</span>
+    </div></div>
+    <div class="qgrid">
+      <div class="q">Pourquoi mon chiffre d'affaires baisse ce mois-ci ?<span>→</span></div>
+      <div class="q">Quelle offre créer pour mes clients VIP ?<span>→</span></div>
+      <div class="q">Quel jour envoyer ma prochaine campagne ?<span>→</span></div>
+      <div class="q">Fais-moi le bilan du mois<span>→</span></div>
+    </div>
+  </div>
+</section>
+
+
+<section class="sec">
+  <span class="spill">CAS D'USAGE</span>
+  <h2>Tout ce que vous pouvez <span class="a">lui demander</span></h2>
+  <p class="lead">Huit missions qu'elle remplit déjà — sans paramétrage, sans formation.</p>
+  <div class="uses">
+    <div class="uc"><span class="ic">🔔</span><b>Relancer les dormants</b><p>Campagne ciblée sur les clients partis en silence.</p></div>
+    <div class="uc"><span class="ic">💎</span><b>Choyer les VIP</b><p>Offre réservée aux 20 % qui font votre chiffre.</p></div>
+    <div class="uc"><span class="ic">🎂</span><b>Anniversaires auto</b><p>Message + attention envoyés au bon jour, chaque fois.</p></div>
+    <div class="uc"><span class="ic">📉</span><b>Diagnostiquer une baisse</b><p>« Pourquoi mon CA baisse ? » — réponse chiffrée.</p></div>
+    <div class="uc"><span class="ic">📅</span><b>Trouver le bon moment</b><p>Jour et heure où vos clients lisent leurs messages.</p></div>
+    <div class="uc"><span class="ic">✍️</span><b>Rédiger vos messages</b><p>Textes prêts dans votre ton — à modifier ou envoyer.</p></div>
+    <div class="uc"><span class="ic">📊</span><b>Bilan mensuel</b><p>Résultats du mois en 10 lignes, en euros.</p></div>
+    <div class="uc"><span class="ic">🎯</span><b>Créer une offre qui marche</b><p>Suggérée selon ce qui a déjà fait revenir vos clients.</p></div>
+  </div>
+</section>
+
+<div class="testi">
+  <div class="ph"></div>
+  <div class="tx">
+    <div class="stars">★★★★★</div>
+    <div class="qq">« Le mardi matin, je valide mes campagnes avec mon café. <span class="hl">Deux minutes.</span> Le reste de la semaine, les clients reviennent tout seuls. »</div>
+    <div class="whorow"><span class="avatar">KB</span><div class="who"><b>Karim B.</b> — Barbier, Lyon 3ᵉ<br>Client Fidclic depuis 8 mois · +31 % de visites récurrentes</div></div>
+  </div>
+</div>
+
+<section class="sec">
+  <span class="spill">INTELLIGENCE CLIENT</span>
+  <h2>Elle connaît vos clients — <span class="a">en français simple</span></h2>
+  <p class="lead">Pas de « scoring RFM ». Des réponses à des questions de commerçant.</p>
+  <div class="know">
+    <div class="kn"><span class="ic">🚪</span><div><b>Qui risque de partir</b><p>Repérés avant qu'il ne soit trop tard, relance suggérée.</p></div></div>
+    <div class="kn"><span class="ic">🔁</span><div><b>Qui revient bientôt</b><p>Le bon moment pour proposer la carte tampons pleine.</p></div></div>
+    <div class="kn"><span class="ic">⭐</span><div><b>Vos meilleurs clients</b><p>Les 20 % qui font vivre le commerce — à chouchouter.</p></div></div>
+    <div class="kn"><span class="ic">🎂</span><div><b>Les anniversaires</b><p>Une attention qui coûte un dessert et fidélise un an.</p></div></div>
+    <div class="kn"><span class="ic">💶</span><div><b>Qui dépense combien</b><p>Panier moyen par client, pour cibler les offres juste.</p></div></div>
+    <div class="kn"><span class="ic">⏰</span><div><b>Le meilleur moment</b><p>Jour et heure où VOS clients ouvrent leurs messages.</p></div></div>
+  </div>
+</section>
+
+
+<section class="sec">
+  <span class="spill">SOUS LE CAPOT</span>
+  <h2>Comment elle raisonne — <span class="a">sans jargon</span></h2>
+  <p class="lead">Deux moteurs simples : ce qu'elle observe chez vous, et ce qu'elle en produit pour vous.</p>
+  <div class="engine">
+    <div class="eng left">
+      <span class="et">ELLE OBSERVE</span>
+      <h3>Vos données — les vôtres uniquement</h3>
+      <ul>
+        <li><i>👥</i>Visites de chaque client, semaine par semaine</li>
+        <li><i>🧾</i>Paniers, points, tampons, récompenses</li>
+        <li><i>⏱️</i>Habitudes : jours, heures, fréquences</li>
+        <li><i>📨</i>Réactions à vos campagnes passées</li>
+      </ul>
+    </div>
+    <div class="engarrow">→</div>
+    <div class="eng right">
+      <span class="et">ELLE PRODUIT</span>
+      <h3>Des actions prêtes à valider</h3>
+      <ul>
+        <li><i>🎯</i>Des segments qui comptent : à risque, VIP, dormants</li>
+        <li><i>✉️</i>Des campagnes rédigées, ciblées, planifiées</li>
+        <li><i>💬</i>Des réponses claires à vos questions</li>
+        <li><i>📈</i>Un rapport hebdo en euros, pas en graphiques</li>
+      </ul>
+    </div>
+  </div>
+  <p class="engnote">Elle apprend de VOTRE commerce — pas d'une moyenne du marché. Et vos données ne quittent jamais l'UE.</p>
+</section>
+
+<div class="trust">
+  <div class="tr"><span class="ic">🔒</span><div><b>Vous gardez la main</b><p>Chaque campagne attend votre validation. Toujours.</p></div></div>
+  <div class="tr"><span class="ic">🇪🇺</span><div><b>Vos données restent vôtres</b><p>Hébergées en UE, jamais revendues. RGPD.</p></div></div>
+  <div class="tr"><span class="ic">✍️</span><div><b>Votre ton, pas un robot</b><p>Les messages reprennent votre façon de parler.</p></div></div>
+</div>
+
+<section class="cta2">
+  <h2>Votre clientèle évolue.<br><span class="a2">Votre marketing aussi.</span></h2>
+  <p>Fidclic IA est inclus dès la formule Croissance — testez-le sur vos vraies données.</p>
+  <span class="btn2">Essayer 14 jours gratuits →</span>
+  <small>Sans carte bancaire · Sans engagement · Configuré en 10 minutes</small>
+</section>
+
+<footer>
+  <div>
+    <div class="logo" style="font-size:18px"><span class="mk" style="width:28px;height:28px;font-size:13px">F</span><span>Fid<b>Clic</b></span></div>
+    <p style="margin-top:8px;line-height:1.5">La plateforme de fidélisation pensée<br>pour les commerces de proximité.</p>
+  </div>
+  <div><h4>Produit</h4><a>Fonctionnalités</a><a>Tarifs</a><a>Fidclic IA</a><a>Secteurs</a></div>
+  <div><h4>Ressources</h4><a>Guide de démarrage</a><a>Centre d'aide</a><a>Blog</a><a>Contact</a></div>
+  <div><h4>Légal</h4><a>Mentions légales</a><a>Confidentialité</a><a>CGU</a><a>Cookies</a></div>
+  <div class="legal"><span>© 2026 Fidclic — Prototype de maquette, contenu non contractuel.</span><span>Français (France)</span></div>
+</footer>
+
+</body>
+</html>
