@@ -161,16 +161,18 @@
   .tr p{font-size:12.5px;color:var(--soft);line-height:1.5}
 
   /* final CTA */
-  .cta2{margin:44px 44px 46px;border-radius:24px;padding:46px;text-align:center;color:#fff;position:relative;overflow:hidden;
+  .cta2{margin:44px 44px 46px;border-radius:24px;padding:46px;text-align:center;position:relative;overflow:hidden;
+    border:1px solid var(--line);
     background:
-      radial-gradient(360px 240px at 15% 15%, rgba(139,92,246,.5), transparent 65%),
-      radial-gradient(320px 220px at 88% 80%, rgba(34,199,230,.35), transparent 65%),
-      #24224A}
-  .cta2 h2{color:#fff}
-  .cta2 .a2{color:#B9B4FF}
-  .cta2 p{color:#C9C7E2;font-size:15px;margin:10px 0 22px}
-  .btn2{display:inline-block;background:#fff;color:var(--primary);font-weight:800;font-size:16px;padding:16px 34px;border-radius:999px;box-shadow:0 18px 36px -14px rgba(0,0,0,.4)}
-  .cta2 small{display:block;margin-top:12px;color:#A6A3C8;font-size:12.5px}
+      radial-gradient(380px 250px at 14% 12%, rgba(139,92,246,.16), transparent 65%),
+      radial-gradient(340px 230px at 88% 82%, rgba(34,199,230,.13), transparent 65%),
+      radial-gradient(300px 200px at 50% 100%, rgba(90,84,232,.10), transparent 65%),
+      linear-gradient(160deg,#F3F2FD,#FBFBFF)}
+  .cta2 h2{color:var(--ink)}
+  .cta2 .a2{background:linear-gradient(100deg,var(--primary),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cta2 p{color:var(--soft);font-size:15px;margin:10px 0 22px}
+  .btn2{display:inline-block;background:linear-gradient(120deg,var(--primary),var(--violet));color:#fff;font-weight:800;font-size:16px;padding:16px 34px;border-radius:999px;box-shadow:0 18px 36px -14px rgba(90,84,232,.5)}
+  .cta2 small{display:block;margin-top:12px;color:var(--faint);font-size:12.5px}
 
 
   /* v4 : Splio-inspired additions */
@@ -203,7 +205,7 @@
   /* v5 : sector photo cards + agents + FAQ */
   .seccards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   .sc{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 12px 26px -20px rgba(35,34,58,.3)}
-  .sc .ph{position:relative;height:118px}
+  .sc .ph{position:relative;height:152px;background:linear-gradient(140deg,#EFEEFC,#E4E2F8)}
   .sc .ph img{width:100%;height:100%;object-fit:cover;display:block}
   .sc .ph .lb{position:absolute;left:10px;bottom:10px;background:rgba(20,19,40,.72);color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;backdrop-filter:blur(4px)}
   .sc .notif{display:flex;gap:9px;padding:11px 12px;align-items:flex-start}
@@ -211,26 +213,27 @@
   .sc .notif b{font-size:11.5px;display:block;line-height:1.3}
   .sc .notif p{font-size:10.5px;color:var(--soft);line-height:1.4}
   .sc .notif .tm{margin-left:auto;font-size:9px;color:var(--faint);flex:none}
-  .agents{margin:46px 44px 0;border-radius:24px;padding:38px;color:#fff;position:relative;overflow:hidden;
+  .agents{margin:46px 44px 0;border-radius:24px;padding:38px;position:relative;overflow:hidden;
+    border:1px solid var(--line);
     background:
-      radial-gradient(400px 260px at 12% 10%, rgba(139,92,246,.4), transparent 65%),
-      radial-gradient(340px 240px at 90% 85%, rgba(34,199,230,.28), transparent 65%),
-      #1D1B3E}
-  .agents .spill{background:rgba(255,255,255,.12);color:#C9C5FF}
-  .agents h2{color:#fff}
-  .agents .a3{color:#B9B4FF}
-  .agents .lead{color:#B9B7D6}
+      radial-gradient(420px 280px at 10% 8%, rgba(139,92,246,.14), transparent 65%),
+      radial-gradient(360px 250px at 92% 88%, rgba(34,199,230,.11), transparent 65%),
+      linear-gradient(160deg,#F3F2FD,#FBFBFF)}
+  .agents .spill{background:#fff;color:var(--primary);box-shadow:0 4px 12px -8px rgba(35,34,58,.25)}
+  .agents h2{color:var(--ink)}
+  .agents .a3{background:linear-gradient(100deg,var(--primary),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .agents .lead{color:var(--soft)}
   .agrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
-  .ag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 16px;backdrop-filter:blur(6px)}
-  .ag .ic{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:17px;margin-bottom:11px}
-  .ag b{font-size:14px;display:block;margin-bottom:4px}
-  .ag p{font-size:11.5px;color:#B9B7D6;line-height:1.55}
-  .apipe{display:flex;align-items:center;justify-content:center;gap:12px;margin:22px 0 18px;font-size:12.5px;font-weight:600;color:#C9C5FF;flex-wrap:wrap}
-  .apipe .n{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);padding:8px 16px;border-radius:999px}
-  .apipe .n.hl{background:#fff;color:var(--primary)}
-  .apipe i{font-style:normal;color:#8B87C7}
+  .ag{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 16px;box-shadow:0 12px 26px -20px rgba(35,34,58,.25)}
+  .ag .ic{width:38px;height:38px;border-radius:11px;background:var(--pl);display:grid;place-items:center;font-size:17px;margin-bottom:11px}
+  .ag b{font-size:14px;display:block;margin-bottom:4px;color:var(--ink)}
+  .ag p{font-size:11.5px;color:var(--soft);line-height:1.55}
+  .apipe{display:flex;align-items:center;justify-content:center;gap:12px;margin:22px 0 18px;font-size:12.5px;font-weight:600;color:var(--ink);flex-wrap:wrap}
+  .apipe .n{background:#fff;border:1px solid var(--line);padding:8px 16px;border-radius:999px;box-shadow:0 6px 14px -10px rgba(35,34,58,.2)}
+  .apipe .n.hl{background:linear-gradient(120deg,var(--primary),var(--violet));color:#fff;border:none}
+  .apipe i{font-style:normal;color:var(--faint)}
   .abullets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
-  .ab{display:flex;gap:10px;font-size:12px;color:#C9C7E2;line-height:1.55;align-items:flex-start}
+  .ab{display:flex;gap:10px;font-size:12px;color:var(--soft);line-height:1.55;align-items:flex-start}
   .ab i{font-style:normal;flex:none}
   .faq{padding:46px 44px 0}
   .faqgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -311,17 +314,17 @@
   <h2>Adaptée à <span class="a">votre activité</span></h2>
   <p class="lead">Les mêmes agents IA, des messages différents — chaque secteur a ses codes, Fidclic les connaît.</p>
   <div class="seccards">
-    <div class="sc"><div class="ph"><img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=75" alt="Café — programme de fidélité Fidclic"><span class="lb">☕ Cafés &amp; Restaurants</span></div>
+    <div class="sc"><div class="ph"><img loading="eager" src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=75" alt="Café — programme de fidélité Fidclic"><span class="lb">☕ Cafés &amp; Restaurants</span></div>
       <div class="notif"><span class="fm">F</span><div><b>Le Petit Café ☕</b><p>Votre 10ᵉ café est offert aujourd'hui !</p></div><span class="tm">maintenant</span></div></div>
-    <div class="sc"><div class="ph"><img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=75" alt="Salon de coiffure barbier — fidélisation client Fidclic"><span class="lb">💈 Barbiers &amp; Coiffeurs</span></div>
+    <div class="sc"><div class="ph"><img loading="eager" src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=75" alt="Salon de coiffure barbier — fidélisation client Fidclic"><span class="lb">💈 Barbiers &amp; Coiffeurs</span></div>
       <div class="notif"><span class="fm">F</span><div><b>Barber House ✂️</b><p>−20 % sur toutes les coupes ce week-end !</p></div><span class="tm">maintenant</span></div></div>
-    <div class="sc"><div class="ph"><img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=75" alt="Boulangerie — carte de fidélité digitale Fidclic"><span class="lb">🥐 Boulangeries</span></div>
+    <div class="sc"><div class="ph"><img loading="eager" src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&q=75" alt="Boulangerie — carte de fidélité digitale Fidclic"><span class="lb">🥐 Boulangeries</span></div>
       <div class="notif"><span class="fm">F</span><div><b>Maison Dorée 🥐</b><p>Vos croissants préférés sortent du four à 8 h</p></div><span class="tm">il y a 1 h</span></div></div>
-    <div class="sc"><div class="ph"><img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800&q=75" alt="Institut de beauté — relance clients Fidclic IA"><span class="lb">💅 Instituts &amp; Ongleries</span></div>
+    <div class="sc"><div class="ph"><img loading="eager" src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800&q=75" alt="Institut de beauté — relance clients Fidclic IA"><span class="lb">💅 Instituts &amp; Ongleries</span></div>
       <div class="notif"><span class="fm">F</span><div><b>Institut Belle &amp; Vous 🌸</b><p>Offre spéciale : −15 % sur les soins visage</p></div><span class="tm">hier</span></div></div>
-    <div class="sc"><div class="ph"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=75" alt="Restaurant — campagnes marketing IA Fidclic"><span class="lb">🍽️ Restaurants</span></div>
+    <div class="sc"><div class="ph"><img loading="eager" src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=75" alt="Restaurant — campagnes marketing IA Fidclic"><span class="lb">🍽️ Restaurants</span></div>
       <div class="notif"><span class="fm">F</span><div><b>Chez Marco 🍽️</b><p>Ce soir, votre table préférée vous attend</p></div><span class="tm">17:30</span></div></div>
-    <div class="sc"><div class="ph"><img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=75" alt="Boutique — notifications push clients Fidclic"><span class="lb">🛍️ Boutiques</span></div>
+    <div class="sc"><div class="ph"><img loading="eager" src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=75" alt="Boutique — notifications push clients Fidclic"><span class="lb">🛍️ Boutiques</span></div>
       <div class="notif"><span class="fm">F</span><div><b>Glow Boutique 🛍️</b><p>Nouvelle collection disponible !</p></div><span class="tm">hier</span></div></div>
   </div>
 </section>
