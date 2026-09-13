@@ -136,14 +136,16 @@
   .q span{color:var(--primary);font-weight:700}
 
   /* testimonial */
-  .testi{margin:46px 44px 0;border-radius:22px;overflow:hidden;display:grid;grid-template-columns:1fr 1.2fr;background:#191830}
+  .testi{margin:46px 44px 0;border-radius:22px;overflow:hidden;display:grid;grid-template-columns:1fr 1.2fr;background:#F3F2FD;border:1px solid var(--line)}
   .testi .ph{min-height:250px;background:url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1200&q=80') center/cover}
-  .testi .tx{padding:34px 36px;color:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;
-    background:radial-gradient(300px 200px at 90% 10%, rgba(139,92,246,.25), transparent 70%),#191830}
-  .testi .qq{font-size:19px;font-weight:600;line-height:1.5}
-  .testi .qq .hl{color:#B9B4FF}
-  .testi .who{margin-top:16px;font-size:13.5px;color:#B6B4CF}
-  .testi .who b{color:#fff}
+  .testi .tx{padding:34px 36px;color:var(--ink);display:flex;flex-direction:column;justify-content:center;position:relative;
+    background:radial-gradient(320px 210px at 90% 8%, rgba(139,92,246,.14), transparent 70%),
+               radial-gradient(260px 180px at 8% 92%, rgba(34,199,230,.10), transparent 70%),
+               linear-gradient(160deg,#F3F2FD,#FBFBFF)}
+  .testi .qq{font-size:19px;font-weight:600;line-height:1.5;color:var(--ink)}
+  .testi .qq .hl{background:linear-gradient(100deg,var(--primary),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .testi .who{margin-top:16px;font-size:13.5px;color:var(--soft)}
+  .testi .who b{color:var(--ink)}
   .testi .stars{color:#F0A32B;font-size:15px;margin-bottom:12px;letter-spacing:2px}
 
   /* plain language */
