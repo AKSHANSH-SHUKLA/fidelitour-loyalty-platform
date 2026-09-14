@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<title>Solution fidélité pour restaurants — carte Wallet, push, IA | Fidclic</title>
+<meta name="description" content="Fidélisez vos clients gourmands : carte de fidélité Apple/Google Wallet, notifications push du plat du jour, géolocalisation, IA marketing, parrainage. Remplissez vos soirs creux.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2563EB; --violet:#7C3AED;
+    --ink:#101828; --soft:#475467; --faint:#98A2B4; --line:#E4E7EC;
+    --bluel:#EFF4FF; --violetl:#F1EBFD;
+    --yell:#FEF3C7; --yellk:#B45309; --pink:#FCE7F3; --pinkk:#BE185D;
+    --mint:#DCFCE7; --mintk:#15803D; --cyanl:#E0F2FE; --cyank:#0369A1;
+    --navy:#101B2E; --gold:#C6A15B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{background:#E8ECF4}
+  body{font-family:'Inter',sans-serif;color:var(--ink);width:1024px;margin:0 auto;background:#fff;box-shadow:0 0 0 1px var(--line)}
+  .hand{font-family:'Caveat',cursive;color:var(--blue);font-size:19px;line-height:1.15;font-weight:600}
+
+  nav{display:flex;align-items:center;gap:24px;padding:15px 40px;border-bottom:1px solid var(--line)}
+  .logo{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:800}
+  .logo .mk{width:32px;height:32px;border-radius:9px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:15px}
+  nav .links{display:flex;gap:20px;font-size:13.5px;color:var(--soft);font-weight:500}
+  nav .links .on{color:var(--blue);font-weight:600;border-bottom:2px solid var(--blue);padding-bottom:3px}
+  nav .right{margin-left:auto;display:flex;gap:10px}
+  .bfill{background:var(--blue);color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:999px}
+  .bline{border:1.5px solid var(--blue);color:var(--blue);font-size:13px;font-weight:600;padding:10px 20px;border-radius:999px}
+  .crumb{padding:14px 40px 0;font-size:12.5px;color:var(--faint)}
+  .crumb b{color:var(--soft);font-weight:500}
+
+  .hero{display:grid;grid-template-columns:1.02fr .98fr;gap:26px;padding:24px 40px 44px;align-items:center;position:relative}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:var(--bluel);color:var(--blue);font-size:12.5px;font-weight:600;padding:7px 15px;border-radius:999px;margin-bottom:16px}
+  h1{font-size:39px;font-weight:800;line-height:1.13;letter-spacing:-.022em}
+  h1 .a{color:var(--violet)}
+  .sub{color:var(--soft);font-size:14.5px;line-height:1.65;margin:15px 0 20px;max-width:450px}
+  .sub b{color:var(--ink);font-weight:600}
+  .ctas{display:flex;gap:12px;align-items:center;margin-bottom:20px}
+  .cta1{background:var(--blue);color:#fff;font-size:14.5px;font-weight:700;padding:13px 26px;border-radius:999px;box-shadow:0 12px 24px -10px rgba(37,99,235,.5)}
+  .cta2{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);color:var(--ink);font-size:14px;font-weight:600;padding:12px 22px;border-radius:999px}
+  .cta2 i{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-style:normal;font-size:9px;display:grid;place-items:center}
+  .minis{display:flex;gap:22px}
+  .mini{display:flex;gap:9px;align-items:flex-start}
+  .mini .ic{width:34px;height:34px;flex:none;border-radius:50%;background:var(--bluel);color:var(--blue);display:grid;place-items:center;font-size:14px}
+  .mini b{font-size:12.5px;display:block}
+  .mini span{font-size:10.5px;color:var(--faint)}
+
+  /* hero collage */
+  .vis{position:relative;height:452px}
+  .blob{position:absolute;top:16px;right:2px;width:396px;height:396px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#DFE9FF,#EFF4FF 60%,transparent 72%)}
+  .phone{position:absolute;top:2px;left:74px;width:232px;height:440px;border-radius:38px;background:linear-gradient(155deg,#3d3b39,#171514 55%,#2a2827);padding:5px;box-shadow:0 34px 64px -26px rgba(16,24,40,.5)}
+  .screen{position:relative;width:100%;height:100%;border-radius:33px;background:#F2F2F7;overflow:hidden}
+  .island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:64px;height:18px;border-radius:999px;background:#000;z-index:3}
+  .sbar{display:flex;justify-content:space-between;padding:10px 18px 0;font-size:9.5px;font-weight:700;color:#111}
+  .pass{margin:16px 11px 0;border-radius:12px;background:var(--navy);overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.3)}
+  .pass .r1{display:flex;justify-content:space-between;align-items:center;padding:9px 11px 7px}
+  .pass .biz{display:flex;align-items:center;gap:6px;color:#F4F1EC;font-size:10px;font-weight:700}
+  .pass .biz .lg{width:16px;height:16px;border-radius:5px;background:#1A2C44;display:grid;place-items:center;color:var(--gold);font-size:9px}
+  .pass .tr{text-align:right}
+  .pass .tr .l{font-size:6.5px;letter-spacing:.08em;color:#8C8478;font-weight:700}
+  .pass .tr .v{font-size:10px;font-weight:800;color:var(--gold)}
+  .strip{height:74px;position:relative}
+  .strip img{width:100%;height:100%;object-fit:cover;display:block}
+  .strip .cap{position:absolute;left:0;right:0;bottom:0;padding:4px 11px;font-size:8px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65));font-weight:600}
+  .stamps{padding:7px 11px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.08)}
+  .stamps .cap2{display:flex;justify-content:space-between;font-size:6.5px;letter-spacing:.1em;color:#8C8478;font-weight:700;margin-bottom:4px}
+  .stamps .cap2 b{color:#fff;font-size:8px}
+  .segs{display:flex;gap:3px}
+  .segs i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.16)}
+  .segs i.f{background:var(--gold)}
+  .qr{display:flex;justify-content:center;padding:10px 0 12px}
+  .qr .bx{width:74px;height:74px;background:#fff;border-radius:8px;display:grid;place-items:center}
+  .qr svg{width:60px;height:60px}
+  .wallets{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;width:150px}
+  .wal{display:flex;align-items:center;justify-content:center;gap:7px;border-radius:9px;padding:7px 0;font-size:9.5px;font-weight:600;background:#000;color:#fff}
+  .wal .wic{width:13px;height:13px;border-radius:3px;background:linear-gradient(135deg,#FF453A,#FF9F0A 40%,#30D158 70%,#0A84FF)}
+  .fl{position:absolute;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 34px -16px rgba(16,24,40,.3);padding:11px 15px;display:flex;gap:10px;align-items:center;z-index:4}
+  .fl .ic{width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:14px}
+  .fl b{font-size:12.5px;display:block;line-height:1.2}
+  .fl span{font-size:10.5px;color:var(--faint)}
+  .fl1{top:58px;right:2px;transform:rotate(2deg)}
+  .fl1 .ic{background:var(--pink);color:var(--pinkk)}
+  .fl2{bottom:110px;right:-6px;transform:rotate(-2deg)}
+  .fl2 .ic{background:var(--yell);color:var(--yellk)}
+  .face{position:absolute;top:-8px;left:10px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 14px 5px 5px;box-shadow:0 12px 26px -14px rgba(16,24,40,.3);z-index:4;transform:rotate(-2deg)}
+  .face img{width:34px;height:34px;border-radius:50%;object-fit:cover}
+  .face b{font-size:11.5px;display:block}
+  .face span{font-size:9.5px;color:var(--faint)}
+  .note{position:absolute;bottom:26px;left:6px;z-index:4;transform:rotate(-3deg)}
+  .note .arr{display:inline-block;font-size:22px;color:var(--blue);transform:rotate(-14deg)}
+
+  .band{margin:40px 40px 0;background:linear-gradient(160deg,#EDF2FC,#F4F7FE);border:1px solid #DFE7F7;border-radius:22px;padding:30px 32px}
+  .tagp{display:inline-block;background:var(--bluel);color:var(--blue);font-size:12px;font-weight:600;padding:6px 14px;border-radius:999px;margin-bottom:12px}
+  h2{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+  h2 .a{color:var(--blue)}
+  h2 .v{color:var(--violet)}
+  .lead{color:var(--soft);font-size:13.5px;margin-top:8px;line-height:1.6;max-width:600px}
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
+  .step{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;position:relative}
+  .step .num{position:absolute;top:-12px;left:16px;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#5B54E8,#7C3AED);color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center;box-shadow:0 8px 16px -6px rgba(124,58,237,.5)}
+  .step .ph{height:78px;border-radius:10px;overflow:hidden;margin:8px 0 12px;position:relative;background:#E7EBFB}
+  .step .ph img{width:100%;height:100%;object-fit:cover}
+  .step .ph .ov{position:absolute;right:6px;bottom:6px;width:26px;height:26px;border-radius:8px;background:#fff;display:grid;place-items:center;font-size:12px;box-shadow:0 6px 12px -4px rgba(16,24,40,.3)}
+  .step h3{font-size:13.5px;font-weight:700;margin-bottom:4px;line-height:1.3}
+  .step p{font-size:11.5px;color:var(--soft);line-height:1.5}
+
+  /* ═══ GROWTH LEVERS ═══ */
+  .sec{padding:44px 40px 0}
+  .lev{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+  .lv{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 12px 28px -22px rgba(16,24,40,.25)}
+  .lv .top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .lv .ic{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:19px}
+  .lv .top b{font-size:15.5px;display:block}
+  .lv .top span{font-size:11px;color:var(--faint);display:block}
+  .lv .plays{display:grid;gap:8px;margin-bottom:12px}
+  .play{display:flex;gap:9px;font-size:12.5px;color:var(--soft);line-height:1.5;align-items:flex-start}
+  .play i{font-style:normal;color:var(--blue);font-weight:700;flex:none}
+  .play b{color:var(--ink);font-weight:600}
+  .lv .res{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;padding:7px 13px;border-radius:999px}
+  .lv .visu{margin:2px 0 14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  /* mini notif */
+  .mn{display:flex;gap:9px;padding:10px 12px;background:#FBFCFE;align-items:flex-start}
+  .mn .fm{width:26px;height:26px;flex:none;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
+  .mn b{font-size:11.5px;display:block;line-height:1.3}
+  .mn p{font-size:10.5px;color:var(--soft);line-height:1.4}
+  .mn .tm{margin-left:auto;font-size:9px;color:var(--faint);flex:none}
+  /* mini map */
+  .map{position:relative;height:86px;background:
+      linear-gradient(#E8EEF8 1px,transparent 1px),linear-gradient(90deg,#E8EEF8 1px,transparent 1px);
+      background-size:22px 22px;background-color:#F4F8FE}
+  .map .rad{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;background:rgba(124,58,237,.12);border:1.5px dashed rgba(124,58,237,.5)}
+  .map .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%);font-size:20px}
+  .map .cl{position:absolute;font-size:13px}
+  .map .tag{position:absolute;right:8px;bottom:8px;background:#fff;border:1px solid var(--line);border-radius:8px;font-size:9.5px;font-weight:600;padding:4px 9px;color:var(--violet)}
+  /* mini pass */
+  .mp{background:var(--navy);padding:10px 12px}
+  .mp .r{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+  .mp .r b{color:#F4F1EC;font-size:11px}
+  .mp .r span{color:var(--gold);font-size:10px;font-weight:800}
+  .mp .segs i{height:6px}
+  .mp .tx{color:#B9B3A8;font-size:9.5px;margin-top:6px}
+  /* mini IA */
+  .mia{padding:10px 12px;background:#FBFAFF}
+  .mia .h{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;color:var(--violet);margin-bottom:6px}
+  .mia .h i{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#5B54E8,#22C7E6);color:#fff;font-style:normal;display:grid;place-items:center;font-size:10px}
+  .mia p{font-size:11px;color:var(--ink);line-height:1.5}
+  .mia .ok{display:inline-block;margin-top:7px;background:var(--blue);color:#fff;font-size:10px;font-weight:700;padding:5px 12px;border-radius:999px}
+  /* mini parrainage */
+  .mpar{display:flex;align-items:center;gap:10px;padding:12px;background:#F7FEF9}
+  .mpar .c{flex:1;text-align:center;background:#fff;border:1px dashed var(--mintk);border-radius:10px;padding:8px 4px;font-size:10px;font-weight:700;color:var(--mintk)}
+  .mpar .c small{display:block;font-weight:500;color:var(--soft);font-size:9px;margin-top:2px}
+  .mpar i{font-style:normal;color:var(--mintk);font-weight:800}
+  /* mini stats */
+  .mst{display:flex;align-items:flex-end;gap:6px;height:70px;padding:12px 14px 10px;background:#FDF9FC}
+  .mst i{flex:1;border-radius:4px 4px 2px 2px;background:#F1D8E8}
+  .mst i.hi{background:linear-gradient(180deg,#EC4899,#BE185D)}
+  .mst .lbl{position:absolute}
+
+  /* dark photo band */
+  .darkband{margin:44px 40px 0;border-radius:22px;overflow:hidden;display:grid;grid-template-columns:1fr 1.1fr;background:#0E1320}
+  .darkband .ph{position:relative;min-height:280px}
+  .darkband .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85}
+  .locknotif{position:absolute;left:14px;bottom:18px;right:14px;background:rgba(255,255,255,.94);border-radius:13px;padding:10px 13px;display:flex;gap:10px;align-items:flex-start;box-shadow:0 18px 36px -14px rgba(0,0,0,.5)}
+  .locknotif .fm{width:28px;height:28px;flex:none;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--violet));color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800}
+  .locknotif b{font-size:11.5px;display:block}
+  .locknotif p{font-size:10.5px;color:var(--soft)}
+  .darkband .tx{padding:32px 34px;color:#fff;display:flex;flex-direction:column;justify-content:center}
+  .darkband .tagd{display:inline-block;width:fit-content;background:rgba(255,255,255,.12);color:#C9D6FF;font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:999px;margin-bottom:12px}
+  .darkband h2{color:#fff}
+  .darkband h2 .a{color:#8FB3FF}
+  .darkband p.d{color:#B9C2D8;font-size:13px;line-height:1.65;margin:10px 0 16px}
+  .chk{display:flex;gap:9px;font-size:12.5px;color:#DDE4F5;margin-bottom:9px;align-items:flex-start}
+  .chk i{width:18px;height:18px;flex:none;border-radius:50%;background:var(--blue);color:#fff;font-style:normal;font-size:10px;display:grid;place-items:center}
+
+  /* results + CTA */
+  .results{margin:40px 40px 0;background:linear-gradient(160deg,#EDF2FC,#F4F7FE);border:1px solid #DFE7F7;border-radius:20px;padding:22px 30px;display:flex;align-items:center;gap:26px;position:relative}
+  .results .tt{font-size:12px;font-weight:600;color:var(--blue);background:#fff;padding:6px 13px;border-radius:999px;border:1px solid var(--line)}
+  .rr{display:flex;gap:10px;align-items:center}
+  .rr .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:15px}
+  .rr b{font-size:13.5px;display:block}
+  .rr span{font-size:10.5px;color:var(--faint)}
+  .results .hand{position:absolute;right:26px;top:-10px;transform:rotate(-3deg)}
+  .cta3{margin:44px 40px 44px;background:linear-gradient(150deg,#ECEAFB,#F4F2FD 70%);border:1px solid #E2DFF6;border-radius:22px;padding:34px;display:grid;grid-template-columns:1.2fr .8fr;gap:20px;align-items:center;position:relative}
+  .cta3 .tag2{display:inline-block;background:#fff;color:var(--violet);font-size:12px;font-weight:600;padding:6px 14px;border-radius:999px;margin-bottom:12px}
+  .cta3 p{color:var(--soft);font-size:13.5px;margin-bottom:18px;max-width:420px}
+  .cta3 small{font-size:11.5px;color:var(--faint);display:block;margin-top:10px}
+  .foodcard{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 16px 34px -20px rgba(16,24,40,.35);transform:rotate(2deg)}
+  .foodcard img{width:100%;height:130px;object-fit:cover;display:block}
+  .foodcard .b{padding:12px 15px;display:flex;gap:10px;align-items:center}
+  .foodcard .ic{width:34px;height:34px;border-radius:10px;background:var(--violetl);display:grid;place-items:center;font-size:15px}
+  .foodcard b{font-size:12.5px;display:block}
+  .foodcard span{font-size:10.5px;color:var(--faint)}
+
+  .faq{padding:40px 40px 8px}
+  .fq{border:1px solid var(--line);border-radius:13px;padding:14px 18px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;font-weight:600}
+  .fq span{color:var(--blue);font-weight:800}
+  footer{border-top:1px solid var(--line);margin-top:36px;padding:24px 40px 16px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:18px;font-size:12.5px;color:var(--soft)}
+  footer h4{font-size:11.5px;color:var(--ink);margin-bottom:8px;letter-spacing:.07em;text-transform:uppercase;font-weight:700}
+  footer a{display:block;margin-bottom:6px;color:var(--soft);text-decoration:none}
+  .legal{grid-column:1/-1;display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;margin-top:6px;font-size:11px;color:var(--faint)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><span class="mk">F</span>Fidclic</div>
+  <div class="links"><span>Accueil</span><span>Fonctionnalités</span><span class="on">Solutions</span><span>Tarifs</span><span>À propos</span><span>Blog</span></div>
+  <div class="right"><span class="bfill">Demander une démo</span><span class="bline">Se connecter</span></div>
+</nav>
+<div class="crumb">⌂ &nbsp;Solutions &nbsp;›&nbsp; <b>Restaurants</b></div>
+
+<section class="hero">
+  <div>
+    <span class="pill">🍽️ Solution Restaurants</span>
+    <h1>Fidélisez vos clients gourmands.<br><span class="a">Faites-les revenir.</span></h1>
+    <p class="sub">Fidclic vous aide à créer une expérience de fidélité moderne et personnalisée pour votre
+    restaurant. <b>Attirez plus de clients, remplissez vos services creux</b> et développez votre chiffre d'affaires.</p>
+    <div class="ctas"><span class="cta1">Demander une démo →</span><span class="cta2"><i>▶</i>Voir en action</span></div>
+    <div class="minis">
+      <div class="mini"><span class="ic">👥</span><div><b>Plus de clients</b><span>en salle</span></div></div>
+      <div class="mini"><span class="ic">📈</span><div><b>Un chiffre d'affaires</b><span>plus stable</span></div></div>
+      <div class="mini"><span class="ic">❤️</span><div><b>Des clients</b><span>plus fidèles</span></div></div>
+    </div>
+  </div>
+  <div class="vis">
+    <div class="blob"></div>
+    <div class="face"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=75" alt="Cliente du restaurant"><div><b>Sarah</b><span>« Votre table vous attend ! »</span></div></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="sbar"><span>9:41</span><span>▪▪▪ ⌁ ▐</span></div>
+      <div class="pass">
+        <div class="r1"><span class="biz"><span class="lg">M</span>Chez Marco</span><span class="tr"><span class="l">STATUT</span><br><span class="v">Or</span></span></div>
+        <div class="strip"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=75" alt="Plat du restaurant Chez Marco"><span class="cap">Restaurant italien</span></div>
+        <div class="stamps"><div class="cap2"><span>REPAS</span><b>5 / 10</b></div>
+          <div class="segs"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="qr"><div class="bx">
+          <svg viewBox="0 0 25 25"><g fill="#111"><rect x="0" y="0" width="7" height="7"/><rect x="18" y="0" width="7" height="7"/><rect x="0" y="18" width="7" height="7"/><rect x="2" y="2" width="3" height="3" fill="#fff"/><rect x="20" y="2" width="3" height="3" fill="#fff"/><rect x="2" y="20" width="3" height="3" fill="#fff"/><rect x="10" y="2" width="2" height="2"/><rect x="13" y="5" width="2" height="2"/><rect x="10" y="9" width="2" height="2"/><rect x="16" y="10" width="2" height="2"/><rect x="20" y="12" width="2" height="2"/><rect x="10" y="14" width="2" height="2"/><rect x="13" y="17" width="2" height="2"/><rect x="17" y="19" width="2" height="2"/><rect x="10" y="21" width="2" height="2"/><rect x="21" y="16" width="2" height="2"/></g></svg>
+        </div></div>
+      </div>
+      <div class="wallets"><span class="wal"><span class="wic"></span>Ajouter à Apple Wallet</span></div>
+    </div></div>
+    <div class="fl fl1"><span class="ic">%</span><div><b>−20 %</b><span>sur votre prochain repas</span></div></div>
+    <div class="fl fl2"><span class="ic">🍰</span><div><b>1 dessert offert</b><span>après 10 visites</span></div></div>
+    <div class="note"><span class="hand">Des clients<br>qui reviennent !</span> <span class="arr">↝</span></div>
+  </div>
+</section>
+
+<div class="band">
+  <span class="tagp">Comment ça fonctionne ?</span>
+  <h2>Une expérience <span class="a">simple</span>, du premier scan au retour en salle.</h2>
+  <div class="steps">
+    <div class="step"><span class="num">1</span><div class="ph"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=75" alt="QR code à scanner sur la table du restaurant"><span class="ov">📷</span></div><h3>Le client scanne votre QR</h3><p>Sur la table, l'addition ou la vitrine — un scan suffit.</p></div>
+    <div class="step"><span class="num">2</span><div class="ph"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=75" alt="Carte de fidélité ajoutée au Wallet"><span class="ov">💳</span></div><h3>La carte s'ajoute au Wallet</h3><p>Un clic, elle est dans Apple ou Google Wallet. Aucune app.</p></div>
+    <div class="step"><span class="num">3</span><div class="ph"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=75" alt="Client présente sa carte en caisse"><span class="ov">🛒</span></div><h3>Il la présente en caisse</h3><p>Un scan à l'addition — repas compté, points crédités.</p></div>
+    <div class="step"><span class="num">4</span><div class="ph"><img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=75" alt="Carte mise à jour en temps réel"><span class="ov">🔄</span></div><h3>Tout se met à jour</h3><p>Repas, statut, offres : la carte est toujours à jour.</p></div>
+  </div>
+</div>
+
+<!-- ═══ GROWTH LEVERS : chaque fonctionnalité = du CA ═══ -->
+<section class="sec">
+  <span class="tagp">Vos leviers de croissance</span>
+  <h2>Chaque fonctionnalité, <span class="v">un levier de chiffre d'affaires.</span></h2>
+  <p class="lead">Concrètement, voilà comment un restaurant utilise Fidclic pour remplir sa salle — service après service.</p>
+
+  <div class="lev">
+    <!-- push -->
+    <div class="lv">
+      <div class="top"><span class="ic" style="background:var(--bluel)">🔔</span><div><b>Notifications push</b><span>Le plat du jour, directement sur leur téléphone</span></div></div>
+      <div class="visu"><div class="mn"><span class="fm">M</span><div><b>Chez Marco 🍝</b><p>Aujourd'hui : lasagnes maison — il ne reste que 12 tables ce midi !</p></div><span class="tm">11:30</span></div></div>
+      <div class="plays">
+        <div class="play"><i>→</i><b>11 h 30 :</b>&nbsp;le plat du jour part à tous vos habitués — la décision déjeuner se prend à ce moment-là.</div>
+        <div class="play"><i>→</i><b>Jeudi :</b>&nbsp;annoncez la soirée à thème, l'happy hour, le nouveau menu — sans payer de pub.</div>
+      </div>
+      <span class="res" style="background:var(--bluel);color:var(--blue)">💶 Un envoi = des couverts en plus le jour même</span>
+    </div>
+    <!-- geoloc -->
+    <div class="lv">
+      <div class="top"><span class="ic" style="background:var(--violetl)">📍</span><div><b>Géolocalisation</b><span>Captez les clients qui passent devant chez vous</span></div></div>
+      <div class="visu"><div class="map"><span class="rad"></span><span class="pin">📍</span><span class="cl" style="left:16%;top:22%">🚶</span><span class="cl" style="left:74%;top:60%">🚶</span><span class="cl" style="left:28%;top:70%">🚶</span><span class="tag">Rappel à proximité</span></div></div>
+      <div class="plays">
+        <div class="play"><i>→</i><b>Midi, à 300 m :</b>&nbsp;un client avec votre carte passe dans le quartier — sa carte lui rappelle votre plat du jour.</div>
+        <div class="play"><i>→</i><b>Notification de proximité Wallet :</b>&nbsp;votre carte s'affiche sur l'écran verrouillé près du restaurant.</div>
+      </div>
+      <span class="res" style="background:var(--violetl);color:var(--violet)">🚶 Du passage transformé en tables occupées</span>
+    </div>
+    <!-- carte -->
+    <div class="lv">
+      <div class="top"><span class="ic" style="background:var(--yell)">💳</span><div><b>Carte de fidélité Wallet</b><span>La raison de revenir chez vous, pas ailleurs</span></div></div>
+      <div class="visu"><div class="mp"><div class="r"><b>Chez Marco · Fidélité</b><span>7 / 10 repas</span></div><div class="segs"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div><div class="tx">Encore 3 repas → un menu offert 🍽️</div></div></div>
+      <div class="plays">
+        <div class="play"><i>→</i><b>10 repas = 1 offert :</b>&nbsp;le classique qui marche, sans carton perdu — la carte vit dans leur téléphone.</div>
+        <div class="play"><i>→</i><b>Statut Or pour vos habitués :</b>&nbsp;dessert offert, coupe-file, attentions — ils se sentent VIP, ils le racontent.</div>
+      </div>
+      <span class="res" style="background:var(--yell);color:var(--yellk)">🔁 Des habitués qui choisissent VOTRE salle</span>
+    </div>
+    <!-- IA -->
+    <div class="lv">
+      <div class="top"><span class="ic" style="background:var(--cyanl)">✦</span><div><b>Fidclic IA</b><span>Votre copilote marketing — il remplit les soirs creux</span></div></div>
+      <div class="visu"><div class="mia"><div class="h"><i>✦</i>FIDCLIC IA · MARDI 9H</div><p>« Vos mardis soirs sont 40 % moins remplis. J'ai préparé une offre −20 % ciblée sur 62 clients du quartier. »</p><span class="ok">✓ Valider la campagne</span></div></div>
+      <div class="plays">
+        <div class="play"><i>→</i><b>Service creux détecté :</b>&nbsp;l'IA propose l'offre, la cible et le message — vous validez en un clic.</div>
+        <div class="play"><i>→</i><b>Clients à risque :</b>&nbsp;ceux qui ne sont pas revenus depuis 6 semaines reçoivent une relance qui donne faim.</div>
+      </div>
+      <span class="res" style="background:var(--cyanl);color:var(--cyank)">🌙 Des salles pleines même le mardi soir</span>
+    </div>
+    <!-- parrainage -->
+    <div class="lv">
+      <div class="top"><span class="ic" style="background:var(--mint)">🤝</span><div><b>Parrainage</b><span>Vos clients amènent leurs amis à table</span></div></div>
+      <div class="visu"><div class="mpar"><span class="c">MARCO10<small>le code de Sarah</small></span><i>→</i><span class="c">1 ami vient dîner<small>table de 2 en plus</small></span><i>→</i><span class="c">2 récompensés<small>apéritif offert chacun</small></span></div></div>
+      <div class="plays">
+        <div class="play"><i>→</i><b>Bouche-à-oreille organisé :</b>&nbsp;chaque client fidèle partage son code — WhatsApp, SMS, en salle.</div>
+        <div class="play"><i>→</i><b>Coût d'acquisition quasi nul :</b>&nbsp;un apéritif offert coûte moins cher que n'importe quelle publicité.</div>
+      </div>
+      <span class="res" style="background:var(--mint);color:var(--mintk)">🪑 De nouvelles tables sans budget pub</span>
+    </div>
+    <!-- CRM -->
+    <div class="lv">
+      <div class="top"><span class="ic" style="background:var(--pink)">📊</span><div><b>CRM &amp; statistiques</b><span>Connaissez votre salle comme votre carte</span></div></div>
+      <div class="visu"><div class="mst"><i style="height:34%"></i><i style="height:52%"></i><i style="height:40%"></i><i class="hi" style="height:88%"></i><i class="hi" style="height:100%"></i><i style="height:64%"></i><i style="height:30%"></i></div></div>
+      <div class="plays">
+        <div class="play"><i>→</i><b>Anniversaires automatiques :</b>&nbsp;un dessert offert le jour J — une attention qui fidélise pour l'année.</div>
+        <div class="play"><i>→</i><b>Habitués vs occasionnels :</b>&nbsp;segmentez, ciblez, et suivez vos heures d'affluence au réel.</div>
+      </div>
+      <span class="res" style="background:var(--pink);color:var(--pinkk)">🎯 Des décisions prises sur vos vrais chiffres</span>
+    </div>
+  </div>
+</section>
+
+<!-- dark photo band -->
+<div class="darkband">
+  <div class="ph"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1000&q=75" alt="Salle de restaurant le soir">
+    <div class="locknotif"><span class="fm">M</span><div><b>Fidclic · Chez Marco</b><p>Votre plat préféré vous attend 🍝 −20 % sur nos pâtes ce soir !</p></div></div>
+  </div>
+  <div class="tx">
+    <span class="tagd">Plus qu'une carte de fidélité</span>
+    <h2>Créez une relation <span class="a">durable</span> avec vos clients.</h2>
+    <p class="d">Restez en contact avec vos clients même en dehors du restaurant. Envoyez des offres
+    personnalisées, annoncez vos événements et faites-les revenir au bon moment.</p>
+    <div class="chk"><i>✓</i>Augmentez la fréquence des visites de vos habitués</div>
+    <div class="chk"><i>✓</i>Remplissez vos services creux, midi comme soir</div>
+    <div class="chk"><i>✓</i>Développez une communauté de clients fidèles</div>
+  </div>
+</div>
+
+<div class="results">
+  <span class="tt">Des résultats concrets</span>
+  <div class="rr"><span class="ic" style="background:var(--bluel)">📈</span><div><b>+ de visites répétées</b><span>vos habitués reviennent</span></div></div>
+  <div class="rr"><span class="ic" style="background:var(--pink)">❤️</span><div><b>+ d'engagement client</b><span>une relation qui dure</span></div></div>
+  <div class="rr"><span class="ic" style="background:var(--mint)">💶</span><div><b>+ de chiffre d'affaires</b><span>service après service</span></div></div>
+  <span class="hand">Un restaurant qui grandit !</span>
+</div>
+
+<div class="cta3">
+  <div>
+    <span class="tag2">Prêt à fidéliser vos clients ?</span>
+    <h2>Transformez chaque repas en <span class="a">une nouvelle visite.</span></h2>
+    <p>Offrez une expérience moderne et engageante, et développez votre restaurant avec Fidclic.</p>
+    <div class="ctas" style="margin-bottom:0"><span class="cta1">Demander une démo →</span><span class="cta2"><i>▶</i>Voir en action</span></div>
+    <small>Sans engagement · Démonstration personnalisée</small>
+  </div>
+  <div class="foodcard">
+    <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=700&q=75" alt="Plat servi au restaurant">
+    <div class="b"><span class="ic">🪑</span><div><b>Des clients plus fidèles</b><span>Des tables plus remplies · un restaurant qui grandit</span></div></div>
+  </div>
+</div>
+
+<section class="faq">
+  <span class="tagp">Questions fréquentes</span>
+  <h2>Vous avez des <span class="a">questions ?</span></h2>
+  <div class="fq">Comment fonctionne la carte de fidélité pour les restaurants ?<span>+</span></div>
+  <div class="fq">Puis-je personnaliser les récompenses (menu offert, dessert, apéritif) ?<span>+</span></div>
+  <div class="fq">Fidclic est-il compatible avec ma caisse ?<span>+</span></div>
+</section>
+
+<footer>
+  <div>
+    <div class="logo" style="font-size:17px"><span class="mk" style="width:28px;height:28px;font-size:13px">F</span>Fidclic</div>
+    <p style="margin-top:8px;line-height:1.5">La plateforme de fidélisation pensée<br>pour les commerces de proximité.</p>
+  </div>
+  <div><h4>Produit</h4><a>Fonctionnalités</a><a>Solutions</a><a>Tarifs</a><a>Fidclic IA</a></div>
+  <div><h4>Ressources</h4><a>Guide de démarrage</a><a>Centre d'aide</a><a>Blog</a><a>Contact</a></div>
+  <div><h4>Légal</h4><a>Mentions légales</a><a>Confidentialité</a><a>CGU</a><a>Cookies</a></div>
+  <div class="legal"><span>© 2026 Fidclic — Prototype de maquette, contenu non contractuel.</span><span>Français (France)</span></div>
+</footer>
+
+</body>
+</html>
